@@ -1,0 +1,71 @@
+.profile-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  margin-top: 150px;
+  margin-bottom: 4%;
+  padding: 50px 30px;
+  background-color: rgb(255, 255, 255);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+}
+
+.profile-container h1 {
+  color: var(--color-secundario);
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-acento);
+}
+
+.profile-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.profile-info p {
+  margin: 0;
+}
+
+.profile-info strong {
+  color: var(--color-texto);
+}
+
+.profile-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.profile-actions button {
+  padding: 10px 25px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.profile-actions .logout-btn {
+  background-color: var(--color-secundario);
+  color: var(--color-fondo);
+}
+
+.profile-actions .logout-btn:hover {
+  background-color: var(--color-principal);
+}

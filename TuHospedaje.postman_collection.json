@@ -1,0 +1,192 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "TuHospedaje",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🟢 Sprint 1 — Alojamientos",
+      "item": [
+        {
+          "name": "Nuevo alojamiento",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hotel Casona del Sol\",\n  \"description\": \"Hermoso hotel en el centro de la ciudad\",\n  \"address\": \"Av. Principal 123\",\n  \"city\": \"Buenos Aires\",\n  \"country\": \"Argentina\",\n  \"phoneNumber\": \"+54111234567\",\n  \"email\": \"contacto@casonadelsol.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings"]
+            }
+          }
+        },
+        {
+          "name": "Todos los alojamientos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings"]
+            }
+          }
+        },
+        {
+          "name": "Alojamiento por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings", "1"]
+            }
+          }
+        },
+        {
+          "name": "Buscar alojamiento por nombre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings/search?query=hotel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings", "search"],
+              "query": [
+                { "key": "query", "value": "hotel" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar alojamiento",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"name\": \"Hotel Casona del Sol (Editado)\",\n  \"description\": \"Descripción actualizada\",\n  \"address\": \"Av. Principal 456\",\n  \"city\": \"Buenos Aires\",\n  \"country\": \"Argentina\",\n  \"phoneNumber\": \"+54111234567\",\n  \"email\": \"contacto@casonadelsol.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar alojamiento",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings", "1"]
+            }
+          }
+        },
+        {
+          "name": "Aleatorios (recomendaciones)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/lodgings/random",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "lodgings", "random"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🟡 Sprint 2 — Categorías",
+      "item": []
+    },
+    {
+      "name": "🟡 Sprint 2 — Características",
+      "item": []
+    },
+    {
+      "name": "🟡 Sprint 2 — Auth (Login/Register)",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@tuhospedaje.com\",\n  \"password\": \"admin123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Registrarse",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Test\",\n  \"lastName\": \"Apellido\",\n  \"email\": \"test@email.com\",\n  \"password\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🟠 Sprint 3 — Favoritos",
+      "item": []
+    },
+    {
+      "name": "🟠 Sprint 3 — Políticas",
+      "item": []
+    },
+    {
+      "name": "🟠 Sprint 3 — Puntuaciones",
+      "item": []
+    },
+    {
+      "name": "🔴 Sprint 4 — Reservas",
+      "item": []
+    }
+  ]
+}

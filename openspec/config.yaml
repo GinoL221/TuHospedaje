@@ -1,0 +1,26 @@
+# OpenSpec Configuration — TuHospedaje
+project: tuhospedaje
+stack:
+  backend:
+    language: Java 17
+    framework: Spring Boot 3.5.0
+    build: Maven 3.9.15
+    database: MariaDB (via JPA/Hibernate)
+    auth: Spring Security + JWT
+  frontend:
+    language: JavaScript (JSX)
+    framework: React 19.2.5
+    bundler: Vite 8.0.10
+    styles: CSS plano (SASS pendiente)
+    linter: ESLint 10.2.1
+testing:
+  strict_tdd: true
+  backend:
+    runner: JUnit 5 (Jupiter)
+    integration: SpringBootTest / MockMVC
+    coverage: false
+  frontend:
+    runner: false
+    linter: ESLint
+  e2e: false
+  

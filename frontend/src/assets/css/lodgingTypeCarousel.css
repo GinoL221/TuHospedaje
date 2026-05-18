@@ -1,0 +1,93 @@
+.lodging-types {
+  margin: 40px 0;
+  text-align: center;
+}
+
+.lodging-types h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.lodging-carousel {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 0;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  justify-content: center;
+}
+
+.lodging-carousel::-webkit-scrollbar {
+  height: 8px;
+}
+
+.lodging-carousel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lodging-carousel::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.lodging-card {
+  min-width: 250px;
+  height: 150px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.lodging-card:hover {
+  transform: scale(1.03);
+}
+
+.lodging-card span {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 1.2rem;
+  color: rgb(255, 255, 255);
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.5);
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.scroll-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.scroll-btn:hover {
+  opacity: 1;
+}
+
+.scroll-btn img {
+  width: 30px;
+  height: auto;
+  display: block;
+}

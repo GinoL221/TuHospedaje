@@ -1,0 +1,24 @@
+# Backend
+backend/target/
+backend/.mvn/
+backend/*.log
+backend/src/main/resources/application-local.properties
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.class
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OpenSpec / Atlassian local artifacts
+.atl/
