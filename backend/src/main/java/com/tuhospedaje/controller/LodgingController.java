@@ -39,11 +39,9 @@ public class LodgingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @PutMapping
-    public ResponseEntity<LodgingDTO> update(@RequestBody LodgingDTO dto) {
-        if (dto.getId() == null) {
-            return ResponseEntity.badRequest().build();
-        }
+    @PutMapping("/{id}")
+    public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @RequestBody LodgingDTO dto) {
+        dto.setId(id);
         LodgingDTO updated = lodgingService.update(dto);
         return ResponseEntity.ok(updated);
     }

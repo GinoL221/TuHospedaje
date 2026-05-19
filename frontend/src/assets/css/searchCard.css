@@ -54,6 +54,7 @@
   color: #fff;
 }
 
+/* RESPONSIVE */
 @media (max-width: 480px) {
   .search-card form {
     flex-direction: column;

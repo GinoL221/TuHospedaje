@@ -22,9 +22,11 @@ Controller → Service (Interface + Impl) → Repository → Entity / DTO
 ```
 
 - **Desacoplamiento de Datos:** Intercambio de información gestionado mediante una entidad unificada `LodgingDTO` que encapsula la lógica de conversión mediante los métodos estáticos `toEntity()` y `fromEntity()`.
+- **Exposición de Imágenes:** El `LodgingDTO` expone `List<String> imageUrls` mapeado desde la relación `@OneToMany` con `LodgingImage`, permitiendo al frontend consumir las URLs sin acoplamiento a la entidad.
 - **Inyección de Dependencias:** Inyección estricta basada en constructores, prescindiendo de `@Autowired` directo en atributos para asegurar la testabilidad unitaria. Automatización de boilerplate mediante Lombok.
 - **Política de CORS:** Configuración explícita en la capa de red para permitir peticiones provenientes del puerto de desarrollo de frontend (`http://localhost:5173`), autorizando de forma nativa los métodos de pre-vuelo (`OPTIONS`).
 - **Seguridad Temporal:** El ciclo de filtros se configuró para mantener todos los endpoints bajo la ruta `/api/` como de acceso público exclusivo durante este corte.
+- **Manejo Global de Errores:** Se implementó `GlobalExceptionHandler` con `@RestControllerAdvice` que captura `ResourceNotFoundException` → 404 e `IllegalArgumentException` → 400, centralizando el manejo de errores HTTP.
 
 ### 2.2. Frontend (React + Vite)
 
@@ -50,7 +52,7 @@ src/
 | US #1 | Encabezado (Header) funcional con logo, lema corporativo y botones de navegación. | `Header.jsx` | N/A (Navegación local) | Elemento fijo (fixed) superior en el 100% de las vistas. Redirección al Home mediante clic. |
 | US #2 | Estructura principal del Home: buscador, categorías y grilla. | `Home.jsx` | `GET /api/lodgings/random` | Carga de placeholders estáticos para el buscador/categorías y consumo dinámico para las recomendaciones. |
 | US #3 | Registro de hospedaje con validaciones desde vista de administración. | `Admin.jsx` (Modal) | `POST /api/lodgings` | Formulario emergente con validación de tipos; persistencia inmediata en MariaDB. |
-| US #4 | Despliegue de grilla aleatoria de 10 recomendaciones en Home. | `ProductCard.jsx` | `GET /api/lodgings/random` | Renderizado responsivo en formato de grilla CSS (2×5 en desktop). |
+| US #4 | Despliegue de grilla aleatoria de 10 recomendaciones en Home. | `ProductCard.jsx` | `GET /api/lodgings/random` | Renderizado responsivo en formato de grilla CSS (4 columnas en desktop). |
 | US #5 | Visualización detallada de la ficha técnica del alojamiento. | `ProductDetail.jsx` | `GET /api/lodgings/{id}` | Recuperación por ID. Enrutamiento dinámico `/lodging/:id`. |
 | US #6 | Galería multimedia interactiva en el detalle del producto. | `ProductDetail.jsx` | Contenido de `Lodging.images` | Layout simétrico (50/50) con grilla adaptativa y botón disparador "Ver más". |
 | US #7 | Pie de página (Footer) con derechos de autor e identidad de marca. | `Footer.jsx` | N/A (UI Estática) | Consistente y posicionado al final del scroll en todo el sitio. |
@@ -70,7 +72,7 @@ src/
 | GET | `/api/lodgings/random` | Ninguno | Retorna una colección desordenada de un máximo de 10 alojamientos para el Home. |
 | GET | `/api/lodgings/search` | Query (Obligatorio): `query` | Endpoint habilitado en backend; busca coincidencias parciales por nombre. |
 | GET | `/api/lodgings/{id}` | Path Variable: `id` (Long) | Retorna la ficha técnica y la colección de imágenes del alojamiento consultado. |
-| PUT | `/api/lodgings` | Body: `LodgingDTO` (JSON) | Exclusivo Backend: Endpoint preventivo desplegado para actualización futura de registros. |
+| PUT | `/api/lodgings/{id}` | Path Variable: `id` (Long), Body: `LodgingDTO` (JSON) | Actualiza los campos de un alojamiento existente identificado por su ID. |
 | DELETE | `/api/lodgings/{id}` | Path Variable: `id` (Long) | Ejecuta el borrado físico del registro en base de datos en cascada (`CascadeType.ALL`). |
 
 ---
@@ -111,7 +113,7 @@ Relación `Lodging (1)` → `(N) LodgingImage`: Configurada mediante `@OneToMany
 
 De acuerdo con el enfoque de desarrollo ágil e incremental, se documentan los siguientes placeholders funcionales que serán resueltos en los ciclos subsecuentes:
 
-- **Tratamiento Multimedia Simplificado:** Las imágenes de los hoteles se registran temporalmente mediante cadenas de texto plano (URLs externas). El componente binario para carga real de archivos a un almacenamiento en la nube (ej. AWS S3) queda fuera de este entregable.
+- **Tratamiento Multimedia Simplificado:** Las imágenes de los alojamientos se gestionan mediante URLs externas de picsum.photos (59 imágenes sembradas para los 14 alojamientos, 3-4 cada uno). Las URLs son deterministas y funcionan en cualquier entorno. La carga real de archivos a un almacenamiento en la nube queda fuera de este entregable.
 - **Interactividad de Búsqueda y Filtrado Suspendida:** El bloque del buscador y los botones de categorías en el Home operan únicamente como componentes visuales estáticos (placeholders de UI). Su interconexión con los motores de indexación asíncrona y lógica de bases de datos se activará en los Sprints 2 y 3.
 - **Ausencia de Autenticación:** Los flujos CRUD de administración no requieren credenciales ni tokens de sesión. La protección mediante Spring Security y JSON Web Tokens (JWT) será la prioridad del Sprint 2.
 - **Validaciones de Backend Básicas:** Las restricciones de integridad se manejan a nivel de persistencia de datos (campos requeridos) y tipos de datos en los DTOs, aplazando el uso de validaciones avanzadas (como `@Valid` / JSR-380) para los próximos incrementos.

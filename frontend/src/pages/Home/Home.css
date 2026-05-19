@@ -71,19 +71,42 @@
 }
 .hotel-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
 }
 
 /* RESPONSIVE */
+@media (max-width: 1024px) {
+  .hotel-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
+  .search-card {
+    padding: 24px;
+  }
+
   .search-card form {
     flex-direction: column;
     align-items: stretch;
   }
+
   .search-card input,
   .btn-search {
     flex: 1 1 100%;
+    display: block;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .recommendations {
+    padding: 20px;
+  }
+
+  .hotel-list {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }

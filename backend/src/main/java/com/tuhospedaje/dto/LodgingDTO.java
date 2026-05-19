@@ -4,6 +4,8 @@ import com.tuhospedaje.entity.Lodging;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class LodgingDTO {
@@ -15,6 +17,7 @@ public class LodgingDTO {
     private String country;
     private String phoneNumber;
     private String email;
+    private List<String> imageUrls;
 
     public Lodging toEntity() {
         Lodging lodging = new Lodging();
@@ -38,6 +41,11 @@ public class LodgingDTO {
         dto.setCountry(lodging.getCountry());
         dto.setPhoneNumber(lodging.getPhoneNumber());
         dto.setEmail(lodging.getEmail());
+        if (lodging.getImages() != null) {
+            dto.setImageUrls(lodging.getImages().stream()
+                    .map(img -> img.getImageUrl())
+                    .toList());
+        }
         return dto;
     }
 }

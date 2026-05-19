@@ -25,18 +25,24 @@ export default function Admin() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-  const fetchLodgings = useCallback(() => {
-    get(`/lodgings?page=${page}&size=${size}`)
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setLodgings(data);
-          setTotalPages(1);
-        } else {
-          setLodgings(data.lodgings || []);
-          setTotalPages(data.totalPages || 0);
-        }
-      })
-      .catch(console.error);
+  const fetchLodgings = useCallback(async () => {
+    try {
+      const data = await get(`/lodgings?page=${page}&size=${size}`);
+
+      if (Array.isArray(data)) {
+        setLodgings(data);
+        setTotalPages(1);
+        return data;
+      }
+
+      const fetchedLodgings = data.lodgings || [];
+      setLodgings(fetchedLodgings);
+      setTotalPages(data.totalPages || 0);
+      return fetchedLodgings;
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
   }, [page, size]);
   useEffect(() => {
     fetchLodgings();
@@ -52,11 +58,18 @@ export default function Admin() {
       </main>
     );
   }
-  const handleDelete = (id, name) => {
+  const handleDelete = async (id, name) => {
     if (window.confirm(`¿Eliminar "${name}"?`)) {
-      del(`/lodgings/${id}`)
-        .then(() => fetchLodgings())
-        .catch(console.error);
+      try {
+        await del(`/lodgings/${id}`);
+        const updatedLodgings = await fetchLodgings();
+
+        if (updatedLodgings.length === 0 && page > 0) {
+          setPage((prevPage) => prevPage - 1);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
   const handleSubmit = (e) => {
@@ -85,11 +98,11 @@ export default function Admin() {
     <main className="page-container admin-page">
       <h1>Panel de Administración</h1>
       <nav className="admin-menu">
-        <button className="menu-btn active">Lista de productos</button>
+        <button className="menu-btn active">Lista de alojamientos</button>
       </nav>
       <div className="admin-toolbar">
         <button className="btn-add" onClick={() => setShowModal(true)}>
-          + Agregar producto
+          + Agregar alojamiento
         </button>
       </div>
       <table>
@@ -140,7 +153,7 @@ export default function Admin() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Nuevo producto</h2>
+            <h2>Nuevo alojamiento</h2>
             <form onSubmit={handleSubmit}>
               <label>
                 Nombre *

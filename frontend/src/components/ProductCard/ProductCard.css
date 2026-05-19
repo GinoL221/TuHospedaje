@@ -5,8 +5,6 @@
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
   width: 100%;
-  max-width: 260px;
-  min-width: 240px;
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease;
@@ -16,9 +14,11 @@
   transform: translateY(-5px);
 }
 
-.hotel-card {
-  max-width: 100%;
-  min-width: 0;
+.hotel-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
 }
 
 .hotel-card-body {
@@ -55,4 +55,19 @@
 .hotel-card-link {
   text-decoration: none;
   color: inherit;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .hotel-card-body {
+    padding: 10px;
+  }
+
+  .hotel-card-body h3 {
+    font-size: 1rem;
+  }
+
+  .hotel-card-body .description {
+    font-size: 0.8rem;
+  }
 }

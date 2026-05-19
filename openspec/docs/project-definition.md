@@ -1,7 +1,7 @@
 # TuHospedaje
 
 ## 1. Identidad, Nicho y Propósito del Negocio
-**TuHospedaje** es una plataforma web centralizada de reservas de alojamiento enfocada exclusivamente en el nicho de **Hoteles**.
+**TuHospedaje** es una plataforma web centralizada de reservas de alojamiento enfocada en **alojamientos turísticos**.
 El propósito principal del negocio es resolver la fricción entre los usuarios que buscan hospedaje de calidad y los administradores que necesitan gestionar su catálogo de manera eficiente. La plataforma permite a los clientes finales explorar un catálogo dinámico y detallado, mientras que provee a los administradores un panel de control intuitivo para crear, actualizar y dar de baja alojamientos.
 - **Nombre Oficial:** TuHospedaje
 - **Identidad Visual:** Isologotipo institucional con soporte nativo para esquemas de colores claro y oscuro.
@@ -13,9 +13,9 @@ El desarrollo se ejecutará de forma incremental a lo largo de **4 Sprints** pla
 ### 2.1. Matriz de Incremento por Sprint
 | Sprint | Foco Estratégico | Entregables Principales |
 |--------|------------------|------------------------|
-| Sprint 1 | Base de la Solución | Catálogo interactivo de hoteles, Panel de Administración (CRUD), identidad visual y maquetación responsiva. |
+| Sprint 1 | Base de la Solución | Catálogo interactivo de alojamientos, Panel de Administración (CRUD), identidad visual y maquetación responsiva. |
 | Sprint 2 | Seguridad y Organización | Autenticación/Registro con JWT, sistema de roles (Admin/User), categorización dinámica y gestión de características. |
-| Sprint 3 | Búsqueda y UX Avanzada | Buscador predictivo con filtros funcionales, sección de favoritos, módulo de políticas del hotel y sistema de puntuaciones/reseñas. |
+| Sprint 3 | Búsqueda y UX Avanzada | Buscador predictivo con filtros funcionales, sección de favoritos, módulo de políticas del alojamiento y sistema de puntuaciones/reseñas. |
 | Sprint 4 | Transaccionalidad | Motor de reservas (Booking), control de disponibilidad, historial de usuario, notificaciones por Email y canal de contacto vía WhatsApp. |
 
 ### 2.2. Exclusiones Explícitas (Fuera de Alcance)
@@ -39,7 +39,7 @@ La solución adopta una arquitectura desacoplada basada en el patrón de diseño
 | **Protocolo** | API RESTful en `http://localhost:8080/api/` |
 
 ### 3.2. Estándar de Diseño del Frontend
-La interfaz se construye con **CSS Puro** mediante **Variables Dinámicas (Custom Properties)**. Esto garantiza el rendimiento de la aplicación y permite un intercambio ágil de temas visuales mediante la manipulación del atributo `data-theme` en el DOM:
+La interfaz se construye con **CSS Puro** mediante **Variables Dinámicas (Custom Properties)**. Las variables están preparadas para soportar un intercambio de temas claro/oscuro mediante el atributo `data-theme` en el DOM. La tabla siguiente muestra los valores definidos para cada tema:
 | Elemento | Paleta Light (Clara) | Paleta Dark (Oscura) |
 |----------|---------------------|----------------------|
 | Background (Fondo) | `#f4f4f9` | `#05050a` |

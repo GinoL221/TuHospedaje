@@ -20,5 +20,8 @@ frontend/.env.local
 .DS_Store
 Thumbs.db
 
+# Postman
+TuHospedaje.postman_collection.json
+
 # OpenSpec / Atlassian local artifacts
 .atl/

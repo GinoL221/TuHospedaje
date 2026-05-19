@@ -114,6 +114,7 @@
   opacity: 1;
 }
 
+/* RESPONSIVE */
 @media (max-width: 480px) {
   .hotel-card {
     min-width: 200px;
