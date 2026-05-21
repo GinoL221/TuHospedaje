@@ -46,6 +46,11 @@ public class LodgingServiceImpl implements ILodgingService {
     public LodgingDTO update(LodgingDTO dto) throws ResourceNotFoundException {
         Lodging lodging = lodgingRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + dto.getId()));
+        // Si el email cambió, validar que no esté duplicado
+        if (dto.getEmail() != null && !dto.getEmail().equals(lodging.getEmail())
+                && lodgingRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un alojamiento con el email: " + dto.getEmail());
+        }
         lodging.setName(dto.getName());
         lodging.setDescription(dto.getDescription());
         lodging.setAddress(dto.getAddress());
