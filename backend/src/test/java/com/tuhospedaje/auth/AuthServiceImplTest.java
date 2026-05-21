@@ -21,7 +21,7 @@ class AuthServiceImplTest {
 
     @Autowired
     private UserRepository userRepository;
-
+    
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
