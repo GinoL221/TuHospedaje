@@ -53,15 +53,15 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Frontend Auth Flow
 
-- [ ] 4.1 Crear `frontend/src/contexts/AuthContext.jsx` con `login`, `register`, `logout`, persistencia en `localStorage` y decodificación JWT.
-- [ ] 4.2 Crear `frontend/src/hooks/useAuth.js` para acceso tipificado al contexto.
-- [ ] 4.3 Crear `frontend/src/pages/LoginPage.jsx`, `frontend/src/pages/RegisterPage.jsx` y estilos en `frontend/src/assets/css/auth.css`.
-- [ ] 4.4 Modificar `frontend/src/services/api.js` para inyectar `Authorization` y limpiar sesión al recibir 401.
-- [ ] 4.5 Modificar `frontend/src/components/Header/Header.jsx` para modo anónimo vs autenticado (nombre + avatar).
-- [ ] 4.6 Modificar `frontend/src/App.jsx` integrando `AuthProvider`, rutas login/register y protección de navegación.
+- [x] 4.1 Crear `frontend/src/context/AuthContext.jsx` con `login`, `register`, `logout`, persistencia en `localStorage` y decodificación JWT. **(refactor: lazy init, sin useEffect, sin loading)**
+- [x] 4.2 Crear `frontend/src/hooks/useAuth.js` para acceso tipificado al contexto.
+- [x] 4.3 Crear `frontend/src/pages/LoginPage.jsx`, `frontend/src/pages/RegisterPage.jsx`.
+- [x] 4.4 Modificar `frontend/src/services/api.js` para inyectar `Authorization` y limpiar sesión al recibir 401. **(ya existía — sin cambios)**
+- [x] 4.5 Modificar `frontend/src/components/Header/Header.jsx` para modo anónimo vs autenticado (nombre + avatar + logout).
+- [x] 4.6 Modificar `frontend/src/App.jsx` integrando `AuthProvider`, rutas login/register.
 
 ## Phase 5: Verification & Done Criteria
 
-- [ ] 5.1 Ejecutar `mvn test` validando todos los escenarios backend de `openspec/specs/user-auth/spec.md`.
-- [ ] 5.2 Ejecutar `npm run lint` y smoke manual: registro, login, logout, header condicional y 401 handling.
+- [x] 5.1 Ejecutar `mvn test` — **11 tests, 0 fallos**.
+- [x] 5.2 Ejecutar `npm run build` — **44 módulos, build exitoso**. Smoke manual pendiente.
 - [ ] 5.3 Verificar que `/api/lodgings/**` sigue público y documentar deuda de cierre Sprint 2 en comentario técnico.

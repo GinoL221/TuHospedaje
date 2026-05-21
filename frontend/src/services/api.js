@@ -1,35 +1,45 @@
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export async function get(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`);
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+async function request(method, endpoint, data) {
+  const token = localStorage.getItem("token");
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const config = { method, headers };
+  if (data) {
+    config.body = JSON.stringify(data);
+  }
+
+  const res = await fetch(`${API_BASE}${endpoint}`, config);
+
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+    throw new Error("Sesión expirada");
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Error ${res.status}`);
+  }
+
   return res.json();
 }
 
-export async function post(endpoint, data) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-  return res.json();
+export function get(endpoint) {
+  return request("GET", endpoint);
 }
 
-export async function put(endpoint, data) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-  return res.json();
+export function post(endpoint, data) {
+  return request("POST", endpoint, data);
 }
 
-export async function del(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-  return res.json();
+export function put(endpoint, data) {
+  return request("PUT", endpoint, data);
+}
+
+export function del(endpoint) {
+  return request("DELETE", endpoint);
 }
