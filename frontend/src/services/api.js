@@ -16,8 +16,10 @@ async function request(method, endpoint, data) {
 
   if (res.status === 401) {
     localStorage.removeItem("token");
-    window.location.href = "/login";
-    throw new Error("Sesión expirada");
+    if (token) {
+      window.location.href = "/login";
+      throw new Error("Sesión expirada");
+    }
   }
 
   if (!res.ok) {
