@@ -7,6 +7,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.service.LodgingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ public class LodgingController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LodgingDTO> create(@RequestBody LodgingDTO dto) {
         if (dto.getId() != null) {
             return ResponseEntity.badRequest().build();
@@ -40,6 +42,7 @@ public class LodgingController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @RequestBody LodgingDTO dto) {
         dto.setId(id);
         LodgingDTO updated = lodgingService.update(dto);
@@ -78,6 +81,7 @@ public class LodgingController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> delete(@PathVariable Long id) {
         lodgingService.delete(id);
         return ResponseEntity.ok("Alojamiento eliminado con ID: " + id);

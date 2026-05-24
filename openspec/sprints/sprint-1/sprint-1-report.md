@@ -1,7 +1,33 @@
+---
+title: "Bitácora de Ejecución y Cierre — Sprint 1"
+subtitle: "TuHospedaje — Estructura Base y Catálogo"
+author: "Equipo de Desarrollo"
+date: "Mayo 2026"
+pdf_options:
+  format: a4
+  margin:
+    top: 25mm
+    bottom: 25mm
+    left: 20mm
+    right: 20mm
+  displayHeaderFooter: true
+  headerTemplate: |
+    <div style="font-size: 9pt; width: 100%; text-align: right; padding-right: 20mm; color: #666;">
+      TuHospedaje — Documentación Técnica Oficial
+    </div>
+  footerTemplate: |
+    <div style="font-size: 9pt; width: 100%; display: flex; justify-content: space-between; padding: 0 20mm; color: #666;">
+      <div>Sprint 1 — Mayo 2026</div>
+      <div>Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>
+    </div>
+---
+
 # Bitácora de Ejecución y Cierre — Sprint 1
 
 **Foco del Incremento:** Estructura Base del Sistema y Catálogo de Alojamientos
 **Stack Tecnológico:** Java 17 / Spring Boot 3.5 / MariaDB / React 19 / Vite
+
+> **Nota:** Este documento describe el estado del proyecto al cierre del Sprint 1. Las referencias a endpoints sin autenticación reflejan el estado original del sistema, antes de la implementación de seguridad en Sprint 2.
 
 ---
 
