@@ -8,6 +8,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const [lodging, setLodging] = useState(null);
   const [showAllImages, setShowAllImages] = useState(false);
+
   useEffect(() => {
     get(`/lodgings/${id}`).then(setLodging).catch(console.error);
   }, [id]);
@@ -76,6 +77,19 @@ export default function ProductDetail() {
         <h2>Descripción</h2>
         <p>{lodging.description}</p>
       </section>
+      {lodging.features && lodging.features.length > 0 && (
+        <section className="features-section">
+          <h2>Qué ofrece este lugar?</h2>
+          <div className="features-grid">
+            {lodging.features.map((f) => (
+              <div key={f.id} className="feature-item">
+                <span className="feature-icon">{f.icon}</span>
+                <span className="feature-name">{f.name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

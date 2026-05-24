@@ -1,6 +1,30 @@
 .admin-page {
   padding-top: 120px;
 }
+.admin-page .field-error {
+  display: block;
+  color: #d32f2f;
+  font-size: 0.7rem;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.admin-page input.input-error,
+.admin-page textarea.input-error {
+  border-color: #d32f2f;
+  animation: shake 0.3s ease-in-out;
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
 .admin-page h1 {
   color: var(--secondary);
   margin-bottom: 20px;
@@ -74,6 +98,28 @@
 .btn-delete:hover {
   background: #c0392b;
 }
+.btn-edit {
+  background: var(--primary);
+  color: var(--bg);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.btn-edit:hover {
+  background: var(--accent);
+}
+.empty-state {
+  text-align: center;
+  color: var(--text);
+  font-size: 1rem;
+  padding: 40px 20px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+}
 .pagination {
   display: flex;
   justify-content: center;
@@ -94,6 +140,45 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.role-admin {
+  background: var(--primary);
+  color: var(--bg);
+}
+.role-user {
+  background: #ccc;
+  color: #333;
+}
+.btn-promote {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-demote {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-promote:disabled,
+.btn-demote:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* MODAL */
 .modal-overlay {
   position: fixed;
@@ -112,12 +197,22 @@
   padding: 30px;
   border-radius: 8px;
   width: 90%;
-  max-width: 500px;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 .modal h2 {
   margin: 0 0 20px;
   color: var(--secondary);
+}
+.modal .modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+.modal .modal-form-grid .full-width {
+  grid-column: 1 / -1;
 }
 .modal label {
   display: block;
@@ -126,7 +221,8 @@
   color: var(--text);
 }
 .modal input,
-.modal textarea {
+.modal textarea,
+.modal select {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -169,4 +265,55 @@
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
+}
+.confirm-dialog {
+  max-width: 400px;
+  text-align: center;
+}
+.confirm-message {
+  font-size: 1rem;
+  margin: 10px 0 20px;
+  color: var(--text);
+  font-weight: 500;
+}
+.feature-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+.feature-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 400;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.feature-checkbox input {
+  width: auto;
+  margin: 0;
+}
+.field-group {
+  display: block;
+  margin-bottom: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+}
+.required-dot::before {
+  content: "●";
+  color: #d32f2f;
+  font-size: 0.5rem;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.required-note {
+  font-size: 0.75rem;
+  color: #d32f2f;
+  margin: 0 0 10px;
+  text-align: left;
 }

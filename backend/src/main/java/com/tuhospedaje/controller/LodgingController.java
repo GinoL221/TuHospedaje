@@ -4,7 +4,7 @@ import com.tuhospedaje.dto.LodgingDTO;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.repository.LodgingRepository;
-import com.tuhospedaje.service.ILodgingService;
+import com.tuhospedaje.service.LodgingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/lodgings")
 public class LodgingController {
 
-    private final ILodgingService lodgingService;
+    private final LodgingService lodgingService;
 
-    public LodgingController(ILodgingService lodgingService) {
+    public LodgingController(LodgingService lodgingService) {
         this.lodgingService = lodgingService;
     }
 
@@ -49,7 +49,11 @@ public class LodgingController {
     @GetMapping
     public ResponseEntity<?> findAll(
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) Long category) {
+        if (category != null) {
+            return ResponseEntity.ok(lodgingService.findByCategory(category));
+        }
         if (page != null && size != null) {
             return ResponseEntity.ok(lodgingService.findAllPaginated(page, size));
         }

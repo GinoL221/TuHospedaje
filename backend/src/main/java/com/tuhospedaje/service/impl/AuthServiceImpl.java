@@ -7,7 +7,8 @@ import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
-import com.tuhospedaje.service.IAuthService;
+import com.tuhospedaje.service.AuthService;
+import com.tuhospedaje.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,12 +20,13 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements IAuthService {
+public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -42,6 +44,8 @@ public class AuthServiceImpl implements IAuthService {
                 .build();
 
         userRepository.save(user);
+
+        emailService.sendWelcomeEmail(request);
 
         return buildAuthResponse(user);
     }

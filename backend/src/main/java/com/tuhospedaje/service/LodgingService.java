@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface ILodgingService {
+public interface LodgingService {
     LodgingDTO save(LodgingDTO lodgingDTO);
 
     LodgingDTO update(LodgingDTO lodgingDTO) throws ResourceNotFoundException;
@@ -19,6 +19,8 @@ public interface ILodgingService {
     Optional<LodgingDTO> findById(Long id);
 
     List<LodgingDTO> findByName(String name);
+
+    List<LodgingDTO> findByCategory(Long categoryId);
 
     Map<String, Object> findAllPaginated(int page, int size);
 

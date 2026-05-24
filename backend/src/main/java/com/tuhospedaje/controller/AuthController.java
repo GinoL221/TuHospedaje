@@ -3,7 +3,7 @@ package com.tuhospedaje.controller;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
-import com.tuhospedaje.service.IAuthService;
+import com.tuhospedaje.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final IAuthService authService;
+    private final AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
