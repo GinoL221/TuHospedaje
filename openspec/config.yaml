@@ -4,23 +4,40 @@ stack:
   backend:
     language: Java 17
     framework: Spring Boot 3.5.0
-    build: Maven 3.9.15
-    database: MariaDB (via JPA/Hibernate)
-    auth: Spring Security + JWT
+    build: Maven 3.9.15 (via .mvn/wrapper)
+    database: MariaDB (via JPA/Hibernate, MariaDBDialect)
+    auth: Spring Security + JWT (jjwt 0.12.6, HS256)
+    api: REST, port 8080
+    packages:
+      - spring-boot-starter-data-jpa
+      - spring-boot-starter-security
+      - spring-boot-starter-validation
+      - spring-boot-starter-web
+      - jjwt-api/impl/jackson (0.12.6)
+      - mariadb-java-client
+      - lombok
+      - spring-boot-devtools
   frontend:
     language: JavaScript (JSX)
     framework: React 19.2.5
     bundler: Vite 8.0.10
-    styles: CSS plano (SASS pendiente)
-    linter: ESLint 10.2.1
+    router: react-router-dom 7.15.1
+    styles: CSS plano (no preprocessor)
+    http: fetch (no axios detected)
+    auth: jwt-decode 4.0.0 (client-side token decode)
+    linter: ESLint 10.2.1 with react-hooks + react-refresh plugins
 testing:
   strict_tdd: true
   backend:
-    runner: JUnit 5 (Jupiter)
-    integration: SpringBootTest / MockMVC
-    coverage: false
+    runner: JUnit 5 (Jupiter) via Maven (mvn test)
+    unit: JUnit 5 (@Test, AssertJ assertions)
+    integration: SpringBootTest + MockMvc (@AutoConfigureMockMvc)
+    coverage: false (no jacoco/surefire-coverage plugin)
+    linter: false (no checkstyle/pmd/spotless configured)
+    formatter: false
   frontend:
-    runner: false
-    linter: ESLint
+    runner: false (no test framework in package.json)
+    linter: ESLint 10.2.1 (npm run lint)
+    type_checker: false (TypeScript types in devDeps but no tsc config)
+    formatter: false
   e2e: false
-  

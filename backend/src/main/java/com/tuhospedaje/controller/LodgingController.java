@@ -4,9 +4,10 @@ import com.tuhospedaje.dto.LodgingDTO;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.repository.LodgingRepository;
-import com.tuhospedaje.service.ILodgingService;
+import com.tuhospedaje.service.LodgingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,13 +25,14 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/lodgings")
 public class LodgingController {
 
-    private final ILodgingService lodgingService;
+    private final LodgingService lodgingService;
 
-    public LodgingController(ILodgingService lodgingService) {
+    public LodgingController(LodgingService lodgingService) {
         this.lodgingService = lodgingService;
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LodgingDTO> create(@RequestBody LodgingDTO dto) {
         if (dto.getId() != null) {
             return ResponseEntity.badRequest().build();
@@ -40,6 +42,7 @@ public class LodgingController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @RequestBody LodgingDTO dto) {
         dto.setId(id);
         LodgingDTO updated = lodgingService.update(dto);
@@ -49,7 +52,11 @@ public class LodgingController {
     @GetMapping
     public ResponseEntity<?> findAll(
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) Long category) {
+        if (category != null) {
+            return ResponseEntity.ok(lodgingService.findByCategory(category));
+        }
         if (page != null && size != null) {
             return ResponseEntity.ok(lodgingService.findAllPaginated(page, size));
         }
@@ -74,6 +81,7 @@ public class LodgingController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> delete(@PathVariable Long id) {
         lodgingService.delete(id);
         return ResponseEntity.ok("Alojamiento eliminado con ID: " + id);

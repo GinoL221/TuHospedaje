@@ -36,3 +36,13 @@ body {
   width: 100%;
   box-sizing: border-box;
 }
+
+.empty-state {
+  text-align: center;
+  color: var(--text);
+  font-size: 1rem;
+  padding: 40px 20px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+}

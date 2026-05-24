@@ -1,0 +1,75 @@
+package com.tuhospedaje.service.impl;
+
+import com.tuhospedaje.configuration.JwtService;
+import com.tuhospedaje.dto.auth.AuthResponse;
+import com.tuhospedaje.dto.auth.LoginRequest;
+import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.AuthService;
+import com.tuhospedaje.service.EmailService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+
+    @Override
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository. findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("El email ya está registrado");
+        }
+
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(RoleEnum.USER)
+                .imageUrl("https://ui-avatars.com/api/?name=" + request.getFirstName() + "+" + request.getLastName())
+                .build();
+
+        userRepository.save(user);
+
+        emailService.sendWelcomeEmail(request);
+
+        return buildAuthResponse(user);
+    }
+
+    @Override
+    public AuthResponse login(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(), request.getPassword()));
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
+
+        return buildAuthResponse(user);
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("firstName", user.getFirstName());
+        claims.put("lastName", user.getLastName());
+        claims.put("role", user.getRole().name());
+        claims.put("imageUrl", user.getImageUrl());
+
+        String token = jwtService.generateToken(claims, user);
+        return new AuthResponse(token);
+    }
+}

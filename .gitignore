@@ -23,5 +23,8 @@ Thumbs.db
 # Postman
 TuHospedaje.postman_collection.json
 
+# AI assistant config (local, not part of the project)
+AGENTS.md
+
 # OpenSpec / Atlassian local artifacts
 .atl/

@@ -1,9 +1,33 @@
-# Plan de Pruebas — Sprint 1
+---
+title: "Plan y Reporte de Pruebas de Software — Sprint 1"
+subtitle: "TuHospedaje — Estructura Base y Catálogo"
+author: "Equipo de Desarrollo"
+date: "Mayo 2026"
+pdf_options:
+  format: a4
+  margin:
+    top: 25mm
+    bottom: 25mm
+    left: 20mm
+    right: 20mm
+  displayHeaderFooter: true
+  headerTemplate: |
+    <div style="font-size: 9pt; width: 100%; text-align: right; padding-right: 20mm; color: #666;">
+      TuHospedaje — Documentación Técnica Oficial
+    </div>
+  footerTemplate: |
+    <div style="font-size: 9pt; width: 100%; display: flex; justify-content: space-between; padding: 0 20mm; color: #666;">
+      <div>Sprint 1 — Mayo 2026</div>
+      <div>Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>
+    </div>
+---
+
+# Plan y Reporte de Pruebas de Software — Sprint 1
 
 **Proyecto:** TuHospedaje
 **Sprint:** 1 — Base del Sistema
 **Alcance:** 11 User Stories (US #1 a US #11)
-**Tipos de prueba:** API (Postman), UI Manual, Validaciones Backend
+**Tipos de prueba:** API (JUnit 5 + MockMvc + Testcontainers), UI Manual, Validaciones Backend
 
 ---
 
@@ -224,18 +248,27 @@
 
 ## Resumen de Ejecución
 
-| TC | User Story | Estado |
-|----|-----------|--------|
-| TC-01 | US #1 — Header | ✅ Aprobado |
-| TC-02 | US #2 — Home | ✅ Aprobado |
-| TC-03 | US #3 — Registro (POST) | ✅ Aprobado |
-| TC-04 | US #4 — Aleatorios | ⚠️ Aprobado con observaciones |
-| TC-05 | US #5 — Detalle | ✅ Aprobado |
-| TC-06 | US #6 — Galería | ✅ Aprobado |
-| TC-07 | US #7 — Footer | ✅ Aprobado |
-| TC-08 | US #8 — Paginación | ✅ Aprobado |
-| TC-09 | US #9 — Panel Admin | ✅ Aprobado |
-| TC-10 | US #10 — Tabla | ✅ Aprobado |
-| TC-11 | US #11 — Eliminar | ✅ Aprobado |
+| TC | User Story | Tipo de Prueba | Estado |
+|----|-----------|----------------|--------|
+| TC-01 | US #1 — Header | UI Manual | ✅ Aprobado |
+| TC-02 | US #2 — Home | UI Manual + API | ✅ Aprobado |
+| TC-03 | US #3 — Registro (POST) | API Automatizada | ✅ Aprobado |
+| TC-04 | US #4 — Aleatorios | API + UI Manual | ✅ Aprobado |
+| TC-05 | US #5 — Detalle | API + UI Manual | ✅ Aprobado |
+| TC-06 | US #6 — Galería | UI Manual | ✅ Aprobado |
+| TC-07 | US #7 — Footer | UI Manual | ✅ Aprobado |
+| TC-08 | US #8 — Paginación | API + UI Manual | ✅ Aprobado |
+| TC-09 | US #9 — Panel Admin | UI Manual | ✅ Aprobado |
+| TC-10 | US #10 — Tabla | UI Manual + API | ✅ Aprobado |
+| TC-11 | US #11 — Eliminar | API + UI Manual | ✅ Aprobado |
 
 **Leyenda:** ✅ Aprobado | ⚠️ Aprobado con observaciones | ❌ Fallido | 🔲 Pendiente
+
+---
+
+## Métricas Consolidadas de Aseguramiento de Calidad (QA)
+
+* **Batería de Pruebas Automatizadas (Suite JUnit 5 + MockMvc + Testcontainers):** 29 casos de prueba automatizados para la funcionalidad base de Lodging (CRUD, búsqueda, paginación, aleatorios), más 8 tests de mapeo de DTO y entidades. Total 37 tests correspondientes al alcance del Sprint 1 (integrados en la suite general de 105 tests del proyecto).
+* **Cobertura de Funcionalidad Crítica:** `LodgingService.save()`, `update()`, `delete()`, `findAll()`, `findById()`, `findByName()`, `findAllRandom()` y `findAllPaginated()` cubiertos con tests unitarios (Mockito). Endpoints HTTP correspondientes cubiertos con tests de integración (MockMvc + Testcontainers).
+* **Pruebas de Seguridad Regresivas:** Los endpoints de mutación (`POST`, `PUT`, `DELETE`) se verificaron con tokens de usuario `ROLE_USER` y sin autenticación, validando que devuelven `403 Forbidden` según la protección `@PreAuthorize` agregada en Sprint 2.
+* **Pruebas UI Manuales:** La funcionalidad visual (header sticky, galería con "Ver más"/"Ver menos", paginación en UI, bloqueo de admin en móvil) se mantiene como verificación manual documentada.

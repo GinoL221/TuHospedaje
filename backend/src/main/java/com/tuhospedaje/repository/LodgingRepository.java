@@ -26,4 +26,8 @@ public interface LodgingRepository extends JpaRepository<Lodging, Long> {
     List<Lodging> findByNameContainingIgnoreCaseAndCityIgnoreCase(String name, String city);
 
     boolean existsByName(String name);
+
+    long countByCategoryId(Long categoryId);
+
+    List<Lodging> findByCategoryId(Long categoryId);
 }
