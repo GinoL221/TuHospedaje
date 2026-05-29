@@ -22,6 +22,12 @@ pdf_options:
     </div>
 ---
 
+<style>
+.page-break { page-break-before: always; }
+table { width: 100%; } table, tr { page-break-inside: avoid; }
+h1, h2, h3, h4 { page-break-after: avoid; }
+</style>
+
 # Plan y Reporte de Pruebas de Software — Sprint 1
 
 **Proyecto:** TuHospedaje
@@ -29,7 +35,7 @@ pdf_options:
 **Alcance:** 11 User Stories (US #1 a US #11)
 **Tipos de prueba:** API (JUnit 5 + MockMvc + Testcontainers), UI Manual, Validaciones Backend
 
----
+
 
 ## TC-01: Header funcional (US #1)
 
@@ -51,7 +57,6 @@ pdf_options:
 | 8 | Reducir ventana a 480px | Header se adapta sin desbordamientos |
 | 9 | Reducir ventana a 768px | Elementos se reordenan fluidamente |
 
----
 
 ## TC-02: Home — buscador, categorías y recomendaciones (US #2)
 
@@ -71,7 +76,7 @@ pdf_options:
 | 7 | Verificar color de fondo del Main | Fondo blanco/claro debajo del buscador |
 | 8 | Verificar alto del Main | Ocupa al menos el alto de la ventana (`min-height: 100vh`) |
 
----
+
 
 ## TC-03: Registro de alojamiento — POST (US #3)
 
@@ -101,7 +106,7 @@ pdf_options:
 }
 ```
 
----
+
 
 ## TC-04: Grilla aleatoria (US #4)
 
@@ -118,7 +123,7 @@ pdf_options:
 | 4 | Verificar UI en Home | Las cards se muestran en grilla 4 columnas |
 | 5 | Verificar sin repeticiones | Ningún alojamiento aparece duplicado en la misma respuesta |
 
----
+
 
 ## TC-05: Vista detalle de alojamiento (US #5)
 
@@ -139,7 +144,6 @@ pdf_options:
 | 8 | UI: verificar imagen destacada | Imagen principal visible en el hero |
 | 9 | UI: verificar galería de imágenes | Las imágenes adicionales (si existen) se muestran en grilla |
 
----
 
 ## TC-06: Galería de imágenes (US #6)
 
@@ -157,7 +161,7 @@ pdf_options:
 | 5 | Clic en "Ver menos" | Se ocultan las imágenes adicionales |
 | 6 | Cargar alojamiento con 0 imágenes | Galería no se renderiza (no rompe la UI) |
 
----
+
 
 ## TC-07: Footer (US #7)
 
@@ -173,7 +177,6 @@ pdf_options:
 | 4 | Verificar enlaces de redes | Íconos de Facebook e Instagram visibles |
 | 5 | Reducir ventana a 480px | Footer se adapta sin desbordamientos |
 
----
 
 ## TC-08: Paginación del catálogo (US #8)
 
@@ -194,7 +197,7 @@ pdf_options:
 | 8 | UI: botón "Siguiente" | Deshabilita en última página, avanza 1 página |
 | 9 | UI: contador de página | Muestra "Página X de Y" correcto |
 
----
+
 
 ## TC-09: Panel de Administración (US #9)
 
@@ -211,7 +214,6 @@ pdf_options:
 | 5 | Acceder desde celular (DevTools modo móvil) | Cartel "Funcionalidad no disponible para dispositivos móviles" |
 | 6 | Acceder desde tablet (modo portrait en DevTools) | Mismo cartel de bloqueo |
 
----
 
 ## TC-10: Tabla de inventario (US #10)
 
@@ -226,7 +228,7 @@ pdf_options:
 | 2 | Verificar datos de fila | ID y Nombre coinciden con BD |
 | 3 | GET `/api/lodgings/{id}` de un ítem de la tabla | Datos consistentes con lo mostrado en UI |
 
----
+
 
 ## TC-11: Eliminar alojamiento (US #11)
 
@@ -244,27 +246,27 @@ pdf_options:
 | 5 | DELETE `/api/lodgings/{id}` con ID inexistente | HTTP 500 con ResourceNotFoundException |
 | 6 | DELETE `/api/lodgings/{id}` con ID existente | HTTP 200, mensaje "Alojamiento eliminado con ID: X" |
 
----
+
 
 ## Resumen de Ejecución
 
 | TC | User Story | Tipo de Prueba | Estado |
 |----|-----------|----------------|--------|
-| TC-01 | US #1 — Header | UI Manual | ✅ Aprobado |
-| TC-02 | US #2 — Home | UI Manual + API | ✅ Aprobado |
-| TC-03 | US #3 — Registro (POST) | API Automatizada | ✅ Aprobado |
-| TC-04 | US #4 — Aleatorios | API + UI Manual | ✅ Aprobado |
-| TC-05 | US #5 — Detalle | API + UI Manual | ✅ Aprobado |
-| TC-06 | US #6 — Galería | UI Manual | ✅ Aprobado |
-| TC-07 | US #7 — Footer | UI Manual | ✅ Aprobado |
-| TC-08 | US #8 — Paginación | API + UI Manual | ✅ Aprobado |
-| TC-09 | US #9 — Panel Admin | UI Manual | ✅ Aprobado |
-| TC-10 | US #10 — Tabla | UI Manual + API | ✅ Aprobado |
-| TC-11 | US #11 — Eliminar | API + UI Manual | ✅ Aprobado |
+| TC-01 | US #1 — Header | UI Manual | ✔ Aprobado |
+| TC-02 | US #2 — Home | UI Manual + API | ✔ Aprobado |
+| TC-03 | US #3 — Registro (POST) | API Automatizada | ✔ Aprobado |
+| TC-04 | US #4 — Aleatorios | API + UI Manual | ✔ Aprobado |
+| TC-05 | US #5 — Detalle | API + UI Manual | ✔ Aprobado |
+| TC-06 | US #6 — Galería | UI Manual | ✔ Aprobado |
+| TC-07 | US #7 — Footer | UI Manual | ✔ Aprobado |
+| TC-08 | US #8 — Paginación | API + UI Manual | ✔ Aprobado |
+| TC-09 | US #9 — Panel Admin | UI Manual | ✔ Aprobado |
+| TC-10 | US #10 — Tabla | UI Manual + API | ✔ Aprobado |
+| TC-11 | US #11 — Eliminar | API + UI Manual | ✔ Aprobado |
 
-**Leyenda:** ✅ Aprobado | ⚠️ Aprobado con observaciones | ❌ Fallido | 🔲 Pendiente
+**Leyenda:** ✔ Aprobado | ⚠ Aprobado con observaciones | ✘ Fallido | ▢ Pendiente
 
----
+
 
 ## Métricas Consolidadas de Aseguramiento de Calidad (QA)
 

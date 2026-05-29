@@ -1,0 +1,47 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f9fafb', 'primaryBorderColor': '#6b7280', 'primaryTextColor': '#374151', 'lineColor': '#6b7280', 'tertiaryColor': '#ffffff', 'fontFamily': 'Arial', 'fontSize': '14px' }}}%%
+
+erDiagram
+    CATEGORY ||--o{ LODGING : classifies
+    LODGING ||--o{ LODGING_IMAGE : contains
+    LODGING ||--o{ LODGING_FEATURES : links
+    FEATURE ||--o{ LODGING_FEATURES : links
+
+    LODGING {
+        bigint id PK
+        string name
+        string description
+        bigint category_id FK
+    }
+
+    LODGING_IMAGE {
+        bigint id PK
+        string url
+        bigint lodging_id FK
+    }
+
+    CATEGORY {
+        bigint id PK
+        string name
+        string description
+    }
+
+    FEATURE {
+        bigint id PK
+        string name
+        string icon
+    }
+
+    LODGING_FEATURES {
+        bigint lodging_id FK
+        bigint feature_id FK
+    }
+
+    USER {
+        bigint id PK
+        string first_name
+        string last_name
+        string email
+        string password
+        string role
+        string image_url
+    }

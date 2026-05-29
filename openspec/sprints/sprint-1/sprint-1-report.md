@@ -22,6 +22,12 @@ pdf_options:
     </div>
 ---
 
+<style>
+.page-break { page-break-before: always; }
+table { width: 100%; } table, tr { page-break-inside: avoid; }
+h1, h2, h3, h4 { page-break-after: avoid; }
+</style>
+
 # Bitácora de Ejecución y Cierre — Sprint 1
 
 **Foco del Incremento:** Estructura Base del Sistema y Catálogo de Alojamientos
@@ -29,13 +35,13 @@ pdf_options:
 
 > **Nota:** Este documento describe el estado del proyecto al cierre del Sprint 1. Las referencias a endpoints sin autenticación reflejan el estado original del sistema, antes de la implementación de seguridad en Sprint 2.
 
----
+
 
 ## 1. Resumen del Incremento (Scope)
 
 El Objetivo del Sprint 1 consistió en establecer las bases de la arquitectura de software (frontend y backend), desplegar el modelo relacional inicial y proveer un catálogo funcional de alojamientos. Al cierre del sprint, la solución permite a los usuarios visualizar opciones en la interfaz pública y faculta a los administradores a dar de alta, listar con paginación y eliminar hospedajes a través de un panel de control dedicado.
 
----
+
 
 ## 2. Arquitectura del Sistema e Integración
 
@@ -69,7 +75,7 @@ src/
 - **Gestión de Estilos:** CSS Puro con Variables Dinámicas (Custom Properties) preparadas para el intercambio de temas Light/Dark.
 - **Control de Entorno:** Aislamiento de variables de infraestructura (`VITE_API_URL`) mediante archivos `.env`.
 
----
+
 
 ## 3. Trazabilidad de Historias de Usuario (User Stories)
 
@@ -87,7 +93,7 @@ src/
 | US #10 | Tabla de visualización de inventario para el Administrador. | `Admin.jsx` (Tabla) | `GET /api/lodgings` | Despliegue estructurado: ID, Nombre, Ubicación y columna de Acciones Directas. |
 | US #11 | Baja física de un alojamiento del catálogo. | `Admin.jsx` | `DELETE /api/lodgings/{id}` | Disparador preventivo mediante `window.confirm`. Borrado y refresco asíncrono de la UI. |
 
----
+
 
 ## 4. Catálogo de Endpoints de la API REST
 
@@ -101,7 +107,7 @@ src/
 | PUT | `/api/lodgings/{id}` | Path Variable: `id` (Long), Body: `LodgingDTO` (JSON) | Actualiza los campos de un alojamiento existente identificado por su ID. |
 | DELETE | `/api/lodgings/{id}` | Path Variable: `id` (Long) | Ejecuta el borrado físico del registro en base de datos en cascada (`CascadeType.ALL`). |
 
----
+
 
 ## 5. Modelo de Datos y Cardinalidad
 
@@ -125,7 +131,6 @@ El esquema relacional implementado en MariaDB se compone de dos entidades nuclea
 
 Relación `Lodging (1)` → `(N) LodgingImage`: Configurada mediante `@OneToMany(mappedBy = "lodging", cascade = CascadeType.ALL, orphanRemoval = true)` en la entidad padre. Esto garantiza que la eliminación de un alojamiento (US #11) destruya de forma limpia y automática todos los registros de imágenes asociados en la base de datos sin dejar registros huérfanos.
 
----
 
 ## 6. Decisiones Técnicas Clave
 
@@ -133,7 +138,7 @@ Relación `Lodging (1)` → `(N) LodgingImage`: Configurada mediante `@OneToMany
 - **Estrategia Migratoria Preventiva:** La propiedad `Lodging.category` fue declarada como clave foránea nullable desde este sprint. Esto previene la necesidad de ejecutar scripts de migración complejos (DIF / DDL) al momento de introducir la lógica de categorías en el Sprint 2.
 - **Arquitectura de Interfaz Restringida:** Siguiendo el criterio de diseño de la aplicación, el panel de administración se diseñó exclusivamente para pantallas de escritorio. Se implementó una lógica de detección táctil (`ontouchstart`) en `Admin.jsx`: si un dispositivo móvil intenta acceder a la ruta `/admin`, el sistema interrumpe la carga y despliega un mensaje explícito indicando que la administración requiere una pantalla optimizada de escritorio.
 
----
+
 
 ## 7. Limitaciones Conocidas y Gestión de Deuda Técnica Controlada
 
