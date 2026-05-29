@@ -1,6 +1,6 @@
 package com.tuhospedaje.service;
 
-import com.tuhospedaje.dto.UserDTO;
+import com.tuhospedaje.dto.user.UserDTO;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 
 import java.util.List;

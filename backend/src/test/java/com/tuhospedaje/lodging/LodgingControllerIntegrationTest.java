@@ -3,7 +3,6 @@ package com.tuhospedaje.lodging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
-import com.tuhospedaje.dto.LodgingDTO;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;

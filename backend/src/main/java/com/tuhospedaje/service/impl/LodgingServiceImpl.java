@@ -1,19 +1,26 @@
 package com.tuhospedaje.service.impl;
 
-import com.tuhospedaje.dto.LodgingDTO;
+import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.Reservation;
+import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,11 +39,13 @@ public class LodgingServiceImpl implements LodgingService {
     private final LodgingRepository lodgingRepository;
     private final CategoryRepository categoryRepository;
     private final FeatureRepository featureRepository;
+    private final ReservationRepository reservationRepository;
 
-    public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository, FeatureRepository featureRepository) {
+    public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository, FeatureRepository featureRepository, ReservationRepository reservationRepository) {
         this.lodgingRepository = lodgingRepository;
         this.categoryRepository = categoryRepository;
         this.featureRepository = featureRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     @Override
@@ -155,5 +164,73 @@ public class LodgingServiceImpl implements LodgingService {
                 .limit(RANDOM_RESULT_SIZE)
                 .map(LodgingDTO::fromEntity)
                 .toList();
+    }
+
+    @Override
+    public List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
+                                   Integer guests, Long category,
+                                   BigDecimal minPrice, BigDecimal maxPrice) {
+        Specification<Lodging> spec = (root, query, cb) -> cb.conjunction();
+
+        if (city != null && !city.isBlank()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("city")), "%" + city.toLowerCase() + "%"));
+        }
+        if (guests != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.greaterThanOrEqualTo(root.get("maxGuests"), guests));
+        }
+        if (category != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("category").get("id"), category));
+        }
+        if (minPrice != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.greaterThanOrEqualTo(root.get("pricePerNight"), minPrice));
+        }
+        if (maxPrice != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.lessThanOrEqualTo(root.get("pricePerNight"), maxPrice));
+        }
+
+        List<Lodging> results = lodgingRepository.findAll(spec);
+
+        if (checkIn != null && checkOut != null) {
+            results = results.stream()
+                    .filter(l -> reservationRepository
+                            .findByLodgingIdAndStatus(l.getId(), ReservationStatus.CONFIRMED)
+                            .stream()
+                            .noneMatch(r -> r.getCheckIn().isBefore(checkOut)
+                                    && r.getCheckOut().isAfter(checkIn)))
+                    .toList();
+        }
+
+        return results.stream()
+                .map(LodgingDTO::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public List<String> findCities(String query) {
+        return lodgingRepository.findAll().stream()
+                .map(Lodging::getCity)
+                .distinct()
+                .filter(city -> query == null || query.isBlank()
+                        || city.toLowerCase().contains(query.toLowerCase()))
+                .sorted()
+                .toList();
+    }
+
+    @Override
+    public AvailabilityResponse checkAvailability(Long lodgingId, LocalDate checkIn, LocalDate checkOut) {
+        List<Reservation> overlapping = reservationRepository
+                .findByLodgingIdAndStatus(lodgingId, ReservationStatus.CONFIRMED)
+                .stream()
+                .filter(r -> r.getCheckIn().isBefore(checkOut) && r.getCheckOut().isAfter(checkIn))
+                .toList();
+
+        AvailabilityResponse response = new AvailabilityResponse();
+        response.setAvailable(overlapping.isEmpty());
+        return response;
     }
 }

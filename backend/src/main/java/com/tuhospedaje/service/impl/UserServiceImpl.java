@@ -1,6 +1,6 @@
 package com.tuhospedaje.service.impl;
 
-import com.tuhospedaje.dto.UserDTO;
+import com.tuhospedaje.dto.user.UserDTO;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;

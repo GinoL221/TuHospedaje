@@ -1,6 +1,6 @@
 package com.tuhospedaje.service.impl;
 
-import com.tuhospedaje.dto.FeatureDTO;
+import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.FeatureRepository;

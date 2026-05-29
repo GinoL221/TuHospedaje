@@ -1,4 +1,4 @@
-package com.tuhospedaje.dto;
+package com.tuhospedaje.dto.lodging;
 
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
@@ -9,6 +9,7 @@ import com.tuhospedaje.repository.CategoryRepository;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,8 @@ public class LodgingDTO {
     private String categoryName;
     private Set<Long> featureIds;
     private List<Map<String, Object>> features;
+    private BigDecimal pricePerNight;
+    private Integer maxGuests;
 
     public Lodging toEntity() {
         Lodging lodging = new Lodging();
@@ -40,6 +43,8 @@ public class LodgingDTO {
         lodging.setCountry(this.country);
         lodging.setPhoneNumber(this.phoneNumber);
         lodging.setEmail(this.email);
+        lodging.setPricePerNight(this.pricePerNight);
+        lodging.setMaxGuests(this.maxGuests);
         return lodging;
     }
 
@@ -65,6 +70,8 @@ public class LodgingDTO {
         dto.setCountry(lodging.getCountry());
         dto.setPhoneNumber(lodging.getPhoneNumber());
         dto.setEmail(lodging.getEmail());
+        dto.setPricePerNight(lodging.getPricePerNight());
+        dto.setMaxGuests(lodging.getMaxGuests());
         if (lodging.getCategory() != null) {
             dto.setCategoryId(lodging.getCategory().getId());
             dto.setCategoryName(lodging.getCategory().getName());

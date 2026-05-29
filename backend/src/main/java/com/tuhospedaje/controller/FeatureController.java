@@ -1,6 +1,6 @@
 package com.tuhospedaje.controller;
 
-import com.tuhospedaje.dto.FeatureDTO;
+import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.service.FeatureService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

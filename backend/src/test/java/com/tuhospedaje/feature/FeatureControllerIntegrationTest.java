@@ -3,7 +3,7 @@ package com.tuhospedaje.feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
-import com.tuhospedaje.dto.FeatureDTO;
+import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;

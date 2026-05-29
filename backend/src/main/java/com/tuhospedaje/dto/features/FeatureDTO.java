@@ -1,4 +1,4 @@
-package com.tuhospedaje.dto;
+package com.tuhospedaje.dto.features;
 
 import com.tuhospedaje.entity.Feature;
 import jakarta.validation.constraints.NotBlank;

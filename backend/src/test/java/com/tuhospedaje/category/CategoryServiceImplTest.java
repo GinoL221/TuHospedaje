@@ -1,6 +1,6 @@
 package com.tuhospedaje.category;
 
-import com.tuhospedaje.dto.CategoryDTO;
+import com.tuhospedaje.dto.category.CategoryDTO;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;

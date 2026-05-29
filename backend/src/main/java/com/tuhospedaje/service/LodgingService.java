@@ -1,8 +1,11 @@
 package com.tuhospedaje.service;
 
-import com.tuhospedaje.dto.LodgingDTO;
+import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,4 +28,12 @@ public interface LodgingService {
     Map<String, Object> findAllPaginated(int page, int size);
 
     List<LodgingDTO> findAllRandom();
+
+    List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
+                            Integer guests, Long category,
+                            BigDecimal minPrice, BigDecimal maxPrice);
+
+    List<String> findCities(String query);
+
+    AvailabilityResponse checkAvailability(Long lodgingId, LocalDate checkIn, LocalDate checkOut);
 }

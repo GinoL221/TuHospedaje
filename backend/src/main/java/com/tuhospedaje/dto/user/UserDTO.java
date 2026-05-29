@@ -1,4 +1,4 @@
-package com.tuhospedaje.dto;
+package com.tuhospedaje.dto.user;
 
 import com.tuhospedaje.entity.User;
 import lombok.Getter;

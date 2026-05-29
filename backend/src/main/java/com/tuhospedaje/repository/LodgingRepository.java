@@ -1,15 +1,15 @@
 package com.tuhospedaje.repository;
 
-import com.tuhospedaje.dto.LodgingDTO;
 import com.tuhospedaje.entity.Lodging;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface LodgingRepository extends JpaRepository<Lodging, Long> {
+public interface LodgingRepository extends JpaRepository<Lodging, Long>, JpaSpecificationExecutor<Lodging> {
 
     Optional<Lodging> findByName(String name);
 
