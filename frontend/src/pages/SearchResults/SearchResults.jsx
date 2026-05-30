@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useSearchParams } from "react-router-dom";
 import { get } from "../../services/api";
 import ProductCard from "../../components/ProductCard/ProductCard";
@@ -19,22 +19,13 @@ export default function SearchResults() {
   const [filterCategory, setFilterCategory] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [, startTransition] = useTransition();
 
-  useEffect(() => {
-    get("/categories")
-      .then((data) => setCategories(Array.isArray(data) ? data : []))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    const params = new URLSearchParams();
-    if (city) params.set("city", city);
-    if (checkIn) params.set("checkIn", checkIn);
-    if (checkOut) params.set("checkOut", checkOut);
-
+  function searchLodgings(params) {
+    startTransition(() => {
+      setLoading(true);
+      setError("");
+    });
     get(`/lodgings/search?${params.toString()}`)
       .then((data) => {
         setResults(Array.isArray(data) ? data : []);
@@ -44,6 +35,21 @@ export default function SearchResults() {
         setError(err.message);
         setLoading(false);
       });
+  }
+
+  useEffect(() => {
+    get("/categories")
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (city) params.set("city", city);
+    if (checkIn) params.set("checkIn", checkIn);
+    if (checkOut) params.set("checkOut", checkOut);
+
+    searchLodgings(params);
   }, [city, checkIn, checkOut]);
 
   function handleFilter() {
@@ -55,16 +61,7 @@ export default function SearchResults() {
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
 
-    setLoading(true);
-    get(`/lodgings/search?${params.toString()}`)
-      .then((data) => {
-        setResults(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+    searchLodgings(params);
   }
 
   return (

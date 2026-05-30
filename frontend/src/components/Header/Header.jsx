@@ -37,6 +37,7 @@ export default function Header() {
               >
                 {user.firstName}
               </span>
+              <Link to="/favorites" className="nav-link">Favoritos</Link>
               <button onClick={logout} className="btn-logout">
                 Cerrar sesión
               </button>

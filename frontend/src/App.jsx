@@ -9,6 +9,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import Admin from "./pages/Admin/Admin";
 import SearchResults from "./pages/SearchResults/SearchResults";
+import FavoritesPage from "./pages/Favorites/FavoritesPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/lodgings/:id" element={<ProductDetail />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
         </Routes>
         <Footer />
       </AuthProvider>

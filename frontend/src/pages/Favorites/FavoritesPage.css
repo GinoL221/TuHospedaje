@@ -1,0 +1,24 @@
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.favorite-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btn-remove-fav {
+  background: none;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+.btn-remove-fav:hover {
+  background: var(--primary);
+  color: var(--bg);
+}

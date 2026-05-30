@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import DatePicker from "react-datepicker";
-import ReservationModal from "../../components/reservation/ReservationModal";
+import ReservationModal from "../../components/Reservation/ReservationModal";
 import "react-datepicker/dist/react-datepicker.css";
 import "./ProductDetail.css";
 
