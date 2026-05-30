@@ -2,8 +2,12 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+
 import DatePicker from "react-datepicker";
+import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ReservationModal from "../../components/Reservation/ReservationModal";
+import ShareModal from "../../components/ShareModal/ShareModal";
+
 import "react-datepicker/dist/react-datepicker.css";
 import "./ProductDetail.css";
 
@@ -17,6 +21,7 @@ export default function ProductDetail() {
   const [checkOut, setCheckOut] = useState(null);
   const [occupiedDates, setOccupiedDates] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   function formatDate(date) {
     return date.toISOString().split("T")[0];
@@ -28,7 +33,9 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!checkIn || !checkOut) return;
-    get(`/lodgings/${id}/availability?checkIn=${formatDate(checkIn)}&checkOut=${formatDate(checkOut)}`)
+    get(
+      `/lodgings/${id}/availability?checkIn=${formatDate(checkIn)}&checkOut=${formatDate(checkOut)}`,
+    )
       .then((data) => {
         if (data && data.occupiedRanges) {
           setOccupiedDates(data.occupiedRanges);
@@ -39,7 +46,8 @@ export default function ProductDetail() {
 
   function isDateOccupied(date) {
     return occupiedDates.some(
-      (range) => date >= new Date(range.checkIn) && date < new Date(range.checkOut)
+      (range) =>
+        date >= new Date(range.checkIn) && date < new Date(range.checkOut),
     );
   }
 
@@ -63,9 +71,16 @@ export default function ProductDetail() {
     <main className="page-container product-detail">
       <div className="detail-header">
         <h1>{lodging.name}</h1>
-        <button className="back-arrow" onClick={() => navigate(-1)}>←</button>
+        <button className="back-arrow" onClick={() => navigate(-1)}>
+          ←
+        </button>
+        <button className="btn-share" onClick={() => setShowShare(true)}>
+          Compartir
+        </button>
       </div>
-      <p className="location">{lodging.city}, {lodging.country}</p>
+      <p className="location">
+        {lodging.city}, {lodging.country}
+      </p>
 
       {images.length > 0 && (
         <div className="gallery-wrapper">
@@ -82,16 +97,30 @@ export default function ProductDetail() {
             )}
           </div>
           {images.length > 5 && !showAllImages && (
-            <button className="btn-show-more" onClick={() => setShowAllImages(true)}>Ver más</button>
+            <button
+              className="btn-show-more"
+              onClick={() => setShowAllImages(true)}
+            >
+              Ver más
+            </button>
           )}
           {showAllImages && (
             <>
               <div className="gallery-all">
                 {images.slice(5).map((url, i) => (
-                  <img key={i + 5} src={url} alt={`${lodging.name} - ${i + 6}`} />
+                  <img
+                    key={i + 5}
+                    src={url}
+                    alt={`${lodging.name} - ${i + 6}`}
+                  />
                 ))}
               </div>
-              <button className="btn-show-more" onClick={() => setShowAllImages(false)}>Ver menos</button>
+              <button
+                className="btn-show-more"
+                onClick={() => setShowAllImages(false)}
+              >
+                Ver menos
+              </button>
             </>
           )}
         </div>
@@ -136,7 +165,8 @@ export default function ProductDetail() {
 
           {nights > 0 && (
             <p className="total-estimate">
-              Total estimado: <strong>${total.toLocaleString()}</strong> ({nights} noches)
+              Total estimado: <strong>${total.toLocaleString()}</strong> (
+              {nights} noches)
             </p>
           )}
 
@@ -169,6 +199,28 @@ export default function ProductDetail() {
             ))}
           </div>
         </section>
+      )}
+
+      {lodging.policies && lodging.policies.length > 0 && (
+        <section className="policies-section">
+          <h2 className="policies-title">Políticas</h2>
+          <div className="policies-grid">
+            {lodging.policies.map((p) => (
+              <div key={p.id} className="policy-item">
+                <h3>
+                  {p.icon} {p.name}
+                </h3>
+                <p>{p.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <ReviewsSection lodgingId={id} user={user} />
+
+      {showShare && (
+        <ShareModal lodging={lodging} onClose={() => setShowShare(false)} />
       )}
 
       {showModal && (

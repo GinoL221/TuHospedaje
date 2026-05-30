@@ -3,24 +3,23 @@ import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 
-export default function AdminCategories() {
-  const [catList, setCatList] = useState([]);
+export default function AdminPolicies() {
+  const [policyList, setPolicyList] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "" });
+  const [form, setForm] = useState({ name: "", description: "", icon: "" });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const resetForm = () => setForm({ name: "", description: "" });
-  const cancel = useConfirmCancel(form.name || form.description, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const resetForm = () => setForm({ name: "", description: "", icon: "" });
+  const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const data = await get("/categories");
-        if (!cancelled) setCatList(Array.isArray(data) ? data : []);
+        const data = await get("/policies");
+        if (!cancelled) setPolicyList(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
       }
@@ -30,12 +29,12 @@ export default function AdminCategories() {
     };
   }, []);
 
-  const openModal = (cat = null) => {
-    if (cat) {
-      setForm({ name: cat.name, description: cat.description || "" });
-      setEditing(cat);
+  const openModal = (policy = null) => {
+    if (policy) {
+      setForm({ name: policy.name, description: policy.description || "", icon: policy.icon });
+      setEditing(policy);
     } else {
-      setForm({ name: "", description: "" });
+      setForm({ name: "", description: "", icon: "" });
       setEditing(null);
     }
     setError("");
@@ -44,14 +43,15 @@ export default function AdminCategories() {
   };
 
   const refresh = () => {
-    get("/categories")
-      .then((data) => setCatList(Array.isArray(data) ? data : []))
+    get("/policies")
+      .then((data) => setPolicyList(Array.isArray(data) ? data : []))
       .catch(() => {});
   };
 
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "El nombre es obligatorio";
+    if (!form.icon.trim()) errs.icon = "El ícono es obligatorio";
     return errs;
   };
 
@@ -66,10 +66,10 @@ export default function AdminCategories() {
       return;
     }
 
-    const body = { name: form.name, description: form.description };
+    const body = { name: form.name, description: form.description, icon: form.icon };
     const request = editing
-      ? put(`/categories/${editing.id}`, body)
-      : post("/categories", body);
+      ? put(`/policies/${editing.id}`, body)
+      : post("/policies", body);
     request
       .then(() => {
         setShowModal(false);
@@ -79,18 +79,13 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (id, name) => {
-    setDeleteConfirm({ id, name });
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteConfirm) return;
-    try {
-      await del(`/categories/${deleteConfirm.id}`);
-      setDeleteConfirm(null);
-      refresh();
-    } catch (err) {
-      alert(err.message);
-      setDeleteConfirm(null);
+    if (window.confirm(`¿Eliminar política "${name}"?`)) {
+      try {
+        await del(`/policies/${id}`);
+        refresh();
+      } catch (err) {
+        alert(err.message);
+      }
     }
   };
 
@@ -98,12 +93,12 @@ export default function AdminCategories() {
     <>
       <div className="admin-toolbar">
         <button className="btn-add" onClick={() => openModal(null)}>
-          + Agregar categoría
+          + Agregar política
         </button>
       </div>
-      {catList.length === 0 ? (
+      {policyList.length === 0 ? (
         <p className="empty-state">
-          No hay categorías cargadas todavía. ¡Creá la primera!
+          No hay políticas cargadas todavía. ¡Creá la primera!
         </p>
       ) : (
         <table>
@@ -112,22 +107,24 @@ export default function AdminCategories() {
               <th>ID</th>
               <th>Nombre</th>
               <th>Descripción</th>
+              <th>Ícono</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {catList.map((c) => (
-              <tr key={c.id}>
-                <td>{c.id}</td>
-                <td>{c.name}</td>
-                <td>{c.description || "—"}</td>
+            {policyList.map((p) => (
+              <tr key={p.id}>
+                <td>{p.id}</td>
+                <td>{p.name}</td>
+                <td>{p.description || "—"}</td>
+                <td><code>{p.icon}</code></td>
                 <td>
-                  <button className="btn-edit" onClick={() => openModal(c)}>
+                  <button className="btn-edit" onClick={() => openModal(p)}>
                     Editar
                   </button>
                   <button
                     className="btn-delete"
-                    onClick={() => handleDelete(c.id, c.name)}
+                    onClick={() => handleDelete(p.id, p.name)}
                   >
                     Eliminar
                   </button>
@@ -141,7 +138,9 @@ export default function AdminCategories() {
       {showModal && (
         <div className="modal-overlay" onClick={cancel.handleCancel}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{editing ? "Editar categoría" : "Nueva categoría"}</h2>
+            <h2>
+              {editing ? "Editar política" : "Nueva política"}
+            </h2>
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
@@ -156,6 +155,11 @@ export default function AdminCategories() {
                     setForm({ ...form, description: e.target.value })
                   }
                 />
+              </label>
+              <label className="required-dot">
+                Ícono
+                <input value={form.icon} className={fieldErrors.icon ? "input-error" : ""} onChange={(e) => { setForm({ ...form, icon: e.target.value }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-clock" />
+                {fieldErrors.icon && <span className="field-error">{fieldErrors.icon}</span>}
               </label>
               {error && <p className="form-error">{error}</p>}
               <p className="required-note">* Campos obligatorios</p>
@@ -181,13 +185,6 @@ export default function AdminCategories() {
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
-      />
-
-      <ConfirmDialog
-        show={deleteConfirm !== null}
-        message={deleteConfirm ? `¿Eliminar la categoría "${deleteConfirm.name}"? Los alojamientos asociados quedarán sin categoría.` : ""}
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteConfirm(null)}
       />
     </>
   );

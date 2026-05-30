@@ -3,6 +3,7 @@ import AdminLodgings from "./AdminLodgings";
 import AdminCategories from "./AdminCategories";
 import AdminFeatures from "./AdminFeatures";
 import AdminUsers from "./AdminUsers";
+import AdminPolicies from "./AdminPolicies";
 
 import "./Admin.css";
 
@@ -55,6 +56,12 @@ export default function Admin() {
           Características
         </button>
         <button
+          className={"menu-btn" + (tab === "policies" ? " active" : "")}
+          onClick={() => setTab("policies")}
+        >
+          Políticas
+        </button>
+        <button
           className={"menu-btn" + (tab === "users" ? " active" : "")}
           onClick={() => setTab("users")}
         >
@@ -63,8 +70,9 @@ export default function Admin() {
       </nav>
 
       {tab === "lodgings" && <AdminLodgings />}
-      {tab === "categories" && <AdminCategories />}
       {tab === "features" && <AdminFeatures />}
+      {tab === "categories" && <AdminCategories />}
+      {tab === "policies" && <AdminPolicies />}
       {tab === "users" && <AdminUsers />}
     </main>
   );

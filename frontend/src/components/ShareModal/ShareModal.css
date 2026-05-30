@@ -1,0 +1,41 @@
+.share-modal {
+  text-align: center;
+}
+.share-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.share-description {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 8px 0;
+}
+.share-link {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  word-break: break-all;
+  margin: 4px 0 16px;
+}
+.share-options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  background-color: var(--primary);
+  color: var(--bg);
+  transition: opacity 0.2s ease;
+}
+.share-btn:hover {
+  opacity: 0.85;
+}

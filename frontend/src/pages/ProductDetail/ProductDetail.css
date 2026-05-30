@@ -170,9 +170,55 @@
 .btn-reserve:hover {
   opacity: 0.85;
 }
+.policies-section {
+  margin-top: 30px;
+  padding: 30px;
+  background: var(--bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.policies-title {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--secondary);
+}
+.policies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.policy-item {
+  padding: 16px;
+  border: 1px solid var(--secondary);
+  border-radius: 8px;
+}
+.policy-item h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--secondary);
+}
+.policy-item p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+}
 .login-prompt {
   text-align: center;
   padding: 12px;
   border: 1px solid var(--secondary);
   border-radius: 6px;
 }
+.btn-share {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-right: 10px;
+}
+

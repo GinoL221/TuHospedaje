@@ -74,4 +74,12 @@ public class Lodging {
 
     @Version
     private Long version;
+
+    @ManyToMany
+    @JoinTable(
+            name = "lodging_policies",
+            joinColumns = @JoinColumn(name = "lodging_id"),
+            inverseJoinColumns = @JoinColumn(name = "policy_id")
+    )
+    private Set<Policy> policies;
 }
