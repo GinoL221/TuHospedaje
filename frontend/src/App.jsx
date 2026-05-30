@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import Admin from "./pages/Admin/Admin";
+import SearchResults from "./pages/SearchResults/SearchResults";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/search" element={<SearchResults />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/lodgings/:id" element={<ProductDetail />} />

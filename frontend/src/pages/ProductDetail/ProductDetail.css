@@ -21,7 +21,7 @@
   padding: 0 10px;
 }
 .product-detail .location {
-  color: #777;
+  color: var(--secondary);
   margin: 0 0 20px;
 }
 /* Galería 50/50 */
@@ -110,7 +110,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px;
-  border: 1px solid #eee;
+  border: 1px solid var(--secondary);
   border-radius: 8px;
 }
 .feature-icon {
@@ -121,4 +121,58 @@
 .feature-name {
   font-weight: 500;
   color: var(--text);
+}
+.booking-section {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.price-display {
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+}
+.price-display strong {
+  font-size: 1.8rem;
+  color: var(--primary);
+}
+.date-pickers {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.date-pickers > div {
+  flex: 1;
+}
+.date-pickers label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.total-estimate {
+  font-size: 1.1rem;
+  margin: 12px 0;
+}
+.btn-reserve {
+  background-color: var(--primary);
+  color: var(--bg);
+  border: none;
+  padding: 14px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.1rem;
+  width: 100%;
+}
+.btn-reserve:hover {
+  opacity: 0.85;
+}
+.login-prompt {
+  text-align: center;
+  padding: 12px;
+  border: 1px solid var(--secondary);
+  border-radius: 6px;
 }

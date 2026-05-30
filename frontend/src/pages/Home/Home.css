@@ -48,6 +48,37 @@
   background-color: #21867a;
   color: var(--bg);
 }
+.city-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--secondary);
+  border-radius: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.city-suggestions li {
+  padding: 10px 14px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background-color 0.2s ease;
+}
+.city-suggestions li:hover {
+  background-color: var(--accent);
+  color: var(--bg);
+}
+.search-error {
+  color: var(--primary);
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
 .category-tag.active {
   background: var(--primary);
   transform: scale(1.05);
