@@ -131,6 +131,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **5** | Promedio de estrellas se actualiza al agregar reseña | Cálculo dinámico correcto | ✔ Pasa |
 | **6** | Lista de reseñas muestra nombre, fecha, estrellas, comentario | Datos visibles y formateados | ✔ Pasa |
 
+<div style="page-break-before: always;"></div>
+
 ### TC-29: Módulo de Eliminar Categoría (US #29)
 
 * **Historias de Usuario Asociadas:** US #29 (Eliminar categoría)
