@@ -7,6 +7,7 @@ export default function AdminLodgings() {
   const [lodgings, setLodgings] = useState([]);
   const [categories, setCategories] = useState([]);
   const [features, setFeatures] = useState([]);
+  const [policies, setPolicies] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +21,7 @@ export default function AdminLodgings() {
     email: "",
     categoryId: "",
     featureIds: [],
+    policyIds: [],
     imageUrls: [],
   });
   const [error, setError] = useState("");
@@ -60,6 +62,7 @@ export default function AdminLodgings() {
       email: "",
       categoryId: "",
       featureIds: [],
+      policyIds: [],
       imageUrls: [],
     });
 
@@ -119,6 +122,12 @@ export default function AdminLodgings() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    get("/policies")
+      .then((data) => setPolicies(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
   const handleDelete = async (id, name) => {
     if (window.confirm(`¿Eliminar "${name}"?`)) {
       try {
@@ -164,7 +173,7 @@ export default function AdminLodgings() {
     if (Object.keys(errs).length > 0) {
       setTimeout(() => document.querySelector(".input-error")?.focus(), 100);
       return;
-    }
+    };
 
     const body = {
       name: form.name,
@@ -177,7 +186,9 @@ export default function AdminLodgings() {
       categoryId: form.categoryId || null,
       featureIds: form.featureIds,
       imageUrls: form.imageUrls || [],
+      policyIds: form.policyIds || [],
     };
+
     post("/lodgings", body)
       .then(() => {
         setShowModal(false);
@@ -192,6 +203,7 @@ export default function AdminLodgings() {
           categoryId: "",
           featureIds: [],
           imageUrls: [],
+          policyIds: [],
         });
         setPage(0);
       })
@@ -416,6 +428,30 @@ export default function AdminLodgings() {
                           }}
                         />
                         {f.icon} {f.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="full-width field-group">
+                  <span className="field-label">Políticas</span>
+                  <div className="feature-checkboxes">
+                    {policies.map((p) => (
+                      <label key={p.id} className="feature-checkbox">
+                        <input
+                          type="checkbox"
+                          value={p.id}
+                          checked={form.policyIds?.includes(p.id)}
+                          onChange={(e) => {
+                            const id = Number(e.target.value);
+                            setForm({
+                              ...form,
+                              policyIds: e.target.checked
+                                ? [...(form.policyIds || []), id]
+                                : (form.policyIds || []).filter((pid) => pid !== id),
+                            });
+                          }}
+                        />
+                        {p.icon} {p.name}
                       </label>
                     ))}
                   </div>

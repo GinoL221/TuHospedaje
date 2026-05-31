@@ -4,6 +4,7 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
+import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import lombok.Getter;
@@ -33,6 +34,8 @@ public class LodgingDTO {
     private List<Map<String, Object>> features;
     private BigDecimal pricePerNight;
     private Integer maxGuests;
+    private Set<Long> policyIds;
+    private List<Map<String, Object>> policies;
 
     public Lodging toEntity() {
         Lodging lodging = new Lodging();
@@ -86,6 +89,19 @@ public class LodgingDTO {
                 return feat;
             }).collect(Collectors.toList()));
         }
+
+        if (lodging.getPolicies() != null) {
+            dto.setPolicyIds(lodging.getPolicies().stream().map(Policy::getId).collect(Collectors.toSet()));
+            dto.setPolicies(lodging.getPolicies().stream().map(p -> {
+                Map<String, Object> pol = new java.util.HashMap<>();
+                pol.put("id", p.getId());
+                pol.put("name", p.getName());
+                pol.put("description", p.getDescription());
+                pol.put("icon", p.getIcon());
+                return pol;
+            }).collect(Collectors.toList()));
+        }
+
         if (lodging.getImages() != null) {
             dto.setImageUrls(lodging.getImages().stream()
                     .map(LodgingImage::getImageUrl)

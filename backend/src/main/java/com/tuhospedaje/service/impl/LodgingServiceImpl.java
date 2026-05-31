@@ -5,12 +5,14 @@ import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingService;
 import org.springframework.data.domain.Page;
@@ -40,12 +42,32 @@ public class LodgingServiceImpl implements LodgingService {
     private final CategoryRepository categoryRepository;
     private final FeatureRepository featureRepository;
     private final ReservationRepository reservationRepository;
+    private final PolicyRepository policyRepository;
 
-    public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository, FeatureRepository featureRepository, ReservationRepository reservationRepository) {
+    public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository, FeatureRepository featureRepository, ReservationRepository reservationRepository, PolicyRepository policyRepository) {
         this.lodgingRepository = lodgingRepository;
         this.categoryRepository = categoryRepository;
         this.featureRepository = featureRepository;
         this.reservationRepository = reservationRepository;
+        this.policyRepository = policyRepository;
+    }
+
+    private Category resolveCategory(Long categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
+    }
+
+    private Set<Feature> resolveFeatures(Set<Long> featureIds) {
+        if (featureIds == null || featureIds.isEmpty()) return new HashSet<>();
+        return new HashSet<>(featureRepository.findAllById(featureIds));
+    }
+
+    private Set<Policy> resolvePolicies(Set<Long> policyIds) {
+        if (policyIds == null || policyIds.isEmpty()) return new HashSet<>();
+        return new HashSet<>(policyRepository.findAllById(policyIds));
     }
 
     @Override
@@ -59,6 +81,8 @@ public class LodgingServiceImpl implements LodgingService {
         Lodging lodging = dto.toEntity();
         lodging.setCategory(resolveCategory(dto.getCategoryId()));
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
+        lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
+
         Lodging saved = lodgingRepository.save(lodging);
         return LodgingDTO.fromEntity(saved);
     }
@@ -81,22 +105,10 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setEmail(dto.getEmail());
         lodging.setCategory(resolveCategory(dto.getCategoryId()));
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
+        lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
+
         Lodging updated = lodgingRepository.save(lodging);
         return LodgingDTO.fromEntity(updated);
-    }
-
-    private Category resolveCategory(Long categoryId) {
-        if (categoryId == null) {
-            return null;
-        }
-
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
-    }
-
-    private Set<Feature> resolveFeatures(Set<Long> featureIds) {
-        if (featureIds == null || featureIds.isEmpty()) return new HashSet<>();
-        return new HashSet<>(featureRepository.findAllById(featureIds));
     }
 
     @Override
