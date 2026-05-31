@@ -23,8 +23,10 @@ public class UploadController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map> upload(@RequestParam("file") MultipartFile file) {
-        Map result = cloudinaryService.uploadImage(file);
+    public ResponseEntity<Map<String, Object>> upload(@RequestParam("file") MultipartFile file) {
+        Map<String, Object> result = cloudinaryService.uploadImage(file);
         return ResponseEntity.ok(Map.of("url", result.get("url")));
     }
+
+
 }
