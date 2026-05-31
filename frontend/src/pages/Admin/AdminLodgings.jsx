@@ -20,10 +20,11 @@ export default function AdminLodgings() {
     email: "",
     categoryId: "",
     featureIds: [],
-    imageUrls: "",
+    imageUrls: [],
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [uploading, setUploading] = useState(false);
   const size = 10;
 
   useEffect(() => {
@@ -39,19 +40,72 @@ export default function AdminLodgings() {
         }
         setLodgings(data.lodgings || []);
         setTotalPages(data.totalPages || 0);
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [page, size]);
 
-  const resetForm = () => setForm({ name: "", description: "", address: "", city: "", country: "",
-    phoneNumber: "", email: "", categoryId: "", featureIds: [], imageUrls: "" });
+  const resetForm = () =>
+    setForm({
+      name: "",
+      description: "",
+      address: "",
+      city: "",
+      country: "",
+      phoneNumber: "",
+      email: "",
+      categoryId: "",
+      featureIds: [],
+      imageUrls: [],
+    });
 
-  const hasChanges = form.name || form.description || form.address || form.city ||
-    form.country || form.phoneNumber || form.email || form.categoryId ||
-    form.featureIds.length > 0 || form.imageUrls;
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: formData,
+      });
+      const data = await res.json();
+      const newUrl = data.url;
+      setForm((prev) => ({
+        ...prev,
+        imageUrls: [...prev.imageUrls, newUrl],
+      }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
 
-  const cancel = useConfirmCancel(hasChanges, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const hasChanges =
+    form.name ||
+    form.description ||
+    form.address ||
+    form.city ||
+    form.country ||
+    form.phoneNumber ||
+    form.email ||
+    form.categoryId ||
+    form.featureIds.length > 0 ||
+    form.imageUrls.length > 0;
+
+  const cancel = useConfirmCancel(hasChanges, () => {
+    setFieldErrors({});
+    resetForm();
+    setShowModal(false);
+  });
 
   useEffect(() => {
     get("/categories")
@@ -88,13 +142,16 @@ export default function AdminLodgings() {
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "El nombre es obligatorio";
-    if (!form.description.trim()) errs.description = "La descripción es obligatoria";
+    if (!form.description.trim())
+      errs.description = "La descripción es obligatoria";
     if (!form.address?.trim()) errs.address = "La dirección es obligatoria";
     if (!form.city?.trim()) errs.city = "La ciudad es obligatoria";
     if (!form.country?.trim()) errs.country = "El país es obligatorio";
-    if (!form.phoneNumber?.trim()) errs.phoneNumber = "El teléfono es obligatorio";
+    if (!form.phoneNumber?.trim())
+      errs.phoneNumber = "El teléfono es obligatorio";
     if (!form.email?.trim()) errs.email = "El email es obligatorio";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "El email no es válido";
+    else if (!/\S+@\S+\.\S+/.test(form.email))
+      errs.email = "El email no es válido";
     return errs;
   };
 
@@ -119,12 +176,7 @@ export default function AdminLodgings() {
       email: form.email,
       categoryId: form.categoryId || null,
       featureIds: form.featureIds,
-      imageUrls: form.imageUrls
-        ? form.imageUrls
-            .split(",")
-            .map((u) => u.trim())
-            .filter(Boolean)
-        : [],
+      imageUrls: form.imageUrls || [],
     };
     post("/lodgings", body)
       .then(() => {
@@ -139,7 +191,7 @@ export default function AdminLodgings() {
           email: "",
           categoryId: "",
           featureIds: [],
-          imageUrls: "",
+          imageUrls: [],
         });
         setPage(0);
       })
@@ -149,7 +201,13 @@ export default function AdminLodgings() {
   return (
     <>
       <div className="admin-toolbar">
-        <button className="btn-add" onClick={() => { setFieldErrors({}); setShowModal(true); }}>
+        <button
+          className="btn-add"
+          onClick={() => {
+            setFieldErrors({});
+            setShowModal(true);
+          }}
+        >
           + Agregar alojamiento
         </button>
       </div>
@@ -212,76 +270,202 @@ export default function AdminLodgings() {
             <h2>Nuevo alojamiento</h2>
             <form onSubmit={handleSubmit} noValidate>
               <div className="modal-form-grid">
-              <label className="required-dot">
-                Nombre
-                <input value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
-                {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
-              </label>
-              <label className="required-dot">
-                Email
-                <input type="email" value={form.email} className={fieldErrors.email ? "input-error" : ""} onChange={(e) => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: "" }); }} />
-                {fieldErrors.email && <span className="field-error">{fieldErrors.email}</span>}
-              </label>
-              <label className="full-width required-dot">
-                Descripción
-                <textarea value={form.description} className={fieldErrors.description ? "input-error" : ""} onChange={(e) => { setForm({ ...form, description: e.target.value }); if (fieldErrors.description) setFieldErrors({ ...fieldErrors, description: "" }); }} />
-                {fieldErrors.description && <span className="field-error">{fieldErrors.description}</span>}
-              </label>
-              <label className="required-dot">
-                Dirección
-                <input value={form.address} className={fieldErrors.address ? "input-error" : ""} onChange={(e) => { setForm({ ...form, address: e.target.value }); if (fieldErrors.address) setFieldErrors({ ...fieldErrors, address: "" }); }} />
-                {fieldErrors.address && <span className="field-error">{fieldErrors.address}</span>}
-              </label>
-              <label className="required-dot">
-                Ciudad
-                <input value={form.city} className={fieldErrors.city ? "input-error" : ""} onChange={(e) => { setForm({ ...form, city: e.target.value }); if (fieldErrors.city) setFieldErrors({ ...fieldErrors, city: "" }); }} />
-                {fieldErrors.city && <span className="field-error">{fieldErrors.city}</span>}
-              </label>
-              <label className="required-dot">
-                País
-                <input value={form.country} className={fieldErrors.country ? "input-error" : ""} onChange={(e) => { setForm({ ...form, country: e.target.value }); if (fieldErrors.country) setFieldErrors({ ...fieldErrors, country: "" }); }} />
-                {fieldErrors.country && <span className="field-error">{fieldErrors.country}</span>}
-              </label>
-              <label className="required-dot">
-                Teléfono
-                <input value={form.phoneNumber} className={fieldErrors.phoneNumber ? "input-error" : ""} onChange={(e) => { setForm({ ...form, phoneNumber: e.target.value }); if (fieldErrors.phoneNumber) setFieldErrors({ ...fieldErrors, phoneNumber: "" }); }} />
-                {fieldErrors.phoneNumber && <span className="field-error">{fieldErrors.phoneNumber}</span>}
-              </label>
-              <label>
-                Categoría
-                <select value={form.categoryId || ""} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
-                  <option value="">Sin categoría</option>
-                  {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                </select>
-              </label>
-              <div className="full-width field-group">
-                <span className="field-label">Características</span>
-                <div className="feature-checkboxes">
-                  {features.map((f) => (
-                    <label key={f.id} className="feature-checkbox">
-                      <input type="checkbox" value={f.id} checked={form.featureIds.includes(f.id)}
-                        onChange={(e) => {
-                          const id = Number(e.target.value);
-                          setForm({ ...form, featureIds: e.target.checked
-                            ? [...form.featureIds, id]
-                            : form.featureIds.filter((fid) => fid !== id) });
-                        }} />
-                      {f.icon} {f.name}
-                    </label>
-                  ))}
+                <label className="required-dot">
+                  Nombre
+                  <input
+                    value={form.name}
+                    className={fieldErrors.name ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, name: e.target.value });
+                      if (fieldErrors.name)
+                        setFieldErrors({ ...fieldErrors, name: "" });
+                    }}
+                  />
+                  {fieldErrors.name && (
+                    <span className="field-error">{fieldErrors.name}</span>
+                  )}
+                </label>
+                <label className="required-dot">
+                  Email
+                  <input
+                    type="email"
+                    value={form.email}
+                    className={fieldErrors.email ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, email: e.target.value });
+                      if (fieldErrors.email)
+                        setFieldErrors({ ...fieldErrors, email: "" });
+                    }}
+                  />
+                  {fieldErrors.email && (
+                    <span className="field-error">{fieldErrors.email}</span>
+                  )}
+                </label>
+                <label className="full-width required-dot">
+                  Descripción
+                  <textarea
+                    value={form.description}
+                    className={fieldErrors.description ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, description: e.target.value });
+                      if (fieldErrors.description)
+                        setFieldErrors({ ...fieldErrors, description: "" });
+                    }}
+                  />
+                  {fieldErrors.description && (
+                    <span className="field-error">
+                      {fieldErrors.description}
+                    </span>
+                  )}
+                </label>
+                <label className="required-dot">
+                  Dirección
+                  <input
+                    value={form.address}
+                    className={fieldErrors.address ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, address: e.target.value });
+                      if (fieldErrors.address)
+                        setFieldErrors({ ...fieldErrors, address: "" });
+                    }}
+                  />
+                  {fieldErrors.address && (
+                    <span className="field-error">{fieldErrors.address}</span>
+                  )}
+                </label>
+                <label className="required-dot">
+                  Ciudad
+                  <input
+                    value={form.city}
+                    className={fieldErrors.city ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, city: e.target.value });
+                      if (fieldErrors.city)
+                        setFieldErrors({ ...fieldErrors, city: "" });
+                    }}
+                  />
+                  {fieldErrors.city && (
+                    <span className="field-error">{fieldErrors.city}</span>
+                  )}
+                </label>
+                <label className="required-dot">
+                  País
+                  <input
+                    value={form.country}
+                    className={fieldErrors.country ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, country: e.target.value });
+                      if (fieldErrors.country)
+                        setFieldErrors({ ...fieldErrors, country: "" });
+                    }}
+                  />
+                  {fieldErrors.country && (
+                    <span className="field-error">{fieldErrors.country}</span>
+                  )}
+                </label>
+                <label className="required-dot">
+                  Teléfono
+                  <input
+                    value={form.phoneNumber}
+                    className={fieldErrors.phoneNumber ? "input-error" : ""}
+                    onChange={(e) => {
+                      setForm({ ...form, phoneNumber: e.target.value });
+                      if (fieldErrors.phoneNumber)
+                        setFieldErrors({ ...fieldErrors, phoneNumber: "" });
+                    }}
+                  />
+                  {fieldErrors.phoneNumber && (
+                    <span className="field-error">
+                      {fieldErrors.phoneNumber}
+                    </span>
+                  )}
+                </label>
+                <label>
+                  Categoría
+                  <select
+                    value={form.categoryId || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, categoryId: e.target.value })
+                    }
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="full-width field-group">
+                  <span className="field-label">Características</span>
+                  <div className="feature-checkboxes">
+                    {features.map((f) => (
+                      <label key={f.id} className="feature-checkbox">
+                        <input
+                          type="checkbox"
+                          value={f.id}
+                          checked={form.featureIds.includes(f.id)}
+                          onChange={(e) => {
+                            const id = Number(e.target.value);
+                            setForm({
+                              ...form,
+                              featureIds: e.target.checked
+                                ? [...form.featureIds, id]
+                                : form.featureIds.filter((fid) => fid !== id),
+                            });
+                          }}
+                        />
+                        {f.icon} {f.name}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <label className="full-width">
-                URLs de imágenes (separadas por coma)
-                <textarea value={form.imageUrls} onChange={(e) => setForm({ ...form, imageUrls: e.target.value })}
-                  placeholder="https://ejemplo.com/img1.jpg, https://ejemplo.com/img2.jpg" />
-              </label>
-              {error && <p className="form-error full-width">{error}</p>}
-              <p className="required-note full-width">* Campos obligatorios</p>
-              <div className="modal-actions full-width">
-                <button type="submit" className="btn-save">Guardar</button>
-                <button type="button" className="btn-cancel" onClick={cancel.handleCancel}>Cancelar</button>
-              </div>
+                <label className="full-width">
+                  URLs de imágenes (separadas por coma)
+                  <div className="image-upload-row">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="imageUpload"
+                      style={{ display: "none" }}
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                    <button
+                      type="button"
+                      className="btn-upload"
+                      onClick={() =>
+                        document.getElementById("imageUpload").click()
+                      }
+                      disabled={uploading}
+                    >
+                      {uploading ? "Subiendo..." : "Subir imagen"}
+                    </button>
+                  </div>
+                  <textarea
+                    value={form.imageUrls}
+                    onChange={(e) =>
+                      setForm({ ...form, imageUrls: e.target.value })
+                    }
+                    placeholder="https://ejemplo.com/img1.jpg, https://ejemplo.com/img2.jpg"
+                  />
+                </label>
+                {error && <p className="form-error full-width">{error}</p>}
+                <p className="required-note full-width">
+                  * Campos obligatorios
+                </p>
+                <div className="modal-actions full-width">
+                  <button type="submit" className="btn-save">
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={cancel.handleCancel}
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -291,7 +475,9 @@ export default function AdminLodgings() {
       <ConfirmDialog
         show={cancel.showConfirm}
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
-        onConfirm={() => { cancel.confirmCancel(); }}
+        onConfirm={() => {
+          cancel.confirmCancel();
+        }}
         onCancel={cancel.dismissConfirm}
       />
     </>
