@@ -1,6 +1,7 @@
 package com.tuhospedaje.service.impl;
 
 import com.cloudinary.Cloudinary;
+import com.tuhospedaje.dto.upload.UploadResult;
 import com.tuhospedaje.service.CloudinaryService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,9 +18,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
-    public Map uploadImage(MultipartFile file) {
+    public UploadResult uploadImage(MultipartFile file) {
         try {
-            return cloudinary.uploader().upload(file.getBytes(), Map.of());
+            Map raw = cloudinary.uploader().upload(file.getBytes(), Map.of());
+            return new UploadResult(raw);
         } catch (Exception e) {
             throw new RuntimeException("Error al subir imagen a Cloudinary: " + e.getMessage());
         }

@@ -1,9 +1,8 @@
 package com.tuhospedaje.service;
 
+import com.tuhospedaje.dto.upload.UploadResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
-
 public interface CloudinaryService {
-    Map uploadImage(MultipartFile file);
+    UploadResult uploadImage(MultipartFile file);
 }
