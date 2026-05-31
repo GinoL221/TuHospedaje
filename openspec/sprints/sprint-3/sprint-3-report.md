@@ -67,8 +67,6 @@ Controller → Service (Interface + Impl) → Repository → Entity / DTO
   - Exclusión de alojamientos con reservas solapadas (filtrado en Java post-query)
 * **Autocompletado de Ciudades:** Endpoint `GET /api/lodgings/cities?q=` que devuelve ciudades distinct con coincidencia parcial. El frontend implementa debounce de 300ms.
 
-<div style="page-break-before: always;"></div>
-
 ### 2.2. Frontend (React + Vite)
 
 Evolución de la SPA con nuevas páginas y componentes extraídos:
@@ -164,8 +162,6 @@ src/
 | Método | Endpoint | Acceso (RBAC) | Descripción |
 |--------|----------|---------------|-------------|
 | POST | `/api/upload` | ADMIN | Subir imagen a Cloudinary |
-
-<div style="page-break-before: always;"></div>
 
 ## 5. Modelo de Datos
 
