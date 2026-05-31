@@ -20,6 +20,7 @@ frontend/.env.local
 .vscode/
 *.iml
 *.class
+.factorypath
 
 # OS
 .DS_Store
