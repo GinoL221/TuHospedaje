@@ -3,12 +3,16 @@ backend/target/
 backend/.mvn/
 backend/*.log
 backend/src/main/resources/application-local.properties
+backend/.env
 
 # Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
+
+# Environment (secrets)
+.env
 
 # IDE
 .idea/
