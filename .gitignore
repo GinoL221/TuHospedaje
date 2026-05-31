@@ -4,6 +4,7 @@ backend/.mvn/
 backend/*.log
 backend/src/main/resources/application-local.properties
 backend/.env
+backend/start.sh
 
 # Frontend
 frontend/node_modules/
