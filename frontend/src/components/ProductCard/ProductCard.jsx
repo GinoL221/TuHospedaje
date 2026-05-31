@@ -7,7 +7,8 @@ import "./ProductCard.css";
 export default function ProductCard({ lodging }) {
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
-  const imageUrl = lodging.imageUrls?.[0] || "https://placehold.co/400x300";
+  const [imgError, setImgError] = useState(false);
+  const imageUrl = imgError ? "https://placehold.co/400x300?text=Sin+imagen" : lodging.imageUrls?.[0] || "https://placehold.co/400x300?text=Sin+imagen";
 
   async function toggleFavorite(e) {
     e.preventDefault();
@@ -28,7 +29,7 @@ export default function ProductCard({ lodging }) {
     <Link to={`/lodgings/${lodging.id}`} className="hotel-card-link">
       <article className="hotel-card">
         <div className="hotel-card-img-wrapper">
-          <img src={imageUrl} alt={lodging.name} />
+          <img src={imageUrl} alt={lodging.name} loading="lazy" onError={() => setImgError(true)} />
           {user && (
             <button
               className={`fav-btn ${isFavorite ? "fav-active" : ""}`}

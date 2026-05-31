@@ -86,12 +86,12 @@ export default function ProductDetail() {
         <div className="gallery-wrapper">
           <div className="gallery">
             <div className="gallery-main">
-              <img src={images[0]} alt={`${lodging.name} - 1`} />
+              <img src={images[0]} alt={`${lodging.name} - 1`} loading="lazy" onError={(e) => { e.target.src = "https://placehold.co/800x600?text=Sin+imagen"; }} />
             </div>
             {images.length > 1 && (
               <div className="gallery-grid">
                 {images.slice(1, 5).map((url, i) => (
-                  <img key={i} src={url} alt={`${lodging.name} - ${i + 2}`} />
+                  <img key={i} src={url} alt={`${lodging.name} - ${i + 2}`} loading="lazy" onError={(e) => { e.target.src = "https://placehold.co/400x300?text=Sin+imagen"; }} />
                 ))}
               </div>
             )}
@@ -112,6 +112,8 @@ export default function ProductDetail() {
                     key={i + 5}
                     src={url}
                     alt={`${lodging.name} - ${i + 6}`}
+                    loading="lazy"
+                    onError={(e) => { e.target.src = "https://placehold.co/400x300?text=Sin+imagen"; }}
                   />
                 ))}
               </div>
