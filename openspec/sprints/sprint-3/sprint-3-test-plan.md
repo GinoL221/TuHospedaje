@@ -114,8 +114,6 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **2** | Pop-up muestra imagen + descripción + enlace | Contenido visible y correcto | ✔ Pasa |
 | **3** | Click en red social | Abre nueva pestaña con URL de compartir | ✔ Pasa |
 
-<div style="page-break-before: always;"></div>
-
 ### TC-28: Módulo de Reseñas (US #28)
 
 * **Historias de Usuario Asociadas:** US #28 (Puntuar producto)
