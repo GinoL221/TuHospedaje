@@ -53,6 +53,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **8** | Búsqueda sin resultados | HTTP 200. Array vacío `[]` | ✔ Pasa |
 | **9** | `GET /api/lodgings/search?checkIn=invalido` | HTTP 400 Bad Request | ✔ Pasa |
 
+<div style="page-break-before: always;"></div>
+
 ### TC-23: Módulo de Disponibilidad y Reservas (US #23)
 
 * **Historias de Usuario Asociadas:** US #23 (Visualizar disponibilidad)
@@ -70,8 +72,6 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **7** | `GET /api/reservations/{id}` con token válido | HTTP 200. Detalle de reserva | ✔ Pasa |
 | **8** | `GET /api/reservations/{id}` con ID inexistente | HTTP 404 Not Found | ✔ Pasa |
 | **9** | Dos reservas simultáneas mismo alojamiento/fechas | Una HTTP 201, la otra HTTP 409 (OptimisticLock) | ✔ Pasa |
-
-<div style="page-break-before: always;"></div>
 
 ### TC-24/25: Módulo de Favoritos (US #24, #25)
 
@@ -114,6 +114,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **2** | Pop-up muestra imagen + descripción + enlace | Contenido visible y correcto | ✔ Pasa |
 | **3** | Click en red social | Abre nueva pestaña con URL de compartir | ✔ Pasa |
 
+<div style="page-break-before: always;"></div>
+
 ### TC-28: Módulo de Reseñas (US #28)
 
 * **Historias de Usuario Asociadas:** US #28 (Puntuar producto)
@@ -128,8 +130,6 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **4** | Formulario de reseña visible solo para autenticados | Selector de estrellas + textarea | ✔ Pasa |
 | **5** | Promedio de estrellas se actualiza al agregar reseña | Cálculo dinámico correcto | ✔ Pasa |
 | **6** | Lista de reseñas muestra nombre, fecha, estrellas, comentario | Datos visibles y formateados | ✔ Pasa |
-
-<div style="page-break-before: always;"></div>
 
 ### TC-29: Módulo de Eliminar Categoría (US #29)
 
