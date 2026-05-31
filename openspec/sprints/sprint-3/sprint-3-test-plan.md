@@ -89,6 +89,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **6** | Corazón NO visible en ProductCard (anónimo) | No se muestra icono | ✔ Pasa |
 | **7** | Click corazón agrega/quita favorito | Toggle visual + llamada API | ✔ Pasa |
 
+<div style="page-break-before: always;"></div>
+
 ### TC-26: Módulo de Políticas (US #26)
 
 * **Historias de Usuario Asociadas:** US #26 (Ver bloque de políticas)
