@@ -163,6 +163,8 @@ src/
 |--------|----------|---------------|-------------|
 | POST | `/api/upload` | ADMIN | Subir imagen a Cloudinary |
 
+<div style="page-break-before: always;"></div>
+
 ## 5. Modelo de Datos
 
 ### Nuevas Entidades
