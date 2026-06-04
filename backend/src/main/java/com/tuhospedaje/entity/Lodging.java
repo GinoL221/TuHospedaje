@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -64,4 +66,20 @@ public class Lodging {
 
     @OneToMany(mappedBy = "lodging", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LodgingImage> images;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal pricePerNight;
+
+    private Integer maxGuests;
+
+    @Version
+    private Long version;
+
+    @ManyToMany
+    @JoinTable(
+            name = "lodging_policies",
+            joinColumns = @JoinColumn(name = "lodging_id"),
+            inverseJoinColumns = @JoinColumn(name = "policy_id")
+    )
+    private Set<Policy> policies;
 }

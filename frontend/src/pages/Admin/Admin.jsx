@@ -1,13 +1,34 @@
 import { useState, useEffect } from "react";
+import {
+  LayoutDashboard,
+  Building2,
+  Tag,
+  Star,
+  ShieldCheck,
+  Users,
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import AdminDashboard from "./AdminDashboard";
 import AdminLodgings from "./AdminLodgings";
 import AdminCategories from "./AdminCategories";
 import AdminFeatures from "./AdminFeatures";
 import AdminUsers from "./AdminUsers";
-
+import AdminPolicies from "./AdminPolicies";
 import "./Admin.css";
 
+const NAV_ITEMS = [
+  { key: "dashboard",  label: "Dashboard",       icon: LayoutDashboard },
+  { key: "lodgings",   label: "Alojamientos",    icon: Building2 },
+  { key: "categories", label: "Categorías",      icon: Tag },
+  { key: "features",   label: "Características", icon: Star },
+  { key: "policies",   label: "Políticas",       icon: ShieldCheck },
+  { key: "users",      label: "Usuarios",        icon: Users },
+];
+
 export default function Admin() {
-  const [tab, setTab] = useState("lodgings");
+  const { user, logout } = useAuth();
+  const [tab, setTab] = useState("dashboard");
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -22,50 +43,55 @@ export default function Admin() {
 
   if (isMobile) {
     return (
-      <main className="page-container admin-page">
-        <div className="mobile-block">
-          <h2>Funcionalidad no disponible para dispositivos móviles</h2>
-          <p>Por favor, accedé desde una computadora.</p>
-        </div>
-      </main>
+      <div className="admin-mobile-block">
+        <h2>Panel no disponible en móvil</h2>
+        <p>Accedé desde una computadora.</p>
+      </div>
     );
   }
 
   return (
-    <main className="page-container admin-page">
-      <h1>Panel de Administración</h1>
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-brand">
+          <span className="admin-sidebar-brand-text">TuHospedaje</span>
+          <span className="admin-sidebar-brand-sub">Admin</span>
+        </div>
+        <nav className="admin-nav">
+          {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              className={"admin-nav-item" + (tab === key ? " active" : "")}
+              onClick={() => setTab(key)}
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-      <nav className="admin-menu">
-        <button
-          className={"menu-btn" + (tab === "lodgings" ? " active" : "")}
-          onClick={() => setTab("lodgings")}
-        >
-          Alojamientos
-        </button>
-        <button
-          className={"menu-btn" + (tab === "categories" ? " active" : "")}
-          onClick={() => setTab("categories")}
-        >
-          Categorías
-        </button>
-        <button
-          className={"menu-btn" + (tab === "features" ? " active" : "")}
-          onClick={() => setTab("features")}
-        >
-          Características
-        </button>
-        <button
-          className={"menu-btn" + (tab === "users" ? " active" : "")}
-          onClick={() => setTab("users")}
-        >
-          Usuarios
-        </button>
-      </nav>
+      <div className="admin-main">
+        <div className="admin-topbar">
+          <span className="admin-topbar-title">Panel de Administración</span>
+          <div className="admin-topbar-user">
+            <span className="admin-topbar-name">{user?.firstName}</span>
+            <button className="admin-btn-logout" onClick={logout}>
+              <LogOut size={16} />
+              Salir
+            </button>
+          </div>
+        </div>
 
-      {tab === "lodgings" && <AdminLodgings />}
-      {tab === "categories" && <AdminCategories />}
-      {tab === "features" && <AdminFeatures />}
-      {tab === "users" && <AdminUsers />}
-    </main>
+        <div className="admin-content">
+          {tab === "dashboard"  && <AdminDashboard onTabChange={setTab} />}
+          {tab === "lodgings"   && <AdminLodgings />}
+          {tab === "categories" && <AdminCategories />}
+          {tab === "features"   && <AdminFeatures />}
+          {tab === "policies"   && <AdminPolicies />}
+          {tab === "users"      && <AdminUsers />}
+        </div>
+      </div>
+    </div>
   );
 }

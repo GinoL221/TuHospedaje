@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -8,20 +9,42 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import Admin from "./pages/Admin/Admin";
+import SearchResults from "./pages/SearchResults/SearchResults";
+import FavoritesPage from "./pages/Favorites/FavoritesPage";
+
+function RequireAdmin({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "ADMIN") return <Navigate to="/" replace />;
+  return children;
+}
+
+function AppLayout() {
+  const { pathname } = useLocation();
+  const isAdmin = pathname.startsWith("/admin");
+
+  return (
+    <>
+      {!isAdmin && <Header />}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/search" element={<SearchResults />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/lodgings/:id" element={<ProductDetail />} />
+        <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+        <Route path="/favorites" element={<FavoritesPage />} />
+      </Routes>
+      {!isAdmin && <Footer />}
+    </>
+  );
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/lodgings/:id" element={<ProductDetail />} />
-          <Route path="/admin" element={<Admin />} />
-        </Routes>
-        <Footer />
+        <AppLayout />
       </AuthProvider>
     </BrowserRouter>
   );

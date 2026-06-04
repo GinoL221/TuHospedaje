@@ -3,7 +3,6 @@ package com.tuhospedaje.lodging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
-import com.tuhospedaje.dto.LodgingDTO;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -155,11 +154,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldSearchLodgingsByName() throws Exception {
+    void shouldSearchLodgingsByCity() throws Exception {
         createTestLodging("Hotel Boutique", "boutique@test.com");
 
         mockMvc.perform(get("/api/lodgings/search")
-                        .param("query", "Boutique"))
+                        .param("city", "Ciudad"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Hotel Boutique"));
     }

@@ -1,12 +1,65 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { post, del } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
+import { Heart } from "lucide-react";
 import "./ProductCard.css";
 
-export default function ProductCard({ lodging }) {
-  const imageUrl = lodging.imageUrls?.[0] || "https://placehold.co/400x300";
+export default function ProductCard({ lodging, defaultFavorite = false, showFavoriteButton = true }) {
+  const { user } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(defaultFavorite);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(defaultFavorite);
+  }, [defaultFavorite]);
+  const imageUrl = imgError
+    ? "https://placehold.co/400x300?text=Sin+imagen"
+    : lodging.imageUrls?.[0] || "https://placehold.co/400x300?text=Sin+imagen";
+
+  async function toggleFavorite(e) {
+    e.preventDefault();
+    try {
+      if (isFavorite) {
+        await del(`/favorites/${lodging.id}`);
+        setIsFavorite(false);
+      } else {
+        await post(`/favorites/${lodging.id}`);
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
     <Link to={`/lodgings/${lodging.id}`} className="hotel-card-link">
       <article className="hotel-card">
-        <img src={imageUrl} alt={lodging.name} />
+        <div className="hotel-card-img-wrapper">
+          <img
+            src={imageUrl}
+            alt={lodging.name}
+            width="400"
+            height="300"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+          {user && showFavoriteButton && (
+            <button
+              className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
+              onClick={toggleFavorite}
+              aria-label={
+                isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+              }
+            >
+              <Heart
+                size={20}
+                fill={isFavorite ? "var(--primary)" : "none"}
+                stroke={isFavorite ? "var(--primary)" : "var(--secondary)"}
+              />
+            </button>
+          )}
+        </div>
         <div className="hotel-card-body">
           <h3>{lodging.name}</h3>
           <p className="location">

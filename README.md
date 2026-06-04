@@ -5,24 +5,25 @@ Proyecto final integrador — Digital House.
 
 ## Stack
 
-- **Backend:** Java 17 / Spring Boot 3.5 / Spring Data JPA / MariaDB
-- **Frontend:** React 19 / Vite 8 / React Router
-- **Herramientas:** Lombok, Maven, Pandoc
+- **Backend:** Java 21 / Spring Boot 3.5 / Spring Data JPA / MariaDB / Testcontainers
+- **Frontend:** React 19 / Vite / React Router / Lucide React
+- **Herramientas:** Maven, Lombok, Pandoc
 
 ## Sprints
 
 | Sprint | Estado | Descripción |
 |--------|--------|-------------|
 | Sprint 1 | ✅ Completado | Base del sistema, catálogo de alojamientos, panel de administración |
-| Sprint 2 | 🔜 Pendiente | Autenticación JWT, roles, categorías |
-| Sprint 3 | 🔜 Pendiente | Búsqueda, favoritos, galería Cloudinary |
+| Sprint 2 | ✅ Completado | Autenticación JWT, roles, categorías, Cloudinary |
+| Sprint 3 | ✅ Completado | Búsqueda, favoritos, galería con modal viewer, CRUD policies, íconos Lucide |
 | Sprint 4 | 🔜 Pendiente | Motor de reservas, disponibilidad |
 
 ## Ramas
 
 - `main` — integración final
 - `sprint-1` — base del sistema (congelada)
-- `sprint-2` — trabajo actual
+- `sprint-2` — auth + categorías (congelada)
+- `sprint-3` — trabajo actual
 
 ## Cómo correr
 
@@ -41,9 +42,10 @@ npm run dev
 
 ## Documentación
 
-- `openspec/docs/project-definition.md` — definición del proyecto
-- `openspec/docs/manual-identidad-visual.pdf` — manual de marca
-- `openspec/sprints/sprint-1/` — reporte y test plan del Sprint 1
+- `markdown/sprint-1/` — reporte y test plan del Sprint 1
+- `markdown/sprint-2/` — reporte, test plan y modelo de datos del Sprint 2
+- `markdown/sprint-3/` — reporte y test plan del Sprint 3
+- `docs/entregables/` — PDFs de reports y test plans (todas las sprints)
 
 ## Licencia
 

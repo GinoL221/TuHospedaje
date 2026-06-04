@@ -3,6 +3,8 @@ backend/target/
 backend/.mvn/
 backend/*.log
 backend/src/main/resources/application-local.properties
+backend/.env
+backend/start.sh
 
 # Frontend
 frontend/node_modules/
@@ -10,11 +12,15 @@ frontend/dist/
 frontend/.env
 frontend/.env.local
 
+# Environment (secrets)
+.env
+
 # IDE
 .idea/
 .vscode/
 *.iml
 *.class
+.factorypath
 
 # OS
 .DS_Store
@@ -25,6 +31,9 @@ TuHospedaje.postman_collection.json
 
 # AI assistant config (local, not part of the project)
 AGENTS.md
+
+# OpenSpec (discontinued — using Engram instead)
+openspec/
 
 # OpenSpec / Atlassian local artifacts
 .atl/

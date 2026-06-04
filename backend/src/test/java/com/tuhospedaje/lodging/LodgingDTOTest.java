@@ -1,6 +1,6 @@
 package com.tuhospedaje.lodging;
 
-import com.tuhospedaje.dto.LodgingDTO;
+import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -131,6 +132,31 @@ class LodgingDTOTest {
         LodgingDTO dto = LodgingDTO.fromEntity(lodging);
 
         assertThat(dto.getImageUrls()).isNull();
+    }
+
+    @Test
+    void shouldMapPriceAndGuestsInToEntity() {
+        LodgingDTO dto = new LodgingDTO();
+        dto.setName("Hotel Precio");
+        dto.setPricePerNight(new BigDecimal("150.00"));
+        dto.setMaxGuests(4);
+
+        Lodging entity = dto.toEntity();
+
+        assertThat(entity.getPricePerNight()).isEqualByComparingTo(new BigDecimal("150.00"));
+        assertThat(entity.getMaxGuests()).isEqualTo(4);
+    }
+
+    @Test
+    void shouldMapPriceAndGuestsFromEntity() {
+        Lodging lodging = new Lodging();
+        lodging.setPricePerNight(new BigDecimal("200.00"));
+        lodging.setMaxGuests(6);
+
+        LodgingDTO dto = LodgingDTO.fromEntity(lodging);
+
+        assertThat(dto.getPricePerNight()).isEqualByComparingTo(new BigDecimal("200.00"));
+        assertThat(dto.getMaxGuests()).isEqualTo(6);
     }
 
     @Test

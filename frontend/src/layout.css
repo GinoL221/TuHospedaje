@@ -6,7 +6,7 @@ header {
   width: 100%;
   z-index: 1000;
   background-color: var(--secondary);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 header nav {
@@ -14,7 +14,7 @@ header nav {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  padding: 15px 30px;
+  padding: 12px 30px;
 }
 
 .logo-container {
@@ -40,7 +40,7 @@ header nav {
   color: #a8cfc9;
   font-weight: 300;
   font-style: italic;
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -53,6 +53,17 @@ header nav {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--bg);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  flex-shrink: 0;
 }
 
 .nav-links a {
@@ -74,11 +85,13 @@ header nav {
   border: none;
   padding: 10px 25px;
   font-weight: 700;
-  border-radius: 4px;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  transition: background-color 0.3s ease;
+  transition: background-color var(--transition);
 }
 
 .btn-secondary:hover {
@@ -102,7 +115,7 @@ footer {
   background-color: var(--secondary);
   color: var(--bg);
   width: 100%;
-  padding: 20px 0;
+  padding: 28px 0;
   margin-top: auto;
 }
 
@@ -155,6 +168,7 @@ footer .page-container {
 
 .footer-right img:hover {
   transform: scale(1.08);
+  opacity: 0.8;
 }
 
 /* RESPONSIVE */
@@ -180,37 +194,56 @@ footer .page-container {
 
 @media (max-width: 768px) {
   header nav {
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
-    padding: 12px 16px;
+    padding: 10px 16px;
+    gap: 0;
   }
+
   .logo-container {
-    width: 100%;
-    flex-direction: column;
-    align-items: center;
+    flex: 1;
     gap: 8px;
   }
+
   .logo-container img {
     height: 52px;
   }
+
   .tagline {
     font-size: 0.80rem;
     white-space: normal;
-    text-align: center;
   }
+
+  .hamburger-btn {
+    display: flex;
+  }
+
   .nav-links {
+    display: none;
     width: 100%;
-    justify-content: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    margin-top: 8px;
   }
-  .nav-links a {
+
+  .nav-links--open {
+    display: flex;
+  }
+
+  .nav-links a,
+  .nav-links span {
     font-size: 0.95rem;
   }
+
   .btn-secondary {
     padding: 8px 18px;
   }
+
   main {
-    padding: 170px 16px 32px;
+    padding: 80px 16px 32px;
     gap: 28px;
   }
 

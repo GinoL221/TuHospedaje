@@ -1,6 +1,6 @@
 package com.tuhospedaje.service;
 
-import com.tuhospedaje.dto.CategoryDTO;
+import com.tuhospedaje.dto.category.CategoryDTO;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 
 import java.util.List;

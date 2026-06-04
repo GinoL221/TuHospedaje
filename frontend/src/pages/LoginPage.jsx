@@ -14,6 +14,7 @@ export default function LoginPage() {
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -50,10 +51,13 @@ export default function LoginPage() {
     if (Object.keys(errors).length > 0) return;
 
     try {
+      setLoading(true);
       await login(form.email, form.password);
       navigate("/");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,7 +91,9 @@ export default function LoginPage() {
             <p className="field-error">{fieldErrors.password}</p>
           )}
 
-          <button type="submit">Iniciar sesión</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+          </button>
         </form>
         <p>
           ¿No tenés cuenta? <Link to="/register">Crear cuenta</Link>

@@ -1,0 +1,31 @@
+import {
+  Wifi,
+  Car,
+  ThermometerSnowflake,
+  UtensilsCrossed,
+  Waves,
+  PawPrint,
+  Tv,
+  CookingPot,
+  Clock,
+  Ban,
+  CigaretteOff,
+  Gift,
+  PartyPopper,
+} from "lucide-react";
+
+export const ICON_MAP = {
+  wifi: Wifi,
+  car: Car,
+  "thermometer-snowflake": ThermometerSnowflake,
+  utensils: UtensilsCrossed,
+  water: Waves,
+  "paw-print": PawPrint,
+  tv: Tv,
+  "kitchen-set": CookingPot,
+  clock: Clock,
+  ban: Ban,
+  "smoking-ban": CigaretteOff,
+  gift: Gift,
+  "party-popper": PartyPopper,
+};

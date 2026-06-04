@@ -1,10 +1,9 @@
 package com.tuhospedaje.controller;
 
-import com.tuhospedaje.dto.LodgingDTO;
-import com.tuhospedaje.entity.Lodging;
-import com.tuhospedaje.entity.LodgingImage;
-import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.service.LodgingService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,8 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/lodgings")
@@ -75,15 +75,35 @@ public class LodgingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<LodgingDTO>> search(@RequestParam String query) {
-        return ResponseEntity.ok(lodgingService.findByName(query));
-    }
-
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> delete(@PathVariable Long id) {
         lodgingService.delete(id);
         return ResponseEntity.ok("Alojamiento eliminado con ID: " + id);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<LodgingDTO>> search(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(required = false) Integer guests,
+            @RequestParam(required = false) Long category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+        return ResponseEntity.ok(lodgingService.search(city, checkIn, checkOut, guests, category, minPrice, maxPrice));
+    }
+
+    @GetMapping("/cities")
+    public ResponseEntity<List<String>> cities(@RequestParam(required = false) String q) {
+        return ResponseEntity.ok(lodgingService.findCities(q));
+    }
+
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<AvailabilityResponse> availability(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+        return ResponseEntity.ok(lodgingService.checkAvailability(id, checkIn, checkOut));
     }
 }

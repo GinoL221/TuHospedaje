@@ -10,6 +10,7 @@ export default function AdminCategories() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const resetForm = () => setForm({ name: "", description: "" });
   const cancel = useConfirmCancel(form.name || form.description, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
@@ -78,23 +79,26 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (id, name) => {
-    if (window.confirm(`¿Eliminar categoría "${name}"?`)) {
-      try {
-        await del(`/categories/${id}`);
-        refresh();
-      } catch (err) {
-        alert(err.message);
-      }
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await del(`/categories/${deleteConfirm.id}`);
+      setDeleteConfirm(null);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+      setDeleteConfirm(null);
     }
   };
 
   return (
     <>
-      <div className="admin-toolbar">
-        <button className="btn-add" onClick={() => openModal(null)}>
-          + Agregar categoría
-        </button>
-      </div>
+      <button className="btn-fab" onClick={() => openModal(null)}>
+        + Agregar categoría
+      </button>
       {catList.length === 0 ? (
         <p className="empty-state">
           No hay categorías cargadas todavía. ¡Creá la primera!
@@ -175,6 +179,13 @@ export default function AdminCategories() {
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
+      />
+
+      <ConfirmDialog
+        show={deleteConfirm !== null}
+        message={deleteConfirm ? `¿Eliminar la categoría "${deleteConfirm.name}"? Los alojamientos asociados quedarán sin categoría.` : ""}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
       />
     </>
   );

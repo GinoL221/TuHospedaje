@@ -1,6 +1,6 @@
 package com.tuhospedaje.controller;
 
-import com.tuhospedaje.dto.UserDTO;
+import com.tuhospedaje.dto.user.UserDTO;
 import com.tuhospedaje.dto.auth.RoleRequest;
 import com.tuhospedaje.service.UserService;
 import org.springframework.http.ResponseEntity;
