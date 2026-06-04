@@ -32,5 +32,8 @@ TuHospedaje.postman_collection.json
 # AI assistant config (local, not part of the project)
 AGENTS.md
 
+# OpenSpec (discontinued — using Engram instead)
+openspec/
+
 # OpenSpec / Atlassian local artifacts
 .atl/

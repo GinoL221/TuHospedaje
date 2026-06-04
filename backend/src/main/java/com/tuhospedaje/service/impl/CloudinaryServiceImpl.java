@@ -18,6 +18,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public UploadResult uploadImage(MultipartFile file) {
         try {
             Map raw = cloudinary.uploader().upload(file.getBytes(), Map.of());

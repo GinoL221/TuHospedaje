@@ -19,20 +19,20 @@
   margin-bottom: 20px;
 }
 .search-card form {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
   gap: 15px;
-  justify-content: center;
+  align-items: stretch;
 }
 .search-card input {
   padding: 12px;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
-  min-width: 160px;
-  flex: 1 1 180px;
   background-color: var(--bg);
   color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
 }
 .btn-search {
   background-color: var(--accent);
@@ -73,6 +73,11 @@
 .city-suggestions li:hover {
   background-color: var(--accent);
   color: var(--bg);
+}
+.city-suggestions-loading,
+.city-suggestions-empty {
+  cursor: default;
+  opacity: 0.6;
 }
 .search-error {
   color: var(--primary);
@@ -153,17 +158,11 @@
   }
 
   .search-card form {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
-  .search-card input,
   .btn-search {
-    flex: 1 1 100%;
-    display: block;
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
   }
 
   .recommendations {

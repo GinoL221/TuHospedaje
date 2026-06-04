@@ -154,11 +154,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldSearchLodgingsByName() throws Exception {
+    void shouldSearchLodgingsByCity() throws Exception {
         createTestLodging("Hotel Boutique", "boutique@test.com");
 
         mockMvc.perform(get("/api/lodgings/search")
-                        .param("query", "Boutique"))
+                        .param("city", "Ciudad"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Hotel Boutique"));
     }

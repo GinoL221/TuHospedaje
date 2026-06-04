@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
+import Icon from "../../components/Icons/Icon";
+import IconPicker from "../../components/IconPicker/IconPicker";
 
 export default function AdminPolicies() {
   const [policyList, setPolicyList] = useState([]);
@@ -117,7 +119,9 @@ export default function AdminPolicies() {
                 <td>{p.id}</td>
                 <td>{p.name}</td>
                 <td>{p.description || "—"}</td>
-                <td><code>{p.icon}</code></td>
+                <td>
+                  <Icon name={p.icon} /> <code>{p.icon}</code>
+                </td>
                 <td>
                   <button className="btn-edit" onClick={() => openModal(p)}>
                     Editar
@@ -158,7 +162,7 @@ export default function AdminPolicies() {
               </label>
               <label className="required-dot">
                 Ícono
-                <input value={form.icon} className={fieldErrors.icon ? "input-error" : ""} onChange={(e) => { setForm({ ...form, icon: e.target.value }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-clock" />
+                <IconPicker value={form.icon} onChange={(val) => { setForm({ ...form, icon: val }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-clock" />
                 {fieldErrors.icon && <span className="field-error">{fieldErrors.icon}</span>}
               </label>
               {error && <p className="form-error">{error}</p>}

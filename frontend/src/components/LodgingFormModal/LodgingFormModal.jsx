@@ -3,6 +3,7 @@ import { post } from "../../services/api";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import ImageUpload from "../../components/ImageUpload/ImageUpload";
+import Icon from "../Icons/Icon";
 
 export default function LodgingFormModal({
   categories,
@@ -187,7 +188,7 @@ export default function LodgingFormModal({
                           });
                         }}
                       />
-                      {f.icon} {f.name}
+                      <Icon name={f.icon} /> {f.name}
                     </label>
                   ))}
                 </div>
@@ -213,7 +214,7 @@ export default function LodgingFormModal({
                           });
                         }}
                       />
-                      {p.icon} {p.name}
+                      <Icon name={p.icon} /> {p.name}
                     </label>
                   ))}
                 </div>

@@ -42,7 +42,7 @@ export default function FavoritesPage() {
         <div className="favorites-grid">
           {favorites.map((lodging) => (
             <div key={lodging.id} className="favorite-item">
-              <ProductCard lodging={lodging} />
+              <ProductCard lodging={lodging} showFavoriteButton={false} />
               <button
                 className="btn-remove-fav"
                 onClick={() => removeFavorite(lodging.id)}

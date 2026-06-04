@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
+import Icon from "../../components/Icons/Icon";
+import IconPicker from "../../components/IconPicker/IconPicker";
 
 export default function AdminFeatures() {
   const [featureList, setFeatureList] = useState([]);
@@ -116,7 +118,7 @@ export default function AdminFeatures() {
                 <td>{f.id}</td>
                 <td>{f.name}</td>
                 <td>
-                  <code>{f.icon}</code>
+                  <Icon name={f.icon} /> <code>{f.icon}</code>
                 </td>
                 <td>
                   <button className="btn-edit" onClick={() => openModal(f)}>
@@ -149,7 +151,7 @@ export default function AdminFeatures() {
               </label>
               <label className="required-dot">
                 Ícono
-                <input value={form.icon} className={fieldErrors.icon ? "input-error" : ""} onChange={(e) => { setForm({ ...form, icon: e.target.value }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-wifi" />
+                <IconPicker value={form.icon} onChange={(val) => { setForm({ ...form, icon: val }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-wifi" />
                 {fieldErrors.icon && <span className="field-error">{fieldErrors.icon}</span>}
               </label>
               {error && <p className="form-error">{error}</p>}

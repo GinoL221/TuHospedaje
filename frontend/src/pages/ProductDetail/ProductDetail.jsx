@@ -7,6 +7,8 @@ import DatePicker from "react-datepicker";
 import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ReservationModal from "../../components/Reservation/ReservationModal";
 import ShareModal from "../../components/ShareModal/ShareModal";
+import GalleryModal from "../../components/GalleryModal/GalleryModal";
+import Icon from "../../components/Icons/Icon";
 
 import "react-datepicker/dist/react-datepicker.css";
 import "./ProductDetail.css";
@@ -16,7 +18,8 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [lodging, setLodging] = useState(null);
-  const [showAllImages, setShowAllImages] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [showGallery, setShowGallery] = useState(false);
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [occupiedDates, setOccupiedDates] = useState([]);
@@ -84,46 +87,68 @@ export default function ProductDetail() {
 
       {images.length > 0 && (
         <div className="gallery-wrapper">
-          <div className="gallery">
-            <div className="gallery-main">
-              <img src={images[0]} alt={`${lodging.name} - 1`} loading="lazy" onError={(e) => { e.target.src = "https://placehold.co/800x600?text=Sin+imagen"; }} />
-            </div>
-            {images.length > 1 && (
-              <div className="gallery-grid">
-                {images.slice(1, 5).map((url, i) => (
-                  <img key={i} src={url} alt={`${lodging.name} - ${i + 2}`} loading="lazy" onError={(e) => { e.target.src = "https://placehold.co/400x300?text=Sin+imagen"; }} />
-                ))}
-              </div>
-            )}
-          </div>
-          {images.length > 5 && !showAllImages && (
+          <div className="gallery-main">
             <button
-              className="btn-show-more"
-              onClick={() => setShowAllImages(true)}
+              className="gallery-main-trigger"
+              onClick={() => setShowGallery(true)}
+              aria-label="Abrir galería"
             >
-              Ver más
+              <img
+                src={images[galleryIndex]}
+                alt={`${lodging.name} - ${galleryIndex + 1}`}
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = "https://placehold.co/800x600?text=Sin+imagen";
+                }}
+              />
             </button>
-          )}
-          {showAllImages && (
-            <>
-              <div className="gallery-all">
-                {images.slice(5).map((url, i) => (
-                  <img
-                    key={i + 5}
-                    src={url}
-                    alt={`${lodging.name} - ${i + 6}`}
-                    loading="lazy"
-                    onError={(e) => { e.target.src = "https://placehold.co/400x300?text=Sin+imagen"; }}
-                  />
+          </div>
+          {images.length > 1 && (
+            <div className="gallery-thumbs-col">
+              <button
+                className="gallery-thumbs-arrow"
+                onClick={() => setGalleryIndex((prev) => Math.max(0, prev - 1))}
+                disabled={galleryIndex === 0}
+                aria-label="Imagen anterior"
+              >
+                ▲
+              </button>
+              <div className="gallery-thumbs">
+                {images.map((url, i) => (
+                  <button
+                    key={i}
+                    className={`gallery-thumb ${galleryIndex === i ? "gallery-thumb--active" : ""}`}
+                    onClick={() => {
+                      setGalleryIndex(i);
+                      setShowGallery(true);
+                    }}
+                    aria-label={`Ver imagen ${i + 1}`}
+                  >
+                    <img
+                      src={url}
+                      alt={`${lodging.name} - ${i + 1}`}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://placehold.co/400x300?text=Sin+imagen";
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
               <button
-                className="btn-show-more"
-                onClick={() => setShowAllImages(false)}
+                className="gallery-thumbs-arrow"
+                onClick={() =>
+                  setGalleryIndex((prev) =>
+                    Math.min(images.length - 1, prev + 1),
+                  )
+                }
+                disabled={galleryIndex === images.length - 1}
+                aria-label="Imagen siguiente"
               >
-                Ver menos
+                ▼
               </button>
-            </>
+            </div>
           )}
         </div>
       )}
@@ -195,7 +220,7 @@ export default function ProductDetail() {
           <div className="features-grid">
             {lodging.features.map((f) => (
               <div key={f.id} className="feature-item">
-                <span className="feature-icon">{f.icon}</span>
+                <Icon name={f.icon} size={20} />
                 <span className="feature-name">{f.name}</span>
               </div>
             ))}
@@ -210,7 +235,7 @@ export default function ProductDetail() {
             {lodging.policies.map((p) => (
               <div key={p.id} className="policy-item">
                 <h3>
-                  {p.icon} {p.name}
+                  <Icon name={p.icon} size={18} /> {p.name}
                 </h3>
                 <p>{p.description}</p>
               </div>
@@ -237,6 +262,15 @@ export default function ProductDetail() {
             setShowModal(false);
             navigate("/");
           }}
+        />
+      )}
+
+      {showGallery && (
+        <GalleryModal
+          images={images}
+          currentIndex={galleryIndex}
+          onClose={() => setShowGallery(false)}
+          onNavigate={setGalleryIndex}
         />
       )}
     </main>

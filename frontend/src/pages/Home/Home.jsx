@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { get } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import "../../App.css";
 import "./Home.css";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [lodgings, setLodgings] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -15,7 +17,9 @@ export default function Home() {
   const [checkOut, setCheckOut] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
   const debounceRef = useRef();
 
   useEffect(() => {
@@ -35,17 +39,40 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (city.length < 2) return;
+    if (!user) {
+      setFavoriteIds(new Set());
+      return;
+    }
+    get("/favorites")
+      .then((data) => {
+        if (Array.isArray(data))
+          setFavoriteIds(new Set(data.map((l) => l.id)));
+      })
+      .catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
+    if (city.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setLoadingCities(false);
+      return;
+    }
 
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
+      setLoadingCities(true);
+      setShowSuggestions(true);
       get(`/lodgings/cities?q=${encodeURIComponent(city)}`)
         .then((data) => {
           setSuggestions(Array.isArray(data) ? data : []);
-          setShowSuggestions(true);
+          setLoadingCities(false);
         })
-        .catch(() => {});
-    }, 300);
+        .catch(() => {
+          setSuggestions([]);
+          setLoadingCities(false);
+        });
+    }, 200);
 
     return () => clearTimeout(debounceRef.current);
   }, [city]);
@@ -72,6 +99,7 @@ export default function Home() {
     if (value.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
+      setLoadingCities(false);
     }
   }
 
@@ -81,22 +109,28 @@ export default function Home() {
         <div className="search-card">
           <h2>Buscar hospedaje</h2>
           <form onSubmit={handleSearch}>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", width: "100%" }}>
               <input
                 type="text"
                 placeholder="Ciudad"
                 value={city}
                 onChange={(e) => handleCityChange(e.target.value)}
-                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
               />
-              {showSuggestions && suggestions.length > 0 && (
+              {showSuggestions && (
                 <ul className="city-suggestions">
-                  {suggestions.map((c) => (
-                    <li key={c} onMouseDown={() => { setCity(c); setShowSuggestions(false); }}>
-                      {c}
-                    </li>
-                  ))}
+                  {loadingCities ? (
+                    <li className="city-suggestions-loading">Buscando...</li>
+                  ) : suggestions.length === 0 ? (
+                    <li className="city-suggestions-empty">Sin resultados</li>
+                  ) : (
+                    suggestions.map((c) => (
+                      <li key={c} onMouseDown={() => { setCity(c); setShowSuggestions(false); }}>
+                        {c}
+                      </li>
+                    ))
+                  )}
                 </ul>
               )}
             </div>
@@ -150,7 +184,7 @@ export default function Home() {
         ) : (
           <div className="hotel-list">
             {lodgings.map((lodging) => (
-              <ProductCard key={lodging.id} lodging={lodging} />
+              <ProductCard key={lodging.id} lodging={lodging} defaultFavorite={favoriteIds.has(lodging.id)} />
             ))}
           </div>
         )}

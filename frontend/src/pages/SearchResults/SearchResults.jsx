@@ -1,16 +1,19 @@
 import { useState, useEffect, useTransition } from "react";
 import { useSearchParams } from "react-router-dom";
 import { get } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import "../../App.css";
 import "./SearchResults.css";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [results, setResults] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
 
   const city = searchParams.get("city") || "";
   const checkIn = searchParams.get("checkIn") || "";
@@ -42,6 +45,19 @@ export default function SearchResults() {
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setFavoriteIds(new Set());
+      return;
+    }
+    get("/favorites")
+      .then((data) => {
+        if (Array.isArray(data))
+          setFavoriteIds(new Set(data.map((l) => l.id)));
+      })
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -103,7 +119,7 @@ export default function SearchResults() {
         ) : (
           <div className="hotel-list">
             {results.map((lodging) => (
-              <ProductCard key={lodging.id} lodging={lodging} />
+              <ProductCard key={lodging.id} lodging={lodging} defaultFavorite={favoriteIds.has(lodging.id)} />
             ))}
           </div>
         )}
