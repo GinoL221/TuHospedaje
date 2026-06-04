@@ -30,12 +30,14 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 # BITÁCORA DE EJECUCIÓN Y CIERRE — SPRINT 3
 
-**Foco del Incremento:** Búsqueda y Disponibilidad — Búsqueda por ciudad y fechas, Calendario de disponibilidad, Favoritos, Políticas, Reseñas y Compartir en redes
-**Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / MariaDB / React 19 / Vite / SpringDoc OpenAPI
+**Foco del Incremento:** Búsqueda y Disponibilidad — Búsqueda por ciudad y fechas, Calendario de disponibilidad, Favoritos, Políticas, Galería de imágenes, Lucide Icons, Reseñas y Compartir en redes
+**Stack Tecnológico:** Java 21 / Spring Boot 3.5 / Spring Security 6 / MariaDB / React 19 / Vite / Lucide React / SpringDoc OpenAPI
 
 ## 1. Resumen del Incremento (Scope)
 
 El Sprint 3 se centró en dotar a la plataforma de funcionalidades de búsqueda avanzada, visualización de disponibilidad, gestión de favoritos, y contenido social. Se implementó un motor de búsqueda unificado con filtros dinámicos (ciudad, fechas, capacidad, precio, categoría) utilizando Specifications de Spring Data JPA, un sistema de reservas con control de concurrencia mediante optimistic locking, un calendario de disponibilidad visual, favoritos con toggle desde las cards del home, políticas de producto, reseñas con puntuación de estrellas, y la capacidad de compartir alojamientos en redes sociales. Adicionalmente, se incorporó documentación automática de la API mediante SpringDoc OpenAPI con Swagger UI.
+
+Como mejoras complementarias, se implementó una galería de imágenes con modal viewer (navegación por teclado, contador, miniaturas), migración completa del sistema de íconos de Font Awesome a Lucide SVGs con un selector visual (IconPicker) en el panel de administración, rediseño del panel admin con sidebar + topbar + dashboard de estadísticas, y un componente CategoryCard con íconos Lucide en la página principal. El frontend recibió un polish visual general con design tokens globales (Inter, --radius, --shadow), header responsive con hamburger menu, y corrección de bugs de CSS scope.
 
 ## 2. Arquitectura del Sistema e Integración
 
@@ -106,6 +108,12 @@ src/
 * **Búsqueda con Transición (React 19):** Se utilizó `useTransition` para evitar warnings de `setState` síncrono en efectos, siguiendo las recomendaciones de React 19.
 * **Calendario:** Se integró `react-datepicker` para la selección de fechas con fechas ocupadas deshabilitadas.
 * **Fallback Visual:** Todas las imágenes tienen `onError` para mostrar placeholder si falla la carga, y `loading="lazy"` para rendimiento.
+* **Galería con Modal Viewer:** Se reemplazó la grilla 50/50 por una imagen principal con miniaturas a la derecha. Al hacer click se abre un modal lightbox con navegación por flechas, teclado (`←`, `→`, `Esc`), contador (`N / M`) y cierre por overlay.
+* **Migración a Lucide:** Se reemplazaron las clases CSS de Font Awesome por componentes SVG de Lucide React, tree-shakeables y consistentes visualmente. Se creó `iconMap.js` con mapeo de keys semánticas (`wifi`, `car`, `pool`, etc.) y un componente `IconPicker` para la selección visual desde el panel admin.
+* **Favoritos Sincronizados:** Se agregó sincronización del estado de favoritos entre Home, SearchResults y ProductDetail mediante la prop `defaultFavorite` y un `useEffect` en `ProductCard`, eliminando la necesidad de recargar la página.
+* **Admin Rediseñado:** Se reemplazó el sistema de tabs horizontales por un shell dedicado con sidebar vertical oscuro, topbar naranja y dashboard de estadísticas con cards clickeables y tabla de últimos alojamientos. El Header/Footer públicos se ocultan automáticamente en la ruta `/admin`.
+* **CategoryCard:** Las categorías en el home dejaron de ser tags de texto plano y ahora son cards con ícono Lucide, nombre y descripción, con efecto hover y borde izquierdo decorativo.
+* **Route Guard:** Se implementó un componente `RequireAdmin` que redirige a `/login` si el usuario no está autenticado y a `/` si no tiene rol ADMIN.
 
 ## 3. Trazabilidad de Historias de Usuario (User Stories)
 
@@ -210,18 +218,23 @@ src/
 * **DTOs en Subcarpetas por Dominio:** Se reorganizó la estructura de `dto/` con subcarpetas por dominio (`lodging/`, `reservation/`, `auth/`, `category/`, `features/`, `user/`), mejorando la navegabilidad y escalabilidad.
 * **Secretos en Variables de Entorno:** Todos los secrets (JWT, Cloudinary, BD) se movieron a variables de entorno con `.env` local en `.gitignore`, y `.env.example` con placeholders para el repositorio.
 * **SpringDoc OpenAPI:** Se incorporó documentación automática de la API con Swagger UI en `/swagger-ui/index.html` y configuración personalizada con título y descripción del proyecto.
+* **Lucide sobre Font Awesome:** Se eligió Lucide React por ser tree-shakeable (sin dependencia externa de CDN), liviano, y con soporte nativo de SVG en React. Font Awesome renderizaba strings de clases CSS como texto visible en la UI.
+* **CSS Grid en Search Bar:** Se reemplazó `flex-wrap` por `display: grid` con `grid-template-columns: 1fr 1fr 1fr auto` para alinear los inputs de búsqueda, ya que los date inputs nativos tienen estilos que rompen la alineación en flex.
+* **Admin Shell con Posicionamiento Fijo:** El admin panel usa `position: fixed; inset: 0` para evitar desbordamientos causados por el layout de la página principal y el margin por defecto del `body`.
+* **CSS Scope en Vite:** Se corrigieron clases CSS genéricas (`.description`) que se filtraban a otras páginas, scopéandolas con el contenedor padre (`.product-detail .description`).
 
 ## 7. Testing
 
-* **120 tests backend:** Todos verdes. Incluyen unitarios (Mockito), integración (MockMvc + Testcontainers con MariaDB 10.11), y pruebas de mapeo de entidades.
-* **Cobertura:** CRUD de todas las nuevas entidades, búsqueda con filtros, solapamiento de fechas, seguridad de endpoints, y validación de DTOs.
-* **Frontend:** Sin test runner configurado. Validación manual (smoke tests).
+* **139 tests backend:** Todos verdes (JUnit 5 + Mockito + MockMvc + Testcontainers con MariaDB 10.11). Incluyen unitarios e integración para CRUD de entidades, búsqueda con filtros, solapamiento de fechas, seguridad de endpoints y validación de DTOs.
+* **Cobertura:** CRUD de todas las entidades, búsqueda con filtros, solapamiento de fechas, seguridad de endpoints, políticas, y validación de DTOs.
+* **Frontend:** Sin test runner configurado. `npm run build` exitoso con 0 errores. 
 
 ## 8. Limitaciones Conocidas y Deuda Técnica Controlada
 
 1. **Refresh Tokens:** El sistema carece de refresh tokens. El JWT expira a las 8 horas forzando reautenticación. Pendiente para futura iteración.
 2. **Precios por Temporada:** El precio por noche es fijo (`pricePerNight` en Lodging). No hay soporte para tarifas variables por temporada.
-3. **Subida de Imágenes:** La integración con Cloudinary está implementada pero la UI de subida en el panel admin no está conectada al frontend.
-4. **Filtro por Features en Búsqueda:** El endpoint `findAvailable` acepta `featureIds` pero el frontend de SearchResults no lo expone como filtro.
-5. **Notificaciones por Email:** Desactivadas en desarrollo (ConsoleEmailService en modo log). Requieren reactivar Mailtrap o configurar SMTP real para producción.
-6. **Frontend sin Tests Automatizados:** No hay test runner configurado en el frontend. Las validaciones son manuales.
+3. **Filtro por Features en Búsqueda:** El endpoint `findAvailable` acepta `featureIds` pero el frontend de SearchResults no lo expone como filtro.
+4. **Notificaciones por Email:** Desactivadas en desarrollo (ConsoleEmailService en modo log). Requieren reactivar Mailtrap o configurar SMTP real para producción.
+5. **Frontend sin Tests Automatizados:** No hay test runner configurado en el frontend. Las validaciones son manuales.
+6. **Gestión de Reservas en Admin:** El panel admin no incluye una vista de reservas para moderación (cancelar, confirmar). Depende del backend de Sprint 4.
+7. **Imágenes en Admin:** La subida de imágenes a Cloudinary desde el panel admin no está conectada a la UI de LodgingFormModal.

@@ -145,12 +145,78 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **2** | Click "Confirmar" en diálogo | Categoría eliminada, tabla refrescada | ✔ Pasa |
 | **3** | Click "Cancelar" en diálogo | Diálogo cerrado, categoría intacta | ✔ Pasa |
 
+### TC-30: Galería de imágenes con modal viewer (UI Manual)
+
+* **Historias de Usuario Asociadas:** Mejora complementaria
+* **Precondiciones:** ProductDetail con al menos 1 imagen
+* **Tipos de Verificación:** UI Manual
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | Click en imagen principal | Modal lightbox se abre con imagen completa | ✔ Pasa |
+| **2** | Click flecha derecha / tecla `→` | Avanza a la siguiente imagen | ✔ Pasa |
+| **3** | Click flecha izquierda / tecla `←` | Retrocede a la imagen anterior | ✔ Pasa |
+| **4** | Presionar tecla `Esc` / click overlay | Modal se cierra | ✔ Pasa |
+| **5** | Click en miniatura | Modal se abre desde esa imagen | ✔ Pasa |
+| **6** | Verificar contador | Muestra `N / M` correcto | ✔ Pasa |
+
+### TC-31: Íconos Lucide en features/policies (UI Manual)
+
+* **Historias de Usuario Asociadas:** Mejora complementaria
+* **Precondiciones:** Alojamiento con features y policies cargadas
+* **Tipos de Verificación:** UI Manual
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado | Estado |
+|------|----------------------------|---------------------|--------|
+| **1** | ProductDetail: features | SVGs Lucide visibles, no texto CSS | ✔ Pasa |
+| **2** | ProductDetail: policies | Ícono SVG + nombre | ✔ Pasa |
+| **3** | Admin → Features/Policies | Tabla muestra SVG + key | ✔ Pasa |
+| **4** | Admin → Crear con IconPicker | Grilla con búsqueda y preview funcional | ✔ Pasa |
+
+### TC-32: Admin rediseñado + route guard (UI Manual)
+
+* **Historias de Usuario Asociadas:** Mejora complementaria
+* **Precondiciones:** Usuario ADMIN autenticado
+* **Tipos de Verificación:** UI Manual
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado | Estado |
+|------|----------------------------|---------------------|--------|
+| **1** | Navegar a `/admin` | Sidebar + topbar + dashboard. Header público oculto | ✔ Pasa |
+| **2** | Click en stat card | Navega al tab correspondiente | ✔ Pasa |
+| **3** | `/admin` sin login | Redirige a `/login` | ✔ Pasa |
+| **4** | `/admin` como user normal | Redirige a `/` | ✔ Pasa |
+| **5** | FAB en admin tabs | Abre modal de creación | ✔ Pasa |
+
+### TC-33: Favoritos sincronizados (UI Manual)
+
+* **Historias de Usuario Asociadas:** US #24/#25
+* **Precondiciones:** Usuario logueado con al menos 1 favorito
+* **Tipos de Verificación:** UI Manual
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado | Estado |
+|------|----------------------------|---------------------|--------|
+| **1** | Home: corazones cargados | Favoritos existentes aparecen llenos | ✔ Pasa |
+| **2** | Click corazón (quitar) | Se vacía sin recargar | ✔ Pasa |
+| **3** | Click corazón (agregar) | Se llena sin recargar | ✔ Pasa |
+| **4** | SearchResults: mismo estado | Coincide con Home | ✔ Pasa |
+
+### TC-34: CategoryCard (UI Manual)
+
+* **Historias de Usuario Asociadas:** Mejora complementaria
+* **Precondiciones:** Categorías cargadas en BD
+* **Tipos de Verificación:** UI Manual
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado | Estado |
+|------|----------------------------|---------------------|--------|
+| **1** | Home: categorías | Cards con ícono + nombre + descripción | ✔ Pasa |
+| **2** | Click en CategoryCard | Filtra alojamientos por categoría | ✔ Pasa |
+
 ## 2. Resumen de Ejecución
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests Automatizados Backend (JUnit 5 + MockMvc) | 120 tests | ✔ Todos pasan |
-| Casos de Prueba Funcionales (Plan) | 40 escenarios | ✔ 40/40 verificados |
+| Tests Automatizados Backend (JUnit 5 + MockMvc) | 139 tests | ✔ Todos pasan |
+| Casos de Prueba Funcionales (Plan) | 56 escenarios | ✔ 56/56 verificados |
 
 ## 3. Cobertura por Historia de Usuario
 
@@ -163,6 +229,11 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | US #27 — Compartir | 3 TC | ✔ Manual |
 | US #28 — Reseñas | 6 TC | ✔ Automatizado + Manual |
 | US #29 — Eliminar categoría | 3 TC | ✔ Manual |
+| Galería (TC-30) | 6 TC | ✔ Manual |
+| Lucide Icons (TC-31) | 4 TC | ✔ Manual |
+| Admin rediseñado (TC-32) | 5 TC | ✔ Manual |
+| Favoritos sincronizados (TC-33) | 4 TC | ✔ Manual |
+| CategoryCard (TC-34) | 2 TC | ✔ Manual |
 
 ## 4. Herramientas Utilizadas
 
