@@ -96,11 +96,9 @@ export default function AdminCategories() {
 
   return (
     <>
-      <div className="admin-toolbar">
-        <button className="btn-add" onClick={() => openModal(null)}>
-          + Agregar categoría
-        </button>
-      </div>
+      <button className="btn-fab" onClick={() => openModal(null)}>
+        + Agregar categoría
+      </button>
       {catList.length === 0 ? (
         <p className="empty-state">
           No hay categorías cargadas todavía. ¡Creá la primera!

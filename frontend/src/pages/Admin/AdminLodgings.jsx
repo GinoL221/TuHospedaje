@@ -68,11 +68,9 @@ export default function AdminLodgings() {
 
   return (
     <>
-      <div className="admin-toolbar">
-        <button className="btn-add" onClick={() => setShowModal(true)}>
-          + Agregar alojamiento
-        </button>
-      </div>
+      <button className="btn-fab" onClick={() => setShowModal(true)}>
+        + Agregar alojamiento
+      </button>
       <LodgingsTable
         lodgings={lodgings}
         page={page}

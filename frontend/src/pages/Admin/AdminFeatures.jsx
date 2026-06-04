@@ -93,11 +93,9 @@ export default function AdminFeatures() {
 
   return (
     <>
-      <div className="admin-toolbar">
-        <button className="btn-add" onClick={() => openModal(null)}>
-          + Agregar característica
-        </button>
-      </div>
+      <button className="btn-fab" onClick={() => openModal(null)}>
+        + Agregar característica
+      </button>
       {featureList.length === 0 ? (
         <p className="empty-state">
           No hay características cargadas todavía. ¡Creá la primera!

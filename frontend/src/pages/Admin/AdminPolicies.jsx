@@ -93,11 +93,9 @@ export default function AdminPolicies() {
 
   return (
     <>
-      <div className="admin-toolbar">
-        <button className="btn-add" onClick={() => openModal(null)}>
-          + Agregar política
-        </button>
-      </div>
+      <button className="btn-fab" onClick={() => openModal(null)}>
+        + Agregar política
+      </button>
       {policyList.length === 0 ? (
         <p className="empty-state">
           No hay políticas cargadas todavía. ¡Creá la primera!

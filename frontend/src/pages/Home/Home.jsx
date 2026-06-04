@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
+import CategoryCard from "./CategoryCard";
 import "../../App.css";
 import "./Home.css";
 
@@ -148,17 +149,14 @@ export default function Home() {
         ) : (
           <div className="category-list">
             {categories.map((c) => (
-              <span
+              <CategoryCard
                 key={c.id}
-                className={
-                  "category-tag" + (selectedCategory === c.id ? " active" : "")
-                }
+                category={c}
+                isActive={selectedCategory === c.id}
                 onClick={() =>
                   setSelectedCategory(selectedCategory === c.id ? null : c.id)
                 }
-              >
-                {c.name}
-              </span>
+              />
             ))}
           </div>
         )}
