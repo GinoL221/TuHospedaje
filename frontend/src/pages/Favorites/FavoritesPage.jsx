@@ -7,6 +7,7 @@ import "./FavoritesPage.css";
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     get("/favorites")
@@ -14,7 +15,10 @@ export default function FavoritesPage() {
         setFavorites(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        setError(err.message || "No se pudieron cargar los favoritos.");
+        setLoading(false);
+      });
   }, []);
 
   async function removeFavorite(id) {
@@ -28,15 +32,17 @@ export default function FavoritesPage() {
 
   if (loading)
     return (
-      <main className="page-container">
-        <p>Cargando...</p>
+      <main className="page-container favorites-page">
+        <p className="empty-state">Cargando...</p>
       </main>
     );
 
   return (
-    <main className="page-container">
-      <h2>Mis favoritos</h2>
-      {favorites.length === 0 ? (
+    <main className="page-container favorites-page">
+      <h2 className="favorites-title">Mis favoritos</h2>
+      {error ? (
+        <p className="empty-state error">{error}</p>
+      ) : favorites.length === 0 ? (
         <p className="empty-state">No tenés favoritos guardados.</p>
       ) : (
         <div className="favorites-grid">

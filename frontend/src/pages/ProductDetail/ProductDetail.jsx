@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -74,8 +75,8 @@ export default function ProductDetail() {
     <main className="page-container product-detail">
       <div className="detail-header">
         <h1>{lodging.name}</h1>
-        <button className="back-arrow" onClick={() => navigate(-1)}>
-          ←
+        <button className="back-arrow" onClick={() => navigate(-1)} aria-label="Volver">
+          <ArrowLeft size={22} />
         </button>
         <button className="btn-share" onClick={() => setShowShare(true)}>
           Compartir
@@ -198,12 +199,16 @@ export default function ProductDetail() {
           )}
 
           {user ? (
-            <button className="btn-reserve" onClick={() => setShowModal(true)}>
+            <button
+              className="btn-reserve"
+              onClick={() => setShowModal(true)}
+              disabled={!checkIn || !checkOut}
+            >
               Reservar
             </button>
           ) : (
             <p className="login-prompt">
-              <a href="/login">Iniciá sesión</a> para reservar
+              <Link to="/login">Iniciá sesión</Link> para reservar
             </p>
           )}
         </section>

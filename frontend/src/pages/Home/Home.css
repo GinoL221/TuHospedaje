@@ -24,25 +24,39 @@
   gap: 15px;
   align-items: stretch;
 }
+.search-card form > div {
+  display: flex;
+  flex-direction: column;
+}
 .search-card input {
-  padding: 12px;
-  border: none;
-  border-radius: 6px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
+  font-family: inherit;
   background-color: var(--bg);
   color: var(--text);
   width: 100%;
   box-sizing: border-box;
 }
+.search-card form > div > input {
+  flex: 1;
+  height: 100%;
+}
 .btn-search {
   background-color: var(--accent);
   color: var(--bg);
   border: none;
-  padding: 12px 25px;
-  border-radius: 6px;
+  align-self: stretch;
+  padding: 0 25px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  transition: background-color var(--transition);
+  white-space: nowrap;
 }
 .btn-search:hover {
   background-color: #21867a;

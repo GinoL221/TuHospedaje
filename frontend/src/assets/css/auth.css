@@ -13,8 +13,8 @@
 .register-box {
   background-color: var(--bg);
   padding: 35px;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -55,19 +55,21 @@
   width: 100%;
   padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
   font-size: 1rem;
+  font-family: inherit;
   background-color: var(--bg);
   color: var(--text);
-  transition: border-color 0.3s ease;
+  transition: border-color var(--transition);
 }
 
 .login-box input:focus,
 .register-box input:focus {
-  border-color: var(--primary);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 .login-box input.input-error,
@@ -131,17 +133,25 @@
   color: var(--bg);
   padding: 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 1rem;
+  font-family: inherit;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: opacity var(--transition);
   margin-top: 4px;
 }
 
-.login-box button:hover,
-.register-box button:hover {
-  background-color: var(--accent);
+.login-box button:hover:not(:disabled),
+.register-box button:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.login-box button:disabled,
+.register-box button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .login-box p,
@@ -188,6 +198,29 @@
   text-align: left;
 }
 
+/* Password strength checklist */
+.pw-checks {
+  list-style: none;
+  margin: -8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pw-checks li {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.pw-check-ok {
+  color: #2e7d32;
+}
+
+.pw-check-fail {
+  color: #999;
+}
+
 /* Header Avatar */
 .avatar {
   width: 36px;
@@ -208,11 +241,12 @@
   border: 1px solid var(--bg);
   color: var(--bg);
   padding: 6px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 600;
+  font-family: inherit;
   font-size: 0.85rem;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
 }
 
 .btn-logout:hover {

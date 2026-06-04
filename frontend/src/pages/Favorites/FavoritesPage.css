@@ -1,24 +1,46 @@
+.favorites-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.favorites-title {
+  margin: 0;
+  color: var(--secondary);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
 .favorites-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
+
 .favorite-item {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
 .btn-remove-fav {
   background: none;
   border: 1px solid var(--primary);
   color: var(--primary);
   padding: 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s ease;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all var(--transition);
 }
+
 .btn-remove-fav:hover {
   background: var(--primary);
   color: var(--bg);
+}
+
+.empty-state.error {
+  color: var(--primary);
 }

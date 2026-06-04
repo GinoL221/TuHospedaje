@@ -17,6 +17,7 @@ export default function RegisterPage() {
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [pwChecks, setPwChecks] = useState({
     minLength: false,
     hasUpper: false,
@@ -73,6 +74,7 @@ export default function RegisterPage() {
     if (Object.keys(errors).length > 0) return;
 
     try {
+      setLoading(true);
       await register(form.firstName, form.lastName, form.email, form.password);
       navigate("/");
     } catch (err) {
@@ -81,6 +83,8 @@ export default function RegisterPage() {
       } else {
         setError(err.message);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,41 +129,35 @@ export default function RegisterPage() {
           )}
 
           <label>Contraseña</label>
-          {(() => {
-            const allPwOk = form.password && pwChecks.minLength && pwChecks.hasUpper && pwChecks.hasNumber;
-            return (
-              <>
-                <div className="input-wrap">
-                  <input
-                    name="password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    className={
-                      fieldErrors.password
-                        ? "input-error"
-                        : allPwOk
-                          ? "input-valid"
-                          : ""
-                    }
-                  />
-                  {form.password && !fieldErrors.password && (
-                    <span className={`input-check ${allPwOk ? "" : "check-fail"}`}>
-                      {allPwOk ? "✔" : "✘"}
-                    </span>
-                  )}
-                </div>
-                {form.password && !allPwOk && !fieldErrors.password && (
-                  <p className="field-hint">
-                    Debe tener al menos 6 caracteres, una mayúscula y un número
-                  </p>
-                )}
-                {fieldErrors.password && (
-                  <p className="field-error">{fieldErrors.password}</p>
-                )}
-              </>
-            );
-          })()}
+          <input
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            className={
+              fieldErrors.password
+                ? "input-error"
+                : form.password && pwChecks.minLength && pwChecks.hasUpper && pwChecks.hasNumber
+                  ? "input-valid"
+                  : ""
+            }
+          />
+          {form.password && (
+            <ul className="pw-checks">
+              <li className={pwChecks.minLength ? "pw-check-ok" : "pw-check-fail"}>
+                {pwChecks.minLength ? "✔" : "✘"} Al menos 6 caracteres
+              </li>
+              <li className={pwChecks.hasUpper ? "pw-check-ok" : "pw-check-fail"}>
+                {pwChecks.hasUpper ? "✔" : "✘"} Una letra mayúscula
+              </li>
+              <li className={pwChecks.hasNumber ? "pw-check-ok" : "pw-check-fail"}>
+                {pwChecks.hasNumber ? "✔" : "✘"} Un número
+              </li>
+            </ul>
+          )}
+          {fieldErrors.password && (
+            <p className="field-error">{fieldErrors.password}</p>
+          )}
 
           <label>Confirmar contraseña</label>
           <input
@@ -173,7 +171,9 @@ export default function RegisterPage() {
             <p className="field-error">{fieldErrors.confirmPassword}</p>
           )}
 
-          <button type="submit">Crear cuenta</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Creando cuenta..." : "Crear cuenta"}
+          </button>
         </form>
         <p>
           ¿Ya tenés cuenta? <Link to="/login">Iniciá sesión</Link>
