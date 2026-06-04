@@ -42,9 +42,9 @@ npm run dev
 
 ## Documentación
 
-- `markdown/sprint-1/` — reporte y test plan del Sprint 1
-- `markdown/sprint-2/` — reporte, test plan y modelo de datos del Sprint 2
-- `markdown/sprint-3/` — reporte y test plan del Sprint 3
+- `markdown/sprint-1/` — reporte, test plan y PDFs del Sprint 1
+- `markdown/sprint-2/` — reporte, test plan, modelo de datos y PDFs del Sprint 2
+- `markdown/sprint-3/` — reporte, test plan y PDFs del Sprint 3
 
 ## Licencia
 
