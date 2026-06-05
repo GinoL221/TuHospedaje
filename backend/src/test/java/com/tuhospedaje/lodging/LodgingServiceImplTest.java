@@ -6,6 +6,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class LodgingServiceImplTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private RatingRepository ratingRepository;
 
     @InjectMocks
     private LodgingServiceImpl lodgingService;

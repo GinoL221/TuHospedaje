@@ -1,64 +1,63 @@
 import { useState } from "react";
-import { post } from "../../services/api";
+import { post, put } from "../../services/api";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import ImageUpload from "../../components/ImageUpload/ImageUpload";
 import Icon from "../Icons/Icon";
 
 export default function LodgingFormModal({
+  lodging,
   categories,
   features,
   policies,
   onSaved,
   onClose,
 }) {
+  const isEdit = Boolean(lodging?.id);
+
   const [form, setForm] = useState({
-    name: "",
-    description: "",
-    address: "",
-    city: "",
-    country: "",
-    phoneNumber: "",
-    email: "",
-    categoryId: "",
-    featureIds: [],
-    policyIds: [],
-    imageUrls: [],
+    name: lodging?.name ?? "",
+    description: lodging?.description ?? "",
+    address: lodging?.address ?? "",
+    city: lodging?.city ?? "",
+    country: lodging?.country ?? "",
+    phoneNumber: lodging?.phoneNumber ?? "",
+    email: lodging?.email ?? "",
+    categoryId: lodging?.categoryId ?? "",
+    featureIds: lodging?.features?.map((f) => f.id) ?? [],
+    policyIds: lodging?.policies?.map((p) => p.id) ?? [],
+    imageUrls: lodging?.imageUrls ?? [],
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const hasChanges =
-    form.name ||
-    form.description ||
-    form.address ||
-    form.city ||
-    form.country ||
-    form.phoneNumber ||
-    form.email ||
-    form.categoryId ||
-    form.featureIds.length > 0 ||
-    form.policyIds.length > 0 ||
-    form.imageUrls.length > 0;
+  const hasChanges = isEdit
+    ? form.name !== (lodging.name ?? "") ||
+      form.description !== (lodging.description ?? "") ||
+      form.address !== (lodging.address ?? "") ||
+      form.city !== (lodging.city ?? "") ||
+      form.country !== (lodging.country ?? "") ||
+      form.phoneNumber !== (lodging.phoneNumber ?? "") ||
+      form.email !== (lodging.email ?? "") ||
+      String(form.categoryId) !== String(lodging.categoryId ?? "")
+    : Boolean(
+        form.name ||
+        form.description ||
+        form.address ||
+        form.city ||
+        form.country ||
+        form.phoneNumber ||
+        form.email ||
+        form.categoryId ||
+        form.featureIds.length > 0 ||
+        form.policyIds.length > 0 ||
+        form.imageUrls.length > 0,
+      );
 
   const cancel = useConfirmCancel(hasChanges, () => {
     setFieldErrors({});
-    setForm({
-      name: "",
-      description: "",
-      address: "",
-      city: "",
-      country: "",
-      phoneNumber: "",
-      email: "",
-      categoryId: "",
-      featureIds: [],
-      policyIds: [],
-      imageUrls: [],
-    });
     onClose();
   });
-
 
   const validate = () => {
     const errs = {};
@@ -85,7 +84,7 @@ export default function LodgingFormModal({
       setTimeout(() => document.querySelector(".input-error")?.focus(), 100);
       return;
     }
-    post("/lodgings", {
+    const payload = {
       name: form.name,
       description: form.description,
       address: form.address,
@@ -97,7 +96,13 @@ export default function LodgingFormModal({
       featureIds: form.featureIds,
       imageUrls: form.imageUrls || [],
       policyIds: form.policyIds || [],
-    })
+    };
+
+    const request = isEdit
+      ? put(`/lodgings/${lodging.id}`, payload)
+      : post("/lodgings", payload);
+
+    request
       .then(() => {
         onSaved();
         onClose();
@@ -129,7 +134,7 @@ export default function LodgingFormModal({
     <>
       <div className="modal-overlay" onClick={cancel.handleCancel}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <h2>Nuevo alojamiento</h2>
+          <h2>{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}</h2>
           <form onSubmit={handleSubmit} noValidate>
             <div className="modal-form-grid">
               {inputField("name", true)}
@@ -219,12 +224,15 @@ export default function LodgingFormModal({
                   ))}
                 </div>
               </div>
-              <ImageUpload urls={form.imageUrls} onUrlsChange={(urls) => setForm({ ...form, imageUrls: urls })} />
+              <ImageUpload
+                urls={form.imageUrls}
+                onUrlsChange={(urls) => setForm({ ...form, imageUrls: urls })}
+              />
               {error && <p className="form-error full-width">{error}</p>}
               <p className="required-note full-width">* Campos obligatorios</p>
               <div className="modal-actions full-width">
                 <button type="submit" className="btn-save">
-                  Guardar
+                  {isEdit ? "Guardar cambios" : "Guardar"}
                 </button>
                 <button
                   type="button"

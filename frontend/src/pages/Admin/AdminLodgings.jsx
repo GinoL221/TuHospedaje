@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { get, del } from "../../services/api";
 import LodgingFormModal from "../../components/LodgingFormModal/LodgingFormModal";
 import LodgingsTable from "../../components/LodgingsTable/LodgingsTable";
@@ -11,9 +11,10 @@ export default function AdminLodgings() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [editingLodging, setEditingLodging] = useState(null);
   const size = 10;
 
-  const fetchLodgings = () => {
+  const fetchLodgings = useCallback(() => {
     get(`/lodgings?page=${page}&size=${size}`)
       .then((data) => {
         if (Array.isArray(data)) {
@@ -25,7 +26,7 @@ export default function AdminLodgings() {
         setTotalPages(data.totalPages || 0);
       })
       .catch(console.error);
-  };
+  }, [page, size]);
 
   const fetchData = (url, setter) => {
     get(url)
@@ -35,7 +36,7 @@ export default function AdminLodgings() {
 
   useEffect(() => {
     fetchLodgings();
-  }, [page, size]);
+  }, [fetchLodgings]);
   useEffect(() => {
     fetchData("/categories", setCategories);
   }, []);
@@ -66,6 +67,16 @@ export default function AdminLodgings() {
     }
   };
 
+  const handleEdit = (lodging) => {
+    setEditingLodging(lodging);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingLodging(null);
+  };
+
   return (
     <>
       <button className="btn-fab" onClick={() => setShowModal(true)}>
@@ -76,10 +87,12 @@ export default function AdminLodgings() {
         page={page}
         totalPages={totalPages}
         onDelete={handleDelete}
+        onEdit={handleEdit}
         onPageChange={setPage}
       />
       {showModal && (
         <LodgingFormModal
+          lodging={editingLodging}
           categories={categories}
           features={features}
           policies={policies}
@@ -87,7 +100,7 @@ export default function AdminLodgings() {
             setPage(0);
             fetchLodgings();
           }}
-          onClose={() => setShowModal(false)}
+          onClose={handleCloseModal}
         />
       )}
     </>
