@@ -4,9 +4,11 @@ import com.tuhospedaje.dto.rating.RatingDTO;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.RatingService;
 import org.springframework.stereotype.Service;
 
@@ -18,14 +20,22 @@ public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
     private final LodgingRepository lodgingRepository;
+    private final ReservationRepository reservationRepository;
 
-    public RatingServiceImpl(RatingRepository ratingRepository, LodgingRepository lodgingRepository) {
+    public RatingServiceImpl(RatingRepository ratingRepository, LodgingRepository lodgingRepository,
+                             ReservationRepository reservationRepository) {
         this.ratingRepository = ratingRepository;
         this.lodgingRepository = lodgingRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     @Override
     public RatingDTO createRating(User user, Long lodgingId, Integer score, String comment) {
+        if (!reservationRepository.existsByUserIdAndLodgingIdAndStatus(
+                user.getId(), lodgingId, ReservationStatus.CONFIRMED)) {
+            throw new IllegalArgumentException("Solo los huéspedes con reserva confirmada pueden puntuar este alojamiento");
+        }
+
         Lodging lodging = lodgingRepository.findById(lodgingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado"));
 

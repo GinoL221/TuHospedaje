@@ -15,10 +15,13 @@ public class CategoryDTO {
 
     private String description;
 
+    private String imageUrl;
+
     public Category toEntity() {
         Category category = new Category();
         category.setName(this.name);
         category.setDescription(this.description);
+        category.setImageUrl(this.imageUrl);
         return category;
     }
 
@@ -27,6 +30,7 @@ public class CategoryDTO {
         dto.setId(category.getId());
         dto.setName(category.getName());
         dto.setDescription(category.getDescription());
+        dto.setImageUrl(category.getImageUrl());
         return dto;
     }
 }

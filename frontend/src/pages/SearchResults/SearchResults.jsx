@@ -1,16 +1,19 @@
 import { useState, useEffect, useTransition } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
+import CategoryCard from "../Home/CategoryCard";
 import "../../App.css";
 import "./SearchResults.css";
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [results, setResults] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [favoriteIds, setFavoriteIds] = useState(new Set());
@@ -19,7 +22,7 @@ export default function SearchResults() {
   const checkIn = searchParams.get("checkIn") || "";
   const checkOut = searchParams.get("checkOut") || "";
 
-  const [filterCategory, setFilterCategory] = useState("");
+  const [filterCategories, setFilterCategories] = useState(new Set());
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [, startTransition] = useTransition();
@@ -47,6 +50,12 @@ export default function SearchResults() {
   }, []);
 
   useEffect(() => {
+    get("/lodgings/random")
+      .then((data) => setRecommendations(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       setFavoriteIds(new Set());
       return;
@@ -68,16 +77,55 @@ export default function SearchResults() {
     searchLodgings(params);
   }, [city, checkIn, checkOut]);
 
+  function toggleCategory(id) {
+    setFilterCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function clearFilters() {
+    setFilterCategories(new Set());
+    setMinPrice("");
+    setMaxPrice("");
+    const params = new URLSearchParams();
+    if (city) params.set("city", city);
+    if (checkIn) params.set("checkIn", checkIn);
+    if (checkOut) params.set("checkOut", checkOut);
+    searchLodgings(params);
+  }
+
   function handleFilter() {
     const params = new URLSearchParams();
     if (city) params.set("city", city);
     if (checkIn) params.set("checkIn", checkIn);
     if (checkOut) params.set("checkOut", checkOut);
-    if (filterCategory) params.set("category", filterCategory);
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
 
-    searchLodgings(params);
+    if (filterCategories.size === 0) {
+      searchLodgings(params);
+    } else if (filterCategories.size === 1) {
+      params.set("category", [...filterCategories][0]);
+      searchLodgings(params);
+    } else {
+      // Multi-category: fetch all without category filter, then filter client-side
+      get(`/lodgings/search?${params.toString()}`)
+        .then((data) => {
+          const all = Array.isArray(data) ? data : [];
+          setResults(all.filter((l) => filterCategories.has(l.categoryId)));
+          setLoading(false);
+        })
+        .catch((err) => {
+          setError(err.message);
+          setLoading(false);
+        });
+    }
   }
 
   return (
@@ -85,13 +133,19 @@ export default function SearchResults() {
       <aside className="search-filters">
         <h3>Filtros</h3>
 
-        <label>Categoría</label>
-        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-          <option value="">Todas</option>
+        <label>Categorías</label>
+        <div className="filter-checkboxes">
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <label key={c.id} className="filter-checkbox-label">
+              <input
+                type="checkbox"
+                checked={filterCategories.has(c.id)}
+                onChange={() => toggleCategory(c.id)}
+              />
+              {c.name}
+            </label>
           ))}
-        </select>
+        </div>
 
         <label>Precio mínimo</label>
         <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="$" />
@@ -100,6 +154,7 @@ export default function SearchResults() {
         <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="$" />
 
         <button onClick={handleFilter} className="btn-filter">Aplicar filtros</button>
+        <button onClick={clearFilters} className="btn-clear">Limpiar filtros</button>
       </aside>
 
       <section className="search-results-list">
@@ -122,6 +177,37 @@ export default function SearchResults() {
               <ProductCard key={lodging.id} lodging={lodging} defaultFavorite={favoriteIds.has(lodging.id)} />
             ))}
           </div>
+        )}
+
+        {categories.length > 0 && (
+          <section className="categories" style={{ marginTop: "40px" }}>
+            <h2>Categorías</h2>
+            <div className="category-list">
+              {categories.map((c) => (
+                <CategoryCard
+                  key={c.id}
+                  category={c}
+                  isActive={false}
+                  onClick={() => navigate(`/search?city=${encodeURIComponent(city)}`)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {recommendations.length > 0 && (
+          <section className="recommendations" style={{ marginTop: "40px" }}>
+            <h2>Te puede interesar</h2>
+            <div className="hotel-list">
+              {recommendations.map((lodging) => (
+                <ProductCard
+                  key={lodging.id}
+                  lodging={lodging}
+                  defaultFavorite={favoriteIds.has(lodging.id)}
+                />
+              ))}
+            </div>
+          </section>
         )}
       </section>
     </main>

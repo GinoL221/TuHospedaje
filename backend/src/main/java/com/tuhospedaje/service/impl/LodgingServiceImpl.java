@@ -2,6 +2,7 @@ package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
+import com.tuhospedaje.dto.reservation.OccupiedRange;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
@@ -13,6 +14,7 @@ import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
+import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingService;
 import org.springframework.data.domain.Page;
@@ -43,13 +45,25 @@ public class LodgingServiceImpl implements LodgingService {
     private final FeatureRepository featureRepository;
     private final ReservationRepository reservationRepository;
     private final PolicyRepository policyRepository;
+    private final RatingRepository ratingRepository;
 
-    public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository, FeatureRepository featureRepository, ReservationRepository reservationRepository, PolicyRepository policyRepository) {
+    public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository,
+                              FeatureRepository featureRepository, ReservationRepository reservationRepository,
+                              PolicyRepository policyRepository, RatingRepository ratingRepository) {
         this.lodgingRepository = lodgingRepository;
         this.categoryRepository = categoryRepository;
         this.featureRepository = featureRepository;
         this.reservationRepository = reservationRepository;
         this.policyRepository = policyRepository;
+        this.ratingRepository = ratingRepository;
+    }
+
+    private LodgingDTO enrichWithRatings(LodgingDTO dto) {
+        int count = ratingRepository.countByLodgingId(dto.getId());
+        Double avg = ratingRepository.findAverageScoreByLodgingId(dto.getId());
+        dto.setRatingCount(count);
+        dto.setAverageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0);
+        return dto;
     }
 
     private Category resolveCategory(Long categoryId) {
@@ -84,7 +98,7 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
 
         Lodging saved = lodgingRepository.save(lodging);
-        return LodgingDTO.fromEntity(saved);
+        return enrichWithRatings(LodgingDTO.fromEntity(saved));
     }
 
     @Override
@@ -108,7 +122,7 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
 
         Lodging updated = lodgingRepository.save(lodging);
-        return LodgingDTO.fromEntity(updated);
+        return enrichWithRatings(LodgingDTO.fromEntity(updated));
     }
 
     @Override
@@ -123,20 +137,20 @@ public class LodgingServiceImpl implements LodgingService {
     public List<LodgingDTO> findAll() {
         return lodgingRepository.findAll()
                 .stream()
-                .map(LodgingDTO::fromEntity)
+                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
                 .toList();
     }
 
     @Override
     public Optional<LodgingDTO> findById(Long id) {
-        return lodgingRepository.findById(id).map(LodgingDTO::fromEntity);
+        return lodgingRepository.findById(id).map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)));
     }
 
     @Override
     public List<LodgingDTO> findByName(String name) {
         return lodgingRepository.findByNameContainingIgnoreCase(name)
                 .stream()
-                .map(LodgingDTO::fromEntity)
+                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
                 .toList();
     }
 
@@ -144,7 +158,7 @@ public class LodgingServiceImpl implements LodgingService {
     public List<LodgingDTO> findByCategory(Long categoryId) {
         return lodgingRepository.findByCategoryId(categoryId)
                 .stream()
-                .map(LodgingDTO::fromEntity)
+                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
                 .toList();
     }
 
@@ -153,7 +167,7 @@ public class LodgingServiceImpl implements LodgingService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Lodging> lodgingPage = lodgingRepository.findAll(pageable);
         List<LodgingDTO> lodgings = lodgingPage.getContent().stream()
-                .map(LodgingDTO::fromEntity)
+                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
                 .toList();
         Map<String, Object> response = new HashMap<>();
         response.put("lodgings", lodgings);
@@ -174,7 +188,7 @@ public class LodgingServiceImpl implements LodgingService {
         Collections.shuffle(pool);
         return pool.stream()
                 .limit(RANDOM_RESULT_SIZE)
-                .map(LodgingDTO::fromEntity)
+                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
                 .toList();
     }
 
@@ -218,7 +232,7 @@ public class LodgingServiceImpl implements LodgingService {
         }
 
         return results.stream()
-                .map(LodgingDTO::fromEntity)
+                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
                 .toList();
     }
 
@@ -235,14 +249,24 @@ public class LodgingServiceImpl implements LodgingService {
 
     @Override
     public AvailabilityResponse checkAvailability(Long lodgingId, LocalDate checkIn, LocalDate checkOut) {
-        List<Reservation> overlapping = reservationRepository
-                .findByLodgingIdAndStatus(lodgingId, ReservationStatus.CONFIRMED)
-                .stream()
-                .filter(r -> r.getCheckIn().isBefore(checkOut) && r.getCheckOut().isAfter(checkIn))
+        List<Reservation> confirmed = reservationRepository
+                .findByLodgingIdAndStatus(lodgingId, ReservationStatus.CONFIRMED);
+
+        List<OccupiedRange> occupiedRanges = confirmed.stream()
+                .map(r -> {
+                    OccupiedRange range = new OccupiedRange();
+                    range.setCheckIn(r.getCheckIn());
+                    range.setCheckOut(r.getCheckOut());
+                    return range;
+                })
                 .toList();
 
+        boolean available = checkIn == null || checkOut == null || confirmed.stream()
+                .noneMatch(r -> r.getCheckIn().isBefore(checkOut) && r.getCheckOut().isAfter(checkIn));
+
         AvailabilityResponse response = new AvailabilityResponse();
-        response.setAvailable(overlapping.isEmpty());
+        response.setAvailable(available);
+        response.setOccupiedRanges(occupiedRanges);
         return response;
     }
 }

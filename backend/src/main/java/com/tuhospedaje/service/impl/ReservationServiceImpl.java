@@ -9,22 +9,26 @@ import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.service.EmailService;
 import com.tuhospedaje.service.ReservationService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final LodgingRepository lodgingRepository;
+    private final EmailService emailService;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  LodgingRepository lodgingRepository) {
+                                  LodgingRepository lodgingRepository, EmailService emailService) {
         this.reservationRepository = reservationRepository;
         this.lodgingRepository = lodgingRepository;
+        this.emailService = emailService;
     }
 
     @Override
@@ -52,11 +56,14 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setCheckOut(request.getCheckOut());
         reservation.setGuestName(request.getGuestName());
         reservation.setGuestEmail(request.getGuestEmail());
+        reservation.setGuestPhone(request.getGuestPhone());
         reservation.setTotalPrice(totalPrice);
         reservation.setStatus(ReservationStatus.CONFIRMED);
 
         Reservation saved = reservationRepository.save(reservation);
-        return ReservationResponse.fromEntity(saved);
+        ReservationResponse response = ReservationResponse.fromEntity(saved);
+        emailService.sendReservationConfirmation(response);
+        return response;
     }
 
     @Override
@@ -64,5 +71,13 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + id));
         return ReservationResponse.fromEntity(reservation);
+    }
+
+    @Override
+    public List<ReservationResponse> getMyReservations(User user) {
+        return reservationRepository.findByUserIdOrderByCheckInDesc(user.getId())
+                .stream()
+                .map(ReservationResponse::fromEntity)
+                .toList();
     }
 }

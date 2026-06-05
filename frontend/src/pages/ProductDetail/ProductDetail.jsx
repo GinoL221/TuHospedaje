@@ -6,7 +6,6 @@ import { useAuth } from "../../hooks/useAuth";
 
 import DatePicker from "react-datepicker";
 import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
-import ReservationModal from "../../components/Reservation/ReservationModal";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import GalleryModal from "../../components/GalleryModal/GalleryModal";
 import Icon from "../../components/Icons/Icon";
@@ -24,7 +23,6 @@ export default function ProductDetail() {
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [occupiedDates, setOccupiedDates] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   function formatDate(date) {
@@ -33,6 +31,16 @@ export default function ProductDetail() {
 
   useEffect(() => {
     get(`/lodgings/${id}`).then(setLodging).catch(console.error);
+  }, [id]);
+
+  useEffect(() => {
+    get(`/lodgings/${id}/availability`)
+      .then((data) => {
+        if (data?.occupiedRanges) {
+          setOccupiedDates(data.occupiedRanges);
+        }
+      })
+      .catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -75,7 +83,11 @@ export default function ProductDetail() {
     <main className="page-container product-detail">
       <div className="detail-header">
         <h1>{lodging.name}</h1>
-        <button className="back-arrow" onClick={() => navigate(-1)} aria-label="Volver">
+        <button
+          className="back-arrow"
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+        >
           <ArrowLeft size={22} />
         </button>
         <button className="btn-share" onClick={() => setShowShare(true)}>
@@ -201,7 +213,14 @@ export default function ProductDetail() {
           {user ? (
             <button
               className="btn-reserve"
-              onClick={() => setShowModal(true)}
+              onClick={() =>
+                navigate(`/booking/${id}`, {
+                  state: {
+                    checkIn,
+                    checkOut,
+                  },
+                })
+              }
               disabled={!checkIn || !checkOut}
             >
               Reservar
@@ -253,21 +272,6 @@ export default function ProductDetail() {
 
       {showShare && (
         <ShareModal lodging={lodging} onClose={() => setShowShare(false)} />
-      )}
-
-      {showModal && (
-        <ReservationModal
-          lodging={lodging}
-          checkIn={checkIn}
-          checkOut={checkOut}
-          nights={nights}
-          total={total}
-          onClose={() => setShowModal(false)}
-          onSuccess={() => {
-            setShowModal(false);
-            navigate("/");
-          }}
-        />
       )}
 
       {showGallery && (

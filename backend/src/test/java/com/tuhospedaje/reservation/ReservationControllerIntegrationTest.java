@@ -1,0 +1,202 @@
+package com.tuhospedaje.reservation;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuhospedaje.AbstractIntegrationTest;
+import com.tuhospedaje.configuration.JwtService;
+import com.tuhospedaje.dto.reservation.ReservationResponse;
+import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.EmailService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private LodgingRepository lodgingRepository;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @MockitoBean
+    private EmailService emailService;
+
+    private String userAuthHeader;
+
+    @BeforeEach
+    void setUp() {
+        reservationRepository.deleteAll();
+        lodgingRepository.deleteAll();
+        userRepository.deleteAll();
+
+        User user = User.builder()
+                .firstName("Juan")
+                .lastName("Perez")
+                .email("juan-reservas@test.com")
+                .password("123456")
+                .role(RoleEnum.USER)
+                .build();
+
+        User savedUser = userRepository.save(user);
+        userAuthHeader = "Bearer " + jwtService.generateToken(savedUser);
+    }
+
+    @Test
+    void shouldCreateReservationSuccessfullyAndSendConfirmationEmail() throws Exception {
+        Long lodgingId = createTestLodging();
+
+        LocalDate checkIn = LocalDate.now().plusDays(10);
+        LocalDate checkOut = LocalDate.now().plusDays(12);
+
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", checkIn.toString(),
+                "checkOut", checkOut.toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455"
+        );
+
+        mockMvc.perform(post("/api/reservations")
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.guestName").value("Juan Perez"))
+                .andExpect(jsonPath("$.guestEmail").value("juan-reservas@test.com"))
+                .andExpect(jsonPath("$.guestPhone").value("+5491122334455"));
+
+        verify(emailService, times(1)).sendReservationConfirmation(any(ReservationResponse.class));
+    }
+
+    @Test
+    void shouldReturnUserReservationsOrderedByCheckInDesc() throws Exception {
+        Long lodgingId = createTestLodging();
+
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+        createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
+
+        mockMvc.perform(get("/api/reservations/my")
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
+                .andExpect(jsonPath("$[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenCreatingReservationWithoutAuth() throws Exception {
+        Long lodgingId = createTestLodging();
+
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", LocalDate.now().plusDays(10).toString(),
+                "checkOut", LocalDate.now().plusDays(12).toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan@test.com",
+                "guestPhone", "+5491122334455"
+        );
+
+        mockMvc.perform(post("/api/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenGettingHistoryWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/reservations/my"))
+                .andExpect(status().isForbidden());
+    }
+
+    private Long createTestLodging() {
+        Lodging lodging = new Lodging();
+        lodging.setName("Hotel Test");
+        lodging.setDescription("Descripcion");
+        lodging.setAddress("Calle 123");
+        lodging.setCity("Ciudad");
+        lodging.setCountry("Pais");
+        lodging.setPhoneNumber("123456789");
+        lodging.setEmail("hotel-test@test.com");
+        lodging.setPricePerNight(new BigDecimal("100.00"));
+        lodging.setMaxGuests(4);
+
+        return lodgingRepository.save(lodging).getId();
+    }
+
+    private void createReservation(Long lodgingId, LocalDate checkIn, LocalDate checkOut) throws Exception {
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", checkIn.toString(),
+                "checkOut", checkOut.toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455"
+        );
+
+        mockMvc.perform(post("/api/reservations")
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenLodgingIsNotAvailable() throws Exception {
+        Long lodgingId = createTestLodging();
+
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", LocalDate.now().plusDays(11).toString(),
+                "checkOut", LocalDate.now().plusDays(13).toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455"
+        );
+
+        mockMvc.perform(post("/api/reservations")
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+}

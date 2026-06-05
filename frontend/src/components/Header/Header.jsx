@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+
 import logo from "../../assets/images/TuHospedaje_Isologotipo.png";
 
 export default function Header() {
@@ -33,12 +34,19 @@ export default function Header() {
           {user ? (
             <>
               <img
-                src={user.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`}
+                src={
+                  user.imageUrl ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`
+                }
                 alt={user.firstName}
                 className="avatar"
                 onClick={goToAdmin}
-                style={{ cursor: user?.role === "ADMIN" ? "pointer" : "default" }}
-                title={user?.role === "ADMIN" ? "Ir al panel de administración" : ""}
+                style={{
+                  cursor: user?.role === "ADMIN" ? "pointer" : "default",
+                }}
+                title={
+                  user?.role === "ADMIN" ? "Ir al panel de administración" : ""
+                }
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`;
@@ -46,20 +54,49 @@ export default function Header() {
               />
               <span
                 onClick={goToAdmin}
-                style={{ cursor: user?.role === "ADMIN" ? "pointer" : "default" }}
-                title={user?.role === "ADMIN" ? "Ir al panel de administración" : ""}
+                style={{
+                  cursor: user?.role === "ADMIN" ? "pointer" : "default",
+                }}
+                title={
+                  user?.role === "ADMIN" ? "Ir al panel de administración" : ""
+                }
               >
                 {user.firstName}
               </span>
-              <Link to="/favorites" className="nav-link" onClick={() => setMenuOpen(false)}>Favoritos</Link>
-              <button onClick={() => { logout(); setMenuOpen(false); }} className="btn-logout">
+              <Link
+                to="/favorites"
+                className="nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
+                Favoritos
+              </Link>
+              <Link
+                to="/my-reservations"
+                className="nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
+                Mis reservas
+              </Link>
+              <button
+                onClick={() => {
+                  logout();
+                  setMenuOpen(false);
+                }}
+                className="btn-logout"
+              >
                 Cerrar sesión
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" onClick={() => setMenuOpen(false)}>Iniciar sesión</Link>
-              <Link to="/register" className="btn-secondary" onClick={() => setMenuOpen(false)}>
+              <Link to="/login" onClick={() => setMenuOpen(false)}>
+                Iniciar sesión
+              </Link>
+              <Link
+                to="/register"
+                className="btn-secondary"
+                onClick={() => setMenuOpen(false)}
+              >
                 Crear cuenta
               </Link>
             </>

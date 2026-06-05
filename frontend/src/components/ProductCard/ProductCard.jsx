@@ -66,6 +66,12 @@ export default function ProductCard({ lodging, defaultFavorite = false, showFavo
             {lodging.city}, {lodging.country}
           </p>
           <p className="description">{lodging.description}</p>
+          {lodging.averageRating > 0 && (
+            <p className="card-rating">
+              ⭐ {lodging.averageRating.toFixed(1)}{" "}
+              <span className="rating-count">({lodging.ratingCount})</span>
+            </p>
+          )}
         </div>
       </article>
     </Link>

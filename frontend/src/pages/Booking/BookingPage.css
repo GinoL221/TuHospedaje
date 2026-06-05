@@ -1,0 +1,111 @@
+.booking-page {
+  padding: 32px 24px;
+}
+
+.booking-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .booking-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.booking-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.booking-image {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-top: 8px;
+}
+
+.booking-description {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.booking-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.booking-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  background: var(--bg);
+  border: 1px solid #ddd;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  color: var(--text);
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.booking-form label {
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-top: 4px;
+}
+
+.booking-form input,
+.booking-form .react-datepicker-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.booking-form input {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.booking-form input[readonly] {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.booking-form button[type="submit"] {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.booking-form button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #c0392b;
+  font-size: 0.88rem;
+}
