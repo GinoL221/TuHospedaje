@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Building2,
@@ -7,6 +8,7 @@ import {
   ShieldCheck,
   Users,
   LogOut,
+  Home,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import AdminDashboard from "./AdminDashboard";
@@ -28,6 +30,7 @@ const NAV_ITEMS = [
 
 export default function Admin() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("dashboard");
   const [isMobile, setIsMobile] = useState(false);
 
@@ -75,6 +78,10 @@ export default function Admin() {
         <div className="admin-topbar">
           <span className="admin-topbar-title">Panel de Administración</span>
           <div className="admin-topbar-user">
+            <button className="admin-btn-logout" onClick={() => navigate("/")}>
+              <Home size={16} />
+              Ir al inicio
+            </button>
             <span className="admin-topbar-name">{user?.firstName}</span>
             <button className="admin-btn-logout" onClick={logout}>
               <LogOut size={16} />
