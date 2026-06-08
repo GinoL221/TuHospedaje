@@ -6,7 +6,6 @@ import { useAuth } from "../../hooks/useAuth";
 import DatePicker from "react-datepicker";
 import Icon from "../../components/Icons/Icon";
 
-import "react-datepicker/dist/react-datepicker.css";
 import "./BookingPage.css";
 
 export default function BookingPage() {

@@ -1,3 +1,22 @@
+/* DatePicker wrapper inside search form */
+.search-card .react-datepicker-wrapper,
+.search-card .react-datepicker__input-container {
+  width: 100%;
+}
+.search-card .react-datepicker__input-container input {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: var(--bg);
+  color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
 /* SEARCH */
 .search {
   display: flex;
@@ -105,20 +124,29 @@
   box-shadow: var(--shadow-md);
   transform: none;
 }
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.section-header h2 {
+  margin: 0;
+}
 .btn-clear-filter {
   background: transparent;
-  border: 1px solid var(--primary);
-  color: var(--primary);
+  border: 1px solid var(--accent);
+  color: var(--accent);
   padding: 6px 16px;
   border-radius: 20px;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
-  margin-bottom: 16px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 .btn-clear-filter:hover {
-  background: var(--primary);
+  background: var(--accent);
   color: var(--bg);
 }
 
@@ -131,7 +159,7 @@
 }
 .category-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 14px;
 }
 .category-tag {
@@ -198,6 +226,36 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
+}
+
+/* PAGINATION */
+.home-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+.home-pagination button {
+  background: var(--secondary);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: opacity 150ms ease;
+}
+.home-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.home-pagination span {
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
 }
 
 /* RESPONSIVE */
