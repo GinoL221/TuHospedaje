@@ -31,6 +31,7 @@ const ICON_MAP = {
   Villa: Landmark,
   Villas: Landmark,
   Resort: Waves,
+  Resorts: Waves,
   Bicicleta: Bike,
   Montaña: Mountain,
 };

@@ -7,6 +7,7 @@ export default function ShareModal({ lodging, onClose }) {
   const shareLinks = [
     {
       name: "Facebook",
+      bg: "#1877F2",
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -16,6 +17,7 @@ export default function ShareModal({ lodging, onClose }) {
     },
     {
       name: "Twitter",
+      bg: "#000",
       href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -25,6 +27,7 @@ export default function ShareModal({ lodging, onClose }) {
     },
     {
       name: "WhatsApp",
+      bg: "#25D366",
       href: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -34,8 +37,8 @@ export default function ShareModal({ lodging, onClose }) {
     },
     {
       name: "Instagram",
+      bg: "#E1306C",
       href: "https://www.instagram.com/",
-      color: "#E1306C",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -77,7 +80,7 @@ export default function ShareModal({ lodging, onClose }) {
               target="_blank"
               rel="noopener noreferrer"
               className="share-btn"
-              style={s.color ? { color: s.color, borderColor: s.color } : undefined}
+              style={{ background: s.bg }}
               onClick={onClose}
             >
               {s.icon} {s.name}

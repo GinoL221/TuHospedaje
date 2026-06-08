@@ -10,7 +10,6 @@ import ShareModal from "../../components/ShareModal/ShareModal";
 import GalleryModal from "../../components/GalleryModal/GalleryModal";
 import Icon from "../../components/Icons/Icon";
 
-import "react-datepicker/dist/react-datepicker.css";
 import "./ProductDetail.css";
 
 export default function ProductDetail() {
@@ -82,7 +81,6 @@ export default function ProductDetail() {
   return (
     <main className="page-container product-detail">
       <div className="detail-header">
-        <h1>{lodging.name}</h1>
         <button
           className="back-arrow"
           onClick={() => navigate(-1)}
@@ -90,13 +88,14 @@ export default function ProductDetail() {
         >
           <ArrowLeft size={22} />
         </button>
+        <div className="detail-title-group">
+          <h1>{lodging.name}</h1>
+          <span className="detail-location">{lodging.city}, {lodging.country}</span>
+        </div>
         <button className="btn-share" onClick={() => setShowShare(true)}>
           Compartir
         </button>
       </div>
-      <p className="location">
-        {lodging.city}, {lodging.country}
-      </p>
 
       {images.length > 0 && (
         <div className="gallery-wrapper">

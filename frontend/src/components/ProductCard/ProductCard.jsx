@@ -5,7 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { Heart } from "lucide-react";
 import "./ProductCard.css";
 
-export default function ProductCard({ lodging, defaultFavorite = false, showFavoriteButton = true }) {
+export default function ProductCard({ lodging, defaultFavorite = false, onFavoriteToggle, showFavoriteButton = true }) {
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(defaultFavorite);
   const [imgError, setImgError] = useState(false);
@@ -19,16 +19,20 @@ export default function ProductCard({ lodging, defaultFavorite = false, showFavo
 
   async function toggleFavorite(e) {
     e.preventDefault();
+    e.stopPropagation();
+    const next = !isFavorite;
+    setIsFavorite(next);
+    onFavoriteToggle?.(lodging.id, next);
     try {
-      if (isFavorite) {
-        await del(`/favorites/${lodging.id}`);
-        setIsFavorite(false);
-      } else {
+      if (next) {
         await post(`/favorites/${lodging.id}`);
-        setIsFavorite(true);
+      } else {
+        await del(`/favorites/${lodging.id}`);
       }
     } catch (err) {
       console.error(err);
+      setIsFavorite(!next);
+      onFavoriteToggle?.(lodging.id, !next);
     }
   }
 
