@@ -29,6 +29,17 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    get("/reservations/my")
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const last = data[data.length - 1];
+          if (last.guestPhone) setGuestPhone(last.guestPhone);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   function formatDate(date) {
     return date.toISOString().split("T")[0];
   }
