@@ -1,69 +1,186 @@
-.my-reservations h1 {
+/* --- PAGE HEADER --- */
+.reservations-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.reservations-header h1 {
+  margin: 0;
   font-size: 1.8rem;
   color: var(--secondary);
-  margin: 0 0 24px;
 }
 
-.reservations-empty {
-  text-align: center;
-  padding: 60px 20px;
-  background: var(--bg);
-  border-radius: var(--radius-md);
-  border: 1px dashed #ccc;
-  color: var(--text);
+.reservations-count {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
+/* --- LIST --- */
 .reservations-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-}
-
-.reservation-card {
-  background: #fff;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 20px 24px;
-  border-left: 4px solid var(--accent);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 16px;
+  max-width: 720px;
 }
 
-.reservation-card h2 {
-  margin: 0 0 4px;
-  font-size: 1.1rem;
+/* --- CARD --- */
+.reservation-card {
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--accent);
+  overflow: hidden;
+}
+
+/* HEADER */
+.reservation-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.reservation-card-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
   color: var(--secondary);
 }
 
-.reservation-card p {
-  margin: 0;
-  font-size: 0.9rem;
+.reservation-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
   color: var(--text);
+  opacity: 0.65;
+  margin: 4px 0 0;
 }
 
+.reservation-location svg {
+  color: var(--accent);
+}
+
+/* STATUS BADGE */
 .reservation-status {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  margin-top: 8px;
-  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .reservation-status.confirmed { background: #e6f9f0; color: #1a7a4a; }
 .reservation-status.pending   { background: #fff7e6; color: #b07d00; }
 .reservation-status.cancelled { background: #fde8e8; color: #c0392b; }
 
-.reservations-back {
-  margin-top: 24px;
-  display: inline-block;
+/* BODY */
+.reservation-card-body {
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.reservation-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.reservation-row svg {
   color: var(--accent);
+  flex-shrink: 0;
+}
+
+.reservation-nights {
+  margin-left: auto;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--secondary);
+  background: rgba(42, 157, 143, 0.09);
+  border: 1px solid rgba(42, 157, 143, 0.2);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* FOOTER */
+.reservation-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 20px;
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.reservation-total {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.reservation-total strong {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.reservation-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
   font-weight: 600;
+  color: var(--accent);
   text-decoration: none;
+  transition: opacity var(--transition);
+}
+
+.reservation-link:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* --- EMPTY STATE --- */
+.reservations-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 20px;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  border: 1px dashed #ccc;
+  color: var(--text);
+  max-width: 720px;
+}
+
+.reservations-back {
+  display: inline-block;
+  padding: 9px 20px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: opacity var(--transition);
 }
 
 .reservations-back:hover {
-  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.error {
+  color: #c0392b;
+  font-size: 0.9rem;
 }
