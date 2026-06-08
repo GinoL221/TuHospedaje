@@ -129,10 +129,10 @@ export default function BookingPage() {
       <div className="booking-layout">
         <section className="booking-summary">
           <h2>{lodging.name}</h2>
-          <p>
+          <p className="booking-location">
             {lodging.city}, {lodging.country}
           </p>
-          <p>
+          <p className="booking-price">
             <strong>${lodging.pricePerNight?.toLocaleString()}</strong> / noche
           </p>
           {lodging.imageUrls?.[0] && (
@@ -149,7 +149,7 @@ export default function BookingPage() {
             <div className="booking-features">
               {lodging.features.map((f) => (
                 <span key={f.id} className="booking-feature-item">
-                  <Icon name={f.icon} size={16} />
+                  <Icon name={f.icon} size={14} />
                   {f.name}
                 </span>
               ))}
@@ -204,8 +204,9 @@ export default function BookingPage() {
           />
 
           {nights > 0 && (
-            <p>
-              {nights} noches — <strong>${total.toLocaleString()}</strong>
+            <p className="booking-total">
+              {nights} {nights === 1 ? "noche" : "noches"} —{" "}
+              <strong>${total.toLocaleString()}</strong>
             </p>
           )}
 
