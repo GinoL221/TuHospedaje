@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { get } from "../../services/api";
+import "./MyReservationsPage.css";
 
 export default function MyReservationsPage() {
   const [reservations, setReservations] = useState([]);
@@ -23,13 +24,15 @@ export default function MyReservationsPage() {
   }
 
   return (
-    <main className="page-container">
+    <main className="page-container my-reservations">
       <h1>Mis reservas</h1>
 
       {error && <p className="error">{error}</p>}
 
       {!error && reservations.length === 0 ? (
-        <p>No tenés reservas todavía.</p>
+        <div className="reservations-empty">
+          <p>No tenés reservas todavía.</p>
+        </div>
       ) : (
         <div className="reservations-list">
           {reservations.map((reservation) => (
@@ -46,15 +49,17 @@ export default function MyReservationsPage() {
                 Total:{" "}
                 <strong>${reservation.totalPrice?.toLocaleString()}</strong>
               </p>
-              <p>Estado: {reservation.status}</p>
+              <span
+                className={`reservation-status ${reservation.status?.toLowerCase()}`}
+              >
+                {reservation.status}
+              </span>
             </article>
           ))}
         </div>
       )}
 
-      <p>
-        <Link to="/">Volver al inicio</Link>
-      </p>
+      <Link to="/" className="reservations-back">← Volver al inicio</Link>
     </main>
   );
 }
