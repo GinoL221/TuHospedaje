@@ -1,4 +1,34 @@
-# TuHospedaje
+---
+title: "Definición del Proyecto"
+subtitle: "TuHospedaje — Plataforma de Reservas de Alojamientos Turísticos"
+author: "Equipo de Desarrollo"
+date: "Mayo 2026"
+pdf_options:
+  format: a4
+  margin:
+    top: 25mm
+    bottom: 25mm
+    left: 20mm
+    right: 20mm
+  displayHeaderFooter: true
+  headerTemplate: |
+    <div style="font-size: 9pt; width: 100%; text-align: right; padding-right: 20mm; color: #666;">
+      TuHospedaje — Documentación Técnica Oficial
+    </div>
+  footerTemplate: |
+    <div style="font-size: 9pt; width: 100%; display: flex; justify-content: space-between; padding: 0 20mm; color: #666;">
+      <div>Definición del Proyecto — Mayo 2026</div>
+      <div>Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>
+    </div>
+---
+
+<style>
+.page-break { page-break-before: always; }
+table { width: 100%; } table, tr { page-break-inside: avoid; }
+h1, h2, h3, h4 { page-break-after: avoid; }
+</style>
+
+# DEFINICIÓN DEL PROYECTO — TUHOSPEDAJE
 
 ## 1. Identidad, Nicho y Propósito del Negocio
 **TuHospedaje** es una plataforma web centralizada de reservas de alojamiento enfocada en **alojamientos turísticos**.
@@ -48,7 +78,7 @@ La interfaz se construye con **CSS Puro** mediante **Variables Dinámicas (Custo
 | Secondary (Componentes/Nav) | `#264653` | `#abccd8` |
 | Accent (Destacados/Badges) | `#2a9d8f` | `#62d5c8` |
 
-Referencia visual de la paleta: [Paleta de colores TuHospedaje](./Paleta_de_colores_TuHospedaje.pdf).
+Referencia visual de la paleta: [Paleta de colores TuHospedaje](../diseno/Paleta_de_colores_TuHospedaje.pdf).
 
 ## 4. Decisiones Arquitectónicas Clave (ADR)
 ### 4.1. Uso del Dominio Semántico `Lodging`

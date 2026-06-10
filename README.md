@@ -51,10 +51,11 @@ npx playwright test
 
 ## Documentación
 
-- `docs/diseno/` — manual de identidad visual, paleta de colores y definición del proyecto
+- `docs/diseno/` — manual de identidad visual y paleta de colores
+- `docs/markdown/project-definition.md` — definición del proyecto (alcance, roadmap, ADRs)
 - `docs/markdown/sprint-1/` … `docs/markdown/sprint-4/` — reporte y test plan de cada sprint
 - `docs/markdown/sprint-2/` — incluye el modelo de datos (`.mmd` / `.svg`)
-- `docs/entregables/` — PDFs de reports y test plans (todos los sprints)
+- `docs/entregables/` — PDFs de la definición del proyecto, reports y test plans (todos los sprints)
 
 ## Licencia
 
