@@ -36,12 +36,6 @@ export default function LoginPage() {
     }
     if (!form.password) {
       errors.password = "La contraseña es obligatoria";
-    } else if (form.password.length < 6) {
-      errors.password = "Debe tener al menos 6 caracteres";
-    } else if (!/[A-Z]/.test(form.password)) {
-      errors.password = "Debe contener una mayúscula";
-    } else if (!/[0-9]/.test(form.password)) {
-      errors.password = "Debe contener un número";
     }
     return errors;
   };
