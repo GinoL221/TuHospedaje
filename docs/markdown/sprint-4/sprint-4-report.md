@@ -43,6 +43,8 @@ En el backend, se corrigió el endpoint de disponibilidad para retornar los rang
 
 Como mejora complementaria al panel de administración, se extendió `LodgingFormModal` con soporte de edición (prop `lodging` opcional + `PUT`) y se incorporaron los botones "Editar" por fila en la tabla de alojamientos.
 
+Adicionalmente, como agregado por iniciativa del equipo fuera del alcance original del sprint, se incorporó una suite de pruebas end-to-end con Playwright (carpeta `e2e/`), que valida los flujos críticos de la aplicación en Chromium y Firefox e introduce pruebas de regresión visual con capturas de referencia.
+
 ## 2. Arquitectura del Sistema e Integración
 
 ### 2.1. Backend (Spring Boot + Spring Security 6)
@@ -186,13 +188,14 @@ src/
   4. Historial propio del usuario autenticado → HTTP 200
   5. Disponibilidad con `occupiedRanges` → HTTP 200
 * **Cobertura del incremento:** Creación de reservas, solapamiento de fechas, seguridad de endpoints, historial por usuario, y retorno de rangos ocupados.
-* **Frontend:** Sin test runner configurado. `npm run build` exitoso con 0 errores y 0 warnings. Las validaciones funcionales son manuales (ver Plan de Pruebas Sprint 4).
+* **Suite E2E con Playwright (agregado complementario):** Fuera del alcance original del sprint, se incorporó una suite end-to-end en `e2e/` con 17 escenarios ejecutados en Chromium y Firefox (34 ejecuciones en total, todas en verde). Está organizada con Page Object Model (`pages/`), fixtures de autenticación y datos de prueba (`fixtures/`, `data/`), y cubre: smoke de páginas principales (3), flujo de autenticación con login, logout y registro (4), búsqueda por ciudad (2), historial de reservas con y sin sesión (2), y regresión visual con capturas de referencia de seis vistas (6).
+* **Frontend (unitarios):** Sin runner de tests unitarios configurado (Vitest / React Testing Library pendiente). `npm run build` exitoso con 0 errores y 0 warnings. La cobertura funcional de UI se apoya en la suite E2E de Playwright y en el plan de pruebas manual (ver Plan de Pruebas Sprint 4).
 
 ## 8. Limitaciones Conocidas y Deuda Técnica Controlada
 
 1. **WhatsApp Business API:** El enlace `wa.me` no provee confirmación de envío ni manejo de errores desde la aplicación. La integración con la API oficial de WhatsApp Business (Meta) requiere cuenta verificada, número dedicado y proceso de aprobación — queda como mejora futura.
 2. **Email SMTP desactivado por defecto:** `ConsoleEmailServiceImpl` es el default de desarrollo. Para activar el envío real se requiere `MAIL_SMTP_ENABLED=true` más las credenciales de Mailtrap (`MAILTRAP_HOST`, `MAILTRAP_PORT`, `MAILTRAP_USERNAME`, `MAILTRAP_PASSWORD`) en las variables de entorno.
-3. **Frontend sin tests automatizados:** No hay test runner configurado en el frontend. La cobertura es manual + build sin errores.
+3. **Frontend sin tests unitarios:** No hay runner unitario (Vitest / React Testing Library) configurado en el frontend. La cobertura automatizada de la UI se apoya en la suite E2E de Playwright incorporada como agregado complementario; los tests unitarios de componentes quedan como mejora futura.
 4. **Precios por temporada:** El total de reserva se calcula como `días × pricePerNight`. No hay soporte para tarifas variables por temporada o fin de semana.
 5. **Refresh tokens:** El JWT expira a las 8 horas sin mecanismo de renovación, forzando reautenticación manual. Pendiente para iteración futura.
 6. **Gestión de reservas en admin:** El panel de administración no incluye una vista para que el administrador cancele, modifique o gestione reservas de usuarios. El flujo actual es solo del lado del huésped.

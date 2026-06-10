@@ -31,7 +31,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 # PLAN Y REPORTE DE PRUEBAS DE SOFTWARE — SPRINT 4
 
 **Foco del Incremento:** Flujo completo de reservas, historial personal, botón de WhatsApp y notificación por email
-**Enfoque de Testing:** Pruebas de API (Postman + automatizadas con MockMvc/Testcontainers), Verificación de UI Manual
+**Enfoque de Testing:** Pruebas de API (Postman + automatizadas con MockMvc/Testcontainers), Verificación de UI Manual, Suite E2E con Playwright (agregado complementario)
 
 ## 1. Matriz Detallada de Casos de Prueba (Test Cases)
 
@@ -154,11 +154,28 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **7** | Modificar un campo y click en "Cancelar" | `ConfirmDialog` aparece preguntando si descartar cambios | ✔ Pasa |
 | **8** | Confirmar descarte en `ConfirmDialog` | Modal cierra. Alojamiento no modificado en BD | ✔ Pasa |
 
+### TC-37: Suite E2E con Playwright (Agregado complementario)
+
+* **Historias de Usuario Asociadas:** Transversal — cobertura end-to-end de los flujos críticos de la aplicación, incorporada por iniciativa del equipo fuera del alcance original del sprint
+* **Precondiciones:** Backend activo en `:8080` y frontend en `:5173`. Credenciales de usuario de prueba configuradas en `e2e/.env`.
+* **Tipos de Verificación:** Test E2E Automatizado (Playwright, Chromium + Firefox), con Page Object Model y fixtures de autenticación.
+
+| Spec | Escenarios | Cobertura | Estado |
+|------|-----------|-----------|--------|
+| `smoke.spec.js` | 3 | Carga de home con formulario de búsqueda, página de login y página de registro | ✔ Pasa |
+| `auth.spec.js` | 4 | Login válido (nombre en header), login con contraseña incorrecta (error visible), logout con redirección a home, registro exitoso | ✔ Pasa |
+| `search.spec.js` | 2 | Búsqueda por ciudad navega a `/search`, página de resultados renderiza encabezado | ✔ Pasa |
+| `reservations.spec.js` | 2 | Historial de reservas carga para usuario autenticado, usuario anónimo es redirigido por `RequireAuth` | ✔ Pasa |
+| `visual.spec.js` | 6 | Regresión visual contra capturas de referencia: home, login, registro, resultados de búsqueda, detalle de alojamiento y mis reservas | ✔ Pasa |
+
+Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores = **34 ejecuciones, todas en verde**.
+
 ## 2. Resumen de Ejecución
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
 | Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 144 tests | ✔ Todos pasan |
+| Tests E2E Playwright — agregado complementario (Chromium + Firefox) | 17 escenarios × 2 navegadores (34 ejecuciones) | ✔ Todos pasan |
 | Casos de Prueba Funcionales (Plan) | 44 escenarios | ✔ 44/44 verificados |
 
 ## 3. Cobertura por Historia de Usuario
@@ -172,6 +189,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | US #34 — WhatsApp | 5 TC | Manual | ✔ Completo |
 | US #35 — Email de confirmación | 5 TC | Automatizado + Manual | ✔ Completo |
 | TC-36 — Edición admin (complementaria) | 8 TC | Automatizado + Manual | ✔ Completo |
+| TC-37 — Suite E2E Playwright (agregado) | 17 TC | Automatizado E2E | ✔ Completo |
 
 ## 4. Herramientas Utilizadas
 
@@ -179,6 +197,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 |------------|-----------|
 | JUnit 5 + Mockito | Tests unitarios de servicios |
 | MockMvc + Testcontainers | Tests de integración con MariaDB efímera |
+| Playwright | Tests E2E y regresión visual en Chromium y Firefox (agregado complementario) |
 | Postman | Pruebas manuales de API |
 | Mailtrap (SMTP sandbox) | Verificación de emails de confirmación |
 | Navegador (Chrome) | Verificación de UI |
