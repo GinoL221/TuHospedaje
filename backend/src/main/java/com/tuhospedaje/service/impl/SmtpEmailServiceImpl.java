@@ -55,6 +55,8 @@ public class SmtpEmailServiceImpl implements EmailService {
                   <tr><td style="padding:6px 12px;font-weight:bold;">Phone</td><td>%s</td></tr>
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Total</td><td><strong>$%s</strong></td></tr>
                   <tr><td style="padding:6px 12px;font-weight:bold;">Status</td><td>%s</td></tr>
+                  <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Contact phone</td><td>%s</td></tr>
+                  <tr><td style="padding:6px 12px;font-weight:bold;">Contact email</td><td>%s</td></tr>
                 </table>
                 <p style="margin-top:20px;">See you there!</p>
                 <hr><p style="font-size:12px;color:#888;">TuHospedaje &mdash; Your next stay, confirmed.</p>
@@ -67,7 +69,9 @@ public class SmtpEmailServiceImpl implements EmailService {
                 reservation.getGuestName(),
                 reservation.getGuestPhone() != null ? reservation.getGuestPhone() : "-",
                 reservation.getTotalPrice(),
-                reservation.getStatus()
+                reservation.getStatus(),
+                reservation.getLodgingPhone() != null ? reservation.getLodgingPhone() : "-",
+                reservation.getLodgingEmail() != null ? reservation.getLodgingEmail() : "-"
         );
 
         send(reservation.getGuestEmail(), subject, body);

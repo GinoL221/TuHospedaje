@@ -61,6 +61,12 @@ export default function LodgingsTable({
           >
             Siguiente
           </button>
+          <button
+            disabled={page >= totalPages - 1}
+            onClick={() => onPageChange(totalPages - 1)}
+          >
+            Última
+          </button>
         </div>
       )}
     </>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { get, del } from "../../services/api";
 import LodgingFormModal from "../../components/LodgingFormModal/LodgingFormModal";
 import LodgingsTable from "../../components/LodgingsTable/LodgingsTable";
+import ConfirmDialog from "../../components/ConfirmDialog";
 
 export default function AdminLodgings() {
   const [lodgings, setLodgings] = useState([]);
@@ -12,6 +13,7 @@ export default function AdminLodgings() {
   const [totalPages, setTotalPages] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editingLodging, setEditingLodging] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const size = 10;
 
   const fetchLodgings = useCallback(() => {
@@ -47,23 +49,28 @@ export default function AdminLodgings() {
     fetchData("/policies", setPolicies);
   }, []);
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`¿Eliminar "${name}"?`)) {
-      try {
-        await del(`/lodgings/${id}`);
-        const data = await get(`/lodgings?page=${page}&size=${size}`);
-        const items = data.lodgings || data || [];
-        if (Array.isArray(data)) {
-          setLodgings(data);
-          setTotalPages(1);
-        } else {
-          setLodgings(data.lodgings || []);
-          setTotalPages(data.totalPages || 0);
-        }
-        if (items.length === 0 && page > 0) setPage((p) => p - 1);
-      } catch (err) {
-        console.error(err);
+  const handleDelete = (id, name) => {
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await del(`/lodgings/${deleteConfirm.id}`);
+      const data = await get(`/lodgings?page=${page}&size=${size}`);
+      const items = data.lodgings || data || [];
+      if (Array.isArray(data)) {
+        setLodgings(data);
+        setTotalPages(1);
+      } else {
+        setLodgings(data.lodgings || []);
+        setTotalPages(data.totalPages || 0);
       }
+      if (items.length === 0 && page > 0) setPage((p) => p - 1);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -89,6 +96,12 @@ export default function AdminLodgings() {
         onDelete={handleDelete}
         onEdit={handleEdit}
         onPageChange={setPage}
+      />
+      <ConfirmDialog
+        show={deleteConfirm !== null}
+        message={deleteConfirm ? `¿Eliminar el alojamiento "${deleteConfirm.name}"? Esta acción no se puede deshacer.` : ""}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
       />
       {showModal && (
         <LodgingFormModal

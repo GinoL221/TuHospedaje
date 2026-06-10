@@ -25,6 +25,8 @@ public class ReservationResponse {
     private BigDecimal totalPrice;
     private ReservationStatus status;
     private Long version;
+    private String lodgingPhone;
+    private String lodgingEmail;
 
     public static ReservationResponse fromEntity(Reservation reservation) {
         ReservationResponse dto = new ReservationResponse();
@@ -41,6 +43,8 @@ public class ReservationResponse {
         dto.setTotalPrice(reservation.getTotalPrice());
         dto.setStatus(reservation.getStatus());
         dto.setVersion(reservation.getVersion());
+        dto.setLodgingPhone(reservation.getLodging().getPhoneNumber());
+        dto.setLodgingEmail(reservation.getLodging().getEmail());
         return dto;
     }
 }

@@ -30,7 +30,9 @@ public class ConsoleEmailServiceImpl implements EmailService {
                 reservation.getGuestName(), reservation.getLodgingName());
         log.info("Fechas: {} a {}", reservation.getCheckIn(), reservation.getCheckOut());
         log.info("Total: {}", reservation.getTotalPrice());
-        log.info("Teléfono: {}", reservation.getGuestPhone());
+        log.info("Teléfono huésped: {}", reservation.getGuestPhone());
+        log.info("Contacto alojamiento - Teléfono: {}", reservation.getLodgingPhone());
+        log.info("Contacto alojamiento - Email: {}", reservation.getLodgingEmail());
         log.info("=======================================================");
     }
 }

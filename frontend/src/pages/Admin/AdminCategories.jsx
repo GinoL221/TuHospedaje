@@ -6,14 +6,14 @@ import useConfirmCancel from "../../hooks/useConfirmCancel";
 export default function AdminCategories() {
   const [catList, setCatList] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "" });
+  const [form, setForm] = useState({ name: "", description: "", imageUrl: "" });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const resetForm = () => setForm({ name: "", description: "" });
-  const cancel = useConfirmCancel(form.name || form.description, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const resetForm = () => setForm({ name: "", description: "", imageUrl: "" });
+  const cancel = useConfirmCancel(form.name || form.description || form.imageUrl, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
 
   useEffect(() => {
     let cancelled = false;
@@ -32,10 +32,10 @@ export default function AdminCategories() {
 
   const openModal = (cat = null) => {
     if (cat) {
-      setForm({ name: cat.name, description: cat.description || "" });
+      setForm({ name: cat.name, description: cat.description || "", imageUrl: cat.imageUrl || "" });
       setEditing(cat);
     } else {
-      setForm({ name: "", description: "" });
+      setForm({ name: "", description: "", imageUrl: "" });
       setEditing(null);
     }
     setError("");
@@ -66,7 +66,7 @@ export default function AdminCategories() {
       return;
     }
 
-    const body = { name: form.name, description: form.description };
+    const body = { name: form.name, description: form.description, imageUrl: form.imageUrl || null };
     const request = editing
       ? put(`/categories/${editing.id}`, body)
       : post("/categories", body);
@@ -108,6 +108,7 @@ export default function AdminCategories() {
           <thead>
             <tr>
               <th>ID</th>
+              <th>Imagen</th>
               <th>Nombre</th>
               <th>Descripción</th>
               <th>Acciones</th>
@@ -117,6 +118,11 @@ export default function AdminCategories() {
             {catList.map((c) => (
               <tr key={c.id}>
                 <td>{c.id}</td>
+                <td>
+                  {c.imageUrl
+                    ? <img src={c.imageUrl} alt={c.name} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4 }} />
+                    : "—"}
+                </td>
                 <td>{c.name}</td>
                 <td>{c.description || "—"}</td>
                 <td>
@@ -153,6 +159,14 @@ export default function AdminCategories() {
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
+                />
+              </label>
+              <label>
+                URL de imagen
+                <input
+                  value={form.imageUrl}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                  placeholder="https://..."
                 />
               </label>
               {error && <p className="form-error">{error}</p>}
