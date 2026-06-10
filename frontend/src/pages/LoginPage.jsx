@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+
 import "../App.css";
 import "../assets/css/auth.css";
 
@@ -15,6 +16,9 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const message = location.state?.message;
+  const from = location.state?.from?.pathname || "/";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -32,12 +36,6 @@ export default function LoginPage() {
     }
     if (!form.password) {
       errors.password = "La contraseña es obligatoria";
-    } else if (form.password.length < 6) {
-      errors.password = "Debe tener al menos 6 caracteres";
-    } else if (!/[A-Z]/.test(form.password)) {
-      errors.password = "Debe contener una mayúscula";
-    } else if (!/[0-9]/.test(form.password)) {
-      errors.password = "Debe contener un número";
     }
     return errors;
   };
@@ -53,7 +51,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await login(form.email, form.password);
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,6 +63,7 @@ export default function LoginPage() {
     <div className="login-container">
       <div className="login-box">
         <h2>Iniciar sesión</h2>
+        {message && <p className="error">{message}</p>}
         {error && <p className="error">{error}</p>}
         <form onSubmit={handleSubmit} noValidate>
           <label>Email</label>

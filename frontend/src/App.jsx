@@ -1,7 +1,14 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 
+import RequireAuth from "./components/RequireAuth";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import Home from "./pages/Home/Home";
@@ -11,6 +18,10 @@ import ProductDetail from "./pages/ProductDetail/ProductDetail";
 import Admin from "./pages/Admin/Admin";
 import SearchResults from "./pages/SearchResults/SearchResults";
 import FavoritesPage from "./pages/Favorites/FavoritesPage";
+import BookingPage from "./pages/Booking/BookingPage";
+import BookingConfirmationPage from "./pages/Booking/BookingConfirmation";
+import MyReservationsPage from "./pages/MyReservations/MyReservationsPage";
+import WhatsAppButton from "./components/WhatsAppButton/WhatsAppButton";
 
 function RequireAdmin({ children }) {
   const { user } = useAuth();
@@ -26,14 +37,29 @@ function AppLayout() {
   return (
     <>
       {!isAdmin && <Header />}
+      {!isAdmin && <WhatsAppButton />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/lodgings/:id" element={<ProductDetail />} />
-        <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
         <Route path="/favorites" element={<FavoritesPage />} />
+
+        <Route element={<RequireAuth />}>
+          <Route path="/booking/:lodgingId" element={<BookingPage />} />
+          <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
+          <Route path="/my-reservations" element={<MyReservationsPage />} />
+        </Route>
+
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <Admin />
+            </RequireAdmin>
+          }
+        />
       </Routes>
       {!isAdmin && <Footer />}
     </>

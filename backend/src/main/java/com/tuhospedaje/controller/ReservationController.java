@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
@@ -39,6 +41,13 @@ public class ReservationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReservationResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(reservationService.getReservationById(id));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ReservationResponse>> getMyReservations(
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(reservationService.getMyReservations(user));
     }
 }
 

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import DatePicker from "react-datepicker";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
@@ -14,24 +15,38 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [city, setCity] = useState("");
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
+  const [checkIn, setCheckIn] = useState(null);
+  const [checkOut, setCheckOut] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const debounceRef = useRef();
 
-  useEffect(() => {
+  const fetchLodgings = useCallback(() => {
     if (selectedCategory) {
       get(`/lodgings?category=${selectedCategory}`)
-        .then(setLodgings)
+        .then((data) => {
+          setLodgings(Array.isArray(data) ? data : []);
+          setTotalPages(1);
+        })
         .catch(console.error);
     } else {
-      get("/lodgings/random").then(setLodgings).catch(console.error);
+      get(`/lodgings?page=${page}&size=8`)
+        .then((data) => {
+          setLodgings(data.lodgings || []);
+          setTotalPages(data.totalPages || 1);
+        })
+        .catch(console.error);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, page]);
+
+  useEffect(() => {
+    fetchLodgings();
+  }, [fetchLodgings]);
 
   useEffect(() => {
     get("/categories")
@@ -78,6 +93,10 @@ export default function Home() {
     return () => clearTimeout(debounceRef.current);
   }, [city]);
 
+  function formatDate(date) {
+    return date ? date.toISOString().split("T")[0] : "";
+  }
+
   function handleSearch(e) {
     e.preventDefault();
     setSearchError("");
@@ -89,10 +108,19 @@ export default function Home() {
 
     const params = new URLSearchParams();
     if (city) params.set("city", city);
-    if (checkIn) params.set("checkIn", checkIn);
-    if (checkOut) params.set("checkOut", checkOut);
+    if (checkIn) params.set("checkIn", formatDate(checkIn));
+    if (checkOut) params.set("checkOut", formatDate(checkOut));
 
     navigate(`/search?${params.toString()}`);
+  }
+
+  function handleFavoriteToggle(id, add) {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (add) next.add(id);
+      else next.delete(id);
+      return next;
+    });
   }
 
   function handleCityChange(value) {
@@ -135,8 +163,30 @@ export default function Home() {
                 </ul>
               )}
             </div>
-            <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
-            <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+            <div>
+              <DatePicker
+                selected={checkIn}
+                onChange={(date) => setCheckIn(date)}
+                selectsStart
+                startDate={checkIn}
+                endDate={checkOut}
+                minDate={new Date()}
+                placeholderText="Check-in"
+                dateFormat="dd/MM/yyyy"
+              />
+            </div>
+            <div>
+              <DatePicker
+                selected={checkOut}
+                onChange={(date) => setCheckOut(date)}
+                selectsEnd
+                startDate={checkIn}
+                endDate={checkOut}
+                minDate={checkIn || new Date()}
+                placeholderText="Check-out"
+                dateFormat="dd/MM/yyyy"
+              />
+            </div>
             <button type="submit" className="btn-search">Buscar</button>
           </form>
           {searchError && <p className="search-error">{searchError}</p>}
@@ -153,28 +203,31 @@ export default function Home() {
                 key={c.id}
                 category={c}
                 isActive={selectedCategory === c.id}
-                onClick={() =>
-                  setSelectedCategory(selectedCategory === c.id ? null : c.id)
-                }
+                onClick={() => {
+                  setSelectedCategory(selectedCategory === c.id ? null : c.id);
+                  setPage(0);
+                }}
               />
             ))}
           </div>
         )}
       </section>
       <section className="recommendations">
-        <h2>
-          {selectedCategory
-            ? categories.find((c) => c.id === selectedCategory)?.name
-            : "Recomendaciones"}
-        </h2>
-        {selectedCategory && (
-          <button
-            className="btn-clear-filter"
-            onClick={() => setSelectedCategory(null)}
-          >
-            Mostrar todos
-          </button>
-        )}
+        <div className="section-header">
+          <h2>
+            {selectedCategory
+              ? categories.find((c) => c.id === selectedCategory)?.name
+              : "Recomendaciones"}
+          </h2>
+          {selectedCategory && (
+            <button
+              className="btn-clear-filter"
+              onClick={() => setSelectedCategory(null)}
+            >
+              Mostrar todos
+            </button>
+          )}
+        </div>
         {lodgings.length === 0 ? (
           <p className="empty-state">
             No hay alojamientos cargados todavía. Volvé más tarde.
@@ -182,8 +235,22 @@ export default function Home() {
         ) : (
           <div className="hotel-list">
             {lodgings.map((lodging) => (
-              <ProductCard key={lodging.id} lodging={lodging} defaultFavorite={favoriteIds.has(lodging.id)} />
+              <ProductCard key={lodging.id} lodging={lodging} defaultFavorite={favoriteIds.has(lodging.id)} onFavoriteToggle={handleFavoriteToggle} />
             ))}
+          </div>
+        )}
+        {!selectedCategory && totalPages > 1 && (
+          <div className="home-pagination">
+            <button disabled={page === 0} onClick={() => setPage(0)}>
+              Inicio
+            </button>
+            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              Anterior
+            </button>
+            <span>Página {page + 1} de {totalPages}</span>
+            <button disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+              Siguiente
+            </button>
           </div>
         )}
       </section>

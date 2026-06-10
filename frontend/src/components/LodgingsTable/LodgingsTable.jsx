@@ -3,6 +3,7 @@ export default function LodgingsTable({
   page,
   totalPages,
   onDelete,
+  onEdit,
   onPageChange,
 }) {
   if (lodgings.length === 0) {
@@ -29,6 +30,9 @@ export default function LodgingsTable({
               <td>{l.id}</td>
               <td>{l.name}</td>
               <td>
+                <button className="btn-edit" onClick={() => onEdit(l)}>
+                  Editar
+                </button>
                 <button
                   className="btn-delete"
                   onClick={() => onDelete(l.id, l.name)}

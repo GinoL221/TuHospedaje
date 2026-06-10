@@ -1,0 +1,20 @@
+{
+  "name": "tuhospedaje-e2e",
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for TuHospedaje — POM + fixtures pattern",
+  "type": "commonjs",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:chrome": "playwright test --project=chromium",
+    "report": "playwright show-report",
+    "clean": "rm -rf test-results playwright-report allure-results allure-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "@types/node": "^22.0.0",
+    "allure-playwright": "^3.4.1",
+    "dotenv": "^16.4.7"
+  }
+}

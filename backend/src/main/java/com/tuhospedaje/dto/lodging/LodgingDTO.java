@@ -36,6 +36,8 @@ public class LodgingDTO {
     private Integer maxGuests;
     private Set<Long> policyIds;
     private List<Map<String, Object>> policies;
+    private Double averageRating;
+    private Integer ratingCount;
 
     public Lodging toEntity() {
         Lodging lodging = new Lodging();

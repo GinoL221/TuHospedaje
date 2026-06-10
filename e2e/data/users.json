@@ -1,0 +1,15 @@
+{
+  "validUser": {
+    "email": "set TEST_USER_EMAIL in .env",
+    "password": "set TEST_USER_PASSWORD in .env"
+  },
+  "newUser": {
+    "firstName": "Test",
+    "lastName": "E2E",
+    "password": "Test1234"
+  },
+  "invalidUser": {
+    "email": "noexiste@test.com",
+    "password": "Wrong123"
+  }
+}

@@ -4,7 +4,6 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -29,6 +28,10 @@ public class CreateReservationRequest {
     @NotBlank(message = "El email del huésped es obligatorio")
     @Email(message = "Formato de email inválido")
     private String guestEmail;
+
+    @NotBlank(message = "El teléfono del huésped es obligatorio")
+    @Size(max = 30, message = "El teléfono no puede superar 30 caracteres")
+    private String guestPhone;
 
     @AssertTrue(message = "La fecha de check-out debe ser posterior al check-in")
     private boolean isCheckOutAfterCheckIn() {

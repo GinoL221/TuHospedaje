@@ -12,4 +12,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     List<Rating> findByLodgingIdOrderByCreatedAtDesc(Long lodgingId);
 
     int countByLodgingId(Long lodgingId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT AVG(r.score) FROM Rating r WHERE r.lodging.id = :lodgingId")
+    Double findAverageScoreByLodgingId(Long lodgingId);
 }

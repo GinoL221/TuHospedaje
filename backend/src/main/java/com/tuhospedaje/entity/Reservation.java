@@ -38,6 +38,9 @@ public class Reservation {
     @Column(nullable = false)
     private String guestEmail;
 
+    @Column(nullable = false)
+    private String guestPhone;
+
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal totalPrice;
 

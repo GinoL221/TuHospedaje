@@ -102,8 +102,8 @@ public class LodgingController {
     @GetMapping("/{id}/availability")
     public ResponseEntity<AvailabilityResponse> availability(
             @PathVariable Long id,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
         return ResponseEntity.ok(lodgingService.checkAvailability(id, checkIn, checkOut));
     }
 }

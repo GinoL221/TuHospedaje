@@ -21,6 +21,7 @@ public class ReservationResponse {
     private LocalDate checkOut;
     private String guestName;
     private String guestEmail;
+    private String guestPhone;
     private BigDecimal totalPrice;
     private ReservationStatus status;
     private Long version;
@@ -36,6 +37,7 @@ public class ReservationResponse {
         dto.setCheckOut(reservation.getCheckOut());
         dto.setGuestName(reservation.getGuestName());
         dto.setGuestEmail(reservation.getGuestEmail());
+        dto.setGuestPhone(reservation.getGuestPhone());
         dto.setTotalPrice(reservation.getTotalPrice());
         dto.setStatus(reservation.getStatus());
         dto.setVersion(reservation.getVersion());

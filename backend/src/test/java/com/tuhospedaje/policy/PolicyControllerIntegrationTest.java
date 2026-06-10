@@ -8,6 +8,8 @@ import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.PolicyRepository;
+import com.tuhospedaje.repository.RatingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +47,12 @@ class PolicyControllerIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private RatingRepository ratingRepository;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     private String adminAuthHeader;
@@ -79,6 +87,9 @@ class PolicyControllerIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        // Seeded ratings and reservations reference users, so they must go first
+        ratingRepository.deleteAll();
+        reservationRepository.deleteAll();
         userRepository.deleteAll();
     }
 
