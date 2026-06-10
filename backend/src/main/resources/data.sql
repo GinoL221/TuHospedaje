@@ -421,3 +421,35 @@ INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
 (36, 1), (36, 2), (36, 3), (36, 5),
 (37, 1), (37, 2), (37, 3), (37, 5),
 (38, 1), (38, 2), (38, 3), (38, 5);
+
+-- ============================================================
+-- Seed data extra — Sprint 4 (Usuarios comunes, reservas y ratings)
+-- ============================================================
+
+-- Usuarios clientes de prueba (contraseñas: maria123, juan123, user123)
+INSERT IGNORE INTO users (id, first_name, last_name, email, password, role) VALUES
+(2, 'Maria', 'Gomez', 'maria@tuhospedaje.com', '$2a$10$7QYt3aRgNNrFWVBKfuo0oe82ZummGy6LLEAljxRp9KqH6.IHcDX3W', 'USER'),
+(3, 'Juan', 'Perez', 'juan@tuhospedaje.com', '$2a$10$MFr0.A/bcyNv14oQqqRynuOqRhrTg/onZrw0Rls.7hRideSXB/try', 'USER'),
+(4, 'Usuario', 'Tester', 'user@tuhospedaje.com', '$2a$10$bEXnAoU.qy05Tq7jRqyjg.G3foN6XMRCXxsJcvCukmh/.7kj7ZRuC', 'USER');
+
+-- Reservas de prueba
+INSERT IGNORE INTO reservations (id, lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version) VALUES
+(1, 1, 2, '2026-05-01', '2026-05-05', 'Maria Gomez', 'maria@tuhospedaje.com', '+5411223344', 600.00, 'CONFIRMED', 0),
+(2, 2, 3, '2026-05-10', '2026-05-15', 'Juan Perez', 'juan@tuhospedaje.com', '+5411998877', 1000.00, 'CONFIRMED', 0),
+(3, 3, 4, '2026-06-01', '2026-06-03', 'Usuario Tester', 'user@tuhospedaje.com', '+5411555555', 360.00, 'CONFIRMED', 0),
+(4, 31, 2, '2026-07-10', '2026-07-15', 'Maria Gomez', 'maria@tuhospedaje.com', '+5411223344', 2250.00, 'CONFIRMED', 0),
+(5, 35, 3, '2026-08-01', '2026-08-05', 'Juan Perez', 'juan@tuhospedaje.com', '+5411998877', 1120.00, 'CONFIRMED', 0),
+(6, 5, 4, '2026-05-20', '2026-05-22', 'Usuario Tester', 'user@tuhospedaje.com', '+5411555555', 500.00, 'CANCELLED', 0);
+
+-- Reseñas / Calificaciones (Ratings)
+INSERT IGNORE INTO ratings (id, lodging_id, user_id, score, comment, created_at) VALUES
+(1, 1, 2, 5, 'Excelente ubicación y atención. El desayuno es completísimo y muy rico.', '2026-05-06 10:00:00'),
+(2, 1, 3, 4, 'Muy cómodo, limpio y céntrico. La vista del bar es hermosa.', '2026-05-07 14:30:00'),
+(3, 2, 3, 5, 'La cabaña es increíble, la vista al lago te deja sin palabras. Ideal para desconectarse.', '2026-05-16 11:15:00'),
+(4, 2, 4, 5, 'Un lugar de ensueño. La chimenea a leña y el jacuzzi exterior valen cada centavo.', '2026-05-18 18:20:00'),
+(5, 3, 4, 4, 'Lindo departamento, moderno y re bien ubicado en pleno Palermo Soho. Muy luminoso.', '2026-06-04 09:00:00'),
+(6, 3, 2, 3, 'Buena ubicación y diseño, pero se escucha el ruido de los bares los fines de semana.', '2026-06-05 12:45:00'),
+(7, 5, 2, 5, 'Hermosa cabaña. El muelle privado es un lujo y los kayaks incluidos te permiten pasear por el lago.', '2026-05-25 16:00:00'),
+(8, 5, 3, 4, 'La vista al lago es preciosa y el ambiente muy acogedor. Recomiendo para ir en pareja.', '2026-05-26 10:30:00'),
+(9, 31, 3, 5, 'Servicio de primer nivel en medio de la selva. La piscina desbordante y las instalaciones son espectaculares.', '2026-05-12 15:20:00'),
+(10, 35, 4, 5, 'Dormir en el domo mirando el cielo estrellado fue una experiencia mágica. Excelente desayuno artesanal.', '2026-05-30 20:10:00');
