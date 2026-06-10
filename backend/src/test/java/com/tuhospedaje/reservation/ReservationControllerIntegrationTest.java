@@ -8,6 +8,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.EmailService;
@@ -53,6 +54,9 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     private ReservationRepository reservationRepository;
 
     @Autowired
+    private RatingRepository ratingRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     @MockitoBean
@@ -62,6 +66,8 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Seeded ratings reference both lodgings and users, so they must go first
+        ratingRepository.deleteAll();
         reservationRepository.deleteAll();
         lodgingRepository.deleteAll();
         userRepository.deleteAll();
