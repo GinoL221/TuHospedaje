@@ -5,7 +5,7 @@ Proyecto final integrador — Digital House.
 
 ## Stack
 
-- **Backend:** Java 21 / Spring Boot 3.5 / Spring Data JPA / MariaDB / Testcontainers
+- **Backend:** Java 17 / Spring Boot 3.5 / Spring Data JPA / MariaDB / Testcontainers
 - **Frontend:** React 19 / Vite / React Router / Lucide React
 - **E2E:** Playwright (Chromium + Firefox, regresión visual)
 - **Herramientas:** Maven, Lombok, Pandoc
@@ -51,6 +51,7 @@ npx playwright test
 
 ## Documentación
 
+- `docs/diseno/` — manual de identidad visual, paleta de colores y definición del proyecto
 - `docs/markdown/sprint-1/` … `docs/markdown/sprint-4/` — reporte y test plan de cada sprint
 - `docs/markdown/sprint-2/` — incluye el modelo de datos (`.mmd` / `.svg`)
 - `docs/entregables/` — PDFs de reports y test plans (todos los sprints)

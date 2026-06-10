@@ -67,7 +67,7 @@ Para garantizar la consistencia visual, se definen los siguientes valores cromá
 | **Background** (fondo principal) | Gris claro | `#f4f4f9` | ![■](https://placehold.co/20x20/f4f4f9/f4f4f9) |
 | **Text** (texto principal) | Gris oscuro | `#333333` | ![■](https://placehold.co/20x20/333333/333333) |
 
-> **Versión oscura:** La paleta incluye valores para tema oscuro (disponible en `data-theme="dark"`). Su implementación en la UI está planificada para Sprints futuros.
+> **Versión oscura:** La paleta incluye valores para tema oscuro (disponible en `data-theme="dark"`). Su implementación en la UI queda como mejora futura.
 
 *Referencia visual completa adjunta en el archivo adjunto: `Paleta_de_colores_TuHospedaje.pdf`*
 
@@ -88,8 +88,8 @@ La tipografía se hereda directamente del sistema operativo del cliente para gar
 Mantener un área de respeto alrededor del isologotipo equivalente al alto de la letra **"T"** de *TuHospedaje*. No se deben ubicar elementos gráficos, bordes ni bloques de texto dentro de esta zona delimitada.
 
 ### 5.2. Usos Correctos
-* Usar el isologotipo sobre fondo blanco (`#f4f4f9`) o secundario (`#264653`).
-* Usar la versión en una sola pieza (no separar el icono del bloque de texto bajo ningún contexto en el Sprint 1).
+* Usar el isologotipo sobre fondo claro (`#f4f4f9`) o secundario (`#264653`).
+* Usar la versión en una sola pieza (no separar el icono del bloque de texto).
 
 ### 5.3. Usos Incorrectos
 * Deformar, estirar o alterar las proporciones del logotipo.

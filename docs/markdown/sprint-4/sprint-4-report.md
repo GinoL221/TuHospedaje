@@ -31,7 +31,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 # BITÁCORA DE EJECUCIÓN Y CIERRE — SPRINT 4
 
 **Foco del Incremento:** Reservas, Historial y Comunicación — Flujo de booking dedicado, historial personal de reservas, botón flotante de WhatsApp y notificación por correo electrónico
-**Stack Tecnológico:** Java 21 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
+**Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
 
 ## 1. Resumen del Incremento (Scope)
 

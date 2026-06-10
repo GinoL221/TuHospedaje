@@ -5,7 +5,7 @@
 El propósito principal del negocio es resolver la fricción entre los usuarios que buscan hospedaje de calidad y los administradores que necesitan gestionar su catálogo de manera eficiente. La plataforma permite a los clientes finales explorar un catálogo dinámico y detallado, mientras que provee a los administradores un panel de control intuitivo para crear, actualizar y dar de baja alojamientos.
 - **Nombre Oficial:** TuHospedaje
 - **Identidad Visual:** Isologotipo institucional con soporte nativo para esquemas de colores claro y oscuro.
-- **Ubicación del recurso:** `frontend/src/assets/TuHospedaje_Isologotipo.png`
+- **Ubicación del recurso:** `frontend/src/assets/images/TuHospedaje_Isologotipo.png`
 
 ## 2. Alcance del Proyecto y Hoja de Ruta (Roadmap)
 El desarrollo se ejecutará de forma incremental a lo largo de **4 Sprints** planificados, garantizando un Producto Mínimo Viable (MVP) funcional desde el primer hito.
