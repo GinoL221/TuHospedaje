@@ -5,6 +5,7 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
+import com.tuhospedaje.repository.CityProjection;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
@@ -336,5 +337,15 @@ class LodgingServiceImplTest {
         when(lodgingRepository.existsByEmail("otro@test.com")).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> lodgingService.update(input));
+    }
+
+    @Test
+    void shouldFindCitiesViaDistinctQuery() {
+        CityProjection projection = org.mockito.Mockito.mock(CityProjection.class);
+        when(projection.getCity()).thenReturn("Springfield");
+        when(lodgingRepository.findDistinctByCityContainingIgnoreCaseOrderByCityAsc("spring"))
+                .thenReturn(List.of(projection));
+        List<String> cities = lodgingService.findCities("spring");
+        assertThat(cities).containsExactly("Springfield");
     }
 }

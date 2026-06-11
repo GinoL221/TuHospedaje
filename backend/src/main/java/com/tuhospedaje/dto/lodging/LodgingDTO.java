@@ -1,14 +1,15 @@
 package com.tuhospedaje.dto.lodging;
 
-import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.entity.Policy;
-import com.tuhospedaje.exception.ResourceNotFoundException;
-import com.tuhospedaje.repository.CategoryRepository;
 import lombok.Getter;
 import lombok.Setter;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,21 +20,42 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 public class LodgingDTO {
+    @Null(message = "El id debe ser nulo al crear")
     private Long id;
+
+    @NotBlank(message = "El nombre es obligatorio")
     private String name;
+
     private String description;
+
+    @NotBlank(message = "La dirección es obligatoria")
     private String address;
+
+    @NotBlank(message = "La ciudad es obligatoria")
     private String city;
+
+    @NotBlank(message = "El país es obligatorio")
     private String country;
+
+    @NotBlank(message = "El número de teléfono es obligatorio")
     private String phoneNumber;
+
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "El email debe ser válido")
     private String email;
+
     private List<String> imageUrls;
     private Long categoryId;
     private String categoryName;
     private Set<Long> featureIds;
     private List<Map<String, Object>> features;
+
+    @Positive(message = "El precio por noche debe ser positivo")
     private BigDecimal pricePerNight;
+
+    @Positive(message = "La cantidad máxima de huéspedes debe ser positiva")
     private Integer maxGuests;
+
     private Set<Long> policyIds;
     private List<Map<String, Object>> policies;
     private Double averageRating;
@@ -53,17 +75,6 @@ public class LodgingDTO {
         return lodging;
     }
 
-    public Lodging toEntity(CategoryRepository categoryRepository) {
-        Lodging lodging = this.toEntity();
-
-        if (this.categoryId != null) {
-            Category category = categoryRepository.findById(this.categoryId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
-            lodging.setCategory(category);
-        }
-
-        return lodging;
-    }
 
     public static LodgingDTO fromEntity(Lodging lodging) {
         LodgingDTO dto = new LodgingDTO();

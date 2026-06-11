@@ -3,6 +3,7 @@ package com.tuhospedaje.controller;
 import com.tuhospedaje.dto.user.UserDTO;
 import com.tuhospedaje.dto.auth.RoleRequest;
 import com.tuhospedaje.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +33,7 @@ public class UserController {
 
     @PutMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateRole(@PathVariable Long id, @RequestBody RoleRequest request) {
+    public ResponseEntity<UserDTO> updateRole(@PathVariable Long id, @Valid @RequestBody RoleRequest request) {
         UserDTO updated = userService.updateRole(id, request.getRole());
         return ResponseEntity.ok(updated);
     }

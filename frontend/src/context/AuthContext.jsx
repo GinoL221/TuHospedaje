@@ -1,5 +1,6 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 import { post } from "../services/api";
 
 const AuthContext = createContext();
@@ -33,7 +34,26 @@ function getInitialAuth() {
 }
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [{ token, user }, setAuth] = useState(getInitialAuth);
+
+  const logout = () => {
+    setAuth({ token: null, user: null });
+    localStorage.removeItem("token");
+  };
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+      navigate("/login");
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, [navigate]);
+
   const login = async (email, password) => {
     const data = await post("/auth/login", { email, password });
     const decoded = jwtDecode(data.token);
@@ -65,11 +85,6 @@ export function AuthProvider({ children }) {
     };
     setAuth({ token: data.token, user: newUser });
     localStorage.setItem("token", data.token);
-  };
-
-  const logout = () => {
-    setAuth({ token: null, user: null });
-    localStorage.removeItem("token");
   };
   
   return (

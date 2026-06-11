@@ -30,10 +30,6 @@ public class CategoryController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryDTO> create(@Valid @RequestBody CategoryDTO dto) {
-        if (dto.getId() != null) {
-            return ResponseEntity.badRequest().build();
-        }
-
         CategoryDTO saved = categoryService.save(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }

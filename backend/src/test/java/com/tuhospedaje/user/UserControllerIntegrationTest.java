@@ -106,6 +106,19 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenUpdatingRoleWithBlankRole() throws Exception {
+        RoleRequest request = new RoleRequest();
+        request.setRole("  ");
+
+        mockMvc.perform(put("/api/users/{id}/role", regularUserId)
+                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
     void shouldReturnNotFoundWhenUpdatingRoleOfNonExistentUser() throws Exception {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");

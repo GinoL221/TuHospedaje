@@ -35,6 +35,30 @@ test.describe('Auth flow', () => {
     await expect(loginLink).toBeVisible();
   });
 
+  test('expired token on protected endpoint triggers logout and redirects to /login', async ({ page, loginPage }) => {
+    await loginPage.open('/login');
+    await loginPage.login(
+      process.env.TEST_USER_EMAIL,
+      process.env.TEST_USER_PASSWORD,
+    );
+    await page.waitForURL('/');
+
+    await page.route('**/api/favorites**', (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Unauthorized' }),
+      })
+    );
+
+    await page.reload();
+
+    await page.waitForURL('**/login', { timeout: 5000 });
+
+    const token = await page.evaluate(() => localStorage.getItem('token'));
+    expect(token).toBeNull();
+  });
+
   test('register redirects to home on success', async ({ page, registerPage }) => {
     const uniqueEmail = `e2e_${Date.now()}@test.com`;
     await registerPage.open('/register');

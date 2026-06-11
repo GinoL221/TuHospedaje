@@ -15,11 +15,8 @@ async function request(method, endpoint, data) {
   const res = await fetch(`${API_BASE}${endpoint}`, config);
 
   if (res.status === 401) {
-    localStorage.removeItem("token");
-    if (token) {
-      window.location.href = "/login";
-      throw new Error("Sesión expirada");
-    }
+    window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    throw new Error("Sesión expirada");
   }
 
   if (!res.ok) {

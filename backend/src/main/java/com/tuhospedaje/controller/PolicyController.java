@@ -42,9 +42,6 @@ public class PolicyController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PolicyDTO> create(@Valid @RequestBody PolicyDTO dto) {
-        if (dto.getId() != null) {
-            return ResponseEntity.badRequest().build();
-        }
         PolicyDTO saved = policyService.save(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }

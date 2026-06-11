@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -92,6 +93,44 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenCreatingLodgingWithInvalidPayload() throws Exception {
+        Map<String, Object> request = Map.of(
+                "name", "",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "invalid-email"
+        );
+
+        mockMvc.perform(post("/api/lodgings")
+                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCreatingLodgingWithNonNullId() throws Exception {
+        Map<String, Object> request = Map.of(
+                "id", 123L,
+                "name", "Hotel ID Test",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "id-test@tuhospedaje.com"
+        );
+
+        mockMvc.perform(post("/api/lodgings")
+                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
     void shouldReturnForbiddenWhenCreatingLodgingWithoutAuth() throws Exception {
         Map<String, Object> request = Map.of(
                 "name", "Sin Auth",
@@ -107,7 +146,12 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnForbiddenWhenCreatingLodgingWithUserRole() throws Exception {
         Map<String, Object> request = Map.of(
-                "name", "User Role",
+                "name", "User Role Hotel",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
                 "email", "userrole@test.com"
         );
 
@@ -232,6 +276,48 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "description", "Descripción",
                 "address", "Calle 123",
                 "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", email
+        );
+
+        String response = mockMvc.perform(post("/api/lodgings")
+                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    @Test
+    void shouldReturnDistinctCities() throws Exception {
+        createTestLodgingWithCity("Hotel A", "a@testcities.com", "Springfield");
+        createTestLodgingWithCity("Hotel B", "b@testcities.com", "Springfield");
+        createTestLodgingWithCity("Hotel C", "c@testcities.com", "Boston");
+        createTestLodgingWithCity("Hotel D", "d@testcities.com", "New York");
+
+        mockMvc.perform(get("/api/lodgings/cities"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasItems("Boston", "New York", "Springfield")));
+
+        mockMvc.perform(get("/api/lodgings/cities").param("q", "spring"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0]").value("Springfield"));
+    }
+
+    private Long createTestLodgingWithCity(String name, String email, String city) throws Exception {
+        Map<String, Object> request = Map.of(
+                "name", name,
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", city,
                 "country", "País",
                 "phoneNumber", "123456789",
                 "email", email
