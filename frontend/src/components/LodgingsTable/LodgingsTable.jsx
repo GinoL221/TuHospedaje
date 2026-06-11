@@ -1,11 +1,11 @@
-export default function LodgingsTable({
-  lodgings,
-  page,
-  totalPages,
-  onDelete,
-  onEdit,
-  onPageChange,
-}) {
+import useTableData from "../../hooks/useTableData";
+import SortableTh from "../SortableTh/SortableTh";
+import Pagination from "../Pagination/Pagination";
+
+export default function LodgingsTable({ lodgings, onDelete, onEdit }) {
+  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } =
+    useTableData(lodgings);
+
   if (lodgings.length === 0) {
     return (
       <p className="empty-state">
@@ -19,16 +19,24 @@ export default function LodgingsTable({
       <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nombre</th>
+            <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>
+              ID
+            </SortableTh>
+            <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>
+              Nombre
+            </SortableTh>
+            <SortableTh columnKey="description" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>
+              Descripción
+            </SortableTh>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {lodgings.map((l) => (
+          {pageItems.map((l) => (
             <tr key={l.id}>
               <td>{l.id}</td>
               <td>{l.name}</td>
+              <td>{l.description}</td>
               <td>
                 <button className="btn-edit" onClick={() => onEdit(l)}>
                   Editar
@@ -44,31 +52,7 @@ export default function LodgingsTable({
           ))}
         </tbody>
       </table>
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button disabled={page === 0} onClick={() => onPageChange(0)}>
-            Inicio
-          </button>
-          <button disabled={page === 0} onClick={() => onPageChange(page - 1)}>
-            Anterior
-          </button>
-          <span>
-            Página {page + 1} de {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages - 1}
-            onClick={() => onPageChange(page + 1)}
-          >
-            Siguiente
-          </button>
-          <button
-            disabled={page >= totalPages - 1}
-            onClick={() => onPageChange(totalPages - 1)}
-          >
-            Última
-          </button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </>
   );
 }

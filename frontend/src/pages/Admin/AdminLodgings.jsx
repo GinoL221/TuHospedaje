@@ -9,26 +9,17 @@ export default function AdminLodgings() {
   const [categories, setCategories] = useState([]);
   const [features, setFeatures] = useState([]);
   const [policies, setPolicies] = useState([]);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editingLodging, setEditingLodging] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const size = 10;
 
   const fetchLodgings = useCallback(() => {
-    get(`/lodgings?page=${page}&size=${size}`)
+    get("/lodgings")
       .then((data) => {
-        if (Array.isArray(data)) {
-          setLodgings(data);
-          setTotalPages(1);
-          return;
-        }
-        setLodgings(data.lodgings || []);
-        setTotalPages(data.totalPages || 0);
+        setLodgings(Array.isArray(data) ? data : (data.lodgings || []));
       })
       .catch(console.error);
-  }, [page, size]);
+  }, []);
 
   const fetchData = (url, setter) => {
     get(url)
@@ -57,16 +48,7 @@ export default function AdminLodgings() {
     if (!deleteConfirm) return;
     try {
       await del(`/lodgings/${deleteConfirm.id}`);
-      const data = await get(`/lodgings?page=${page}&size=${size}`);
-      const items = data.lodgings || data || [];
-      if (Array.isArray(data)) {
-        setLodgings(data);
-        setTotalPages(1);
-      } else {
-        setLodgings(data.lodgings || []);
-        setTotalPages(data.totalPages || 0);
-      }
-      if (items.length === 0 && page > 0) setPage((p) => p - 1);
+      fetchLodgings();
     } catch (err) {
       console.error(err);
     } finally {
@@ -91,11 +73,8 @@ export default function AdminLodgings() {
       </button>
       <LodgingsTable
         lodgings={lodgings}
-        page={page}
-        totalPages={totalPages}
         onDelete={handleDelete}
         onEdit={handleEdit}
-        onPageChange={setPage}
       />
       <ConfirmDialog
         show={deleteConfirm !== null}
@@ -110,7 +89,6 @@ export default function AdminLodgings() {
           features={features}
           policies={policies}
           onSaved={() => {
-            setPage(0);
             fetchLodgings();
           }}
           onClose={handleCloseModal}

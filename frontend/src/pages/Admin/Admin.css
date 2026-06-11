@@ -231,8 +231,20 @@
 }
 
 /* ── DASHBOARD RECENT ────────────────────────────────────────── */
-.dashboard-recent {
+.dashboard-recent-container {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr;
+  gap: 24px;
   margin-top: 32px;
+  align-items: start;
+}
+.dashboard-recent {
+  margin-top: 0;
+}
+@media (max-width: 1024px) {
+  .dashboard-recent-container {
+    grid-template-columns: 1fr;
+  }
 }
 .dashboard-recent-title {
   font-size: 1rem;
@@ -393,6 +405,41 @@ tbody tr:last-child td {
 .role-user {
   background: rgba(0, 0, 0, 0.08);
   color: var(--text);
+}
+
+/* ── STATUS BADGES ───────────────────────────────────────────── */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.status-confirmed {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.status-cancelled {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* ── SORTABLE HEADERS ────────────────────────────────────────── */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+th.sortable:hover {
+  background: var(--secondary-dark, #1a4f6e);
+}
+.sort-icon {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+th.sortable[aria-sort="ascending"] .sort-icon,
+th.sortable[aria-sort="descending"] .sort-icon {
+  opacity: 1;
 }
 
 /* ── PAGINATION ──────────────────────────────────────────────── */

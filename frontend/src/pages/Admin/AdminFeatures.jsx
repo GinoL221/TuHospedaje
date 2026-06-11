@@ -4,9 +4,13 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
 import IconPicker from "../../components/IconPicker/IconPicker";
+import useTableData from "../../hooks/useTableData";
+import SortableTh from "../../components/SortableTh/SortableTh";
+import Pagination from "../../components/Pagination/Pagination";
 
 export default function AdminFeatures() {
   const [featureList, setFeatureList] = useState([]);
+  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(featureList);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: "", icon: "" });
   const [editing, setEditing] = useState(null);
@@ -101,38 +105,41 @@ export default function AdminFeatures() {
           No hay características cargadas todavía. ¡Creá la primera!
         </p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Ícono</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {featureList.map((f) => (
-              <tr key={f.id}>
-                <td>{f.id}</td>
-                <td>{f.name}</td>
-                <td>
-                  <Icon name={f.icon} /> <code>{f.icon}</code>
-                </td>
-                <td>
-                  <button className="btn-edit" onClick={() => openModal(f)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(f.id, f.name)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
+        <>
+          <table>
+            <thead>
+              <tr>
+                <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>ID</SortableTh>
+                <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Nombre</SortableTh>
+                <SortableTh columnKey="icon" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Ícono</SortableTh>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pageItems.map((f) => (
+                <tr key={f.id}>
+                  <td>{f.id}</td>
+                  <td>{f.name}</td>
+                  <td>
+                    <Icon name={f.icon} /> <code>{f.icon}</code>
+                  </td>
+                  <td>
+                    <button className="btn-edit" onClick={() => openModal(f)}>
+                      Editar
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDelete(f.id, f.name)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {showModal && (
