@@ -80,4 +80,12 @@ public class ReservationServiceImpl implements ReservationService {
                 .map(ReservationResponse::fromEntity)
                 .toList();
     }
+
+    @Override
+    public List<ReservationResponse> getAllReservations() {
+        return reservationRepository.findAllByOrderByIdDesc()
+                .stream()
+                .map(ReservationResponse::fromEntity)
+                .toList();
+    }
 }

@@ -15,4 +15,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByUserIdOrderByCheckInDesc(Long userId);
 
     boolean existsByUserIdAndLodgingIdAndStatus(Long userId, Long lodgingId, ReservationStatus status);
+
+    List<Reservation> findAllByOrderByIdDesc();
 }

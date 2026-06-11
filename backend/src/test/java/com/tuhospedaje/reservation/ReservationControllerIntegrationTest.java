@@ -128,7 +128,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenCreatingReservationWithoutAuth() throws Exception {
+    void shouldReturnUnauthorizedWhenCreatingReservationWithoutAuth() throws Exception {
         Long lodgingId = createTestLodging();
 
         Map<String, Object> request = Map.of(
@@ -143,13 +143,52 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/reservations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenGettingHistoryWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/reservations/my"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnAllReservationsForAdminOrderedByIdDesc() throws Exception {
+        User admin = User.builder()
+                .firstName("Admin")
+                .lastName("User")
+                .email("admin-reservas@test.com")
+                .password("123456")
+                .role(RoleEnum.ADMIN)
+                .build();
+        User savedAdmin = userRepository.save(admin);
+        String adminAuth = "Bearer " + jwtService.generateToken(savedAdmin);
+
+        Long lodgingId = createTestLodging();
+
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+        createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
+
+        mockMvc.perform(get("/api/reservations")
+                        .header(HttpHeaders.AUTHORIZATION, adminAuth))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
+                .andExpect(jsonPath("$[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenGettingAllReservationsAsNormalUser() throws Exception {
+        mockMvc.perform(get("/api/reservations")
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void shouldReturnForbiddenWhenGettingHistoryWithoutAuth() throws Exception {
-        mockMvc.perform(get("/api/reservations/my"))
-                .andExpect(status().isForbidden());
+    void shouldReturnUnauthorizedWhenGettingAllReservationsWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/reservations"))
+                .andExpect(status().isUnauthorized());
     }
 
     private Long createTestLodging() {

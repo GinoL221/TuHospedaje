@@ -49,5 +49,11 @@ public class ReservationController {
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(reservationService.getMyReservations(user));
     }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ReservationResponse>> getAllReservations() {
+        return ResponseEntity.ok(reservationService.getAllReservations());
+    }
 }
 
