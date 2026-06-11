@@ -30,4 +30,6 @@ public interface LodgingRepository extends JpaRepository<Lodging, Long>, JpaSpec
     long countByCategoryId(Long categoryId);
 
     List<Lodging> findByCategoryId(Long categoryId);
+
+    List<CityProjection> findDistinctByCityContainingIgnoreCaseOrderByCityAsc(String city);
 }

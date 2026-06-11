@@ -2,6 +2,7 @@ package com.tuhospedaje.dto.features;
 
 import com.tuhospedaje.entity.Feature;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +10,7 @@ import lombok.Setter;
 @Setter
 public class FeatureDTO {
 
+    @Null(message = "El id debe ser nulo al crear")
     private Long id;
 
     @NotBlank(message = "El nombre de la característica es obligatorio")

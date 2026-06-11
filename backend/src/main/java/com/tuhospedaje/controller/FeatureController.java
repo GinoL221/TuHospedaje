@@ -30,9 +30,6 @@ public class FeatureController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<FeatureDTO> create(@Valid @RequestBody FeatureDTO dto) {
-        if (dto.getId() != null) {
-            return ResponseEntity.badRequest().build();
-        }
         FeatureDTO saved = featureService.save(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }

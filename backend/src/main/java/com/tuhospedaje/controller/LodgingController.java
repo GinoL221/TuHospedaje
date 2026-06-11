@@ -3,6 +3,7 @@ package com.tuhospedaje.controller;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.service.LodgingService;
+import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,10 +34,7 @@ public class LodgingController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<LodgingDTO> create(@RequestBody LodgingDTO dto) {
-        if (dto.getId() != null) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<LodgingDTO> create(@Valid @RequestBody LodgingDTO dto) {
         LodgingDTO saved = lodgingService.save(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }

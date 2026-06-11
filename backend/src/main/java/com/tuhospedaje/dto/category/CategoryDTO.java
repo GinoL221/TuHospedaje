@@ -2,12 +2,14 @@ package com.tuhospedaje.dto.category;
 
 import com.tuhospedaje.entity.Category;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Null;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class CategoryDTO {
+    @Null(message = "El id debe ser nulo al crear")
     private Long id;
 
     @NotBlank(message = "El nombre es obligatorio")

@@ -7,10 +7,12 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
+import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
+import com.tuhospedaje.repository.CityProjection;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
@@ -59,10 +61,14 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     private LodgingDTO enrichWithRatings(LodgingDTO dto) {
-        int count = ratingRepository.countByLodgingId(dto.getId());
-        Double avg = ratingRepository.findAverageScoreByLodgingId(dto.getId());
+        List<Rating> ratings = ratingRepository.findByLodgingIdOrderByCreatedAtDesc(dto.getId());
+        int count = ratings.size();
+        double avg = ratings.stream()
+                .mapToInt(Rating::getScore)
+                .average()
+                .orElse(0.0);
         dto.setRatingCount(count);
-        dto.setAverageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0);
+        dto.setAverageRating(Math.round(avg * 10.0) / 10.0);
         return dto;
     }
 
@@ -238,12 +244,10 @@ public class LodgingServiceImpl implements LodgingService {
 
     @Override
     public List<String> findCities(String query) {
-        return lodgingRepository.findAll().stream()
-                .map(Lodging::getCity)
-                .distinct()
-                .filter(city -> query == null || query.isBlank()
-                        || city.toLowerCase().contains(query.toLowerCase()))
-                .sorted()
+        String filter = (query == null) ? "" : query;
+        return lodgingRepository.findDistinctByCityContainingIgnoreCaseOrderByCityAsc(filter)
+                .stream()
+                .map(CityProjection::getCity)
                 .toList();
     }
 
