@@ -12,9 +12,20 @@ import {
   CigaretteOff,
   Gift,
   PartyPopper,
+  Hotel,
+  TreePine,
+  Building2,
+  Building,
+  Tent,
+  BedDouble,
+  House,
+  Landmark,
+  Mountain,
+  Bike,
 } from "lucide-react";
 
 export const ICON_MAP = {
+  // Amenities / features
   wifi: Wifi,
   car: Car,
   "thermometer-snowflake": ThermometerSnowflake,
@@ -28,4 +39,15 @@ export const ICON_MAP = {
   "smoking-ban": CigaretteOff,
   gift: Gift,
   "party-popper": PartyPopper,
+  // Categories
+  hotel: Hotel,
+  "tree-pine": TreePine,
+  "building-2": Building2,
+  building: Building,
+  tent: Tent,
+  "bed-double": BedDouble,
+  house: House,
+  landmark: Landmark,
+  mountain: Mountain,
+  bike: Bike,
 };

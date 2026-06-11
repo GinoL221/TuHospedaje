@@ -46,6 +46,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         category.setName(dto.getName());
         category.setDescription(dto.getDescription());
+        category.setIcon(dto.getIcon());
         Category updated = categoryRepository.save(category);
         return CategoryDTO.fromEntity(updated);
     }

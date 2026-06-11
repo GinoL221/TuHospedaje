@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
+import Pagination from "../../components/Pagination/Pagination";
 import "../../App.css";
 import "./SearchResults.css";
 
@@ -46,6 +47,9 @@ export default function SearchResults() {
   const [appliedMinPrice, setAppliedMinPrice] = useState("");
   const [appliedMaxPrice, setAppliedMaxPrice] = useState("");
 
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 9;
+
   const [, startTransition] = useTransition();
   const skipNextSearchRef = useRef(false);
 
@@ -55,7 +59,7 @@ export default function SearchResults() {
   }, [checkIn, checkOut]);
 
   function searchLodgings(params) {
-    startTransition(() => { setLoading(true); setError(""); });
+    startTransition(() => { setLoading(true); setError(""); setPage(0); });
     get(`/lodgings/search?${params.toString()}`)
       .then((data) => { setResults(Array.isArray(data) ? data : []); setLoading(false); })
       .catch((err) => { setError(err.message); setLoading(false); });
@@ -116,6 +120,7 @@ export default function SearchResults() {
     } else {
       get(`/lodgings/search?${baseParams.toString()}`)
         .then((data) => {
+          setPage(0);
           setResults((Array.isArray(data) ? data : []).filter((l) => cats.has(l.categoryId)));
           setLoading(false);
         })
@@ -173,10 +178,12 @@ export default function SearchResults() {
   }
 
   const hasChips = checkIn || appliedCategories.size > 0 || appliedMinPrice || appliedMaxPrice;
+  const totalPages = Math.ceil(results.length / PAGE_SIZE);
+  const paginatedResults = results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <main className="search-results page-container">
-      <aside className="search-filters">
+      <aside className={`search-filters${hasChips ? " search-filters--hidden" : ""}`}>
         <h3>Filtros</h3>
 
         <div className="filter-section">
@@ -288,16 +295,24 @@ export default function SearchResults() {
         ) : results.length === 0 ? (
           <p className="empty-state">No se encontraron resultados para tu búsqueda.</p>
         ) : (
-          <div className="hotel-list">
-            {results.map((lodging) => (
-              <ProductCard
-                key={lodging.id}
-                lodging={lodging}
-                defaultFavorite={favoriteIds.has(lodging.id)}
-                onFavoriteToggle={handleFavoriteToggle}
-              />
-            ))}
-          </div>
+          <>
+            <div className="hotel-list">
+              {paginatedResults.map((lodging) => (
+                <ProductCard
+                  key={lodging.id}
+                  lodging={lodging}
+                  defaultFavorite={favoriteIds.has(lodging.id)}
+                  onFavoriteToggle={handleFavoriteToggle}
+                />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              className="search-pagination"
+            />
+          </>
         )}
       </section>
     </main>

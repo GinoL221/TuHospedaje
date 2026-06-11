@@ -62,6 +62,38 @@
   line-height: 1.45;
 }
 
+.card-rating-overlay {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.52);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.ov-star-full {
+  color: #f5b342;
+}
+
+.ov-star-empty {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.ov-star-half {
+  background: linear-gradient(to right, #f5b342 50%, rgba(255, 255, 255, 0.35) 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .fav-btn {
   position: absolute;
   top: 10px;

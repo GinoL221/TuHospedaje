@@ -63,6 +63,15 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
               />
             </button>
           )}
+          {lodging.averageRating > 0 && (
+            <div className="card-rating-overlay">
+              {Array.from({ length: 5 }, (_, i) => {
+                const fill = lodging.averageRating - i;
+                const cls = fill >= 1 ? "ov-star-full" : fill >= 0.25 ? "ov-star-half" : "ov-star-empty";
+                return <span key={i} className={cls}>★</span>;
+              })}
+            </div>
+          )}
         </div>
         <div className="hotel-card-body">
           <h3>{lodging.name}</h3>
@@ -70,12 +79,6 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
             {lodging.city}, {lodging.country}
           </p>
           <p className="description">{lodging.description}</p>
-          {lodging.averageRating > 0 && (
-            <p className="card-rating">
-              ⭐ {lodging.averageRating.toFixed(1)}{" "}
-              <span className="rating-count">({lodging.ratingCount})</span>
-            </p>
-          )}
         </div>
       </article>
     </Link>
