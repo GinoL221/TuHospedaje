@@ -2,18 +2,24 @@ import { useState, useEffect } from "react";
 import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
+import Icon from "../../components/Icons/Icon";
+import IconPicker from "../../components/IconPicker/IconPicker";
+import useTableData from "../../hooks/useTableData";
+import SortableTh from "../../components/SortableTh/SortableTh";
+import Pagination from "../../components/Pagination/Pagination";
 
 export default function AdminCategories() {
   const [catList, setCatList] = useState([]);
+  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(catList);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", imageUrl: "" });
+  const [form, setForm] = useState({ name: "", description: "", icon: "" });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const resetForm = () => setForm({ name: "", description: "", imageUrl: "" });
-  const cancel = useConfirmCancel(form.name || form.description || form.imageUrl, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const resetForm = () => setForm({ name: "", description: "", icon: "" });
+  const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
 
   useEffect(() => {
     let cancelled = false;
@@ -32,10 +38,10 @@ export default function AdminCategories() {
 
   const openModal = (cat = null) => {
     if (cat) {
-      setForm({ name: cat.name, description: cat.description || "", imageUrl: cat.imageUrl || "" });
+      setForm({ name: cat.name, description: cat.description || "", icon: cat.icon || "" });
       setEditing(cat);
     } else {
-      setForm({ name: "", description: "", imageUrl: "" });
+      setForm({ name: "", description: "", icon: "" });
       setEditing(null);
     }
     setError("");
@@ -66,7 +72,7 @@ export default function AdminCategories() {
       return;
     }
 
-    const body = { name: form.name, description: form.description, imageUrl: form.imageUrl || null };
+    const body = { name: form.name, description: form.description, icon: form.icon || null };
     const request = editing
       ? put(`/categories/${editing.id}`, body)
       : post("/categories", body);
@@ -104,42 +110,43 @@ export default function AdminCategories() {
           No hay categorías cargadas todavía. ¡Creá la primera!
         </p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Imagen</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {catList.map((c) => (
-              <tr key={c.id}>
-                <td>{c.id}</td>
-                <td>
-                  {c.imageUrl
-                    ? <img src={c.imageUrl} alt={c.name} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4 }} />
-                    : "—"}
-                </td>
-                <td>{c.name}</td>
-                <td>{c.description || "—"}</td>
-                <td>
-                  <button className="btn-edit" onClick={() => openModal(c)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(c.id, c.name)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
+        <>
+          <table>
+            <thead>
+              <tr>
+                <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>ID</SortableTh>
+                <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Nombre</SortableTh>
+                <SortableTh columnKey="description" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Descripción</SortableTh>
+                <SortableTh columnKey="icon" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Ícono</SortableTh>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pageItems.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.id}</td>
+                  <td>{c.name}</td>
+                  <td>{c.description || "—"}</td>
+                  <td>
+                    <Icon name={c.icon} /> <code>{c.icon}</code>
+                  </td>
+                  <td>
+                    <button className="btn-edit" onClick={() => openModal(c)}>
+                      Editar
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDelete(c.id, c.name)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {showModal && (
@@ -162,12 +169,8 @@ export default function AdminCategories() {
                 />
               </label>
               <label>
-                URL de imagen
-                <input
-                  value={form.imageUrl}
-                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                  placeholder="https://..."
-                />
+                Ícono
+                <IconPicker value={form.icon} onChange={(val) => setForm({ ...form, icon: val })} placeholder="Buscar ícono" />
               </label>
               {error && <p className="form-error">{error}</p>}
               <p className="required-note">* Campos obligatorios</p>
