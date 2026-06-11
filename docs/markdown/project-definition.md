@@ -96,3 +96,12 @@ Los controladores se inyectan estrictamente a través de constructores (evitando
 
 ### 4.4. Inyección de Configuración mediante Entornos
 El Frontend se desacopla del entorno de ejecución utilizando variables de entorno (`.env`) mediante el prefijo `VITE_API_URL`, asegurando que la transición a servidores de producción sea transparente.
+
+### 4.5. Bean Validation Declarativa
+Se adopta la validación de entrada de datos mediante anotaciones declarativas JSR 380 en los DTOs y objetos Request. Las peticiones son interceptadas con `@Valid` a nivel de controlador de Spring Boot y cualquier error de validación es procesado de forma centralizada por el `GlobalExceptionHandler` capturando la excepción `MethodArgumentNotValidException`, permitiendo retornar respuestas HTTP 400 (Bad Request) estandarizadas y limpias para el cliente.
+
+### 4.6. Sistema Unificado de Íconos
+Se unifica la carga de iconos en el frontend mediante el uso directo de SVGs o de la librería Lucide React. Esto asegura la resolución óptima en dispositivos de alta densidad de píxeles (HiDPI), facilidad de adaptación de estilos responsivos mediante CSS y una mejora en los bundles mediante el "tree-shaking" nativo de Vite al omitir iconos no utilizados.
+
+### 4.7. Tablas Admin Client-Side
+Se decide implementar la ordenación y paginación en el lado del cliente (client-side) a través del hook personalizado `useTableData` para las tablas del administrador (AdminCategories, AdminFeatures, AdminPolicies, AdminUsers, AdminLodgings). Dado el bajo volumen esperado de estos datos de parametrización, esta aproximación simplifica el backend (usando peticiones `GET` planas), reduce el tráfico a la base de datos y provee una experiencia de usuario instantánea y sin latencia en la UI.
