@@ -133,12 +133,12 @@ export default function LodgingFormModal({
   return (
     <>
       <div className="modal-overlay" onClick={cancel.handleCancel}>
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
           <h2>{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}</h2>
           <form onSubmit={handleSubmit} noValidate>
             <div className="modal-form-grid">
-              {inputField("name", true)}
-              {inputField("email", true, "email")}
+              {inputField("name", true, "text", "Nombre del alojamiento")}
+              {inputField("email", true, "email", "Correo electrónico")}
               <label className="full-width required-dot">
                 Descripción
                 <textarea
@@ -154,9 +154,9 @@ export default function LodgingFormModal({
                   <span className="field-error">{fieldErrors.description}</span>
                 )}
               </label>
-              {inputField("address", true)}
-              {inputField("city", true)}
-              {inputField("country", true)}
+              {inputField("address", true, "text", "Dirección")}
+              {inputField("city", true, "text", "Ciudad")}
+              {inputField("country", true, "text", "País")}
               {inputField("phoneNumber", true, "tel", "Teléfono")}
               <label>
                 Categoría

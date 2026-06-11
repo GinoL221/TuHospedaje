@@ -261,6 +261,10 @@
   cursor: not-allowed;
 }
 
+.search-pagination button.btn-extremo {
+  background: var(--primary);
+}
+
 .pagination-info {
   font-size: 0.9rem;
   color: var(--secondary);

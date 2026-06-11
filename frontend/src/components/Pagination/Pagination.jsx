@@ -3,7 +3,7 @@ export default function Pagination({ page, totalPages, onPageChange, className =
 
   return (
     <div className={className}>
-      <button disabled={page === 0} onClick={() => onPageChange(0)}>
+      <button className="btn-extremo" disabled={page === 0} onClick={() => onPageChange(0)}>
         Primera
       </button>
       <button disabled={page === 0} onClick={() => onPageChange(page - 1)}>
@@ -19,6 +19,7 @@ export default function Pagination({ page, totalPages, onPageChange, className =
         Siguiente
       </button>
       <button
+        className="btn-extremo"
         disabled={page >= totalPages - 1}
         onClick={() => onPageChange(totalPages - 1)}
       >

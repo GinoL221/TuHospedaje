@@ -9,6 +9,7 @@ import {
   Users,
   LogOut,
   Home,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import AdminDashboard from "./AdminDashboard";
@@ -17,6 +18,7 @@ import AdminCategories from "./AdminCategories";
 import AdminFeatures from "./AdminFeatures";
 import AdminUsers from "./AdminUsers";
 import AdminPolicies from "./AdminPolicies";
+import AdminReservations from "./AdminReservations";
 import "./Admin.css";
 
 const NAV_ITEMS = [
@@ -26,6 +28,7 @@ const NAV_ITEMS = [
   { key: "features",   label: "Características", icon: Star },
   { key: "policies",   label: "Políticas",       icon: ShieldCheck },
   { key: "users",      label: "Usuarios",        icon: Users },
+  { key: "reservations", label: "Reservas",      icon: CalendarCheck },
 ];
 
 export default function Admin() {
@@ -97,6 +100,7 @@ export default function Admin() {
           {tab === "features"   && <AdminFeatures />}
           {tab === "policies"   && <AdminPolicies />}
           {tab === "users"      && <AdminUsers />}
+          {tab === "reservations" && <AdminReservations />}
         </div>
       </div>
     </div>

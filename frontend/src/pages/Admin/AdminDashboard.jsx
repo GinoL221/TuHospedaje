@@ -7,7 +7,7 @@ const STATS = [
   { key: "categories", label: "Categorías",       icon: Tag,       endpoint: "/categories", tab: "categories" },
   { key: "features",   label: "Características",  icon: Star,      endpoint: "/features",   tab: "features" },
   { key: "users",      label: "Usuarios",         icon: Users,     endpoint: "/users",      tab: "users" },
-  { key: "reservations", label: "Reservas",        icon: Calendar,  endpoint: "/reservations", tab: null },
+  { key: "reservations", label: "Reservas",        icon: Calendar,  endpoint: "/reservations", tab: "reservations" },
 ];
 
 export default function AdminDashboard({ onTabChange }) {
