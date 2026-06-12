@@ -39,8 +39,10 @@ public class ReservationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ReservationResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(reservationService.getReservationById(id));
+    public ResponseEntity<ReservationResponse> getById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(reservationService.getReservationById(id, user));
     }
 
     @GetMapping("/my")

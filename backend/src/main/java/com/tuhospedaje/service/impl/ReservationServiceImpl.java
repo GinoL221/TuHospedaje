@@ -6,6 +6,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
+import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
@@ -73,9 +74,15 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ReservationResponse getReservationById(Long id) {
+    public ReservationResponse getReservationById(Long id, User requester) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + id));
+        boolean isOwner = reservation.getUser().getId().equals(requester.getId());
+        boolean isAdmin = requester.getRole() == RoleEnum.ADMIN;
+        if (!isOwner && !isAdmin) {
+            // 404 instead of 403 to hide resource existence (IDOR prevention)
+            throw new ResourceNotFoundException("Reserva no encontrada con ID: " + id);
+        }
         return ReservationResponse.fromEntity(reservation);
     }
 

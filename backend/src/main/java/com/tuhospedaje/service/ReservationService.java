@@ -10,7 +10,7 @@ public interface ReservationService {
 
     ReservationResponse createReservation(User user, CreateReservationRequest request);
 
-    ReservationResponse getReservationById(Long id);
+    ReservationResponse getReservationById(Long id, User requester);
 
     List<ReservationResponse> getMyReservations(User user);
 
