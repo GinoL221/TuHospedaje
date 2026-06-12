@@ -56,7 +56,7 @@ public class Lodging {
     @JoinColumn(name = "category_id", nullable = true)
     private Category category;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "lodging_features",
             joinColumns = @JoinColumn(name = "lodging_id"),
@@ -75,7 +75,7 @@ public class Lodging {
     @Version
     private Long version;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "lodging_policies",
             joinColumns = @JoinColumn(name = "lodging_id"),
