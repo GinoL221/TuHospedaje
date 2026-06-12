@@ -7,7 +7,6 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
-import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.exception.ResourceNotFoundException;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class LodgingServiceImpl implements LodgingService {
@@ -61,16 +61,29 @@ public class LodgingServiceImpl implements LodgingService {
         this.ratingRepository = ratingRepository;
     }
 
+    /**
+     * Batch enricher: issues exactly 1 aggregate query for the full list.
+     * Lodgings absent from the query result (no ratings) are post-filled with 0.0/0.
+     */
+    private List<LodgingDTO> enrichWithRatings(List<LodgingDTO> dtos) {
+        if (dtos.isEmpty()) return dtos;
+        Set<Long> ids = dtos.stream().map(LodgingDTO::getId).collect(Collectors.toSet());
+        Map<Long, RatingRepository.RatingAggregate> byId =
+                ratingRepository.aggregateByLodgingIds(ids).stream()
+                        .collect(Collectors.toMap(RatingRepository.RatingAggregate::getLodgingId, a -> a));
+        for (LodgingDTO dto : dtos) {
+            RatingRepository.RatingAggregate a = byId.get(dto.getId());
+            double avg = (a != null && a.getAverage() != null) ? a.getAverage() : 0.0;
+            long count = (a != null) ? a.getCount() : 0L;
+            dto.setRatingCount((int) count);
+            dto.setAverageRating(Math.round(avg * 10.0) / 10.0);
+        }
+        return dtos;
+    }
+
+    /** Single-item adapter — reuses batch enricher (one aggregate query for one id). */
     private LodgingDTO enrichWithRatings(LodgingDTO dto) {
-        List<Rating> ratings = ratingRepository.findByLodgingIdOrderByCreatedAtDesc(dto.getId());
-        int count = ratings.size();
-        double avg = ratings.stream()
-                .mapToInt(Rating::getScore)
-                .average()
-                .orElse(0.0);
-        dto.setRatingCount(count);
-        dto.setAverageRating(Math.round(avg * 10.0) / 10.0);
-        return dto;
+        return enrichWithRatings(new ArrayList<>(List.of(dto))).get(0);
     }
 
     private Category resolveCategory(Long categoryId) {
@@ -146,10 +159,11 @@ public class LodgingServiceImpl implements LodgingService {
     @Override
     @Transactional(readOnly = true)
     public List<LodgingDTO> findAll() {
-        return lodgingRepository.findAll()
+        List<LodgingDTO> dtos = lodgingRepository.findAll()
                 .stream()
-                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
-                .toList();
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        return enrichWithRatings(dtos);
     }
 
     @Override
@@ -161,19 +175,21 @@ public class LodgingServiceImpl implements LodgingService {
     @Override
     @Transactional(readOnly = true)
     public List<LodgingDTO> findByName(String name) {
-        return lodgingRepository.findByNameContainingIgnoreCase(name)
+        List<LodgingDTO> dtos = lodgingRepository.findByNameContainingIgnoreCase(name)
                 .stream()
-                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
-                .toList();
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        return enrichWithRatings(dtos);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<LodgingDTO> findByCategory(Long categoryId) {
-        return lodgingRepository.findByCategoryId(categoryId)
+        List<LodgingDTO> dtos = lodgingRepository.findByCategoryId(categoryId)
                 .stream()
-                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
-                .toList();
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        return enrichWithRatings(dtos);
     }
 
     @Override
@@ -181,9 +197,10 @@ public class LodgingServiceImpl implements LodgingService {
     public Map<String, Object> findAllPaginated(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Lodging> lodgingPage = lodgingRepository.findAll(pageable);
-        List<LodgingDTO> lodgings = lodgingPage.getContent().stream()
-                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
-                .toList();
+        List<LodgingDTO> dtos = lodgingPage.getContent().stream()
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        List<LodgingDTO> lodgings = enrichWithRatings(dtos);
         Map<String, Object> response = new HashMap<>();
         response.put("lodgings", lodgings);
         response.put("currentPage", lodgingPage.getNumber());
@@ -202,10 +219,11 @@ public class LodgingServiceImpl implements LodgingService {
         int fetchSize = (int) Math.min(total, RANDOM_POOL_SIZE);
         List<Lodging> pool = new ArrayList<>(lodgingRepository.findAll(PageRequest.of(0, fetchSize)).getContent());
         Collections.shuffle(pool);
-        return pool.stream()
+        List<LodgingDTO> dtos = pool.stream()
                 .limit(RANDOM_RESULT_SIZE)
-                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
-                .toList();
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        return enrichWithRatings(dtos);
     }
 
     @Override
@@ -248,9 +266,10 @@ public class LodgingServiceImpl implements LodgingService {
                     .toList();
         }
 
-        return results.stream()
-                .map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)))
-                .toList();
+        List<LodgingDTO> dtos = results.stream()
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        return enrichWithRatings(dtos);
     }
 
     @Override
