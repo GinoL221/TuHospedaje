@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -91,6 +92,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional
     public LodgingDTO save(LodgingDTO dto) {
         if (lodgingRepository.existsByName(dto.getName())) {
             throw new IllegalArgumentException("Ya existe un alojamiento con el nombre: " + dto.getName());
@@ -108,6 +110,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional
     public LodgingDTO update(LodgingDTO dto) throws ResourceNotFoundException {
         Lodging lodging = lodgingRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + dto.getId()));
@@ -132,6 +135,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional
     public Optional<LodgingDTO> delete(Long id) throws ResourceNotFoundException {
         Lodging lodging = lodgingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + id));
@@ -140,6 +144,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<LodgingDTO> findAll() {
         return lodgingRepository.findAll()
                 .stream()
@@ -148,11 +153,13 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<LodgingDTO> findById(Long id) {
         return lodgingRepository.findById(id).map(l -> enrichWithRatings(LodgingDTO.fromEntity(l)));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<LodgingDTO> findByName(String name) {
         return lodgingRepository.findByNameContainingIgnoreCase(name)
                 .stream()
@@ -161,6 +168,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<LodgingDTO> findByCategory(Long categoryId) {
         return lodgingRepository.findByCategoryId(categoryId)
                 .stream()
@@ -169,6 +177,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> findAllPaginated(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Lodging> lodgingPage = lodgingRepository.findAll(pageable);
@@ -184,6 +193,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<LodgingDTO> findAllRandom() {
         long total = lodgingRepository.count();
         if (total == 0) return List.of();
@@ -199,6 +209,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
                                    Integer guests, Long category,
                                    BigDecimal minPrice, BigDecimal maxPrice) {

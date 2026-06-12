@@ -11,6 +11,7 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.RatingService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional
     public RatingDTO createRating(User user, Long lodgingId, Integer score, String comment) {
         if (!reservationRepository.existsByUserIdAndLodgingIdAndStatus(
                 user.getId(), lodgingId, ReservationStatus.CONFIRMED)) {
@@ -60,6 +62,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> getRatingsByLodging(Long lodgingId) {
         List<Rating> ratings = ratingRepository.findByLodgingIdOrderByCreatedAtDesc(lodgingId);
         double average = ratings.isEmpty() ? 0.0
