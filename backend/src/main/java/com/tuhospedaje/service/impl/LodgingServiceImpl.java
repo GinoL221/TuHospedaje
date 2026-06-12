@@ -254,6 +254,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<String> findCities(String query) {
         String filter = (query == null) ? "" : query;
         return lodgingRepository.findDistinctByCityContainingIgnoreCaseOrderByCityAsc(filter)
@@ -263,6 +264,7 @@ public class LodgingServiceImpl implements LodgingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AvailabilityResponse checkAvailability(Long lodgingId, LocalDate checkIn, LocalDate checkOut) {
         List<Reservation> confirmed = reservationRepository
                 .findByLodgingIdAndStatus(lodgingId, ReservationStatus.CONFIRMED);
