@@ -3,6 +3,7 @@ package com.tuhospedaje.controller;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,16 +28,16 @@ public class FavoriteController {
 
     @PostMapping("/{lodgingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> addFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
+    public ResponseEntity<Void> addFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
         userService.addFavorite(user.getId(), lodgingId);
-        return ResponseEntity.ok("Favorito agregado");
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/{lodgingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> removeFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
+    public ResponseEntity<Void> removeFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
         userService.removeFavorite(user.getId(), lodgingId);
-        return ResponseEntity.ok("Favorito eliminado");
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

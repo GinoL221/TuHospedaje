@@ -41,7 +41,7 @@ public class LodgingController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @RequestBody LodgingDTO dto) {
+    public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @Valid @RequestBody LodgingDTO dto) {
         dto.setId(id);
         LodgingDTO updated = lodgingService.update(dto);
         return ResponseEntity.ok(updated);
@@ -75,9 +75,9 @@ public class LodgingController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         lodgingService.delete(id);
-        return ResponseEntity.ok("Alojamiento eliminado con ID: " + id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/search")

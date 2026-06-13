@@ -264,7 +264,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(delete("/api/lodgings/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/lodgings/{id}", id))
                 .andExpect(status().isNotFound());
