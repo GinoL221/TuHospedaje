@@ -11,6 +11,8 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasItem;
@@ -55,6 +58,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private EntityManagerFactory emf;
 
     private String adminAuthHeader;
     private String userAuthHeader;
@@ -405,6 +411,42 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+    }
+
+    @Test
+    void adjacentReservation_checkinEqualsRequestedCheckout_lodgingIncluded() throws Exception {
+        Long id = createTestLodgingWithCity("Adjacent Hotel B", "adjacent-b@tdd-adj-05.com", "tdd-adj-05");
+        LocalDate today = LocalDate.now();
+        // Reservation checkIn == requested checkOut: adjacent, NOT an overlap
+        seedReservation(id, today.plusDays(3), today.plusDays(7), ReservationStatus.CONFIRMED);
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-adj-05")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+    }
+
+    @Test
+    void searchWithDates_executesAtMostTwoQueries() throws Exception {
+        Long id = createTestLodgingWithCity("Perf Hotel", "perf@tdd-perf-06.com", "tdd-perf-06");
+        LocalDate today = LocalDate.now();
+
+        SessionFactory sf = emf.unwrap(SessionFactory.class);
+        sf.getStatistics().setStatisticsEnabled(true);
+        sf.getStatistics().clear();
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-perf-06")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+
+        // search (1 query with NOT EXISTS subquery) + ratings aggregate (1 query) = 2 max
+        long queryCount = sf.getStatistics().getQueryExecutionCount();
+        assertThat(queryCount).isLessThanOrEqualTo(2L);
     }
 
     private void seedReservation(Long lodgingId, LocalDate checkIn, LocalDate checkOut, ReservationStatus status) {
