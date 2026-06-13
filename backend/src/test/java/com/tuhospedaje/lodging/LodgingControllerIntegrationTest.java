@@ -3,9 +3,13 @@ package com.tuhospedaje.lodging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
+import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,9 +20,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -38,6 +46,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private LodgingRepository lodgingRepository;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -333,5 +344,92 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .getContentAsString();
 
         return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    // -------------------------------------------------------------------------
+    // Availability filtering tests (N+1 fix validation)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void availableLodging_noReservations_appearsInResults() throws Exception {
+        Long id = createTestLodgingWithCity("Avail No Res", "avail-no-res@tdd-avail-01.com", "tdd-avail-01");
+        LocalDate today = LocalDate.now();
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-avail-01")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+    }
+
+    @Test
+    void confirmedOverlappingReservation_lodgingExcluded() throws Exception {
+        Long id = createTestLodgingWithCity("Booked Hotel", "booked@tdd-excl-02.com", "tdd-excl-02");
+        LocalDate today = LocalDate.now();
+        seedReservation(id, today, today.plusDays(5), ReservationStatus.CONFIRMED);
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-excl-02")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", not(hasItem(id.intValue()))));
+    }
+
+    @Test
+    void adjacentReservation_checkoutEqualsRequestedCheckin_lodgingIncluded() throws Exception {
+        Long id = createTestLodgingWithCity("Adjacent Hotel", "adjacent@tdd-adj-03.com", "tdd-adj-03");
+        LocalDate today = LocalDate.now();
+        // Reservation checkOut == requested checkIn: adjacent, NOT an overlap
+        seedReservation(id, today.minusDays(2), today.plusDays(1), ReservationStatus.CONFIRMED);
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-adj-03")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+    }
+
+    @Test
+    void cancelledOverlappingReservation_doesNotBlockLodging() throws Exception {
+        Long id = createTestLodgingWithCity("Cancelled Hotel", "cancelled@tdd-canc-04.com", "tdd-canc-04");
+        LocalDate today = LocalDate.now();
+        // CANCELLED reservation overlapping the requested range — must NOT block
+        seedReservation(id, today, today.plusDays(5), ReservationStatus.CANCELLED);
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-canc-04")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+    }
+
+    private void seedReservation(Long lodgingId, LocalDate checkIn, LocalDate checkOut, ReservationStatus status) {
+        Lodging lodging = lodgingRepository.findById(lodgingId)
+                .orElseThrow(() -> new IllegalArgumentException("Lodging not found: " + lodgingId));
+
+        User guest = User.builder()
+                .firstName("Guest")
+                .lastName("Tester")
+                .email("guest-" + lodgingId + "-" + checkIn + "@reservation-seed.com")
+                .password("password")
+                .role(RoleEnum.USER)
+                .build();
+        User savedGuest = userRepository.save(guest);
+
+        Reservation reservation = new Reservation();
+        reservation.setLodging(lodging);
+        reservation.setUser(savedGuest);
+        reservation.setCheckIn(checkIn);
+        reservation.setCheckOut(checkOut);
+        reservation.setGuestName(savedGuest.getFirstName() + " " + savedGuest.getLastName());
+        reservation.setGuestEmail(savedGuest.getEmail());
+        reservation.setGuestPhone("000000000");
+        reservation.setTotalPrice(BigDecimal.valueOf(100));
+        reservation.setStatus(status);
+        reservationRepository.save(reservation);
     }
 }

@@ -25,6 +25,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -256,17 +258,22 @@ public class LodgingServiceImpl implements LodgingService {
                     cb.lessThanOrEqualTo(root.get("pricePerNight"), maxPrice));
         }
 
-        List<Lodging> results = lodgingRepository.findAll(spec);
-
         if (checkIn != null && checkOut != null) {
-            results = results.stream()
-                    .filter(l -> reservationRepository
-                            .findByLodgingIdAndStatus(l.getId(), ReservationStatus.CONFIRMED)
-                            .stream()
-                            .noneMatch(r -> r.getCheckIn().isBefore(checkOut)
-                                    && r.getCheckOut().isAfter(checkIn)))
-                    .toList();
+            spec = spec.and((root, query, cb) -> {
+                Subquery<Long> sub = query.subquery(Long.class);
+                Root<Reservation> r = sub.from(Reservation.class);
+                sub.select(r.get("id"))
+                   .where(
+                       cb.equal(r.get("lodging"), root),
+                       cb.equal(r.get("status"), ReservationStatus.CONFIRMED),
+                       cb.lessThan(r.<LocalDate>get("checkIn"), checkOut),
+                       cb.greaterThan(r.<LocalDate>get("checkOut"), checkIn)
+                   );
+                return cb.not(cb.exists(sub));
+            });
         }
+
+        List<Lodging> results = lodgingRepository.findAll(spec);
 
         List<LodgingDTO> dtos = results.stream()
                 .map(LodgingDTO::fromEntity)
