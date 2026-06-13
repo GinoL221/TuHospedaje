@@ -1,5 +1,6 @@
 package com.tuhospedaje.auth;
 
+import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
@@ -9,12 +10,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 @Transactional
 class AuthServiceImplTest {
 
