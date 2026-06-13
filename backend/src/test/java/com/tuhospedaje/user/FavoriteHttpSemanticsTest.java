@@ -19,8 +19,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -95,5 +97,42 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
+    }
+
+    // GET /api/favorites authenticated — returns list (covers getFavorites controller branch)
+    @Test
+    void getFavorites_authenticated_returns200WithArray() throws Exception {
+        // add one favorite first
+        mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/favorites")
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    // POST /api/favorites unauthenticated — current behavior: Spring Security returns 403 (no WWW-Authenticate)
+    // Pinning current behavior; 401 vs 403 discrepancy noted in apply-progress.
+    @Test
+    void addFavorite_unauthenticated_returns403() throws Exception {
+        mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId))
+                .andExpect(status().isForbidden());
+    }
+
+    // DELETE /api/favorites unauthenticated — current behavior: 403
+    @Test
+    void removeFavorite_unauthenticated_returns403() throws Exception {
+        mockMvc.perform(delete("/api/favorites/{lodgingId}", lodgingId))
+                .andExpect(status().isForbidden());
+    }
+
+    // GET /api/favorites unauthenticated — current behavior: 403
+    @Test
+    void getFavorites_unauthenticated_returns403() throws Exception {
+        mockMvc.perform(get("/api/favorites"))
+                .andExpect(status().isForbidden());
     }
 }
