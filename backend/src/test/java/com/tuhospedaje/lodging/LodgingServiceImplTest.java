@@ -15,6 +15,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -146,7 +149,7 @@ class LodgingServiceImplTest {
         two.setId(2L);
         two.setName("Hotel B");
 
-        when(lodgingRepository.findAll()).thenReturn(List.of(one, two));
+        when(lodgingRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(one, two)));
 
         List<LodgingDTO> response = lodgingService.findAll();
 

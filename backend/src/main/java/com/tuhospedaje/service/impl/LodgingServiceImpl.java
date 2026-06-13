@@ -42,6 +42,7 @@ public class LodgingServiceImpl implements LodgingService {
 
     private static final int RANDOM_POOL_SIZE = 100;
     private static final int RANDOM_RESULT_SIZE = 10;
+    private static final int MAX_UNFILTERED_RESULTS = 100;
 
     private final LodgingRepository lodgingRepository;
     private final CategoryRepository categoryRepository;
@@ -159,7 +160,8 @@ public class LodgingServiceImpl implements LodgingService {
     @Override
     @Transactional(readOnly = true)
     public List<LodgingDTO> findAll() {
-        List<LodgingDTO> dtos = lodgingRepository.findAll()
+        List<LodgingDTO> dtos = lodgingRepository.findAll(PageRequest.of(0, MAX_UNFILTERED_RESULTS))
+                .getContent()
                 .stream()
                 .map(LodgingDTO::fromEntity)
                 .collect(Collectors.toList());

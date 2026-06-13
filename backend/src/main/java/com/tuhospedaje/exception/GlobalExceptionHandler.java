@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleUploadError(UploadException ex) {
         log.error("Upload failed", ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(Map.of("error", ex.getMessage(), "status", 502));
+                .body(Map.of("error", "Error al procesar la imagen", "status", 502));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
