@@ -68,7 +68,7 @@ export default function AdminLodgings() {
 
   return (
     <>
-      <button className="btn-fab" onClick={() => setShowModal(true)}>
+      <button className="btn-fab" data-testid="admin-add-btn" onClick={() => setShowModal(true)}>
         + Agregar alojamiento
       </button>
       <LodgingsTable
@@ -81,6 +81,7 @@ export default function AdminLodgings() {
         message={deleteConfirm ? `¿Eliminar el alojamiento "${deleteConfirm.name}"? Esta acción no se puede deshacer.` : ""}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
+        testId="confirm-delete"
       />
       {showModal && (
         <LodgingFormModal

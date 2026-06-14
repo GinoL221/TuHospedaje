@@ -97,7 +97,7 @@ export default function AdminFeatures() {
 
   return (
     <>
-      <button className="btn-fab" onClick={() => openModal(null)}>
+      <button className="btn-fab" data-testid="admin-add-btn" onClick={() => openModal(null)}>
         + Agregar característica
       </button>
       {featureList.length === 0 ? (
@@ -117,18 +117,19 @@ export default function AdminFeatures() {
             </thead>
             <tbody>
               {pageItems.map((f) => (
-                <tr key={f.id}>
+                <tr key={f.id} data-testid={`row-${f.id}`}>
                   <td>{f.id}</td>
                   <td>{f.name}</td>
                   <td>
                     <Icon name={f.icon} /> <code>{f.icon}</code>
                   </td>
                   <td>
-                    <button className="btn-edit" onClick={() => openModal(f)}>
+                    <button className="btn-edit" data-testid="row-edit-btn" onClick={() => openModal(f)}>
                       Editar
                     </button>
                     <button
                       className="btn-delete"
+                      data-testid="row-delete-btn"
                       onClick={() => handleDelete(f.id, f.name)}
                     >
                       Eliminar
@@ -144,30 +145,31 @@ export default function AdminFeatures() {
 
       {showModal && (
         <div className="modal-overlay" onClick={cancel.handleCancel}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
             <h2>
               {editing ? "Editar característica" : "Nueva característica"}
             </h2>
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
-                <input value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
-                {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
+                <input data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
+                {fieldErrors.name && <span className="field-error" data-testid="error-name">{fieldErrors.name}</span>}
               </label>
               <label className="required-dot">
                 Ícono
                 <IconPicker value={form.icon} onChange={(val) => { setForm({ ...form, icon: val }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-wifi" />
-                {fieldErrors.icon && <span className="field-error">{fieldErrors.icon}</span>}
+                {fieldErrors.icon && <span className="field-error" data-testid="error-icon">{fieldErrors.icon}</span>}
               </label>
-              {error && <p className="form-error">{error}</p>}
+              {error && <p className="form-error" data-testid="admin-form-error">{error}</p>}
               <p className="required-note">* Campos obligatorios</p>
               <div className="modal-actions">
-                <button type="submit" className="btn-save">
+                <button type="submit" className="btn-save" data-testid="admin-save-btn">
                   {editing ? "Guardar cambios" : "Crear"}
                 </button>
                 <button
                   type="button"
                   className="btn-cancel"
+                  data-testid="admin-cancel-btn"
                   onClick={cancel.handleCancel}
                 >
                   Cancelar
@@ -183,6 +185,7 @@ export default function AdminFeatures() {
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
+        testId="confirm-cancel"
       />
     </>
   );

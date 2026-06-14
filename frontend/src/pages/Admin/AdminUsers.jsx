@@ -54,7 +54,7 @@ export default function AdminUsers() {
             </thead>
             <tbody>
               {pageItems.map((u) => (
-                <tr key={u.id}>
+                <tr key={u.id} data-testid={`row-${u.id}`}>
                   <td>{u.id}</td>
                   <td>{u.firstName} {u.lastName}</td>
                   <td>{u.email}</td>
@@ -62,6 +62,7 @@ export default function AdminUsers() {
                   <td>
                     <button
                       className={"btn-role " + (u.role === "ADMIN" ? "btn-demote" : "btn-promote")}
+                      data-testid="row-role-btn"
                       onClick={() => toggleRole(u)}
                       disabled={u.email === currentUser?.email}
                       title={u.email === currentUser?.email ? "No podés cambiarte tu propio rol" : ""}

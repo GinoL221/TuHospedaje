@@ -68,6 +68,7 @@ export default function Admin() {
             <button
               key={key}
               className={"admin-nav-item" + (tab === key ? " active" : "")}
+              data-testid={`admin-nav-${key}`}
               onClick={() => setTab(key)}
             >
               <Icon size={18} />

@@ -44,7 +44,7 @@ export default function AdminReservations() {
         <p className="empty-state">No hay reservas registradas.</p>
       ) : (
         <>
-          <table>
+          <table data-testid="reservations-table">
             <thead>
               <tr>
                 <SortableTh
@@ -107,7 +107,7 @@ export default function AdminReservations() {
             </thead>
             <tbody>
               {pageItems.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} data-testid={`row-${r.id}`}>
                   <td>{r.id}</td>
                   <td>{r.lodgingName}</td>
                   <td>{r.guestName}</td>
