@@ -2,12 +2,17 @@ package com.tuhospedaje.lodging;
 
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.entity.Category;
+import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.CityProjection;
+import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
+import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,8 +23,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,6 +41,15 @@ class LodgingServiceImplTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private FeatureRepository featureRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
+
+    @Mock
+    private PolicyRepository policyRepository;
 
     @Mock
     private RatingRepository ratingRepository;
@@ -350,5 +366,98 @@ class LodgingServiceImplTest {
                 .thenReturn(List.of(projection));
         List<String> cities = lodgingService.findCities("spring");
         assertThat(cities).containsExactly("Springfield");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenFindCitiesQueryIsNull() {
+        // query == null branch: ternary resolves to ""
+        when(lodgingRepository.findDistinctByCityContainingIgnoreCaseOrderByCityAsc(""))
+                .thenReturn(List.of());
+        List<String> cities = lodgingService.findCities(null);
+        assertThat(cities).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptyWhenFindAllRandomAndNoLodgings() {
+        when(lodgingRepository.count()).thenReturn(0L);
+        List<LodgingDTO> result = lodgingService.findAllRandom();
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldSaveLodgingWithFeaturesAndPolicies() {
+        Feature feature = new Feature();
+        feature.setId(1L);
+        feature.setName("Pool");
+
+        Policy policy = new Policy();
+        policy.setId(2L);
+        policy.setName("No pets");
+        policy.setDescription("No pets allowed");
+
+        LodgingDTO dto = new LodgingDTO();
+        dto.setName("Hotel Features");
+        dto.setAddress("Av. Test 1");
+        dto.setCity("Ciudad");
+        dto.setCountry("Pais");
+        dto.setPhoneNumber("999");
+        dto.setEmail("features@test.com");
+        dto.setFeatureIds(Set.of(1L));
+        dto.setPolicyIds(Set.of(2L));
+
+        Lodging savedEntity = new Lodging();
+        savedEntity.setId(50L);
+        savedEntity.setName("Hotel Features");
+        savedEntity.setFeatures(Set.of(feature));
+        savedEntity.setPolicies(Set.of(policy));
+
+        when(lodgingRepository.existsByName("Hotel Features")).thenReturn(false);
+        when(lodgingRepository.existsByEmail("features@test.com")).thenReturn(false);
+        when(featureRepository.findAllById(Set.of(1L))).thenReturn(List.of(feature));
+        when(policyRepository.findAllById(Set.of(2L))).thenReturn(List.of(policy));
+        when(lodgingRepository.save(any(Lodging.class))).thenReturn(savedEntity);
+
+        LodgingDTO response = lodgingService.save(dto);
+
+        assertThat(response.getId()).isEqualTo(50L);
+    }
+
+    @Test
+    void shouldReturnEmptyListFromEnrichWithRatingsWhenInputIsEmpty() {
+        // enrichWithRatings short-circuit: dtos.isEmpty() == true
+        when(lodgingRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        List<LodgingDTO> result = lodgingService.findAll();
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldReturnLodgingsForCategoryId() {
+        Lodging lodging = new Lodging();
+        lodging.setId(3L);
+        lodging.setName("Hostel Mar");
+
+        when(lodgingRepository.findByCategoryId(5L)).thenReturn(List.of(lodging));
+
+        List<LodgingDTO> result = lodgingService.findByCategory(5L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getName()).isEqualTo("Hostel Mar");
+    }
+
+    @Test
+    void shouldReturnPaginatedLodgings() {
+        Lodging lodging = new Lodging();
+        lodging.setId(7L);
+        lodging.setName("Hotel Pag");
+
+        when(lodgingRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(lodging)));
+
+        var result = lodgingService.findAllPaginated(0, 10);
+
+        assertThat(result.get("currentPage")).isEqualTo(0);
+        assertThat(result.get("totalItems")).isEqualTo(1L);
+        assertThat((List<?>) result.get("lodgings")).hasSize(1);
     }
 }
