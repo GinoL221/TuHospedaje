@@ -76,8 +76,7 @@ test.describe('Admin › Categories CRUD', () => {
 
     // Open edit, change name, save.
     await categoriesPage.editRow(id);
-    const nameField = adminUser.page.locator('[data-testid="field-name"]');
-    await nameField.fill(updatedName);
+    await categoriesPage.fillField('name', updatedName);
     await categoriesPage.save();
 
     // Updated name is now visible; original is gone.

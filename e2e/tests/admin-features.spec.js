@@ -81,9 +81,7 @@ test.describe('Admin › Features CRUD', () => {
 
     // Open edit, change name, save.
     await featuresPage.editRow(id);
-    // Clear the field and type the new name.
-    const nameField = adminUser.page.locator('[data-testid="field-name"]');
-    await nameField.fill(updatedName);
+    await featuresPage.fillField('name', updatedName);
     await featuresPage.save();
 
     // Updated name is now visible; original is gone.
