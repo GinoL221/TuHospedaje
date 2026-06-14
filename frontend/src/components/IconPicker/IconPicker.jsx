@@ -78,6 +78,7 @@ export default function IconPicker({
         ref={triggerRef}
         type="button"
         className="icon-picker-trigger"
+        data-testid="icon-picker-trigger"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
       >
@@ -107,6 +108,7 @@ export default function IconPicker({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="icon-picker-search"
+              data-testid="icon-picker-search"
               placeholder={placeholder}
             />
 
@@ -118,6 +120,7 @@ export default function IconPicker({
                     key={key}
                     type="button"
                     className={`icon-picker-item ${isSelected ? "selected" : ""}`}
+                    data-testid={`icon-picker-item-${key}`}
                     onClick={() => {
                       onChange(key);
                       setIsOpen(false);

@@ -33,16 +33,17 @@ export default function LodgingsTable({ lodgings, onDelete, onEdit }) {
         </thead>
         <tbody>
           {pageItems.map((l) => (
-            <tr key={l.id}>
+            <tr key={l.id} data-testid={`row-${l.id}`}>
               <td>{l.id}</td>
               <td>{l.name}</td>
               <td>{l.description}</td>
               <td>
-                <button className="btn-edit" onClick={() => onEdit(l)}>
+                <button className="btn-edit" data-testid="row-edit-btn" onClick={() => onEdit(l)}>
                   Editar
                 </button>
                 <button
                   className="btn-delete"
+                  data-testid="row-delete-btn"
                   onClick={() => onDelete(l.id, l.name)}
                 >
                   Eliminar

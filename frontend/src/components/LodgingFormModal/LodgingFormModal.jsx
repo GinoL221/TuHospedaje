@@ -119,13 +119,14 @@ export default function LodgingFormModal({
         <input
           type={type || "text"}
           value={value}
+          data-testid={`field-${name}`}
           className={error ? "input-error" : ""}
           onChange={(e) => {
             setForm({ ...form, [name]: e.target.value });
             if (error) setFieldErrors({ ...fieldErrors, [name]: "" });
           }}
         />
-        {error && <span className="field-error">{error}</span>}
+        {error && <span className="field-error" data-testid={`error-${name}`}>{error}</span>}
       </label>
     );
   }
@@ -133,7 +134,7 @@ export default function LodgingFormModal({
   return (
     <>
       <div className="modal-overlay" onClick={cancel.handleCancel}>
-        <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="modal modal-lg" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
           <h2>{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}</h2>
           <form onSubmit={handleSubmit} noValidate>
             <div className="modal-form-grid">
@@ -142,6 +143,7 @@ export default function LodgingFormModal({
               <label className="full-width required-dot">
                 Descripción
                 <textarea
+                  data-testid="field-description"
                   value={form.description}
                   className={fieldErrors.description ? "input-error" : ""}
                   onChange={(e) => {
@@ -151,7 +153,7 @@ export default function LodgingFormModal({
                   }}
                 />
                 {fieldErrors.description && (
-                  <span className="field-error">{fieldErrors.description}</span>
+                  <span className="field-error" data-testid="error-description">{fieldErrors.description}</span>
                 )}
               </label>
               {inputField("address", true, "text", "Dirección")}
@@ -231,12 +233,13 @@ export default function LodgingFormModal({
               {error && <p className="form-error full-width">{error}</p>}
               <p className="required-note full-width">* Campos obligatorios</p>
               <div className="modal-actions full-width">
-                <button type="submit" className="btn-save">
+                <button type="submit" className="btn-save" data-testid="admin-save-btn">
                   {isEdit ? "Guardar cambios" : "Guardar"}
                 </button>
                 <button
                   type="button"
                   className="btn-cancel"
+                  data-testid="admin-cancel-btn"
                   onClick={cancel.handleCancel}
                 >
                   Cancelar
@@ -254,6 +257,7 @@ export default function LodgingFormModal({
           cancel.confirmCancel();
         }}
         onCancel={cancel.dismissConfirm}
+        testId="confirm-cancel"
       />
     </>
   );
