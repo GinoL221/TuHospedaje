@@ -3,6 +3,12 @@ package com.tuhospedaje.controller;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.service.LodgingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -24,6 +30,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/lodgings")
+@Tag(name = "Lodgings", description = "Search and manage lodging listings")
 public class LodgingController {
 
     private final LodgingService lodgingService;
@@ -34,6 +41,13 @@ public class LodgingController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create a lodging", description = "Creates a new lodging listing. Requires ADMIN role.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Lodging created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+    })
     public ResponseEntity<LodgingDTO> create(@Valid @RequestBody LodgingDTO dto) {
         LodgingDTO saved = lodgingService.save(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -41,6 +55,14 @@ public class LodgingController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update a lodging", description = "Updates an existing lodging by ID. Requires ADMIN role.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lodging updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+    })
     public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @Valid @RequestBody LodgingDTO dto) {
         dto.setId(id);
         LodgingDTO updated = lodgingService.update(dto);
@@ -48,6 +70,10 @@ public class LodgingController {
     }
 
     @GetMapping
+    @Operation(summary = "List lodgings", description = "Returns all lodgings. Supports optional pagination (?page=0&size=10) and category filtering (?category=1).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lodgings retrieved successfully"),
+    })
     public ResponseEntity<?> findAll(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
@@ -62,11 +88,20 @@ public class LodgingController {
     }
 
     @GetMapping("/random")
+    @Operation(summary = "Get random lodgings", description = "Returns a random sample of lodging listings for discovery purposes.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Random lodgings retrieved successfully"),
+    })
     public ResponseEntity<List<LodgingDTO>> random() {
         return ResponseEntity.ok(lodgingService.findAllRandom());
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get lodging by ID", description = "Returns a single lodging by its unique identifier.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lodging found"),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+    })
     public ResponseEntity<LodgingDTO> findById(@PathVariable Long id) {
         return lodgingService.findById(id)
                 .map(ResponseEntity::ok)
@@ -75,12 +110,23 @@ public class LodgingController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete a lodging", description = "Permanently deletes a lodging by ID. Requires ADMIN role.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Lodging deleted successfully", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+    })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         lodgingService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/search")
+    @Operation(summary = "Search lodgings", description = "Filters lodgings by city, check-in/check-out dates, number of guests, category, and price range. All parameters are optional.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Search results returned"),
+    })
     public ResponseEntity<List<LodgingDTO>> search(
             @RequestParam(required = false) String city,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
@@ -93,11 +139,20 @@ public class LodgingController {
     }
 
     @GetMapping("/cities")
+    @Operation(summary = "List available cities", description = "Returns a list of cities that have at least one lodging. Supports optional query string filtering (?q=bue).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "City list returned"),
+    })
     public ResponseEntity<List<String>> cities(@RequestParam(required = false) String q) {
         return ResponseEntity.ok(lodgingService.findCities(q));
     }
 
     @GetMapping("/{id}/availability")
+    @Operation(summary = "Check lodging availability", description = "Returns availability status for a lodging in the given date range.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Availability information returned"),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+    })
     public ResponseEntity<AvailabilityResponse> availability(
             @PathVariable Long id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
