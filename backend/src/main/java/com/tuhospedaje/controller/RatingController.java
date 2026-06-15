@@ -4,6 +4,12 @@ import com.tuhospedaje.dto.rating.RatingDTO;
 import com.tuhospedaje.dto.rating.RatingRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.service.RatingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +26,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ratings")
+@Tag(name = "Ratings", description = "Submit and retrieve lodging ratings")
 public class RatingController {
 
     private final RatingService ratingService;
@@ -30,6 +37,19 @@ public class RatingController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Submit or update a rating",
+            description = "Creates a new rating for a lodging, or updates the existing one if the user " +
+                          "has already rated it. Only users with a confirmed reservation for the target " +
+                          "lodging are allowed to submit a rating. Score must be between 1 and 5."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Rating submitted successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or user has no confirmed reservation for this lodging", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+    })
     public ResponseEntity<RatingDTO> create(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody RatingRequest request) {
@@ -38,6 +58,13 @@ public class RatingController {
     }
 
     @GetMapping("/lodging/{lodgingId}")
+    @Operation(
+            summary = "Get ratings for a lodging",
+            description = "Returns all ratings for a given lodging along with the average score and total count. Public endpoint — no authentication required."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Ratings retrieved successfully"),
+    })
     public ResponseEntity<Map<String, Object>> getByLodging(@PathVariable Long lodgingId) {
         return ResponseEntity.ok(ratingService.getRatingsByLodging(lodgingId));
     }
