@@ -106,9 +106,55 @@ describe("BookingPage - total computed from nights x price", () => {
     expect(screen.getByText(/3 noches/)).toBeInTheDocument();
     expect(screen.getByText("$300")).toBeInTheDocument();
   });
+
+  it("uses the singular '1 noche' label for a 1-night stay", async () => {
+    mockGetDefaults();
+    const authValue = makeAuthValue();
+    const { container } = renderBookingPage({
+      authValue,
+      initialEntries: [
+        {
+          pathname: "/booking/1",
+          state: { checkIn: "2026-07-01", checkOut: "2026-07-02" },
+        },
+      ],
+    });
+
+    await screen.findByText("Cabaña del Lago");
+
+    const totalText = container.querySelector(".booking-total").textContent;
+    expect(totalText).toMatch(/1 noche\b/);
+    expect(totalText).not.toMatch(/1 noches/);
+    expect(totalText).toContain("$100");
+  });
+
+  it("computes a total of $0 when the lodging has no pricePerNight", async () => {
+    mockGetDefaults({ lodging: { ...lodgingFixture, pricePerNight: 0 } });
+    const authValue = makeAuthValue();
+    const { container } = renderBookingPage({
+      authValue,
+      initialEntries: [
+        {
+          pathname: "/booking/1",
+          state: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+        },
+      ],
+    });
+
+    await screen.findByText("Cabaña del Lago");
+
+    const totalText = container.querySelector(".booking-total").textContent;
+    expect(totalText).toMatch(/3 noches/);
+    expect(totalText).toContain("$0");
+  });
 });
 
-describe("BookingPage - occupied dates filtering", () => {
+// NOTE: This describe block only verifies the submit button's disabled state
+// based on whether checkIn/checkOut are present. It does NOT cover the actual
+// occupied-dates filtering logic (isDateOccupied / the filterDate prop passed
+// to react-datepicker). Testing that would require interacting with the
+// react-datepicker calendar widget directly, which is a known coverage gap.
+describe("BookingPage - submit button enablement", () => {
   it("disables the submit button until both dates are selected", async () => {
     mockGetDefaults({
       availability: {
