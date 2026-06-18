@@ -1,10 +1,12 @@
 import { get, post, put, del } from "./api";
 
 // NOTE: `api.js` reads `import.meta.env.VITE_API_URL` into a module-level
-// `const API_BASE` at import time, so `vi.stubEnv` (which runs in
-// `beforeEach`, after the module has already been evaluated) cannot
-// override it. We assert against the actual `endpoint` portion of the URL
-// instead of hardcoding the base, per design's documented fallback.
+// `const API_BASE` at import time. Most tests below assert only the
+// `endpoint` portion of the URL (the static `./api` import already has a
+// fixed `API_BASE` baked in). The "request URL construction" describe block
+// further down controls `API_BASE` for real via `vi.resetModules()` plus a
+// dynamic `import("./api")`, which re-evaluates the module against a
+// freshly stubbed `VITE_API_URL`.
 function mockFetchResolved({ ok = true, status = 200, json } = {}) {
   return vi.fn().mockResolvedValue({
     ok,
@@ -160,5 +162,41 @@ describe("api service - 401 unauthorized", () => {
     expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
 
     window.removeEventListener("auth:unauthorized", eventSpy);
+  });
+});
+
+describe("api service - request URL construction", () => {
+  it("builds the request URL from the real VITE_API_URL evaluated at module import time", async () => {
+    vi.resetModules();
+    vi.stubEnv("VITE_API_URL", "http://test-base");
+
+    const { get: scopedGet } = await import("./api");
+
+    const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await scopedGet("/lodgings");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://test-base/lodgings",
+      expect.objectContaining({ method: "GET" })
+    );
+  });
+});
+
+describe("api service - ok response with unparseable body", () => {
+  it("resolves with null when res.ok is true but res.json() throws", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new Error("invalid json");
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await get("/lodgings");
+
+    expect(result).toBeNull();
   });
 });

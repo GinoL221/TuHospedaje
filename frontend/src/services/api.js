@@ -1,3 +1,6 @@
+// Evaluated once at module import time (top-level), so vi.stubEnv calls
+// made after this module is first imported (e.g. in beforeEach) will not
+// change API_BASE; use vi.resetModules() + a dynamic import() to re-evaluate it.
 const API_BASE = import.meta.env.VITE_API_URL;
 
 async function request(method, endpoint, data) {
