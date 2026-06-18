@@ -26,10 +26,8 @@ function getInput(container, name) {
   return container.querySelector(`input[name="${name}"]`);
 }
 
-function getPwCheckItem(container, text) {
-  return Array.from(container.querySelectorAll(".pw-checks li")).find((li) =>
-    li.textContent.includes(text)
-  );
+function getPwCheckItem(text) {
+  return screen.getByText(text, { exact: false });
 }
 
 const validForm = {
@@ -72,15 +70,15 @@ describe("RegisterPage - password complexity checklist", () => {
     const passwordInput = getInput(container, "password");
     await user.type(passwordInput, "a");
 
-    expect(getPwCheckItem(container, "Al menos 6 caracteres")).toHaveClass("pw-check-fail");
-    expect(getPwCheckItem(container, "Una letra mayúscula")).toHaveClass("pw-check-fail");
-    expect(getPwCheckItem(container, "Un número")).toHaveClass("pw-check-fail");
+    expect(getPwCheckItem("Al menos 6 caracteres")).toHaveClass("pw-check-fail");
+    expect(getPwCheckItem("Una letra mayúscula")).toHaveClass("pw-check-fail");
+    expect(getPwCheckItem("Un número")).toHaveClass("pw-check-fail");
 
     await user.type(passwordInput, "bcdeF9");
 
-    expect(getPwCheckItem(container, "Al menos 6 caracteres")).toHaveClass("pw-check-ok");
-    expect(getPwCheckItem(container, "Una letra mayúscula")).toHaveClass("pw-check-ok");
-    expect(getPwCheckItem(container, "Un número")).toHaveClass("pw-check-ok");
+    expect(getPwCheckItem("Al menos 6 caracteres")).toHaveClass("pw-check-ok");
+    expect(getPwCheckItem("Una letra mayúscula")).toHaveClass("pw-check-ok");
+    expect(getPwCheckItem("Un número")).toHaveClass("pw-check-ok");
   });
 });
 
