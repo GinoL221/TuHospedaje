@@ -1,5 +1,5 @@
-import { render, screen, userEvent } from "../test/test-utils";
-import Pagination from "./Pagination/Pagination";
+import { render, screen, userEvent } from "../../test/test-utils";
+import Pagination from "./Pagination";
 
 describe("Pagination - single page renders nothing", () => {
   it("renders null when totalPages is 1", () => {
