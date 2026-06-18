@@ -1,9 +1,8 @@
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { customRender, screen, makeAuthValue } from "./test-utils";
 
 function AuthConsumer() {
-  const { user, token } = useContext(AuthContext);
+  const { user, token } = useAuth();
   return (
     <div>
       <span data-testid="user">{user ? user.email : "no-user"}</span>
