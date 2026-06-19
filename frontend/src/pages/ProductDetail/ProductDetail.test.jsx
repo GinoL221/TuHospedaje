@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { customRender, screen, userEvent, makeAuthValue } from "../../test/test-utils";
 import ProductDetail from "./ProductDetail";
 import { get } from "../../services/api";
@@ -34,11 +34,21 @@ function mockGetDefaults({ lodging = lodgingFixture, availability = {}, ratings 
   });
 }
 
+function LoginSentinel() {
+  const location = useLocation();
+  return (
+    <div data-testid="login-sentinel">
+      login page, from: {location.state?.from?.pathname ?? "none"}
+    </div>
+  );
+}
+
 function renderProductDetail({ authValue, initialEntries = ["/lodgings/1"] } = {}) {
   return customRender(
     <Routes>
       <Route path="/lodgings/:id" element={<ProductDetail />} />
       <Route path="/booking/:id" element={<BookingSentinel />} />
+      <Route path="/login" element={<LoginSentinel />} />
     </Routes>,
     { authValue, initialEntries }
   );
@@ -70,6 +80,25 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
       "/login"
     );
     expect(screen.queryByRole("button", { name: "Reservar" })).not.toBeInTheDocument();
+  });
+
+  it("preserves the current location as state.from on the login link, so login can redirect back here", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderProductDetail({ authValue: null, initialEntries: ["/lodgings/1"] });
+
+    await screen.findByText("Cabaña del Lago");
+
+    const loginLink = screen.getByRole("link", { name: "Iniciá sesión" });
+    await user.click(loginLink);
+
+    // Same pattern RequireAuth already uses: the login link must carry
+    // state.from = current location, so LoginPage's
+    // `location.state?.from?.pathname` resolves back here instead of
+    // falling back to "/".
+    expect(await screen.findByTestId("login-sentinel")).toHaveTextContent(
+      "from: /lodgings/1"
+    );
   });
 
   it("disables the reserve button for a logged-in user until both dates are selected", async () => {

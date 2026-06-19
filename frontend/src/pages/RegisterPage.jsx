@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import "../App.css";
 import "../assets/css/auth.css";
@@ -7,6 +7,7 @@ import "../assets/css/auth.css";
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState({
     firstName: "",
@@ -176,7 +177,10 @@ export default function RegisterPage() {
           </button>
         </form>
         <p>
-          ¿Ya tenés cuenta? <Link to="/login">Iniciá sesión</Link>
+          ¿Ya tenés cuenta?{" "}
+          <Link to="/login" state={{ from: location.state?.from }}>
+            Iniciá sesión
+          </Link>
         </p>
       </div>
     </div>
