@@ -149,7 +149,8 @@ describe("api service - Authorization header", () => {
 });
 
 describe("api service - 401 unauthorized", () => {
-  it("dispatches auth:unauthorized and rejects with 'Sesión expirada'", async () => {
+  it("dispatches auth:unauthorized and rejects with 'Sesión expirada' when a token was sent", async () => {
+    localStorage.setItem("token", "abc");
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -160,6 +161,25 @@ describe("api service - 401 unauthorized", () => {
     expect(eventSpy).toHaveBeenCalledTimes(1);
     expect(eventSpy.mock.calls[0][0]).toBeInstanceOf(CustomEvent);
     expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
+
+    window.removeEventListener("auth:unauthorized", eventSpy);
+  });
+
+  it("rejects with the real backend error message and does NOT dispatch auth:unauthorized when no token was sent (e.g. failed login)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: "Credenciales inválidas" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const eventSpy = vi.fn();
+    window.addEventListener("auth:unauthorized", eventSpy);
+
+    await expect(post("/auth/login", { email: "a@a.com", password: "wrong" })).rejects.toThrow(
+      "Credenciales inválidas"
+    );
+    expect(eventSpy).not.toHaveBeenCalled();
 
     window.removeEventListener("auth:unauthorized", eventSpy);
   });
