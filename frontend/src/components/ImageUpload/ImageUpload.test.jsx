@@ -49,7 +49,7 @@ describe("ImageUpload - failed upload", () => {
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
 
-  it("shows a visible error message when fetch itself rejects (network error)", async () => {
+  it("shows the generic Spanish error message when fetch itself rejects (network error), not the raw exception text", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error("network down"));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -59,7 +59,8 @@ describe("ImageUpload - failed upload", () => {
     const input = document.getElementById("imageUpload");
     await userEvent.upload(input, makeFile());
 
-    expect(await screen.findByText("network down")).toBeInTheDocument();
+    expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
+    expect(screen.queryByText("network down")).not.toBeInTheDocument();
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
 });
