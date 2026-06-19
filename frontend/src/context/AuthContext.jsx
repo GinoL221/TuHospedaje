@@ -24,6 +24,7 @@ function getInitialAuth() {
       }
       localStorage.removeItem("token");
     } catch {
+      console.warn("Stored auth token is invalid or corrupted; clearing it.");
       localStorage.removeItem("token");
     }
   }
