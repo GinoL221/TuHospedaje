@@ -1,5 +1,5 @@
 import { render, screen, act } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { AuthProvider } from "./AuthContext";
 import { useAuth } from "../hooks/useAuth";
@@ -21,7 +21,15 @@ function AuthConsumer() {
 }
 
 function LoginSentinel() {
-  return <div data-testid="login-sentinel">login page</div>;
+  const location = useLocation();
+  return (
+    <div data-testid="login-sentinel">
+      login page
+      <span data-testid="login-from">
+        {location.state?.from?.pathname ?? "no-from"}
+      </span>
+    </div>
+  );
 }
 
 function renderWithProvider({ initialEntries = ["/"] } = {}) {
@@ -152,5 +160,19 @@ describe("AuthContext - auth:unauthorized event", () => {
 
     expect(screen.getByTestId("login-sentinel")).toBeInTheDocument();
     expect(localStorage.getItem("token")).toBeNull();
+  });
+
+  it("preserves the originating route as state.from so login can redirect back", async () => {
+    localStorage.setItem("token", "valid-jwt");
+    jwtDecode.mockReturnValue(decodedPayload);
+
+    renderWithProvider({ initialEntries: ["/booking/42"] });
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    });
+
+    expect(screen.getByTestId("login-sentinel")).toBeInTheDocument();
+    expect(screen.getByTestId("login-from")).toHaveTextContent("/booking/42");
   });
 });

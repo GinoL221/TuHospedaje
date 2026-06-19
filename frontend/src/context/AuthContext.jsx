@@ -1,6 +1,6 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { post } from "../services/api";
 
 const AuthContext = createContext();
@@ -35,6 +35,9 @@ function getInitialAuth() {
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationRef = useRef(location);
+  locationRef.current = location;
   const [{ token, user }, setAuth] = useState(getInitialAuth);
 
   const logout = () => {
@@ -45,7 +48,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleUnauthorized = () => {
       logout();
-      navigate("/login");
+      navigate("/login", {
+        state: {
+          from: locationRef.current,
+          message: "Tu sesión expiró. Volvé a iniciar sesión para continuar.",
+        },
+      });
     };
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
