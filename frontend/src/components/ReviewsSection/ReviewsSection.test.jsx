@@ -1,4 +1,4 @@
-import { render, screen, userEvent, waitFor } from "../../test/test-utils";
+import { render, screen, userEvent, waitFor, within } from "../../test/test-utils";
 import ReviewsSection from "./ReviewsSection";
 import { get, post } from "../../services/api";
 
@@ -81,14 +81,13 @@ describe("ReviewsSection - successful submission", () => {
     };
     get.mockResolvedValueOnce(refreshedFixture);
     const user = userEvent.setup();
-    render(<ReviewsSection lodgingId="1" user={loggedUser} />);
+    const { container } = render(<ReviewsSection lodgingId="1" user={loggedUser} />);
 
     await screen.findByText("4.5");
 
-    const stars = screen.getAllByText("★");
-    // First 5 stars belong to the aggregate display; the next 5 belong to the
-    // review form's star selector (rendered only when `user` is truthy).
-    await user.click(stars[5]);
+    const starSelector = container.querySelector(".star-selector");
+    const stars = within(starSelector).getAllByText("★");
+    await user.click(stars[0]);
 
     const textarea = screen.getByPlaceholderText("Contá tu experiencia...");
     await user.type(textarea, "Genial");
@@ -112,12 +111,13 @@ describe("ReviewsSection - failed submission", () => {
     post.mockRejectedValue(new Error("fail"));
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const user = userEvent.setup();
-    render(<ReviewsSection lodgingId="1" user={loggedUser} />);
+    const { container } = render(<ReviewsSection lodgingId="1" user={loggedUser} />);
 
     await screen.findByText("4.5");
 
-    const stars = screen.getAllByText("★");
-    await user.click(stars[6]);
+    const starSelector = container.querySelector(".star-selector");
+    const stars = within(starSelector).getAllByText("★");
+    await user.click(stars[1]);
 
     const textarea = screen.getByPlaceholderText("Contá tu experiencia...");
     await user.type(textarea, "Mal");

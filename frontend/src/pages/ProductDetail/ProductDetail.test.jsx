@@ -84,6 +84,15 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 });
 
 describe("ProductDetail - navigation to booking", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-07-15"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("navigates to /booking/:id with checkIn/checkOut state once dates are selected", async () => {
     mockGetDefaults();
     const authValue = makeAuthValue();
