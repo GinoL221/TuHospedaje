@@ -156,6 +156,45 @@ describe("ProductDetail - navigation to booking", () => {
 
     expect(await screen.findByTestId("booking-sentinel")).toBeInTheDocument();
   });
+
+  it("disables the same day as check-in in the check-out calendar, requiring at least one night", async () => {
+    mockGetDefaults();
+    const authValue = makeAuthValue();
+    const user = userEvent.setup();
+    const { container } = renderProductDetail({ authValue });
+
+    await screen.findByText("Cabaña del Lago");
+
+    const [checkInInput, checkOutInput] = container.querySelectorAll(
+      ".react-datepicker-wrapper input"
+    );
+
+    // Select today's earliest enabled day as check-in.
+    await user.click(checkInInput);
+    const checkInDay = document.querySelector(
+      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
+    );
+    const checkInDayNumber = Number(checkInDay.textContent);
+    await user.click(checkInDay);
+
+    // Open the check-out calendar: the same day must now be disabled,
+    // since a booking requires at least one night (checkOut > checkIn).
+    await user.click(checkOutInput);
+    const sameDayInCheckoutCalendar = Array.from(
+      document.querySelectorAll(".react-datepicker__day")
+    ).find(
+      (day) =>
+        Number(day.textContent) === checkInDayNumber &&
+        !day.classList.contains("react-datepicker__day--outside-month")
+    );
+
+    expect(sameDayInCheckoutCalendar).toHaveClass("react-datepicker__day--disabled");
+
+    const firstEnabledCheckoutDay = document.querySelector(
+      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
+    );
+    expect(Number(firstEnabledCheckoutDay.textContent)).toBe(checkInDayNumber + 1);
+  });
 });
 
 describe("ProductDetail - ReviewsSection integration", () => {

@@ -9,6 +9,7 @@ import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import GalleryModal from "../../components/GalleryModal/GalleryModal";
 import Icon from "../../components/Icons/Icon";
+import { minCheckoutDate } from "../../utils/dateRange";
 
 import "./ProductDetail.css";
 
@@ -195,7 +196,7 @@ export default function ProductDetail() {
                 selectsEnd
                 startDate={checkIn}
                 endDate={checkOut}
-                minDate={checkIn || new Date()}
+                minDate={minCheckoutDate(checkIn)}
                 filterDate={(date) => !isDateOccupied(date)}
                 placeholderText="Check-out"
                 dateFormat="dd/MM/yyyy"
