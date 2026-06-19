@@ -135,12 +135,95 @@ describe("SearchResults - multi-category filter is client-side intersected", () 
       expect(screen.getByText("Hotel Centro")).toBeInTheDocument();
     });
 
+    get.mockClear();
     await user.click(screen.getByRole("button", { name: "Quitar Cabaña" }));
 
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Quitar Cabaña" })).not.toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Quitar Hotel" })).toBeInTheDocument();
+
+    // Removing one of two categories leaves exactly one applied — runCategorySearch
+    // takes the cats.size === 1 server-side branch, issuing exactly one fetch.
+    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
+    expect(searchCalls).toHaveLength(1);
+  });
+});
+
+describe("SearchResults - price chip removal", () => {
+  it("removes the price chip and re-runs the search without price params", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderSearchResults();
+
+    await screen.findByText("Cabaña del Lago");
+
+    const [minPriceInput, maxPriceInput] = screen.getAllByPlaceholderText("$");
+    await user.type(minPriceInput, "100");
+    await user.type(maxPriceInput, "200");
+    await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+
+    const priceChipRemove = await screen.findByRole("button", { name: "Quitar filtro de precio" });
+    get.mockClear();
+
+    await user.click(priceChipRemove);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Quitar filtro de precio" })).not.toBeInTheDocument();
+    });
+
+    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
+    expect(searchCalls).toHaveLength(1);
+    const [calledEndpoint] = searchCalls[0];
+    expect(calledEndpoint).toBe("/lodgings/search?city=Bariloche");
+  });
+});
+
+describe("SearchResults - date chip removal", () => {
+  it("removes the date chip and re-runs the search without checkIn/checkOut params", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderSearchResults({
+      initialEntries: ["/search?city=Bariloche&checkIn=2026-07-01&checkOut=2026-07-05"],
+    });
+
+    await screen.findByText("Cabaña del Lago");
+    const dateChipRemove = await screen.findByRole("button", { name: "Quitar fechas" });
+    get.mockClear();
+
+    await user.click(dateChipRemove);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Quitar fechas" })).not.toBeInTheDocument();
+    });
+
+    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
+    expect(searchCalls).toHaveLength(1);
+    const [calledEndpoint] = searchCalls[0];
+    expect(calledEndpoint).toBe("/lodgings/search?city=Bariloche");
+  });
+});
+
+describe("SearchResults - single category filter is server-side", () => {
+  it("includes the category param in the search request when exactly one category is selected", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderSearchResults();
+
+    await screen.findByText("Cabaña del Lago");
+    get.mockClear();
+
+    await user.click(screen.getByRole("checkbox", { name: "Cabaña" }));
+    await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+
+    await waitFor(() => {
+      const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
+      expect(searchCalls).toHaveLength(1);
+    });
+
+    const [calledEndpoint] = get.mock.calls.find(([endpoint]) => endpoint.startsWith("/lodgings/search"));
+    const url = new URL(calledEndpoint, "http://localhost");
+    expect(url.searchParams.get("category")).toBe("1");
   });
 });
 
