@@ -36,6 +36,10 @@ function getInitialAuth() {
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  // Kept in a ref (updated on every render) instead of a useEffect dependency
+  // so the auth:unauthorized listener below doesn't get torn down and
+  // re-registered on every route change — it always reads the current route
+  // without needing to resubscribe.
   const locationRef = useRef(location);
   locationRef.current = location;
   const [{ token, user }, setAuth] = useState(getInitialAuth);
