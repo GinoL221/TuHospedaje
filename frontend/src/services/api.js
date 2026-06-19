@@ -17,7 +17,7 @@ async function request(method, endpoint, data) {
 
   const res = await fetch(`${API_BASE}${endpoint}`, config);
 
-  if (res.status === 401) {
+  if (res.status === 401 && token) {
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
     throw new Error("Sesión expirada");
   }
