@@ -24,7 +24,11 @@ async function request(method, endpoint, data) {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || `Error ${res.status}`);
+    const fieldMessages =
+      errorData.fields && Object.keys(errorData.fields).length > 0
+        ? Object.values(errorData.fields).join(" ")
+        : null;
+    throw new Error(fieldMessages || errorData.error || `Error ${res.status}`);
   }
 
   if (res.status === 204) return null;
