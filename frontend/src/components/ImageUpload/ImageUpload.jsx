@@ -52,7 +52,7 @@ export default function ImageUpload({ urls, onUrlsChange }) {
           {uploading ? "Subiendo..." : "Subir imagen"}
         </button>
       </div>
-      {error && <p className="image-upload-error">{error}</p>}
+      {error && <p className="field-error">{error}</p>}
       {urls.length > 0 && (
         <div className="image-preview-list">
           {urls.map((url, i) => (
