@@ -12,6 +12,7 @@ export default defineConfig({
     css: false,
     clearMocks: true,
     restoreMocks: true,
+    forbidOnly: !!process.env.CI,
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',
