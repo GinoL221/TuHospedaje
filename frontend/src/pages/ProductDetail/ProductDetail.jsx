@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -15,6 +15,7 @@ import "./ProductDetail.css";
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [lodging, setLodging] = useState(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -226,7 +227,10 @@ export default function ProductDetail() {
             </button>
           ) : (
             <p className="login-prompt">
-              <Link to="/login">Iniciá sesión</Link> para reservar
+              <Link to="/login" state={{ from: location }}>
+                Iniciá sesión
+              </Link>{" "}
+              para reservar
             </p>
           )}
         </section>

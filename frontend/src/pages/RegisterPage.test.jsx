@@ -1,9 +1,18 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { customRender, screen, userEvent, makeAuthValue } from "../test/test-utils";
 import RegisterPage from "./RegisterPage";
 
 function HomeSentinel() {
   return <div data-testid="home-sentinel">home page</div>;
+}
+
+function LoginSentinel() {
+  const location = useLocation();
+  return (
+    <div data-testid="login-sentinel">
+      login page, from: {location.state?.from?.pathname ?? "none"}
+    </div>
+  );
 }
 
 // NOTE: RegisterPage's <label> elements have no `htmlFor`/`id` association
@@ -12,13 +21,14 @@ function HomeSentinel() {
 // per spec Risks policy) — not fixed here since fixing production code is
 // out of scope for this characterization PR. Tests select inputs by their
 // `name` attribute instead.
-function renderRegisterPage({ authValue } = {}) {
+function renderRegisterPage({ authValue, initialEntries } = {}) {
   return customRender(
     <Routes>
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<LoginSentinel />} />
       <Route path="/" element={<HomeSentinel />} />
     </Routes>,
-    { authValue, route: "/register" }
+    { authValue, route: "/register", initialEntries }
   );
 }
 
@@ -144,6 +154,31 @@ describe("RegisterPage - generic registration failure", () => {
 
     expect(await screen.findByText("Error de servidor")).toBeInTheDocument();
     expect(getInput(container, "email")).not.toHaveClass("input-error");
+  });
+});
+
+describe("RegisterPage - reciprocal login link preserves redirect origin", () => {
+  it("preserves location.state.from on the 'Iniciá sesión' link, so switching to login can redirect back", async () => {
+    const user = userEvent.setup();
+    renderRegisterPage({
+      initialEntries: [
+        {
+          pathname: "/register",
+          state: { from: { pathname: "/favorites" } },
+        },
+      ],
+    });
+
+    const loginLink = screen.getByRole("link", { name: "Iniciá sesión" });
+    await user.click(loginLink);
+
+    // RegisterPage is often reached via a redirect-with-from (e.g. from
+    // RequireAuth). If the user switches to login from there, the original
+    // `from` must be forwarded so LoginPage can still redirect back to it
+    // instead of falling back to "/".
+    expect(await screen.findByTestId("login-sentinel")).toHaveTextContent(
+      "from: /favorites"
+    );
   });
 });
 
