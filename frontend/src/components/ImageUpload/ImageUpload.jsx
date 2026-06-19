@@ -24,7 +24,7 @@ export default function ImageUpload({ urls, onUrlsChange }) {
       onUrlsChange([...urls, data.url]);
     } catch (err) {
       console.error(err);
-      setError(err.message || "No se pudo subir la imagen. Intentá de nuevo.");
+      setError("No se pudo subir la imagen. Intentá de nuevo.");
     } finally {
       setUploading(false);
       e.target.value = "";
