@@ -119,6 +119,68 @@ describe("api service - non-OK HTTP errors", () => {
 
     await expect(get("/lodgings")).rejects.toThrow("Error 500");
   });
+
+  it("rejects with the specific field validation message instead of the generic error label when fields is present", async () => {
+    const fetchMock = mockFetchResolved({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        error: "Error de validación",
+        status: 400,
+        fields: {
+          checkOutAfterCheckIn: "La fecha de check-out debe ser posterior al check-in",
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(post("/reservations", {})).rejects.toThrow(
+      "La fecha de check-out debe ser posterior al check-in"
+    );
+    await expect(post("/reservations", {})).rejects.not.toThrow("Error de validación");
+  });
+
+  it("joins multiple field validation messages when fields has more than one entry", async () => {
+    const fetchMock = mockFetchResolved({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        error: "Error de validación",
+        status: 400,
+        fields: {
+          checkOutAfterCheckIn: "La fecha de check-out debe ser posterior al check-in",
+          guestPhone: "El teléfono es obligatorio",
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(post("/reservations", {})).rejects.toThrow(
+      "La fecha de check-out debe ser posterior al check-in El teléfono es obligatorio"
+    );
+  });
+
+  it("falls back to errorData.error when fields is absent (no regression)", async () => {
+    const fetchMock = mockFetchResolved({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "Error de validación", status: 400 }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(post("/reservations", {})).rejects.toThrow("Error de validación");
+  });
+
+  it("falls back to errorData.error when fields is an empty object (no regression)", async () => {
+    const fetchMock = mockFetchResolved({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "Error de validación", status: 400, fields: {} }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(post("/reservations", {})).rejects.toThrow("Error de validación");
+  });
 });
 
 describe("api service - Authorization header", () => {

@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 import DatePicker from "react-datepicker";
 import Icon from "../../components/Icons/Icon";
+import { minCheckoutDate } from "../../utils/dateRange";
 
 import "./BookingPage.css";
 
@@ -208,7 +209,7 @@ export default function BookingPage() {
             selectsEnd
             startDate={checkIn}
             endDate={checkOut}
-            minDate={checkIn || new Date()}
+            minDate={minCheckoutDate(checkIn)}
             filterDate={(date) => !isDateOccupied(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Check-out"
