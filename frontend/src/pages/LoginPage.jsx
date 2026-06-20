@@ -66,8 +66,9 @@ export default function LoginPage() {
         {message && <p className="error">{message}</p>}
         {error && <p className="error">{error}</p>}
         <form onSubmit={handleSubmit} noValidate>
-          <label>Email</label>
+          <label htmlFor="login-email">Email</label>
           <input
+            id="login-email"
             name="email"
             type="email"
             value={form.email}
@@ -78,8 +79,9 @@ export default function LoginPage() {
             <p className="field-error">{fieldErrors.email}</p>
           )}
 
-          <label>Contraseña</label>
+          <label htmlFor="login-password">Contraseña</label>
           <input
+            id="login-password"
             name="password"
             type="password"
             value={form.password}

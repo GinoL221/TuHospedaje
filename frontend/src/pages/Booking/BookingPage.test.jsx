@@ -66,23 +66,23 @@ describe("BookingPage - guest phone prefill", () => {
         { id: 2, guestPhone: "222222" },
       ],
     });
-    const { container } = renderBookingPage();
+    renderBookingPage();
 
     await screen.findByText("Cabaña del Lago");
 
     await waitFor(() => {
-      const phoneInput = container.querySelector('input[placeholder="Ingresá tu teléfono"]');
+      const phoneInput = screen.getByLabelText("Teléfono");
       expect(phoneInput.value).toBe("222222");
     });
   });
 
   it("leaves guestPhone empty when there are no prior reservations", async () => {
     mockGetDefaults({ myReservations: [] });
-    const { container } = renderBookingPage();
+    renderBookingPage();
 
     await screen.findByText("Cabaña del Lago");
 
-    const phoneInput = container.querySelector('input[placeholder="Ingresá tu teléfono"]');
+    const phoneInput = screen.getByLabelText("Teléfono");
     expect(phoneInput.value).toBe("");
   });
 });
@@ -209,7 +209,7 @@ describe("BookingPage - successful reservation", () => {
     post.mockResolvedValue(reservationFixture);
     const user = userEvent.setup();
     const authValue = makeAuthValue();
-    const { container } = renderBookingPage({
+    renderBookingPage({
       authValue,
       initialEntries: [
         {
@@ -221,7 +221,7 @@ describe("BookingPage - successful reservation", () => {
 
     await screen.findByText("Cabaña del Lago");
 
-    const phoneInput = container.querySelector('input[placeholder="Ingresá tu teléfono"]');
+    const phoneInput = screen.getByLabelText("Teléfono");
     await user.type(phoneInput, "123456");
     await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
@@ -275,13 +275,12 @@ describe("BookingPage - check-out calendar minimum date", () => {
     mockGetDefaults();
     const authValue = makeAuthValue();
     const user = userEvent.setup();
-    const { container } = renderBookingPage({ authValue });
+    renderBookingPage({ authValue });
 
     await screen.findByText("Cabaña del Lago");
 
-    const [checkInInput, checkOutInput] = container.querySelectorAll(
-      ".react-datepicker-wrapper input"
-    );
+    const checkInInput = screen.getByLabelText("Check-in");
+    const checkOutInput = screen.getByLabelText("Check-out");
 
     // Select today's earliest enabled day as check-in.
     await user.click(checkInInput);
@@ -315,13 +314,12 @@ describe("BookingPage - current user via useAuth", () => {
   it("renders the authenticated user's name and email as read-only fields", async () => {
     mockGetDefaults();
     const authValue = makeAuthValue();
-    const { container } = renderBookingPage({ authValue });
+    renderBookingPage({ authValue });
 
     await screen.findByText("Cabaña del Lago");
 
-    const inputs = container.querySelectorAll("input[readonly]");
-    const values = Array.from(inputs).map((input) => input.value);
-
-    expect(values).toEqual([authValue.user.firstName, authValue.user.lastName, authValue.user.email]);
+    expect(screen.getByLabelText("Nombre")).toHaveValue(authValue.user.firstName);
+    expect(screen.getByLabelText("Apellido")).toHaveValue(authValue.user.lastName);
+    expect(screen.getByLabelText("Email")).toHaveValue(authValue.user.email);
   });
 });
