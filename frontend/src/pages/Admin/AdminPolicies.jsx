@@ -16,6 +16,7 @@ export default function AdminPolicies() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const resetForm = () => setForm({ name: "", description: "", icon: "" });
   const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
@@ -84,14 +85,19 @@ export default function AdminPolicies() {
       .catch((err) => setError(err.message));
   };
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`¿Eliminar política "${name}"?`)) {
-      try {
-        await del(`/policies/${id}`);
-        refresh();
-      } catch (err) {
-        alert(err.message);
-      }
+  const handleDelete = (id, name) => {
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await del(`/policies/${deleteConfirm.id}`);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -198,6 +204,14 @@ export default function AdminPolicies() {
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
         testId="confirm-cancel"
+      />
+
+      <ConfirmDialog
+        show={deleteConfirm !== null}
+        message={deleteConfirm ? `¿Eliminar política "${deleteConfirm.name}"?` : ""}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        testId="confirm-delete"
       />
     </>
   );

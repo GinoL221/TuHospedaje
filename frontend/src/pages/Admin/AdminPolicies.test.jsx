@@ -159,41 +159,45 @@ describe("AdminPolicies - edit", () => {
 });
 
 describe("AdminPolicies - delete", () => {
-  it("asks for native confirmation and calls DELETE /policies/:id on accept, then refreshes the list", async () => {
+  it("shows the in-app confirm dialog and calls DELETE /policies/:id on accept, then refreshes the list", async () => {
     get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
     del.mockResolvedValue({});
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     renderAdminPolicies();
 
     await screen.findByText("Check-in flexible");
-    get.mockResolvedValue([]);
     await user.click(screen.getByTestId("row-delete-btn"));
 
-    // SUSPICIOUS: AdminPolicies uses native window.confirm for delete (same
-    // mechanism as AdminFeatures), while AdminCategories/AdminLodgings use
-    // the in-app ConfirmDialog — a third inconsistent confirmation mechanism
-    // across Admin CRUD screens. Asserted as-is per spec Risks.
-    expect(window.confirm).toHaveBeenCalledWith('¿Eliminar política "Check-in flexible"?');
+    // Uses the in-app ConfirmDialog (testId confirm-delete), kept independent
+    // from the confirm-cancel dialog (unsaved-edit guard) that already exists
+    // in this same screen via useConfirmCancel.
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
+      '¿Eliminar política "Check-in flexible"?'
+    );
+    expect(del).not.toHaveBeenCalled();
 
+    get.mockResolvedValue([]);
+    await user.click(screen.getByTestId("confirm-delete-yes"));
+
+    expect(del).toHaveBeenCalledWith("/policies/1");
     await waitFor(() => {
-      expect(del).toHaveBeenCalledWith("/policies/1");
+      expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     });
     expect(
       await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!")
     ).toBeInTheDocument();
   });
 
-  it("makes no DELETE request when the native confirmation is rejected", async () => {
+  it("makes no DELETE request when the confirmation is dismissed", async () => {
     get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     const user = userEvent.setup();
     renderAdminPolicies();
 
     await screen.findByText("Check-in flexible");
     await user.click(screen.getByTestId("row-delete-btn"));
+    await user.click(screen.getByTestId("confirm-delete-no"));
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     expect(del).not.toHaveBeenCalled();
     expect(screen.getByText("Check-in flexible")).toBeInTheDocument();
   });
@@ -201,17 +205,37 @@ describe("AdminPolicies - delete", () => {
   it("surfaces the request error via alert when DELETE rejects", async () => {
     get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
     del.mockRejectedValue(new Error("No se pudo eliminar"));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const user = userEvent.setup();
     renderAdminPolicies();
 
     await screen.findByText("Check-in flexible");
     await user.click(screen.getByTestId("row-delete-btn"));
+    await user.click(screen.getByTestId("confirm-delete-yes"));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("No se pudo eliminar");
     });
     expect(screen.getByText("Check-in flexible")).toBeInTheDocument();
+    expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
+  });
+
+  it("keeps the dialog message scoped to the most recently clicked row when reopened for a different policy", async () => {
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+      policyFixture({ id: 2, name: "No mascotas", description: "No se permiten mascotas." }),
+    ]);
+    const user = userEvent.setup();
+    renderAdminPolicies();
+
+    await screen.findByText("Check-in flexible");
+
+    await user.click(screen.getByTestId("row-1").querySelector("[data-testid='row-delete-btn']"));
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar política "Check-in flexible"?');
+    await user.click(screen.getByTestId("confirm-delete-no"));
+
+    await user.click(screen.getByTestId("row-2").querySelector("[data-testid='row-delete-btn']"));
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar política "No mascotas"?');
+    expect(del).not.toHaveBeenCalled();
   });
 });
