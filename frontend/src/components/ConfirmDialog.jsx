@@ -10,6 +10,8 @@ export default function ConfirmDialog({ show, message, onConfirm, onCancel, test
     setPending(true);
     try {
       await onConfirm();
+    } catch (error) {
+      console.error(error);
     } finally {
       setPending(false);
     }
