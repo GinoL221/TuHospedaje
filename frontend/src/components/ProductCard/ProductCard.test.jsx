@@ -117,9 +117,9 @@ describe("ProductCard - favorite toggle rollback on failure", () => {
 
     await user.click(screen.getByRole("button", { name: "Agregar a favoritos" }));
 
-    expect(
-      await screen.findByRole("button", { name: "Agregar a favoritos" })
-    ).toBeInTheDocument();
+    const button = await screen.findByRole("button", { name: "Agregar a favoritos" });
+    expect(button).toBeInTheDocument();
+    expect(button).not.toBeDisabled();
     expect(onFavoriteToggle).toHaveBeenNthCalledWith(1, 1, true);
     expect(onFavoriteToggle).toHaveBeenNthCalledWith(2, 1, false);
 
