@@ -317,6 +317,68 @@ describe("BookingPage - check-out calendar minimum date", () => {
   });
 });
 
+// Covers isDateOccupied / the filterDate prop wired into both DatePickers:
+// dates that overlap an existing reservation must be blocked, using the same
+// [checkIn, checkOut) exclusive-end semantics as the backend
+// (LodgingServiceImpl.checkAvailability). There was previously zero test
+// coverage of this filtering behavior.
+describe("BookingPage - occupied date filtering", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Use a midday local time, not UTC midnight: "2026-07-01" parses as UTC
+    // midnight, which in a UTC-3 timezone is "2026-06-30T21:00" local time,
+    // shifting the DatePicker's default-open month to June and breaking
+    // any assertion on July dates.
+    vi.setSystemTime(new Date("2026-07-01T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function findDayByLabelDate(dateText) {
+    return Array.from(document.querySelectorAll('[role="gridcell"]')).find(
+      (day) => day.getAttribute("aria-label")?.includes(dateText)
+    );
+  }
+
+  it("blocks dates inside an existing reservation while leaving its checkout day and outside dates selectable", async () => {
+    // Existing reservation occupies July 20-22 (checkOut 23 is exclusive,
+    // i.e. the 3-night stay is [2026-07-20, 2026-07-23)).
+    mockGetDefaults({
+      availability: {
+        occupiedRanges: [{ checkIn: "2026-07-20", checkOut: "2026-07-23" }],
+      },
+    });
+    const authValue = makeAuthValue();
+    const user = userEvent.setup();
+    renderBookingPage({ authValue });
+
+    await screen.findByText("Cabaña del Lago");
+
+    const checkInInput = screen.getByLabelText("Check-in");
+    await user.click(checkInInput);
+
+    const july20 = findDayByLabelDate("July 20th, 2026");
+    const july21 = findDayByLabelDate("July 21st, 2026");
+    const july22 = findDayByLabelDate("July 22nd, 2026");
+    const july23 = findDayByLabelDate("July 23rd, 2026");
+    const july25 = findDayByLabelDate("July 25th, 2026");
+
+    // Strictly inside the occupied range: blocked.
+    expect(july20).toHaveAttribute("aria-disabled", "true");
+    expect(july21).toHaveAttribute("aria-disabled", "true");
+    expect(july22).toHaveAttribute("aria-disabled", "true");
+
+    // The reservation's checkout day is the exclusive upper bound, so it
+    // must remain selectable (this is what makes same-day turnover work).
+    expect(july23).toHaveAttribute("aria-disabled", "false");
+
+    // A date outside the occupied range entirely is also selectable.
+    expect(july25).toHaveAttribute("aria-disabled", "false");
+  });
+});
+
 describe("BookingPage - current user via useAuth", () => {
   it("renders the authenticated user's name and email as read-only fields", async () => {
     mockGetDefaults();
