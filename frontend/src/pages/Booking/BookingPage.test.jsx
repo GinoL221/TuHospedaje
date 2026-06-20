@@ -261,6 +261,12 @@ describe("BookingPage - reservation submit error", () => {
   });
 });
 
+// NOTE: minCheckoutDate's date-arithmetic contract (day-after-checkIn,
+// month/year rollover, null/undefined fallback) is unit-tested exhaustively
+// in src/utils/dateRange.test.js. The test below only checks the thin
+// page-specific wiring: that the check-out DatePicker's minDate prop is
+// actually connected to minCheckoutDate(checkIn), not duplicating the
+// date-math assertions already owned by dateRange.test.js.
 describe("BookingPage - check-out calendar minimum date", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -291,7 +297,8 @@ describe("BookingPage - check-out calendar minimum date", () => {
     await user.click(checkInDay);
 
     // Open the check-out calendar: the same day must now be disabled,
-    // since a booking requires at least one night (checkOut > checkIn).
+    // proving minDate={minCheckoutDate(checkIn)} is actually wired up
+    // (a booking requires at least one night, so checkOut > checkIn).
     await user.click(checkOutInput);
     const sameDayInCheckoutCalendar = Array.from(
       document.querySelectorAll(".react-datepicker__day")
@@ -302,11 +309,6 @@ describe("BookingPage - check-out calendar minimum date", () => {
     );
 
     expect(sameDayInCheckoutCalendar).toHaveClass("react-datepicker__day--disabled");
-
-    const firstEnabledCheckoutDay = document.querySelector(
-      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
-    );
-    expect(Number(firstEnabledCheckoutDay.textContent)).toBe(checkInDayNumber + 1);
   });
 });
 
