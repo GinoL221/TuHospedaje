@@ -16,11 +16,21 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -112,5 +122,45 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
                                 "\"phoneNumber\":\"1\",\"email\":\"bad\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields").isMap());
+    }
+
+    /**
+     * Regression guard for the tech-debt fix that replaced HashMap with LinkedHashMap
+     * in {@code GlobalExceptionHandler.handleValidation}: the "fields" map in the
+     * response must preserve the exact insertion order of
+     * {@code BindingResult.getFieldErrors()} — a HashMap does not guarantee this
+     * (iteration order is unspecified and bucket-layout dependent), so the handler
+     * must keep using a LinkedHashMap. Mocking BindingResult directly (rather than
+     * going through real bean validation) makes the asserted order deterministic and
+     * independent of Hibernate Validator's own internal traversal order.
+     */
+    @Test
+    void handleValidation_preservesFieldErrorInsertionOrder() {
+        // Keys chosen so HashMap's bucket-iteration order ("v","w","x","y","z" —
+        // ascending by hashCode/bucket index) is the exact REVERSE of insertion
+        // order. "a","b","c" looked safe but coincidentally landed in ascending
+        // buckets under HashMap too, so that version of this test could not have
+        // caught a regression back to HashMap — verified empirically before
+        // settling on this set (see commit message / engram for details).
+        BindingResult bindingResult = mock(BindingResult.class);
+        List<FieldError> fieldErrors = List.of(
+                new FieldError("lodgingDTO", "z", "error Z"),
+                new FieldError("lodgingDTO", "y", "error Y"),
+                new FieldError("lodgingDTO", "x", "error X"),
+                new FieldError("lodgingDTO", "w", "error W"),
+                new FieldError("lodgingDTO", "v", "error V"));
+        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+        when(ex.getBindingResult()).thenReturn(bindingResult);
+
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> fields = (Map<String, String>) response.getBody().get("fields");
+
+        assertThat(new ArrayList<>(fields.keySet()))
+                .containsExactly("z", "y", "x", "w", "v");
     }
 }
