@@ -138,15 +138,19 @@ describe("ProductDetail - navigation to booking", () => {
       ".react-datepicker-wrapper input"
     );
 
+    // react-datepicker marks enabled/disabled state via aria-disabled on
+    // each gridcell (a stable accessibility contract), instead of relying
+    // on its internal "--disabled" CSS class which can change across
+    // library versions.
     await user.click(checkInInput);
     const checkInDay = document.querySelector(
-      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
+      '[role="gridcell"][aria-disabled="false"]'
     );
     await user.click(checkInDay);
 
     await user.click(checkOutInput);
     const checkOutDay = Array.from(
-      document.querySelectorAll(".react-datepicker__day:not(.react-datepicker__day--disabled)")
+      document.querySelectorAll('[role="gridcell"][aria-disabled="false"]')
     ).at(-1);
     await user.click(checkOutDay);
 
@@ -175,10 +179,13 @@ describe("ProductDetail - navigation to booking", () => {
       ".react-datepicker-wrapper input"
     );
 
-    // Select today's earliest enabled day as check-in.
+    // Select today's earliest enabled day as check-in. react-datepicker
+    // marks enabled/disabled state via aria-disabled on each gridcell (a
+    // stable accessibility contract), instead of relying on its internal
+    // "--disabled" CSS class which can change across library versions.
     await user.click(checkInInput);
     const checkInDay = document.querySelector(
-      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
+      '[role="gridcell"][aria-disabled="false"]'
     );
     const checkInDayNumber = Number(checkInDay.textContent);
     await user.click(checkInDay);
@@ -186,16 +193,18 @@ describe("ProductDetail - navigation to booking", () => {
     // Open the check-out calendar: the same day must now be disabled,
     // proving minDate={minCheckoutDate(checkIn)} is actually wired up
     // (a booking requires at least one night, so checkOut > checkIn).
+    // "outside-month" has no aria/role equivalent in react-datepicker, so
+    // that one filter still relies on the internal CSS class.
     await user.click(checkOutInput);
     const sameDayInCheckoutCalendar = Array.from(
-      document.querySelectorAll(".react-datepicker__day")
+      document.querySelectorAll('[role="gridcell"]')
     ).find(
       (day) =>
         Number(day.textContent) === checkInDayNumber &&
         !day.classList.contains("react-datepicker__day--outside-month")
     );
 
-    expect(sameDayInCheckoutCalendar).toHaveClass("react-datepicker__day--disabled");
+    expect(sameDayInCheckoutCalendar).toHaveAttribute("aria-disabled", "true");
   });
 });
 
