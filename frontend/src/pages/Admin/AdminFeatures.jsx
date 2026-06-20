@@ -16,6 +16,7 @@ export default function AdminFeatures() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const resetForm = () => setForm({ name: "", icon: "" });
   const cancel = useConfirmCancel(form.name || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
@@ -84,14 +85,19 @@ export default function AdminFeatures() {
       .catch((err) => setError(err.message));
   };
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`¿Eliminar característica "${name}"?`)) {
-      try {
-        await del(`/features/${id}`);
-        refresh();
-      } catch (err) {
-        alert(err.message);
-      }
+  const handleDelete = (id, name) => {
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await del(`/features/${deleteConfirm.id}`);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -186,6 +192,14 @@ export default function AdminFeatures() {
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
         testId="confirm-cancel"
+      />
+
+      <ConfirmDialog
+        show={deleteConfirm !== null}
+        message={deleteConfirm ? `¿Eliminar característica "${deleteConfirm.name}"?` : ""}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        testId="confirm-delete"
       />
     </>
   );
