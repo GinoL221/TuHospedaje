@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import useTableData from "../../hooks/useTableData";
 import SortableTh from "../../components/SortableTh/SortableTh";
 import Pagination from "../../components/Pagination/Pagination";
+import ConfirmDialog from "../../components/ConfirmDialog";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
@@ -11,6 +12,7 @@ export default function AdminUsers() {
   const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(users, {
     accessors: { name: (u) => (u.firstName || "") + " " + (u.lastName || "") },
   });
+  const [roleConfirm, setRoleConfirm] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,16 +25,22 @@ export default function AdminUsers() {
     return () => { cancelled = true; };
   }, []);
 
-  const toggleRole = async (u) => {
+  const toggleRole = (u) => {
     const newRole = u.role === "ADMIN" ? "USER" : "ADMIN";
     const action = newRole === "ADMIN" ? "dar permisos de admin" : "quitar permisos de admin";
-    if (!window.confirm(`¿${action} a "${u.firstName} ${u.lastName}"?`)) return;
+    setRoleConfirm({ user: u, newRole, message: `¿${action} a "${u.firstName} ${u.lastName}"?` });
+  };
 
+  const confirmToggleRole = async () => {
+    if (!roleConfirm) return;
+    const { user: u, newRole } = roleConfirm;
     try {
       const updated = await put(`/users/${u.id}/role`, { role: newRole });
       setUsers(users.map((usr) => (usr.id === u.id ? updated : usr)));
     } catch (err) {
       alert(err.message);
+    } finally {
+      setRoleConfirm(null);
     }
   };
 
@@ -77,6 +85,13 @@ export default function AdminUsers() {
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
+      <ConfirmDialog
+        show={roleConfirm !== null}
+        message={roleConfirm ? roleConfirm.message : ""}
+        onConfirm={confirmToggleRole}
+        onCancel={() => setRoleConfirm(null)}
+        testId="confirm-role-toggle"
+      />
     </>
   );
 }
