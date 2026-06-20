@@ -15,9 +15,16 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     coverage: {
       provider: 'v8',
+      reporter: ['text', 'html'],
       reportsDirectory: './coverage',
       include: ['src/**/*.{js,jsx}'],
-      exclude: ['src/main.jsx', 'src/test/**', 'src/**/*.test.{js,jsx}'],
+      exclude: [
+        'src/main.jsx',
+        'src/test/**',
+        'src/**/*.test.{js,jsx}',
+        '**/*.config.{js,cjs,mjs}',
+        'node_modules/**',
+      ],
     },
   },
 })
