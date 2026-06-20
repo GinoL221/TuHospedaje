@@ -95,8 +95,9 @@ export default function RegisterPage() {
         <h2>Crear cuenta</h2>
         {error && <p className="error">{error}</p>}
         <form onSubmit={handleSubmit} noValidate>
-          <label>Nombre</label>
+          <label htmlFor="register-first-name">Nombre</label>
           <input
+            id="register-first-name"
             name="firstName"
             value={form.firstName}
             onChange={handleChange}
@@ -106,8 +107,9 @@ export default function RegisterPage() {
             <p className="field-error">{fieldErrors.firstName}</p>
           )}
 
-          <label>Apellido</label>
+          <label htmlFor="register-last-name">Apellido</label>
           <input
+            id="register-last-name"
             name="lastName"
             value={form.lastName}
             onChange={handleChange}
@@ -117,8 +119,9 @@ export default function RegisterPage() {
             <p className="field-error">{fieldErrors.lastName}</p>
           )}
 
-          <label>Email</label>
+          <label htmlFor="register-email">Email</label>
           <input
+            id="register-email"
             name="email"
             type="email"
             value={form.email}
@@ -129,8 +132,9 @@ export default function RegisterPage() {
             <p className="field-error">{fieldErrors.email}</p>
           )}
 
-          <label>Contraseña</label>
+          <label htmlFor="register-password">Contraseña</label>
           <input
+            id="register-password"
             name="password"
             type="password"
             value={form.password}
@@ -160,8 +164,9 @@ export default function RegisterPage() {
             <p className="field-error">{fieldErrors.password}</p>
           )}
 
-          <label>Confirmar contraseña</label>
+          <label htmlFor="register-confirm-password">Confirmar contraseña</label>
           <input
+            id="register-confirm-password"
             name="confirmPassword"
             type="password"
             value={form.confirmPassword}

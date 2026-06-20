@@ -15,12 +15,6 @@ function LoginSentinel() {
   );
 }
 
-// NOTE: RegisterPage's <label> elements have no `htmlFor`/`id` association
-// with their <input>s, so `getByLabelText` cannot locate them. This is a
-// pre-existing accessibility gap in production markup (SUSPICIOUS, flagged
-// per spec Risks policy) — not fixed here since fixing production code is
-// out of scope for this characterization PR. Tests select inputs by their
-// `name` attribute instead.
 function renderRegisterPage({ authValue, initialEntries } = {}) {
   return customRender(
     <Routes>
@@ -32,8 +26,16 @@ function renderRegisterPage({ authValue, initialEntries } = {}) {
   );
 }
 
-function getInput(container, name) {
-  return container.querySelector(`input[name="${name}"]`);
+const labelByField = {
+  firstName: "Nombre",
+  lastName: "Apellido",
+  email: "Email",
+  password: "Contraseña",
+  confirmPassword: "Confirmar contraseña",
+};
+
+function getInput(name) {
+  return screen.getByLabelText(labelByField[name]);
 }
 
 function getPwCheckItem(text) {
@@ -48,26 +50,26 @@ const validForm = {
   confirmPassword: "Secret1",
 };
 
-async function fillForm(user, container, overrides = {}) {
+async function fillForm(user, overrides = {}) {
   const form = { ...validForm, ...overrides };
-  if (form.firstName) await user.type(getInput(container, "firstName"), form.firstName);
-  if (form.lastName) await user.type(getInput(container, "lastName"), form.lastName);
-  if (form.email) await user.type(getInput(container, "email"), form.email);
-  if (form.password) await user.type(getInput(container, "password"), form.password);
+  if (form.firstName) await user.type(getInput("firstName"), form.firstName);
+  if (form.lastName) await user.type(getInput("lastName"), form.lastName);
+  if (form.email) await user.type(getInput("email"), form.email);
+  if (form.password) await user.type(getInput("password"), form.password);
   if (form.confirmPassword) {
-    await user.type(getInput(container, "confirmPassword"), form.confirmPassword);
+    await user.type(getInput("confirmPassword"), form.confirmPassword);
   }
 }
 
 describe("RegisterPage - render", () => {
   it("renders all form fields and the submit button", () => {
-    const { container } = renderRegisterPage();
+    renderRegisterPage();
 
-    expect(getInput(container, "firstName")).toBeInTheDocument();
-    expect(getInput(container, "lastName")).toBeInTheDocument();
-    expect(getInput(container, "email")).toBeInTheDocument();
-    expect(getInput(container, "password")).toBeInTheDocument();
-    expect(getInput(container, "confirmPassword")).toBeInTheDocument();
+    expect(getInput("firstName")).toBeInTheDocument();
+    expect(getInput("lastName")).toBeInTheDocument();
+    expect(getInput("email")).toBeInTheDocument();
+    expect(getInput("password")).toBeInTheDocument();
+    expect(getInput("confirmPassword")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Crear cuenta" })).toBeInTheDocument();
   });
 });
@@ -75,9 +77,9 @@ describe("RegisterPage - render", () => {
 describe("RegisterPage - password complexity checklist", () => {
   it("toggles minLength/hasUpper/hasNumber as the password value changes", async () => {
     const user = userEvent.setup();
-    const { container } = renderRegisterPage();
+    renderRegisterPage();
 
-    const passwordInput = getInput(container, "password");
+    const passwordInput = getInput("password");
     await user.type(passwordInput, "a");
 
     expect(getPwCheckItem("Al menos 6 caracteres")).toHaveClass("pw-check-fail");
@@ -113,9 +115,9 @@ describe("RegisterPage - mismatched confirm password", () => {
   it("blocks submit with a mismatch error", async () => {
     const user = userEvent.setup();
     const authValue = makeAuthValue();
-    const { container } = renderRegisterPage({ authValue });
+    renderRegisterPage({ authValue });
 
-    await fillForm(user, container, { confirmPassword: "Different1" });
+    await fillForm(user, { confirmPassword: "Different1" });
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(screen.getByText("Las contraseñas no coinciden")).toBeInTheDocument();
@@ -131,13 +133,13 @@ describe("RegisterPage - duplicate email error", () => {
         .fn()
         .mockRejectedValue(new Error("Ese email ya está registrado")),
     });
-    const { container } = renderRegisterPage({ authValue });
+    renderRegisterPage({ authValue });
 
-    await fillForm(user, container);
+    await fillForm(user);
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(await screen.findByText("Ese email ya está registrado")).toBeInTheDocument();
-    expect(getInput(container, "email")).toHaveClass("input-error");
+    expect(getInput("email")).toHaveClass("input-error");
   });
 });
 
@@ -147,13 +149,13 @@ describe("RegisterPage - generic registration failure", () => {
     const authValue = makeAuthValue({
       register: vi.fn().mockRejectedValue(new Error("Error de servidor")),
     });
-    const { container } = renderRegisterPage({ authValue });
+    renderRegisterPage({ authValue });
 
-    await fillForm(user, container);
+    await fillForm(user);
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(await screen.findByText("Error de servidor")).toBeInTheDocument();
-    expect(getInput(container, "email")).not.toHaveClass("input-error");
+    expect(getInput("email")).not.toHaveClass("input-error");
   });
 });
 
@@ -186,9 +188,9 @@ describe("RegisterPage - successful registration", () => {
   it("calls register with form data and navigates to /", async () => {
     const user = userEvent.setup();
     const authValue = makeAuthValue({ register: vi.fn().mockResolvedValue(undefined) });
-    const { container } = renderRegisterPage({ authValue });
+    renderRegisterPage({ authValue });
 
-    await fillForm(user, container);
+    await fillForm(user);
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(authValue.register).toHaveBeenCalledWith(
