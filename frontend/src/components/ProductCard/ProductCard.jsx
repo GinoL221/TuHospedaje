@@ -9,6 +9,7 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(defaultFavorite);
   const [imgError, setImgError] = useState(false);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     setIsFavorite(defaultFavorite);
@@ -20,7 +21,9 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
   async function toggleFavorite(e) {
     e.preventDefault();
     e.stopPropagation();
+    if (pending) return;
     const next = !isFavorite;
+    setPending(true);
     setIsFavorite(next);
     onFavoriteToggle?.(lodging.id, next);
     try {
@@ -33,6 +36,8 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
       console.error(err);
       setIsFavorite(!next);
       onFavoriteToggle?.(lodging.id, !next);
+    } finally {
+      setPending(false);
     }
   }
 
@@ -52,6 +57,7 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
             <button
               className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
               onClick={toggleFavorite}
+              disabled={pending}
               aria-label={
                 isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
               }
