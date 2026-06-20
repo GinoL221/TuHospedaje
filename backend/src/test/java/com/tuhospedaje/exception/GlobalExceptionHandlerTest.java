@@ -16,8 +16,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -131,25 +136,31 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
      */
     @Test
     void handleValidation_preservesFieldErrorInsertionOrder() {
-        org.springframework.validation.BindingResult bindingResult =
-                org.mockito.Mockito.mock(org.springframework.validation.BindingResult.class);
-        List<org.springframework.validation.FieldError> fieldErrors = List.of(
-                new org.springframework.validation.FieldError("lodgingDTO", "a", "error A"),
-                new org.springframework.validation.FieldError("lodgingDTO", "b", "error B"),
-                new org.springframework.validation.FieldError("lodgingDTO", "c", "error C"));
+        // Keys chosen so HashMap's bucket-iteration order ("v","w","x","y","z" —
+        // ascending by hashCode/bucket index) is the exact REVERSE of insertion
+        // order. "a","b","c" looked safe but coincidentally landed in ascending
+        // buckets under HashMap too, so that version of this test could not have
+        // caught a regression back to HashMap — verified empirically before
+        // settling on this set (see commit message / engram for details).
+        BindingResult bindingResult = mock(BindingResult.class);
+        List<FieldError> fieldErrors = List.of(
+                new FieldError("lodgingDTO", "z", "error Z"),
+                new FieldError("lodgingDTO", "y", "error Y"),
+                new FieldError("lodgingDTO", "x", "error X"),
+                new FieldError("lodgingDTO", "w", "error W"),
+                new FieldError("lodgingDTO", "v", "error V"));
         when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
 
-        org.springframework.web.bind.MethodArgumentNotValidException ex =
-                org.mockito.Mockito.mock(org.springframework.web.bind.MethodArgumentNotValidException.class);
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         when(ex.getBindingResult()).thenReturn(bindingResult);
 
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        org.springframework.http.ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
+        ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
 
         @SuppressWarnings("unchecked")
         Map<String, String> fields = (Map<String, String>) response.getBody().get("fields");
 
         assertThat(new ArrayList<>(fields.keySet()))
-                .containsExactly("a", "b", "c");
+                .containsExactly("z", "y", "x", "w", "v");
     }
 }
