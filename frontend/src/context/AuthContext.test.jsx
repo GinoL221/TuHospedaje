@@ -127,11 +127,7 @@ describe("AuthContext - initial mount with an expired token", () => {
 });
 
 describe("AuthContext - initial mount with a malformed token", () => {
-  // SUSPICIOUS: getInitialAuth swallows the decode error silently (bare
-  // catch-all) and just falls back to logged-out state instead of
-  // surfacing the error anywhere. Characterizing current behavior as-is,
-  // per spec Risks section — not treating this as the ideal contract.
-  it("silently discards an unparseable token and starts logged-out", () => {
+  it("discards an unparseable token and starts logged-out", () => {
     localStorage.setItem("token", "not-a-real-jwt");
     jwtDecode.mockImplementation(() => {
       throw new Error("invalid token");
@@ -142,6 +138,23 @@ describe("AuthContext - initial mount with a malformed token", () => {
     expect(screen.getByTestId("user")).toHaveTextContent("no-user");
     expect(screen.getByTestId("token")).toHaveTextContent("no-token");
     expect(localStorage.getItem("token")).toBeNull();
+  });
+
+  it("logs the decode error so the failure is visible for debugging", () => {
+    localStorage.setItem("token", "not-a-real-jwt");
+    const decodeError = new Error("invalid token");
+    jwtDecode.mockImplementation(() => {
+      throw decodeError;
+    });
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    renderWithProvider();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(decodeError);
+
+    consoleErrorSpy.mockRestore();
   });
 });
 

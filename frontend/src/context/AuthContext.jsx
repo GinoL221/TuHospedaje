@@ -23,8 +23,8 @@ function getInitialAuth() {
         };
       }
       localStorage.removeItem("token");
-    } catch {
-      console.warn("Stored auth token is invalid or corrupted; clearing it.");
+    } catch (error) {
+      console.error(error);
       localStorage.removeItem("token");
     }
   }
