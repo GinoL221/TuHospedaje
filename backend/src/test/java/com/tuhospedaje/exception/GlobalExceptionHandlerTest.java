@@ -19,6 +19,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -112,5 +117,39 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
                                 "\"phoneNumber\":\"1\",\"email\":\"bad\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields").isMap());
+    }
+
+    /**
+     * Regression guard for the tech-debt fix that replaced HashMap with LinkedHashMap
+     * in {@code GlobalExceptionHandler.handleValidation}: the "fields" map in the
+     * response must preserve the exact insertion order of
+     * {@code BindingResult.getFieldErrors()} — a HashMap does not guarantee this
+     * (iteration order is unspecified and bucket-layout dependent), so the handler
+     * must keep using a LinkedHashMap. Mocking BindingResult directly (rather than
+     * going through real bean validation) makes the asserted order deterministic and
+     * independent of Hibernate Validator's own internal traversal order.
+     */
+    @Test
+    void handleValidation_preservesFieldErrorInsertionOrder() {
+        org.springframework.validation.BindingResult bindingResult =
+                org.mockito.Mockito.mock(org.springframework.validation.BindingResult.class);
+        List<org.springframework.validation.FieldError> fieldErrors = List.of(
+                new org.springframework.validation.FieldError("lodgingDTO", "a", "error A"),
+                new org.springframework.validation.FieldError("lodgingDTO", "b", "error B"),
+                new org.springframework.validation.FieldError("lodgingDTO", "c", "error C"));
+        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+
+        org.springframework.web.bind.MethodArgumentNotValidException ex =
+                org.mockito.Mockito.mock(org.springframework.web.bind.MethodArgumentNotValidException.class);
+        when(ex.getBindingResult()).thenReturn(bindingResult);
+
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        org.springframework.http.ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> fields = (Map<String, String>) response.getBody().get("fields");
+
+        assertThat(new ArrayList<>(fields.keySet()))
+                .containsExactly("a", "b", "c");
     }
 }
