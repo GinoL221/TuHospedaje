@@ -117,9 +117,9 @@ describe("ProductCard - favorite toggle rollback on failure", () => {
 
     await user.click(screen.getByRole("button", { name: "Agregar a favoritos" }));
 
-    expect(
-      await screen.findByRole("button", { name: "Agregar a favoritos" })
-    ).toBeInTheDocument();
+    const button = await screen.findByRole("button", { name: "Agregar a favoritos" });
+    expect(button).toBeInTheDocument();
+    expect(button).not.toBeDisabled();
     expect(onFavoriteToggle).toHaveBeenNthCalledWith(1, 1, true);
     expect(onFavoriteToggle).toHaveBeenNthCalledWith(2, 1, false);
 
@@ -127,13 +127,37 @@ describe("ProductCard - favorite toggle rollback on failure", () => {
   });
 });
 
-// SUSPICIOUS: ProductCard's toggleFavorite has no in-flight guard — nothing
-// prevents a second click while the first POST/DELETE is still pending. Two
-// rapid clicks can race (e.g. POST then DELETE in flight simultaneously,
-// with whichever resolves/rejects last deciding the final optimistic state).
-// Per spec Risks policy this is characterized as the CURRENT single-click
-// behavior only; concurrent-click race safety is explicitly out of scope and
-// is NOT asserted or fixed here.
+describe("ProductCard - favorite toggle race condition guard", () => {
+  it("ignores a second click while the first request is still in flight", async () => {
+    let resolvePost;
+    post.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePost = resolve;
+      })
+    );
+    const onFavoriteToggle = vi.fn();
+    const user = userEvent.setup();
+    renderProductCard(
+      { defaultFavorite: false, onFavoriteToggle },
+      { authValue: makeAuthValue() }
+    );
+
+    const button = screen.getByRole("button", { name: "Agregar a favoritos" });
+    await user.click(button);
+    await user.click(button);
+
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(button).toBeDisabled();
+
+    resolvePost(undefined);
+    await screen.findByRole("button", { name: "Quitar de favoritos" });
+
+    expect(
+      screen.getByRole("button", { name: "Quitar de favoritos" })
+    ).not.toBeDisabled();
+  });
+});
+
 describe("ProductCard - useAuth integration", () => {
   it("reads the current user from useAuth via AuthContext to decide button visibility", () => {
     const authValue = makeAuthValue({ user: null });
