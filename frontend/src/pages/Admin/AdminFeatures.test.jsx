@@ -155,41 +155,45 @@ describe("AdminFeatures - edit", () => {
 });
 
 describe("AdminFeatures - delete", () => {
-  it("asks for native confirmation and calls DELETE /features/:id on accept, then refreshes the list", async () => {
+  it("shows the in-app confirm dialog and calls DELETE /features/:id on accept, then refreshes the list", async () => {
     get.mockResolvedValue([featureFixture({ id: 1, name: "WiFi" })]);
     del.mockResolvedValue({});
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     renderAdminFeatures();
 
     await screen.findByText("WiFi");
-    get.mockResolvedValue([]);
     await user.click(screen.getByTestId("row-delete-btn"));
 
-    // SUSPICIOUS: AdminFeatures uses native window.confirm for delete (NOT
-    // the in-app ConfirmDialog used by AdminCategories/AdminLodgings) — a
-    // third inconsistent confirmation mechanism across Admin CRUD screens.
-    // Asserted as-is per spec Risks; not unified here.
-    expect(window.confirm).toHaveBeenCalledWith('¿Eliminar característica "WiFi"?');
+    // Uses the in-app ConfirmDialog (testId confirm-delete), kept independent
+    // from the confirm-cancel dialog (unsaved-edit guard) that already exists
+    // in this same screen via useConfirmCancel.
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
+      '¿Eliminar característica "WiFi"?'
+    );
+    expect(del).not.toHaveBeenCalled();
 
+    get.mockResolvedValue([]);
+    await user.click(screen.getByTestId("confirm-delete-yes"));
+
+    expect(del).toHaveBeenCalledWith("/features/1");
     await waitFor(() => {
-      expect(del).toHaveBeenCalledWith("/features/1");
+      expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     });
     expect(
       await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!")
     ).toBeInTheDocument();
   });
 
-  it("makes no DELETE request when the native confirmation is rejected", async () => {
+  it("makes no DELETE request when the confirmation is dismissed", async () => {
     get.mockResolvedValue([featureFixture({ id: 1, name: "WiFi" })]);
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     const user = userEvent.setup();
     renderAdminFeatures();
 
     await screen.findByText("WiFi");
     await user.click(screen.getByTestId("row-delete-btn"));
+    await user.click(screen.getByTestId("confirm-delete-no"));
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     expect(del).not.toHaveBeenCalled();
     expect(screen.getByText("WiFi")).toBeInTheDocument();
   });
@@ -197,17 +201,37 @@ describe("AdminFeatures - delete", () => {
   it("surfaces the request error via alert when DELETE rejects", async () => {
     get.mockResolvedValue([featureFixture({ id: 1, name: "WiFi" })]);
     del.mockRejectedValue(new Error("No se pudo eliminar"));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const user = userEvent.setup();
     renderAdminFeatures();
 
     await screen.findByText("WiFi");
     await user.click(screen.getByTestId("row-delete-btn"));
+    await user.click(screen.getByTestId("confirm-delete-yes"));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("No se pudo eliminar");
     });
     expect(screen.getByText("WiFi")).toBeInTheDocument();
+    expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
+  });
+
+  it("keeps the dialog message scoped to the most recently clicked row when reopened for a different feature", async () => {
+    get.mockResolvedValue([
+      featureFixture({ id: 1, name: "WiFi" }),
+      featureFixture({ id: 2, name: "Pileta", icon: "fa-solid fa-water-ladder" }),
+    ]);
+    const user = userEvent.setup();
+    renderAdminFeatures();
+
+    await screen.findByText("WiFi");
+
+    await user.click(screen.getByTestId("row-1").querySelector("[data-testid='row-delete-btn']"));
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar característica "WiFi"?');
+    await user.click(screen.getByTestId("confirm-delete-no"));
+
+    await user.click(screen.getByTestId("row-2").querySelector("[data-testid='row-delete-btn']"));
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar característica "Pileta"?');
+    expect(del).not.toHaveBeenCalled();
   });
 });
