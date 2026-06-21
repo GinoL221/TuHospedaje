@@ -261,6 +261,12 @@ describe("BookingPage - reservation submit error", () => {
   });
 });
 
+// NOTE: minCheckoutDate's date-arithmetic contract (day-after-checkIn,
+// month/year rollover, null/undefined fallback) is unit-tested exhaustively
+// in src/utils/dateRange.test.js. The test below only checks the thin
+// page-specific wiring: that the check-out DatePicker's minDate prop is
+// actually connected to minCheckoutDate(checkIn), not duplicating the
+// date-math assertions already owned by dateRange.test.js.
 describe("BookingPage - check-out calendar minimum date", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -282,31 +288,94 @@ describe("BookingPage - check-out calendar minimum date", () => {
     const checkInInput = screen.getByLabelText("Check-in");
     const checkOutInput = screen.getByLabelText("Check-out");
 
-    // Select today's earliest enabled day as check-in.
+    // Select today's earliest enabled day as check-in. react-datepicker
+    // marks enabled/disabled state via aria-disabled on each gridcell (a
+    // stable accessibility contract), instead of relying on its internal
+    // "--disabled" CSS class which can change across library versions.
     await user.click(checkInInput);
     const checkInDay = document.querySelector(
-      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
+      '[role="gridcell"][aria-disabled="false"]'
     );
     const checkInDayNumber = Number(checkInDay.textContent);
     await user.click(checkInDay);
 
     // Open the check-out calendar: the same day must now be disabled,
-    // since a booking requires at least one night (checkOut > checkIn).
+    // proving minDate={minCheckoutDate(checkIn)} is actually wired up
+    // (a booking requires at least one night, so checkOut > checkIn).
+    // "outside-month" has no aria/role equivalent in react-datepicker, so
+    // that one filter still relies on the internal CSS class.
     await user.click(checkOutInput);
     const sameDayInCheckoutCalendar = Array.from(
-      document.querySelectorAll(".react-datepicker__day")
+      document.querySelectorAll('[role="gridcell"]')
     ).find(
       (day) =>
         Number(day.textContent) === checkInDayNumber &&
         !day.classList.contains("react-datepicker__day--outside-month")
     );
 
-    expect(sameDayInCheckoutCalendar).toHaveClass("react-datepicker__day--disabled");
+    expect(sameDayInCheckoutCalendar).toHaveAttribute("aria-disabled", "true");
+  });
+});
 
-    const firstEnabledCheckoutDay = document.querySelector(
-      ".react-datepicker__day:not(.react-datepicker__day--disabled)"
+// Covers isDateOccupied / the filterDate prop wired into both DatePickers:
+// dates that overlap an existing reservation must be blocked, using the same
+// [checkIn, checkOut) exclusive-end semantics as the backend
+// (LodgingServiceImpl.checkAvailability). There was previously zero test
+// coverage of this filtering behavior.
+describe("BookingPage - occupied date filtering", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Use a midday local time, not UTC midnight: "2026-07-01" parses as UTC
+    // midnight, which in a UTC-3 timezone is "2026-06-30T21:00" local time,
+    // shifting the DatePicker's default-open month to June and breaking
+    // any assertion on July dates.
+    vi.setSystemTime(new Date("2026-07-01T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function findDayByLabelDate(dateText) {
+    return Array.from(document.querySelectorAll('[role="gridcell"]')).find(
+      (day) => day.getAttribute("aria-label")?.includes(dateText)
     );
-    expect(Number(firstEnabledCheckoutDay.textContent)).toBe(checkInDayNumber + 1);
+  }
+
+  it("blocks dates inside an existing reservation while leaving its checkout day and outside dates selectable", async () => {
+    // Existing reservation occupies July 20-22 (checkOut 23 is exclusive,
+    // i.e. the 3-night stay is [2026-07-20, 2026-07-23)).
+    mockGetDefaults({
+      availability: {
+        occupiedRanges: [{ checkIn: "2026-07-20", checkOut: "2026-07-23" }],
+      },
+    });
+    const authValue = makeAuthValue();
+    const user = userEvent.setup();
+    renderBookingPage({ authValue });
+
+    await screen.findByText("Cabaña del Lago");
+
+    const checkInInput = screen.getByLabelText("Check-in");
+    await user.click(checkInInput);
+
+    const july20 = findDayByLabelDate("July 20th, 2026");
+    const july21 = findDayByLabelDate("July 21st, 2026");
+    const july22 = findDayByLabelDate("July 22nd, 2026");
+    const july23 = findDayByLabelDate("July 23rd, 2026");
+    const july25 = findDayByLabelDate("July 25th, 2026");
+
+    // Strictly inside the occupied range: blocked.
+    expect(july20).toHaveAttribute("aria-disabled", "true");
+    expect(july21).toHaveAttribute("aria-disabled", "true");
+    expect(july22).toHaveAttribute("aria-disabled", "true");
+
+    // The reservation's checkout day is the exclusive upper bound, so it
+    // must remain selectable (this is what makes same-day turnover work).
+    expect(july23).toHaveAttribute("aria-disabled", "false");
+
+    // A date outside the occupied range entirely is also selectable.
+    expect(july25).toHaveAttribute("aria-disabled", "false");
   });
 });
 
