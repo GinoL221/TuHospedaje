@@ -62,8 +62,9 @@ cp backend/.env.example backend/.env
 DB_USERNAME=tuhospedaje
 DB_PASSWORD=your_password
 
-# JWT
-JWT_SECRET=your_secret_256_bits_minimum
+# JWT — must be Base64-encoded and decode to at least 256 bits (32 bytes).
+# A plain passphrase will NOT work. Generate one with: openssl rand -base64 48
+JWT_SECRET=change-me-generate-with-openssl-rand-base64-48
 
 # CORS — URL del frontend
 CORS_ALLOWED_ORIGINS=http://localhost:5173
