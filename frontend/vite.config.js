@@ -27,6 +27,15 @@ export default defineConfig({
         'src/test/**',
         'src/**/*.test.{js,jsx}',
       ],
+      // Floor set below the current measured coverage (73.9% statements /
+      // 68.8% branches / 62.1% functions / 75.8% lines as of 2026-06) so the
+      // run fails on real regressions without blocking on today's gaps.
+      thresholds: {
+        statements: 70,
+        branches: 65,
+        functions: 55,
+        lines: 70,
+      },
     },
   },
 })
