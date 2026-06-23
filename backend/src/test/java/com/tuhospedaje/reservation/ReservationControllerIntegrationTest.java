@@ -12,6 +12,7 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.EmailService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,8 +101,11 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
                         .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -140,7 +144,12 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        // Keep CSRF valid even without auth, so the 401 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -216,8 +225,11 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
                         .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -238,8 +250,11 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
                         .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

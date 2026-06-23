@@ -113,10 +113,13 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
     void existingValidationHandler_stillReturns400WithFields() throws Exception {
         // Validation fires at the controller layer before the service is called —
         // the mock doesn't need to be configured here.
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/lodgings")
                         .header(HttpHeaders.AUTHORIZATION, adminToken)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\",\"address\":\"x\",\"city\":\"y\",\"country\":\"z\"," +
                                 "\"phoneNumber\":\"1\",\"email\":\"bad\"}"))

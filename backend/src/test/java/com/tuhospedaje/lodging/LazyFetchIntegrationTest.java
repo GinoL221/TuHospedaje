@@ -150,8 +150,11 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
     @Test
     void favoritesEndpoint_returnsFavorites_noLazyException() throws Exception {
         // Add favorite
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userToken))
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().is2xxSuccessful());
 
         // Get favorites

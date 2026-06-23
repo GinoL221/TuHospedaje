@@ -9,6 +9,7 @@ import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,8 +67,11 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("Hotel 5 estrellas");
         request.setDescription("Alojamientos de lujo");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -87,8 +91,11 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("Cabaña");
         request.setDescription("Otra");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -142,8 +149,11 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("Hotel Boutique");
         request.setDescription("Actualizado");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/categories/{id}", saved.getId())
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -157,8 +167,11 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         CategoryDTO request = new CategoryDTO();
         request.setName("No existe");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/categories/{id}", 888L)
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -170,15 +183,21 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         category.setName("Temporal");
         Category saved = categoryRepository.save(category);
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/categories/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, authHeader))
+                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void shouldReturnNotFoundWhenDeletingCategoryDoesNotExist() throws Exception {
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/categories/{id}", 777L)
-                        .header(HttpHeaders.AUTHORIZATION, authHeader))
+                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound());
     }
 }

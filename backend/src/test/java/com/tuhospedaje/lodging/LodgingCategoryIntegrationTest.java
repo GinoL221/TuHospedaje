@@ -9,6 +9,7 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,8 +75,11 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
         Map<String, Object> request = buildLodgingRequest("Gran Hotel", "gran@hotel.com", savedCategory.getId());
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -88,8 +92,11 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
     void shouldCreateLodgingWithoutCategoryAndExposeNullCategoryFields() throws Exception {
         Map<String, Object> request = buildLodgingRequest("Sin Categoría", "sin@categoria.com", null);
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -102,8 +109,11 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
     void shouldReturnNotFoundWhenCreatingLodgingWithMissingCategory() throws Exception {
         Map<String, Object> request = buildLodgingRequest("Categoría Missing", "missing@cat.com", 9999L);
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
@@ -123,8 +133,11 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
         Category savedNewCategory = categoryRepository.save(newCategory);
 
         Map<String, Object> createRequest = buildLodgingRequest("Cambio Categoría", "cambio@cat.com", savedOldCategory.getId());
+        Cookie createCsrfCookie = obtainCsrfCookie(mockMvc);
         String createResponse = mockMvc.perform(post("/api/lodgings")
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(createCsrfCookie)
+                        .header("X-XSRF-TOKEN", createCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
@@ -136,8 +149,11 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
         Map<String, Object> updateRequest = buildLodgingRequest("Cambio Categoría", "cambio@cat.com", savedNewCategory.getId());
 
+        Cookie updateCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", lodgingId)
                         .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(updateCsrfCookie)
+                        .header("X-XSRF-TOKEN", updateCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -171,7 +187,12 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
         request.put("name", "NoAuth");
         request.put("description", "Write denied");
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());

@@ -8,6 +8,7 @@ import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,8 +80,11 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
     // SC-7.5: POST /api/favorites/{lodgingId} returns 201
     @Test
     void addFavorite_returns201() throws Exception {
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isCreated());
     }
 
@@ -88,13 +92,19 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
     @Test
     void removeFavorite_returns204WithNoBody() throws Exception {
         // first add
+        Cookie addCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(addCsrfCookie)
+                        .header("X-XSRF-TOKEN", addCsrfCookie.getValue()))
                 .andExpect(status().isCreated());
 
         // then remove
+        Cookie removeCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(removeCsrfCookie)
+                        .header("X-XSRF-TOKEN", removeCsrfCookie.getValue()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
     }
@@ -103,8 +113,11 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
     @Test
     void getFavorites_authenticated_returns200WithArray() throws Exception {
         // add one favorite first
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/favorites")
@@ -118,14 +131,22 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
     // Pinning current behavior; 401 vs 403 discrepancy noted in apply-progress.
     @Test
     void addFavorite_unauthenticated_returns403() throws Exception {
-        mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId))
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isForbidden());
     }
 
     // DELETE /api/favorites unauthenticated — current behavior: 403
     @Test
     void removeFavorite_unauthenticated_returns403() throws Exception {
-        mockMvc.perform(delete("/api/favorites/{lodgingId}", lodgingId))
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/favorites/{lodgingId}", lodgingId)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isForbidden());
     }
 

@@ -81,9 +81,12 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.jpg", "image/jpeg", "fake-image-bytes".getBytes());
 
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(multipart("/api/upload")
                         .file(file)
-                        .header(HttpHeaders.AUTHORIZATION, adminToken))
+                        .header(HttpHeaders.AUTHORIZATION, adminToken)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.status").value(502))
                 .andExpect(jsonPath("$.error").isString())

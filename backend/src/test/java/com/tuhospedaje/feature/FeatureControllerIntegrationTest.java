@@ -9,6 +9,7 @@ import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,8 +81,11 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("FT-WiFi-Gratis");
         request.setIcon("wifi-icon");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -101,8 +105,11 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("FT-Cochera");
         request.setIcon("car-icon");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -156,8 +163,11 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("FT-WiFi-Premium");
         request.setIcon("new-icon");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/features/{id}", saved.getId())
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -172,8 +182,11 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("FT-No-Existe");
         request.setIcon("none");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/features/{id}", 888L)
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -186,15 +199,21 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         feature.setIcon("temp-icon");
         Feature saved = featureRepository.save(feature);
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/features/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void shouldReturnNotFoundWhenDeletingFeatureDoesNotExist() throws Exception {
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/features/{id}", 777L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound());
     }
 
@@ -204,7 +223,12 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("FT-Sin-Auth");
         request.setIcon("lock-icon");
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -216,8 +240,11 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
         request.setName("FT-No-Admin");
         request.setIcon("user-icon");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
                         .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());

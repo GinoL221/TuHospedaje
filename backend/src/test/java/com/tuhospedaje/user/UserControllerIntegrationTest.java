@@ -7,6 +7,7 @@ import com.tuhospedaje.dto.auth.RoleRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,8 +97,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -110,8 +114,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("  ");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -123,8 +130,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", 999L)
                         .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -135,7 +145,12 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -146,8 +161,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
                         .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
