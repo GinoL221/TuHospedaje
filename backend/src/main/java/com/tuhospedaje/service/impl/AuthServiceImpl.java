@@ -38,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResult register(RegisterRequest request) {
         if (userRepository. findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
@@ -56,12 +56,12 @@ public class AuthServiceImpl implements AuthService {
 
         emailService.sendWelcomeEmail(request);
 
-        return buildAuthResponse(user);
+        return buildAuthResult(user);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    public AuthResult login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(), request.getPassword()));
@@ -69,10 +69,19 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
 
+        return buildAuthResult(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AuthResponse currentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
         return buildAuthResponse(user);
     }
 
-    private AuthResponse buildAuthResponse(User user) {
+    private AuthResult buildAuthResult(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("firstName", user.getFirstName());
         claims.put("lastName", user.getLastName());
@@ -80,6 +89,16 @@ public class AuthServiceImpl implements AuthService {
         claims.put("imageUrl", user.getImageUrl());
 
         String token = jwtService.generateToken(claims, user);
-        return new AuthResponse(token);
+        return new AuthResult(buildAuthResponse(user), token);
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        return AuthResponse.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .imageUrl(user.getImageUrl())
+                .build();
     }
 }
