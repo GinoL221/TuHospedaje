@@ -273,7 +273,9 @@ public class LodgingServiceImpl implements LodgingService {
             });
         }
 
-        List<Lodging> results = lodgingRepository.findAll(spec);
+        List<Lodging> results = lodgingRepository
+                .findAll(spec, PageRequest.of(0, MAX_UNFILTERED_RESULTS))
+                .getContent();
 
         List<LodgingDTO> dtos = results.stream()
                 .map(LodgingDTO::fromEntity)
