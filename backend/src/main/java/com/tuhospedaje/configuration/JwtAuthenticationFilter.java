@@ -3,6 +3,7 @@ package com.tuhospedaje.configuration;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
@@ -24,6 +25,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -35,14 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        final String jwt = resolveToken(request);
 
-        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if(jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        final String jwt = authHeader.substring(7);
 
         try {
             final String userEmail = jwtService.extractUsername(jwt);
@@ -62,5 +62,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.warn("Rejected invalid JWT: {}", ex.getMessage());
         }
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Resolves the JWT from the {@code ACCESS_TOKEN} httpOnly cookie first (the
+     * supported carrier going forward). Falls back to the {@code Authorization: Bearer}
+     * header only when no cookie is present.
+     *
+     * <p>This fallback is a deliberate, temporary bridge for this PR only: the ~15
+     * pre-existing backend integration tests still send the JWT via the header, and
+     * their migration to the cookie is a separate, mechanical PR (PR2). The header
+     * remains immune to CSRF by design, so keeping it as a fallback does not reopen the
+     * CSRF surface this change closes via the cookie + CSRF token. Whether to drop this
+     * fallback once PR2 lands is a decision for a future PR, not this one.
+     */
+    private String resolveToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        return null;
     }
 }
