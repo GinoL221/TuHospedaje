@@ -15,6 +15,7 @@ export function makeAuthValue(overrides = {}) {
   return {
     token: "fake-token",
     user: mockUser,
+    loading: false,
     login: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
@@ -23,6 +24,7 @@ export function makeAuthValue(overrides = {}) {
 }
 
 // authValue: pass null for logged-out; pass makeAuthValue({...}) to customize.
+// Pass makeAuthValue({ loading: true }) to simulate the in-flight /me bootstrap.
 // route/initialEntries: drive MemoryRouter (LoginPage reads location.state.from.pathname).
 export function customRender(ui, { authValue, route = "/", initialEntries, ...options } = {}) {
   const entries = initialEntries ?? [route];
