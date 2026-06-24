@@ -43,4 +43,14 @@ public abstract class AbstractIntegrationTest {
         assertThat(csrfCookie).isNotNull();
         return csrfCookie;
     }
+
+    /**
+     * Builds the {@code ACCESS_TOKEN} cookie used to authenticate {@code MockMvc}
+     * requests, mirroring how {@code JwtAuthenticationFilter} reads the JWT in
+     * production (cookie-first). This is a plain in-memory wrapper — unlike
+     * {@link #obtainCsrfCookie(MockMvc)}, it performs no real request.
+     */
+    protected Cookie accessCookie(String token) {
+        return new Cookie("ACCESS_TOKEN", token);
+    }
 }
