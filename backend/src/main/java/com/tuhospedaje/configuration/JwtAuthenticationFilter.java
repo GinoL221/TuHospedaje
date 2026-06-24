@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -58,7 +59,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (JwtException | IllegalArgumentException ex) {
+        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException ex) {
+            // UsernameNotFoundException covers the case where the JWT is structurally
+            // and cryptographically valid but the user it names was deleted from the DB
+            // after the token was issued — must degrade to "unauthenticated", not
+            // propagate, since this filter runs before ExceptionTranslationFilter in the
+            // chain and an uncaught exception here never reaches it.
             log.warn("Rejected invalid JWT: {}", ex.getMessage());
         }
         filterChain.doFilter(request, response);

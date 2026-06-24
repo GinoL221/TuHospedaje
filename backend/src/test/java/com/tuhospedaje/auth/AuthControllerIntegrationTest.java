@@ -16,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.regex.Pattern;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -87,10 +89,14 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturn401OnInvalidCredentials() throws Exception {
         LoginRequest login = new LoginRequest("noexiste@test.com", "pass");
-        mockMvc.perform(post("/api/auth/login")
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        // Scenario 8.5: no JWT-shaped string anywhere in the error body.
+        assertBodyHasNoJwt(result.getResponse().getContentAsString());
     }
 
     @Test
@@ -234,16 +240,70 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldRejectLogoutWithoutAccessTokenCookie() throws Exception {
+        // Without a CSRF header at all, this is rejected by CSRF protection (403) —
+        // logout is no longer auth-gated, but it stays CSRF-protected like every other
+        // mutating endpoint outside login/register.
         mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldLogoutSuccessfullyWithoutAnyPriorSession() throws Exception {
+        // Logout is idempotent: calling it with a valid CSRF token but no ACCESS_TOKEN
+        // cookie (no session was ever established, or it already expired) must still
+        // succeed as a no-op — it should not require knowing who the user is.
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent())
+                .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItem(containsString("ACCESS_TOKEN="))))
+                .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItem(containsString("Max-Age=0"))));
+    }
+
+    @Test
+    void shouldLogoutSuccessfullyTwiceInARow() throws Exception {
+        LoginCookies cookies = loginAndGetCookies("logout-idempotent@test.com");
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(cookies.accessToken(), cookies.csrfToken())
+                        .header("X-XSRF-TOKEN", cookies.csrfToken().getValue()))
+                .andExpect(status().isNoContent());
+
+        // Second call: no ACCESS_TOKEN cookie anymore (cleared by the first logout), but
+        // a fresh CSRF token obtained the same way the frontend would on next render.
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent());
     }
 
     @Test
     void shouldRejectLogoutWithoutCsrfHeaderEvenWithValidCookie() throws Exception {
         LoginCookies cookies = loginAndGetCookies("logout-no-csrf@test.com");
 
-        mockMvc.perform(post("/api/auth/logout")
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
                         .cookie(cookies.accessToken(), cookies.csrfToken()))
+                .andExpect(status().isForbidden())
+                .andReturn();
+
+        // Scenario 8.5: no JWT-shaped string anywhere in the error body.
+        assertBodyHasNoJwt(result.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldRejectLogoutWhenCsrfHeaderDoesNotMatchCookie() throws Exception {
+        // Scenario 4.2 / double-submit core case: header present but mismatched must be
+        // rejected, not just header absent — a forged cross-site request could otherwise
+        // attach an attacker-controlled X-XSRF-TOKEN value without ever reading the real
+        // cookie value (which Same-Origin Policy blocks it from doing).
+        LoginCookies cookies = loginAndGetCookies("logout-mismatch-csrf@test.com");
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(cookies.accessToken(), cookies.csrfToken())
+                        .header("X-XSRF-TOKEN", "this-does-not-match-the-real-csrf-cookie"))
                 .andExpect(status().isForbidden());
     }
 
@@ -261,15 +321,23 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturn401OnMeWithoutCookie() throws Exception {
-        mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isUnauthorized());
+        MvcResult result = mockMvc.perform(get("/api/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        // Scenario 8.5: no JWT-shaped string anywhere in the error body.
+        assertBodyHasNoJwt(result.getResponse().getContentAsString());
     }
 
     @Test
     void shouldReturn401OnMeWithInvalidCookie() throws Exception {
-        mockMvc.perform(get("/api/auth/me")
+        MvcResult result = mockMvc.perform(get("/api/auth/me")
                         .cookie(new Cookie("ACCESS_TOKEN", "not-a-valid-jwt")))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        // Scenario 8.5: no JWT-shaped string anywhere in the error body.
+        assertBodyHasNoJwt(result.getResponse().getContentAsString());
     }
 
     @Test
@@ -279,6 +347,24 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         // GET is never CSRF-checked — no .with(csrf()) needed.
         mockMvc.perform(get("/api/auth/me").cookie(accessTokenCookie))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldReturn401OnMeWhenValidJwtButUserDeletedFromDb() throws Exception {
+        // The cookie carries a structurally and cryptographically valid JWT, but the
+        // user it names no longer exists in the DB. AuthController's own Swagger
+        // (@ApiResponse 401 "No valid session") documents this as 401 — it must NOT
+        // fall through to the generic IllegalArgumentException -> 400 mapping used by
+        // ordinary validation errors elsewhere in the app.
+        Cookie accessTokenCookie = loginAndGetAccessTokenCookie("me-deleted-user@test.com");
+        Long userId = userRepository.findByEmail("me-deleted-user@test.com").orElseThrow().getId();
+        userRepository.deleteById(userId);
+
+        MvcResult result = mockMvc.perform(get("/api/auth/me").cookie(accessTokenCookie))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        assertBodyHasNoJwt(result.getResponse().getContentAsString());
     }
 
     private void registerUser(String email) throws Exception {
@@ -307,5 +393,21 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     private record LoginCookies(Cookie accessToken, Cookie csrfToken) {
+    }
+
+    /**
+     * Requirement 8 (hard security criterion): the JWT must never appear in ANY JSON
+     * response body, including error bodies (Scenario 8.5). A compact JWT is always
+     * three base64url segments separated by dots; this regex catches that shape
+     * anywhere in the raw body, not just under a {@code "token"} key — defends against
+     * a JWT leaking into an error detail field, a nested object, or any other key name.
+     */
+    private static final Pattern JWT_SHAPE = Pattern.compile("[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+");
+
+    private void assertBodyHasNoJwt(String body) {
+        assertThat(JWT_SHAPE.matcher(body).find())
+                .as("Response body must not contain any JWT-shaped string (3 dot-separated base64url segments): %s", body)
+                .isFalse();
+        assertThat(body).doesNotContain("\"token\"");
     }
 }

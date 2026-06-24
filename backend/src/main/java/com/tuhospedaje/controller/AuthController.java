@@ -60,10 +60,10 @@ public class AuthController {
         return withAccessTokenCookie(HttpStatus.OK, result);
     }
 
-    @Operation(summary = "Log out", description = "Clears the ACCESS_TOKEN session cookie")
+    @Operation(summary = "Log out", description = "Clears the ACCESS_TOKEN session cookie. Idempotent: "
+            + "succeeds even without a prior session, so it can always be called safely.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Logout successful — ACCESS_TOKEN cookie cleared", content = @Content),
-            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content),
+            @ApiResponse(responseCode = "204", description = "ACCESS_TOKEN cookie cleared (no-op if there was no session)", content = @Content),
             @ApiResponse(responseCode = "403", description = "Missing/invalid CSRF token", content = @Content)
     })
     @PostMapping("/logout")
