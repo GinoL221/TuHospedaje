@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -62,7 +61,7 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build();
         User savedUser = userRepository.save(user);
-        userAuthHeader = "Bearer " + jwtService.generateToken(savedUser);
+        userAuthHeader = jwtService.generateToken(savedUser);
 
         Lodging lodging = new Lodging();
         lodging.setName("Favoritable Hotel");
@@ -82,7 +81,7 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
     void addFavorite_returns201() throws Exception {
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isCreated());
@@ -94,7 +93,7 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
         // first add
         Cookie addCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(addCsrfCookie)
                         .header("X-XSRF-TOKEN", addCsrfCookie.getValue()))
                 .andExpect(status().isCreated());
@@ -102,7 +101,7 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
         // then remove
         Cookie removeCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(removeCsrfCookie)
                         .header("X-XSRF-TOKEN", removeCsrfCookie.getValue()))
                 .andExpect(status().isNoContent())
@@ -115,13 +114,13 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
         // add one favorite first
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/favorites")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1));

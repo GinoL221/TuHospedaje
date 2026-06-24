@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -82,7 +81,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(user);
-        userAuthHeader = "Bearer " + jwtService.generateToken(savedUser);
+        userAuthHeader = jwtService.generateToken(savedUser);
     }
 
     @Test
@@ -103,7 +102,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +124,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
 
         mockMvc.perform(get("/api/reservations/my")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
                 .andExpect(jsonPath("$[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
@@ -171,7 +170,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.ADMIN)
                 .build();
         User savedAdmin = userRepository.save(admin);
-        String adminAuth = "Bearer " + jwtService.generateToken(savedAdmin);
+        String adminAuth = jwtService.generateToken(savedAdmin);
 
         Long lodgingId = createTestLodging();
 
@@ -179,7 +178,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
 
         mockMvc.perform(get("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuth))
+                        .cookie(accessCookie(adminAuth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -190,7 +189,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnForbiddenWhenGettingAllReservationsAsNormalUser() throws Exception {
         mockMvc.perform(get("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isForbidden());
     }
 
@@ -227,7 +226,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -252,7 +251,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)

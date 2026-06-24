@@ -40,7 +40,7 @@ class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnForbiddenInsteadOfServerErrorWhenTokenIsMalformed() throws Exception {
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer not-a-valid-jwt-token"))
+                        .cookie(accessCookie("not-a-valid-jwt-token")))
                 .andExpect(status().isForbidden());
     }
 
@@ -54,7 +54,7 @@ class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationTest {
                 .compact();
 
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredToken))
+                        .cookie(accessCookie(expiredToken)))
                 .andExpect(status().isForbidden());
     }
 
@@ -69,7 +69,7 @@ class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationTest {
                 .compact();
 
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + badlySignedToken))
+                        .cookie(accessCookie(badlySignedToken)))
                 .andExpect(status().isForbidden());
     }
 

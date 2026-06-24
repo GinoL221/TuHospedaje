@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -59,8 +58,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedAdmin = userRepository.save(admin);
-        String adminToken = jwtService.generateToken(savedAdmin);
-        adminAuthHeader = "Bearer " + adminToken;
+        adminAuthHeader = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("User")
@@ -71,8 +69,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(regularUser);
-        String userToken = jwtService.generateToken(savedUser);
-        userAuthHeader = "Bearer " + userToken;
+        userAuthHeader = jwtService.generateToken(savedUser);
     }
 
     @Test
@@ -83,7 +80,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +104,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -165,7 +162,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/features/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -184,7 +181,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/features/{id}", 888L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -201,7 +198,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/features/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
@@ -211,7 +208,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
     void shouldReturnNotFoundWhenDeletingFeatureDoesNotExist() throws Exception {
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/features/{id}", 777L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound());
@@ -242,7 +239,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)

@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -61,7 +60,7 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
                 .role(RoleEnum.ADMIN)
                 .build();
         User savedAdmin = userRepository.save(admin);
-        adminAuthHeader = "Bearer " + jwtService.generateToken(savedAdmin);
+        adminAuthHeader = jwtService.generateToken(savedAdmin);
     }
 
     // SC-7.1: PUT with invalid body (blank name) should return 400
@@ -80,7 +79,7 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", id)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +95,7 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/lodgings/{id}", id)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent())
@@ -116,7 +115,7 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         String response = mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)

@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -90,7 +89,7 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
                 .password("hash")
                 .role(RoleEnum.ADMIN)
                 .build());
-        adminToken = "Bearer " + jwtService.generateToken(admin);
+        adminToken = jwtService.generateToken(admin);
 
         regularUser = userRepository.save(User.builder()
                 .firstName("User")
@@ -99,7 +98,7 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
                 .password("hash")
                 .role(RoleEnum.USER)
                 .build());
-        userToken = "Bearer " + jwtService.generateToken(regularUser);
+        userToken = jwtService.generateToken(regularUser);
 
         Feature feature = new Feature();
         feature.setName("Wi-Fi Lazy Test");
@@ -152,14 +151,14 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
         // Add favorite
         jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/favorites/{lodgingId}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .cookie(accessCookie(userToken))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().is2xxSuccessful());
 
         // Get favorites
         mockMvc.perform(get("/api/favorites")
-                        .header(HttpHeaders.AUTHORIZATION, userToken))
+                        .cookie(accessCookie(userToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1));

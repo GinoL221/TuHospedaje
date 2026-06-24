@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.HashMap;
@@ -62,8 +61,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedAdmin = userRepository.save(admin);
-        String token = jwtService.generateToken(savedAdmin);
-        authHeader = "Bearer " + token;
+        authHeader = jwtService.generateToken(savedAdmin);
     }
 
     @Test
@@ -77,7 +75,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(accessCookie(authHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -94,7 +92,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(accessCookie(authHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,7 +109,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(accessCookie(authHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -135,7 +133,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
         Map<String, Object> createRequest = buildLodgingRequest("Cambio Categoría", "cambio@cat.com", savedOldCategory.getId());
         Cookie createCsrfCookie = obtainCsrfCookie(mockMvc);
         String createResponse = mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(accessCookie(authHeader))
                         .cookie(createCsrfCookie)
                         .header("X-XSRF-TOKEN", createCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,7 +149,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
         Cookie updateCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, authHeader)
+                        .cookie(accessCookie(authHeader))
                         .cookie(updateCsrfCookie)
                         .header("X-XSRF-TOKEN", updateCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -161,7 +159,7 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.categoryName").value("Cabaña"));
 
         mockMvc.perform(get("/api/lodgings/{id}", lodgingId)
-                        .header(HttpHeaders.AUTHORIZATION, authHeader))
+                        .cookie(accessCookie(authHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoryId").value(savedNewCategory.getId()))
                 .andExpect(jsonPath("$.categoryName").value("Cabaña"));

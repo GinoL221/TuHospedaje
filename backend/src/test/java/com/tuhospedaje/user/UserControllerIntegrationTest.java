@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -53,8 +52,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedAdmin = userRepository.save(admin);
-        String adminToken = jwtService.generateToken(savedAdmin);
-        adminAuthHeader = "Bearer " + adminToken;
+        adminAuthHeader = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("Regular")
@@ -65,15 +63,14 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(regularUser);
-        String userToken = jwtService.generateToken(savedUser);
-        userAuthHeader = "Bearer " + userToken;
+        userAuthHeader = jwtService.generateToken(savedUser);
         regularUserId = savedUser.getId();
     }
 
     @Test
     void shouldListUsersSuccessfully() throws Exception {
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .cookie(accessCookie(adminAuthHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").isNumber())
                 .andExpect(jsonPath("$[0].email").exists());
@@ -88,7 +85,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnForbiddenWhenListingUsersWithUserRole() throws Exception {
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isForbidden());
     }
 
@@ -99,7 +96,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,7 +113,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,7 +129,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", 999L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -163,7 +160,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)

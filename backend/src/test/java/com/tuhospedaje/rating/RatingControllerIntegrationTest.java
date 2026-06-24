@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -76,7 +75,7 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build();
         testUser = userRepository.save(testUser);
-        userAuthHeader = "Bearer " + jwtService.generateToken(testUser);
+        userAuthHeader = jwtService.generateToken(testUser);
 
         testLodging = new Lodging();
         testLodging.setName("Hostel Oasis");
@@ -113,7 +112,7 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -136,7 +135,7 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie firstCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(firstCsrfCookie)
                         .header("X-XSRF-TOKEN", firstCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,7 +150,7 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie secondCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(secondCsrfCookie)
                         .header("X-XSRF-TOKEN", secondCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)

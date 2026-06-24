@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -71,8 +70,7 @@ class PolicyControllerIntegrationTest {
                 .build();
 
         User savedAdmin = userRepository.save(admin);
-        String adminToken = jwtService.generateToken(savedAdmin);
-        adminAuthHeader = "Bearer " + adminToken;
+        adminAuthHeader = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("User")
@@ -83,8 +81,7 @@ class PolicyControllerIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(regularUser);
-        String userToken = jwtService.generateToken(savedUser);
-        userAuthHeader = "Bearer " + userToken;
+        userAuthHeader = jwtService.generateToken(savedUser);
     }
 
     @AfterEach
@@ -131,7 +128,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +153,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,7 +171,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -198,7 +195,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(put("/api/policies/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -217,7 +214,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(put("/api/policies/{id}", 888888L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -235,7 +232,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(delete("/api/policies/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
@@ -245,7 +242,7 @@ class PolicyControllerIntegrationTest {
     void shouldReturnBadRequestWhenDeletingPolicyReferencedByLodging() throws Exception {
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(delete("/api/policies/{id}", 1L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isBadRequest())
@@ -256,7 +253,7 @@ class PolicyControllerIntegrationTest {
     void shouldReturnNotFoundWhenDeletingPolicyDoesNotExist() throws Exception {
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(delete("/api/policies/{id}", 777777L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound());
@@ -289,7 +286,7 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -314,5 +311,15 @@ class PolicyControllerIntegrationTest {
                 .getCookie("XSRF-TOKEN");
         assertThat(csrfCookie).isNotNull();
         return csrfCookie;
+    }
+
+    /**
+     * Builds the {@code ACCESS_TOKEN} cookie used to authenticate {@code MockMvc}
+     * requests. Duplicated here rather than via {@code AbstractIntegrationTest} for the
+     * same reason {@link #obtainCsrfCookie()} is duplicated above — this class does not
+     * extend that base class.
+     */
+    private Cookie accessCookie(String token) {
+        return new Cookie("ACCESS_TOKEN", token);
     }
 }
