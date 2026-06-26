@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -68,7 +67,7 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
                 .password("hash")
                 .role(RoleEnum.ADMIN)
                 .build());
-        adminToken = "Bearer " + jwtService.generateToken(admin);
+        adminToken = jwtService.generateToken(admin);
     }
 
     /** SC-6.2: Cloudinary upload failure returns 502 with standard shape, no internal message leaked */
@@ -81,9 +80,12 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.jpg", "image/jpeg", "fake-image-bytes".getBytes());
 
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(multipart("/api/upload")
                         .file(file)
-                        .header(HttpHeaders.AUTHORIZATION, adminToken))
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.status").value(502))
                 .andExpect(jsonPath("$.error").isString())

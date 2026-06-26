@@ -12,13 +12,13 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.servlet.http.Cookie;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -62,8 +62,8 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private EntityManagerFactory emf;
 
-    private String adminAuthHeader;
-    private String userAuthHeader;
+    private String adminToken;
+    private String userToken;
 
     @BeforeEach
     void setUp() {
@@ -75,7 +75,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.ADMIN)
                 .build();
         User savedAdmin = userRepository.save(admin);
-        adminAuthHeader = "Bearer " + jwtService.generateToken(savedAdmin);
+        adminToken = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("User")
@@ -85,7 +85,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build();
         User savedUser = userRepository.save(regularUser);
-        userAuthHeader = "Bearer " + jwtService.generateToken(savedUser);
+        userToken = jwtService.generateToken(savedUser);
     }
 
     @Test
@@ -100,8 +100,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "hotel-test@tuhospedaje.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -120,8 +123,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "invalid-email"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -139,8 +145,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "id-test@tuhospedaje.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -154,7 +163,12 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "noauth@test.com"
         );
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -172,8 +186,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "userrole@test.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -252,8 +269,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "update@test.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", id)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -263,7 +283,12 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnForbiddenWhenUpdatingLodgingWithoutAuth() throws Exception {
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", 1L)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("name", "Hack"))))
                 .andExpect(status().isForbidden());
@@ -271,7 +296,10 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnForbiddenWhenDeletingLodgingWithoutAuth() throws Exception {
-        mockMvc.perform(delete("/api/lodgings/{id}", 1L))
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/lodgings/{id}", 1L)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isForbidden());
     }
 
@@ -279,8 +307,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     void shouldDeleteLodgingSuccessfully() throws Exception {
         Long id = createTestLodging("To Delete", "delete@test.com");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/lodgings/{id}", id)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/lodgings/{id}", id))
@@ -298,8 +329,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", email
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         String response = mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -340,8 +374,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", email
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         String response = mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())

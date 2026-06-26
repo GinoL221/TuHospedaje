@@ -1,38 +1,8 @@
 import { createContext, useState, useEffect, useRef } from "react";
-import { jwtDecode } from "jwt-decode";
 import { useNavigate, useLocation } from "react-router-dom";
-import { post } from "../services/api";
+import { get, post } from "../services/api";
 
 const AuthContext = createContext();
-
-function getInitialAuth() {
-  const savedToken = localStorage.getItem("token");
-  if (savedToken) {
-    try {
-      const decoded = jwtDecode(savedToken);
-      if (decoded.exp * 1000 > Date.now()) {
-        return {
-          token: savedToken,
-          user: {
-            firstName: decoded.firstName,
-            lastName: decoded.lastName,
-            email: decoded.sub,
-            role: decoded.role,
-            imageUrl: decoded.imageUrl,
-          },
-        };
-      }
-      localStorage.removeItem("token");
-    } catch (error) {
-      console.error(error);
-      localStorage.removeItem("token");
-    }
-  }
-  return {
-    token: null,
-    user: null,
-  };
-}
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
@@ -43,16 +13,32 @@ export function AuthProvider({ children }) {
   // without needing to resubscribe.
   const locationRef = useRef(location);
   locationRef.current = location;
-  const [{ token, user }, setAuth] = useState(getInitialAuth);
+  const [{ user, loading }, setAuth] = useState({ user: null, loading: true });
 
-  const logout = () => {
-    setAuth({ token: null, user: null });
-    localStorage.removeItem("token");
+  const logout = async () => {
+    await post("/auth/logout");
+    setAuth({ user: null, loading: false });
   };
 
   useEffect(() => {
+    let cancelled = false;
+
+    get("/auth/me")
+      .then((data) => {
+        if (!cancelled) setAuth({ user: data, loading: false });
+      })
+      .catch(() => {
+        if (!cancelled) setAuth({ user: null, loading: false });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleUnauthorized = () => {
-      logout();
+      setAuth({ user: null, loading: false });
       navigate("/login", {
         state: {
           from: locationRef.current,
@@ -69,16 +55,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const data = await post("/auth/login", { email, password });
-    const decoded = jwtDecode(data.token);
-    const newUser = {
-      firstName: decoded.firstName,
-      lastName: decoded.lastName,
-      email: decoded.sub,
-      role: decoded.role,
-      imageUrl: decoded.imageUrl,
-    };
-    setAuth({ token: data.token, user: newUser });
-    localStorage.setItem("token", data.token);
+    setAuth({ user: data, loading: false });
   };
 
   const register = async (firstName, lastName, email, password) => {
@@ -88,20 +65,11 @@ export function AuthProvider({ children }) {
       email,
       password,
     });
-    const decoded = jwtDecode(data.token);
-    const newUser = {
-      firstName: decoded.firstName,
-      lastName: decoded.lastName,
-      email: decoded.sub,
-      role: decoded.role,
-      imageUrl: decoded.imageUrl,
-    };
-    setAuth({ token: data.token, user: newUser });
-    localStorage.setItem("token", data.token);
+    setAuth({ user: data, loading: false });
   };
-  
+
   return (
-    <AuthContext.Provider value={{ token, user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

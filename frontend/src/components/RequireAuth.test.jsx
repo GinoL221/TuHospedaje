@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-import { customRender, screen } from "../test/test-utils";
+import { customRender, screen, makeAuthValue } from "../test/test-utils";
 import RequireAuth from "./RequireAuth";
 
 function LoginSentinel() {
@@ -48,5 +48,14 @@ describe("RequireAuth - authenticated user", () => {
 
     expect(screen.getByTestId("protected-sentinel")).toBeInTheDocument();
     expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+  });
+});
+
+describe("RequireAuth - session bootstrap still in flight (loading=true, user=null)", () => {
+  it("does not redirect to /login while loading, even though user is still null", () => {
+    renderGuardedRoute({ authValue: makeAuthValue({ user: null, loading: true }) });
+
+    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("protected-sentinel")).not.toBeInTheDocument();
   });
 });

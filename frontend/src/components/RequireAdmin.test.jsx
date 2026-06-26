@@ -65,3 +65,12 @@ describe("RequireAdmin - authenticated admin user", () => {
     expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
   });
 });
+
+describe("RequireAdmin - session bootstrap still in flight (loading=true, user=null)", () => {
+  it("does not redirect to /login while loading, even though user is still null", () => {
+    renderGuardedRoute({ authValue: makeAuthValue({ user: null, loading: true }) });
+
+    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
+  });
+});

@@ -19,7 +19,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.http.HttpHeaders;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -121,10 +120,10 @@ class ReservationOwnershipIntegrationTest extends AbstractIntegrationTest {
     /** SC-2.1: owner retrieves own reservation → 200 */
     @Test
     void ownerGetsOwnReservation_returns200() throws Exception {
-        String token = "Bearer " + jwtService.generateToken(owner);
+        String token = jwtService.generateToken(owner);
 
         mockMvc.perform(get("/api/reservations/{id}", reservationId)
-                        .header(HttpHeaders.AUTHORIZATION, token))
+                        .cookie(accessCookie(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(reservationId));
     }
@@ -132,10 +131,10 @@ class ReservationOwnershipIntegrationTest extends AbstractIntegrationTest {
     /** SC-2.2: admin retrieves any reservation → 200 */
     @Test
     void adminGetsAnyReservation_returns200() throws Exception {
-        String token = "Bearer " + jwtService.generateToken(admin);
+        String token = jwtService.generateToken(admin);
 
         mockMvc.perform(get("/api/reservations/{id}", reservationId)
-                        .header(HttpHeaders.AUTHORIZATION, token))
+                        .cookie(accessCookie(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(reservationId));
     }
@@ -143,10 +142,10 @@ class ReservationOwnershipIntegrationTest extends AbstractIntegrationTest {
     /** SC-2.3: non-owner non-admin (user A requests user B's reservation) → 404 */
     @Test
     void nonOwnerNonAdmin_gets404_notRevealingExistence() throws Exception {
-        String token = "Bearer " + jwtService.generateToken(otherUser);
+        String token = jwtService.generateToken(otherUser);
 
         mockMvc.perform(get("/api/reservations/{id}", reservationId)
-                        .header(HttpHeaders.AUTHORIZATION, token))
+                        .cookie(accessCookie(token)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -161,10 +160,10 @@ class ReservationOwnershipIntegrationTest extends AbstractIntegrationTest {
     /** SC-2.5: non-existent reservation → 404 regardless of caller */
     @Test
     void nonExistentReservation_returns404() throws Exception {
-        String token = "Bearer " + jwtService.generateToken(owner);
+        String token = jwtService.generateToken(owner);
 
         mockMvc.perform(get("/api/reservations/{id}", 99999L)
-                        .header(HttpHeaders.AUTHORIZATION, token))
+                        .cookie(accessCookie(token)))
                 .andExpect(status().isNotFound());
     }
 }

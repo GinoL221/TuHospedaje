@@ -39,4 +39,10 @@ class JwtServiceTest {
         assertThat(token).isNotBlank();
         assertThat(jwtService.extractUsername(token)).isEqualTo("juanperez@test.com");
     }
+
+    @Test
+    void shouldExposeExpirationInSeconds() {
+        // app.jwt.expiration is configured as 28800000 ms in test resources.
+        assertThat(jwtService.getExpirationSeconds()).isEqualTo(28800L);
+    }
 }
