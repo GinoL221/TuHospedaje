@@ -39,6 +39,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleUnauthorized = () => {
       setAuth({ user: null, loading: false });
+      if (locationRef.current.pathname === "/login") return;
       navigate("/login", {
         state: {
           from: locationRef.current,
