@@ -1,6 +1,7 @@
 package com.tuhospedaje.reservation;
 
 import com.tuhospedaje.dto.reservation.CreateReservationRequest;
+import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
@@ -109,6 +110,45 @@ class ReservationServiceImplTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    // --- getMyReservations ---
+
+    @Test
+    void getMyReservations_returnsReservationsMappedToResponse() {
+        User user = buildUser(1L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("100.00"));
+
+        Reservation r = new Reservation();
+        r.setId(1L);
+        r.setLodging(lodging);
+        r.setUser(user);
+        r.setCheckIn(LocalDate.now().plusDays(20));
+        r.setCheckOut(LocalDate.now().plusDays(22));
+        r.setGuestName("Test Guest");
+        r.setGuestEmail("guest@test.com");
+        r.setGuestPhone("111222333");
+        r.setTotalPrice(new BigDecimal("200.00"));
+        r.setStatus(ReservationStatus.CONFIRMED);
+
+        when(reservationRepository.findByUserIdOrderByCheckInDesc(1L)).thenReturn(List.of(r));
+
+        List<ReservationResponse> result = reservationService.getMyReservations(user);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(0).getGuestEmail()).isEqualTo("guest@test.com");
+    }
+
+    @Test
+    void getMyReservations_returnsEmptyListWhenNoReservationsExist() {
+        User user = buildUser(1L, RoleEnum.USER);
+
+        when(reservationRepository.findByUserIdOrderByCheckInDesc(1L)).thenReturn(Collections.emptyList());
+
+        List<ReservationResponse> result = reservationService.getMyReservations(user);
+
+        assertThat(result).isEmpty();
     }
 
     // --- getReservationById ---

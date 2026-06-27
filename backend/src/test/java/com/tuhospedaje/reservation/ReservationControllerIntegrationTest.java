@@ -235,6 +235,49 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnOnlyAuthenticatedUserOwnReservations() throws Exception {
+        User otherUser = User.builder()
+                .firstName("Other")
+                .lastName("User")
+                .email("other-isolation@test.com")
+                .password("hash")
+                .role(RoleEnum.USER)
+                .build();
+        User savedOtherUser = userRepository.save(otherUser);
+        String otherToken = jwtService.generateToken(savedOtherUser);
+
+        Long lodgingId = createTestLodging();
+
+        // Main user books +10..+12
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+
+        // Other user books +20..+22 (non-overlapping)
+        Map<String, Object> otherReq = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", LocalDate.now().plusDays(20).toString(),
+                "checkOut", LocalDate.now().plusDays(22).toString(),
+                "guestName", "Other User",
+                "guestEmail", "other-isolation@test.com",
+                "guestPhone", "+5491100000000"
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/reservations")
+                        .cookie(accessCookie(otherToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(otherReq)))
+                .andExpect(status().isCreated());
+
+        // Main user must only see their own reservation, not the other user's
+        mockMvc.perform(get("/api/reservations/my")
+                        .cookie(accessCookie(userAuthHeader)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].guestEmail").value("juan-reservas@test.com"));
+    }
+
+    @Test
     void shouldReturnBadRequestWhenLodgingIsNotAvailable() throws Exception {
         Long lodgingId = createTestLodging();
 
