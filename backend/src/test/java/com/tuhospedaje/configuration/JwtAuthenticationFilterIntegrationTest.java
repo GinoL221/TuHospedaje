@@ -126,27 +126,6 @@ class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldFallBackToAuthorizationHeaderWhenNoCookiePresent() throws Exception {
-        // Deviation from the original cookie-only plan (see apply-progress): the filter
-        // must keep accepting the Authorization header as a fallback in this PR so the
-        // pre-existing 15 header-based integration test files keep passing. The PR2
-        // mechanical sweep migrates those files to the cookie; only then can a future PR
-        // evaluate dropping this fallback.
-        User admin = userRepository.save(User.builder()
-                .firstName("Header")
-                .lastName("Admin")
-                .email("header-admin@test.com")
-                .password("irrelevant")
-                .role(RoleEnum.ADMIN)
-                .build());
-        String token = jwtService.generateToken(admin);
-
-        mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
-                .andExpect(status().isOk());
-    }
-
-    @Test
     void shouldPreferCookieOverHeaderWhenBothPresent() throws Exception {
         User cookieAdmin = userRepository.save(User.builder()
                 .firstName("Cookie")
