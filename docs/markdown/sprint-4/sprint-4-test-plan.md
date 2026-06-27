@@ -31,7 +31,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 # PLAN Y REPORTE DE PRUEBAS DE SOFTWARE — SPRINT 4
 
 **Foco del Incremento:** Flujo completo de reservas, historial personal, botón de WhatsApp y notificación por email
-**Enfoque de Testing:** Pruebas de API (Postman + automatizadas con MockMvc/Testcontainers), Verificación de UI Manual, Suite E2E con Playwright (agregado complementario)
+**Enfoque de Testing:** Tests unitarios (JUnit 5 + Mockito / Vitest + React Testing Library), Tests de integración (MockMvc + Testcontainers), Verificación de UI Manual, Suite E2E con Playwright (agregado complementario)
 
 ## 1. Matriz Detallada de Casos de Prueba (Test Cases)
 
@@ -74,7 +74,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 * **Historias de Usuario Asociadas:** US #32 (Realizar reserva y recibir confirmación)
 * **Precondiciones:** Usuario autenticado con JWT válido. Alojamiento existente sin solapamiento de fechas en el rango elegido.
-* **Tipos de Verificación:** API Rest, Test de Integración Automatizado, UI Manual.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend), Test Unitario de Componente (frontend), UI Manual.
 
 | Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
 |------|----------------------------|---------------------------------------------|--------|
@@ -88,11 +88,13 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **8** | Acceder a `/booking/confirmation` directamente sin reserva previa | Redirige a home (`/`) | ✔ Pasa |
 | **9** | Error al reservar (ej: 409 Conflict) | Mensaje de error específico visible en el formulario | ✔ Pasa |
 
+**Cobertura automatizada (frontend):** `BookingConfirmation.test.jsx` — 4 tests unitarios: detalles de reserva (nombre, fechas formateadas `dd/mm/aaaa`, huésped, total), nota de email, links a `/my-reservations` y `/`, redirección a `/` sin state.
+
 ### TC-33: Acceder al Historial de Reservas (US #33)
 
 * **Historias de Usuario Asociadas:** US #33 (Acceder al historial personal de reservas)
 * **Precondiciones:** Usuario autenticado con al menos una reserva creada. Servidor backend activo.
-* **Tipos de Verificación:** API Rest, Test de Integración Automatizado, UI Manual.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend), Test Unitario de Componente (frontend), UI Manual.
 
 | Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
 |------|----------------------------|---------------------------------------------|--------|
@@ -104,6 +106,11 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **6** | Lista ordenada por `checkIn` descendente | La reserva más reciente aparece primera | ✔ Pasa |
 | **7** | Link "Mis reservas" en el `Header` para usuario autenticado | Visible para usuarios con sesión activa. Navega a `/my-reservations` | ✔ Pasa |
 | **8** | Link "Mis reservas" NO visible para usuarios anónimos | No renderiza en header cuando no hay sesión | ✔ Pasa |
+| **9** | `GET /api/reservations/my` como usuario A — no retorna reservas de usuario B | Solo se devuelven las reservas del usuario autenticado (aislamiento de datos) | ✔ Pasa |
+
+**Cobertura automatizada (backend):** `ReservationServiceImplTest` — `getMyReservations_returnsReservationsMappedToResponse`, `getMyReservations_returnsEmptyListWhenNoReservationsExist`. `ReservationControllerIntegrationTest` — `shouldReturnUserReservationsOrderedByCheckInDesc`, `shouldReturnOnlyAuthenticatedUserOwnReservations`.
+
+**Cobertura automatizada (frontend):** `MyReservationsPage.test.jsx` — lista con noches calculadas, singular/plural, estado vacío con CTA, error de fetch. `Header.test.jsx` — "Mis reservas" solo para autenticados; login/register para anónimos; logout visible/oculto según sesión.
 
 <div style="page-break-before: always;"></div>
 
@@ -120,6 +127,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **3** | Click en botón de WhatsApp | Abre `wa.me/{número}` con mensaje pre-cargado en nueva pestaña | ✔ Pasa |
 | **4** | Verificar acceso sin login | Botón visible para usuarios anónimos. No requiere autenticación | ✔ Pasa |
 | **5** | Hacer scroll vertical en la página | Botón permanece en posición fija (`bottom: 24px; right: 24px`) | ✔ Pasa |
+
+**Cobertura automatizada (frontend):** `WhatsAppButton.test.jsx` — no renderiza con env vacía; URL `wa.me` correcta con número configurado; atributos `target="_blank"` y `rel="noreferrer"`; posicionamiento fijo; sin requisito de autenticación.
 
 ### TC-35: Email de Confirmación (US #35)
 
@@ -174,20 +183,21 @@ Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores 
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 144 tests | ✔ Todos pasan |
+| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 265 tests | ✔ Todos pasan |
+| Tests Automatizados Frontend (Vitest + React Testing Library) | 232 tests | ✔ Todos pasan |
 | Tests E2E Playwright — agregado complementario (Chromium + Firefox) | 17 escenarios × 2 navegadores (34 ejecuciones) | ✔ Todos pasan |
-| Casos de Prueba Funcionales (Plan) | 44 escenarios | ✔ 44/44 verificados |
+| Casos de Prueba Funcionales (Plan) | 46 escenarios | ✔ 46/46 verificados |
 
 ## 3. Cobertura por Historia de Usuario
 
 | User Story | Cantidad TC | Tipo | Estado |
 |-----------|-------------|------|--------|
-| US #30 — Seleccionar fecha | 6 TC | Automatizado + Manual | ✔ Completo |
-| US #31 — Visualizar detalles | 9 TC | Manual | ✔ Completo |
-| US #32 — Realizar reserva | 9 TC | Automatizado + Manual | ✔ Completo |
-| US #33 — Historial de reservas | 8 TC | Automatizado + Manual | ✔ Completo |
-| US #34 — WhatsApp | 5 TC | Manual | ✔ Completo |
-| US #35 — Email de confirmación | 5 TC | Automatizado + Manual | ✔ Completo |
+| US #30 — Seleccionar fecha | 6 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #31 — Visualizar detalles | 9 TC | Automatizado (frontend) + Manual | ✔ Completo |
+| US #32 — Realizar reserva | 10 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #33 — Historial de reservas | 9 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #34 — WhatsApp | 5 TC | Automatizado (frontend) + Manual | ✔ Completo |
+| US #35 — Email de confirmación | 5 TC | Automatizado (backend) + Manual | ✔ Completo |
 | TC-36 — Edición admin (complementaria) | 8 TC | Automatizado + Manual | ✔ Completo |
 | TC-37 — Suite E2E Playwright (agregado) | 17 TC | Automatizado E2E | ✔ Completo |
 
@@ -203,8 +213,8 @@ Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores 
 | Navegador (Chrome) | Verificación de UI |
 | Swagger UI | Documentación y exploración de endpoints |
 
-## 5. Defectos Encontrados
+## 5. Defectos Encontrados y Corregidos
 
 | ID | Descripción | Severidad | Estado |
 |----|------------|-----------|--------|
-| — | Ningún defecto crítico encontrado en Sprint 4 | — | — |
+| BUG-01 | `BookingPage.jsx` prefillaba el teléfono desde `data[data.length - 1]` (la reserva más antigua), cuando la API retorna por `checkIn DESC` y la reserva más reciente es `data[0]`. El test lo describía como "latest prior reservation" pero verificaba el último elemento — inconsistencia entre semántica del test y comportamiento real. | Baja (UX) | ✔ Corregido — `data[0]`; test actualizado para reflejar el orden DESC real de la API. |
