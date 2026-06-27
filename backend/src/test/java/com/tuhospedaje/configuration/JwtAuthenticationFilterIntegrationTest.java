@@ -126,7 +126,7 @@ class JwtAuthenticationFilterIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldPreferCookieOverHeaderWhenBothPresent() throws Exception {
+    void shouldAuthenticateViaCookieEvenWhenSpuriousAuthorizationHeaderIsPresent() throws Exception {
         User cookieAdmin = userRepository.save(User.builder()
                 .firstName("Cookie")
                 .lastName("Preferred")
