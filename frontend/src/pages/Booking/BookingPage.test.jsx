@@ -60,10 +60,11 @@ describe("BookingPage - loading and summary", () => {
 
 describe("BookingPage - guest phone prefill", () => {
   it("prefills guestPhone from the latest prior reservation", async () => {
+    // API returns reservations ordered by checkIn DESC: most recent first
     mockGetDefaults({
       myReservations: [
-        { id: 1, guestPhone: "111111" },
-        { id: 2, guestPhone: "222222" },
+        { id: 2, guestPhone: "222222" }, // most recent (comes first in DESC list)
+        { id: 1, guestPhone: "111111" }, // older reservation
       ],
     });
     renderBookingPage();
