@@ -4,14 +4,19 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
 import IconPicker from "../../components/IconPicker/IconPicker";
+import useTableData from "../../hooks/useTableData";
+import SortableTh from "../../components/SortableTh/SortableTh";
+import Pagination from "../../components/Pagination/Pagination";
 
 export default function AdminPolicies() {
   const [policyList, setPolicyList] = useState([]);
+  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(policyList);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", icon: "" });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const resetForm = () => setForm({ name: "", description: "", icon: "" });
   const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
@@ -80,20 +85,25 @@ export default function AdminPolicies() {
       .catch((err) => setError(err.message));
   };
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`¿Eliminar política "${name}"?`)) {
-      try {
-        await del(`/policies/${id}`);
-        refresh();
-      } catch (err) {
-        alert(err.message);
-      }
+  const handleDelete = (id, name) => {
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await del(`/policies/${deleteConfirm.id}`);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
   return (
     <>
-      <button className="btn-fab" onClick={() => openModal(null)}>
+      <button className="btn-fab" data-testid="admin-add-btn" onClick={() => openModal(null)}>
         + Agregar política
       </button>
       {policyList.length === 0 ? (
@@ -101,57 +111,62 @@ export default function AdminPolicies() {
           No hay políticas cargadas todavía. ¡Creá la primera!
         </p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Ícono</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {policyList.map((p) => (
-              <tr key={p.id}>
-                <td>{p.id}</td>
-                <td>{p.name}</td>
-                <td>{p.description || "—"}</td>
-                <td>
-                  <Icon name={p.icon} /> <code>{p.icon}</code>
-                </td>
-                <td>
-                  <button className="btn-edit" onClick={() => openModal(p)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(p.id, p.name)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
+        <>
+          <table>
+            <thead>
+              <tr>
+                <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>ID</SortableTh>
+                <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Nombre</SortableTh>
+                <SortableTh columnKey="description" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Descripción</SortableTh>
+                <SortableTh columnKey="icon" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Ícono</SortableTh>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pageItems.map((p) => (
+                <tr key={p.id} data-testid={`row-${p.id}`}>
+                  <td>{p.id}</td>
+                  <td>{p.name}</td>
+                  <td>{p.description || "—"}</td>
+                  <td>
+                    <Icon name={p.icon} /> <code>{p.icon}</code>
+                  </td>
+                  <td>
+                    <button className="btn-edit" data-testid="row-edit-btn" onClick={() => openModal(p)}>
+                      Editar
+                    </button>
+                    <button
+                      className="btn-delete"
+                      data-testid="row-delete-btn"
+                      onClick={() => handleDelete(p.id, p.name)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {showModal && (
         <div className="modal-overlay" onClick={cancel.handleCancel}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
             <h2>
               {editing ? "Editar política" : "Nueva política"}
             </h2>
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
-                <input value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
-                {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
+                <input data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
+                {fieldErrors.name && <span className="field-error" data-testid="error-name">{fieldErrors.name}</span>}
               </label>
               <label>
                 Descripción
                 <textarea
+                  data-testid="field-description"
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
@@ -161,17 +176,18 @@ export default function AdminPolicies() {
               <label className="required-dot">
                 Ícono
                 <IconPicker value={form.icon} onChange={(val) => { setForm({ ...form, icon: val }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-clock" />
-                {fieldErrors.icon && <span className="field-error">{fieldErrors.icon}</span>}
+                {fieldErrors.icon && <span className="field-error" data-testid="error-icon">{fieldErrors.icon}</span>}
               </label>
-              {error && <p className="form-error">{error}</p>}
+              {error && <p className="form-error" data-testid="admin-form-error">{error}</p>}
               <p className="required-note">* Campos obligatorios</p>
               <div className="modal-actions">
-                <button type="submit" className="btn-save">
+                <button type="submit" className="btn-save" data-testid="admin-save-btn">
                   {editing ? "Guardar cambios" : "Crear"}
                 </button>
                 <button
                   type="button"
                   className="btn-cancel"
+                  data-testid="admin-cancel-btn"
                   onClick={cancel.handleCancel}
                 >
                   Cancelar
@@ -187,6 +203,15 @@ export default function AdminPolicies() {
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
+        testId="confirm-cancel"
+      />
+
+      <ConfirmDialog
+        show={deleteConfirm !== null}
+        message={deleteConfirm ? `¿Eliminar política "${deleteConfirm.name}"?` : ""}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        testId="confirm-delete"
       />
     </>
   );

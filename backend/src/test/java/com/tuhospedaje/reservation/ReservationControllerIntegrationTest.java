@@ -12,12 +12,12 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.EmailService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -81,7 +81,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(user);
-        userAuthHeader = "Bearer " + jwtService.generateToken(savedUser);
+        userAuthHeader = jwtService.generateToken(savedUser);
     }
 
     @Test
@@ -100,8 +100,11 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -121,14 +124,14 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
 
         mockMvc.perform(get("/api/reservations/my")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
                 .andExpect(jsonPath("$[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
     }
 
     @Test
-    void shouldReturnForbiddenWhenCreatingReservationWithoutAuth() throws Exception {
+    void shouldReturnUnauthorizedWhenCreatingReservationWithoutAuth() throws Exception {
         Long lodgingId = createTestLodging();
 
         Map<String, Object> request = Map.of(
@@ -140,16 +143,60 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        // Keep CSRF valid even without auth, so the 401 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenGettingHistoryWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/reservations/my"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnAllReservationsForAdminOrderedByIdDesc() throws Exception {
+        User admin = User.builder()
+                .firstName("Admin")
+                .lastName("User")
+                .email("admin-reservas@test.com")
+                .password("123456")
+                .role(RoleEnum.ADMIN)
+                .build();
+        User savedAdmin = userRepository.save(admin);
+        String adminAuth = jwtService.generateToken(savedAdmin);
+
+        Long lodgingId = createTestLodging();
+
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+        createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
+
+        mockMvc.perform(get("/api/reservations")
+                        .cookie(accessCookie(adminAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
+                .andExpect(jsonPath("$[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenGettingAllReservationsAsNormalUser() throws Exception {
+        mockMvc.perform(get("/api/reservations")
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void shouldReturnForbiddenWhenGettingHistoryWithoutAuth() throws Exception {
-        mockMvc.perform(get("/api/reservations/my"))
-                .andExpect(status().isForbidden());
+    void shouldReturnUnauthorizedWhenGettingAllReservationsWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/reservations"))
+                .andExpect(status().isUnauthorized());
     }
 
     private Long createTestLodging() {
@@ -177,11 +224,57 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void shouldReturnOnlyAuthenticatedUserOwnReservations() throws Exception {
+        User otherUser = User.builder()
+                .firstName("Other")
+                .lastName("User")
+                .email("other-isolation@test.com")
+                .password("hash")
+                .role(RoleEnum.USER)
+                .build();
+        User savedOtherUser = userRepository.save(otherUser);
+        String otherToken = jwtService.generateToken(savedOtherUser);
+
+        Long lodgingId = createTestLodging();
+
+        // Main user books +10..+12
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+
+        // Other user books +20..+22 (non-overlapping)
+        Map<String, Object> otherReq = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", LocalDate.now().plusDays(20).toString(),
+                "checkOut", LocalDate.now().plusDays(22).toString(),
+                "guestName", "Other User",
+                "guestEmail", "other-isolation@test.com",
+                "guestPhone", "+5491100000000"
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/reservations")
+                        .cookie(accessCookie(otherToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(otherReq)))
+                .andExpect(status().isCreated());
+
+        // Main user must only see their own reservation, not the other user's
+        mockMvc.perform(get("/api/reservations/my")
+                        .cookie(accessCookie(userAuthHeader)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].guestEmail").value("juan-reservas@test.com"));
     }
 
     @Test
@@ -199,8 +292,11 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "guestPhone", "+5491122334455"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

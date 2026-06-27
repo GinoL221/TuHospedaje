@@ -1,14 +1,8 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { useAuth } from "./hooks/useAuth";
 
 import RequireAuth from "./components/RequireAuth";
+import RequireAdmin from "./components/RequireAdmin";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import Home from "./pages/Home/Home";
@@ -22,13 +16,6 @@ import BookingPage from "./pages/Booking/BookingPage";
 import BookingConfirmationPage from "./pages/Booking/BookingConfirmation";
 import MyReservationsPage from "./pages/MyReservations/MyReservationsPage";
 import WhatsAppButton from "./components/WhatsAppButton/WhatsAppButton";
-
-function RequireAdmin({ children }) {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "ADMIN") return <Navigate to="/" replace />;
-  return children;
-}
 
 function AppLayout() {
   const { pathname } = useLocation();

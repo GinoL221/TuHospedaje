@@ -4,6 +4,12 @@ import com.tuhospedaje.dto.reservation.CreateReservationRequest;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.service.ReservationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
+@Tag(name = "Reservations", description = "Create and manage lodging reservations")
 public class ReservationController {
 
     private final ReservationService reservationService;
@@ -30,6 +37,20 @@ public class ReservationController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Create a reservation",
+            description = "Books a lodging for the authenticated user. Returns 400 if the requested " +
+                          "dates overlap with an existing confirmed reservation. Returns 409 if a " +
+                          "concurrent update conflict is detected (optimistic or pessimistic lock failure)."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Reservation created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or date conflict with an existing reservation", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Concurrent update conflict — retry the request", content = @Content),
+    })
     public ResponseEntity<ReservationResponse> create(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateReservationRequest request) {
@@ -39,15 +60,51 @@ public class ReservationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ReservationResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(reservationService.getReservationById(id));
+    @Operation(
+            summary = "Get reservation by ID",
+            description = "Returns a reservation by its ID. To prevent IDOR, non-owner users " +
+                          "receive a 404 instead of 403 — the resource existence is not disclosed."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservation found"),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Reservation not found or not owned by the requester", content = @Content),
+    })
+    public ResponseEntity<ReservationResponse> getById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(reservationService.getReservationById(id, user));
     }
 
     @GetMapping("/my")
     @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "List my reservations",
+            description = "Returns all reservations belonging to the authenticated user, ordered by check-in date descending."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservations retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+    })
     public ResponseEntity<List<ReservationResponse>> getMyReservations(
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(reservationService.getMyReservations(user));
     }
-}
 
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "List all reservations",
+            description = "Returns all reservations across all users, ordered by ID descending. Requires ADMIN role."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "All reservations retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+    })
+    public ResponseEntity<List<ReservationResponse>> getAllReservations() {
+        return ResponseEntity.ok(reservationService.getAllReservations());
+    }
+}

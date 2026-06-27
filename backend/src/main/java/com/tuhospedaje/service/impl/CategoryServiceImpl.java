@@ -7,6 +7,7 @@ import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.service.CategoryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +25,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryDTO save(CategoryDTO dto) {
         if (categoryRepository.existsByName(dto.getName())) {
             throw new IllegalArgumentException("Category name already exists: " + dto.getName());
@@ -35,6 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryDTO update(CategoryDTO dto) throws ResourceNotFoundException {
         Category category = categoryRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + dto.getId()));
@@ -46,11 +49,13 @@ public class CategoryServiceImpl implements CategoryService {
 
         category.setName(dto.getName());
         category.setDescription(dto.getDescription());
+        category.setIcon(dto.getIcon());
         Category updated = categoryRepository.save(category);
         return CategoryDTO.fromEntity(updated);
     }
 
     @Override
+    @Transactional
     public Optional<CategoryDTO> delete(Long id) throws ResourceNotFoundException {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));
@@ -67,6 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryDTO> findAll() {
         return categoryRepository.findAll()
                 .stream()
@@ -76,6 +82,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<CategoryDTO> findById(Long id) {
         return categoryRepository.findById(id).map(CategoryDTO::fromEntity);
     }

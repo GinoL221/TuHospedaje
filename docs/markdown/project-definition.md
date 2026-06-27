@@ -1,11 +1,41 @@
-# TuHospedaje
+---
+title: "Definición del Proyecto"
+subtitle: "TuHospedaje — Plataforma de Reservas de Alojamientos Turísticos"
+author: "Equipo de Desarrollo"
+date: "Mayo 2026"
+pdf_options:
+  format: a4
+  margin:
+    top: 25mm
+    bottom: 25mm
+    left: 20mm
+    right: 20mm
+  displayHeaderFooter: true
+  headerTemplate: |
+    <div style="font-size: 9pt; width: 100%; text-align: right; padding-right: 20mm; color: #666;">
+      TuHospedaje — Documentación Técnica Oficial
+    </div>
+  footerTemplate: |
+    <div style="font-size: 9pt; width: 100%; display: flex; justify-content: space-between; padding: 0 20mm; color: #666;">
+      <div>Definición del Proyecto — Mayo 2026</div>
+      <div>Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>
+    </div>
+---
+
+<style>
+.page-break { page-break-before: always; }
+table { width: 100%; } table, tr { page-break-inside: avoid; }
+h1, h2, h3, h4 { page-break-after: avoid; }
+</style>
+
+# DEFINICIÓN DEL PROYECTO — TUHOSPEDAJE
 
 ## 1. Identidad, Nicho y Propósito del Negocio
 **TuHospedaje** es una plataforma web centralizada de reservas de alojamiento enfocada en **alojamientos turísticos**.
 El propósito principal del negocio es resolver la fricción entre los usuarios que buscan hospedaje de calidad y los administradores que necesitan gestionar su catálogo de manera eficiente. La plataforma permite a los clientes finales explorar un catálogo dinámico y detallado, mientras que provee a los administradores un panel de control intuitivo para crear, actualizar y dar de baja alojamientos.
 - **Nombre Oficial:** TuHospedaje
 - **Identidad Visual:** Isologotipo institucional con soporte nativo para esquemas de colores claro y oscuro.
-- **Ubicación del recurso:** `frontend/src/assets/TuHospedaje_Isologotipo.png`
+- **Ubicación del recurso:** `frontend/src/assets/images/TuHospedaje_Isologotipo.png`
 
 ## 2. Alcance del Proyecto y Hoja de Ruta (Roadmap)
 El desarrollo se ejecutará de forma incremental a lo largo de **4 Sprints** planificados, garantizando un Producto Mínimo Viable (MVP) funcional desde el primer hito.
@@ -48,7 +78,7 @@ La interfaz se construye con **CSS Puro** mediante **Variables Dinámicas (Custo
 | Secondary (Componentes/Nav) | `#264653` | `#abccd8` |
 | Accent (Destacados/Badges) | `#2a9d8f` | `#62d5c8` |
 
-Referencia visual de la paleta: [Paleta de colores TuHospedaje](./Paleta_de_colores_TuHospedaje.pdf).
+Referencia visual de la paleta: [Paleta de colores TuHospedaje](../diseno/Paleta_de_colores_TuHospedaje.pdf).
 
 ## 4. Decisiones Arquitectónicas Clave (ADR)
 ### 4.1. Uso del Dominio Semántico `Lodging`
@@ -66,3 +96,12 @@ Los controladores se inyectan estrictamente a través de constructores (evitando
 
 ### 4.4. Inyección de Configuración mediante Entornos
 El Frontend se desacopla del entorno de ejecución utilizando variables de entorno (`.env`) mediante el prefijo `VITE_API_URL`, asegurando que la transición a servidores de producción sea transparente.
+
+### 4.5. Bean Validation Declarativa
+Se adopta la validación de entrada de datos mediante anotaciones declarativas JSR 380 en los DTOs y objetos Request. Las peticiones son interceptadas con `@Valid` a nivel de controlador de Spring Boot y cualquier error de validación es procesado de forma centralizada por el `GlobalExceptionHandler` capturando la excepción `MethodArgumentNotValidException`, permitiendo retornar respuestas HTTP 400 (Bad Request) estandarizadas y limpias para el cliente.
+
+### 4.6. Sistema Unificado de Íconos
+Se unifica la carga de iconos en el frontend mediante el uso directo de SVGs o de la librería Lucide React. Esto asegura la resolución óptima en dispositivos de alta densidad de píxeles (HiDPI), facilidad de adaptación de estilos responsivos mediante CSS y una mejora en los bundles mediante el "tree-shaking" nativo de Vite al omitir iconos no utilizados.
+
+### 4.7. Tablas Admin Client-Side
+Se decide implementar la ordenación y paginación en el lado del cliente (client-side) a través del hook personalizado `useTableData` para las tablas del administrador (AdminCategories, AdminFeatures, AdminPolicies, AdminUsers, AdminLodgings). Dado el bajo volumen esperado de estos datos de parametrización, esta aproximación simplifica el backend (usando peticiones `GET` planas), reduce el tráfico a la base de datos y provee una experiencia de usuario instantánea y sin latencia en la UI.

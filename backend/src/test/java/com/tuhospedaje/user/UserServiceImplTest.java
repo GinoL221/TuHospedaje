@@ -1,9 +1,11 @@
 package com.tuhospedaje.user;
 
 import com.tuhospedaje.dto.user.UserDTO;
+import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
+import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +29,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private LodgingRepository lodgingRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -76,5 +83,67 @@ class UserServiceImplTest {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.updateRole(999L, "ADMIN"));
+    }
+
+    // --- Favorite not-found branches ---
+
+    @Test
+    void addFavorite_whenUserNotFound_throwsResourceNotFoundException() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.addFavorite(999L, 1L)
+        );
+        assertThat(ex.getMessage()).isEqualTo("Usuario no encontrado");
+    }
+
+    @Test
+    void addFavorite_whenLodgingNotFound_throwsResourceNotFoundException() {
+        User user = buildUser(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(lodgingRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.addFavorite(1L, 999L)
+        );
+        assertThat(ex.getMessage()).isEqualTo("Alojamiento no encontrado");
+    }
+
+    @Test
+    void removeFavorite_whenUserNotFound_throwsResourceNotFoundException() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.removeFavorite(999L, 1L)
+        );
+        assertThat(ex.getMessage()).isEqualTo("Usuario no encontrado");
+    }
+
+    @Test
+    void getFavorites_whenUserNotFound_throwsResourceNotFoundException() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> userService.getFavorites(999L)
+        );
+        assertThat(ex.getMessage()).isEqualTo("Usuario no encontrado");
+    }
+
+    // --- helpers ---
+
+    private static User buildUser(Long id) {
+        User user = new User();
+        user.setId(id);
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setEmail("test" + id + "@tuhospedaje.com");
+        user.setPassword("secret");
+        user.setRole(RoleEnum.USER);
+        user.setFavorites(new HashSet<>());
+        return user;
     }
 }

@@ -2,18 +2,24 @@ import { useState, useEffect } from "react";
 import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
+import Icon from "../../components/Icons/Icon";
+import IconPicker from "../../components/IconPicker/IconPicker";
+import useTableData from "../../hooks/useTableData";
+import SortableTh from "../../components/SortableTh/SortableTh";
+import Pagination from "../../components/Pagination/Pagination";
 
 export default function AdminCategories() {
   const [catList, setCatList] = useState([]);
+  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(catList);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "" });
+  const [form, setForm] = useState({ name: "", description: "", icon: "" });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const resetForm = () => setForm({ name: "", description: "" });
-  const cancel = useConfirmCancel(form.name || form.description, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const resetForm = () => setForm({ name: "", description: "", icon: "" });
+  const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
 
   useEffect(() => {
     let cancelled = false;
@@ -32,10 +38,10 @@ export default function AdminCategories() {
 
   const openModal = (cat = null) => {
     if (cat) {
-      setForm({ name: cat.name, description: cat.description || "" });
+      setForm({ name: cat.name, description: cat.description || "", icon: cat.icon || "" });
       setEditing(cat);
     } else {
-      setForm({ name: "", description: "" });
+      setForm({ name: "", description: "", icon: "" });
       setEditing(null);
     }
     setError("");
@@ -66,7 +72,7 @@ export default function AdminCategories() {
       return;
     }
 
-    const body = { name: form.name, description: form.description };
+    const body = { name: form.name, description: form.description, icon: form.icon || null };
     const request = editing
       ? put(`/categories/${editing.id}`, body)
       : post("/categories", body);
@@ -96,7 +102,7 @@ export default function AdminCategories() {
 
   return (
     <>
-      <button className="btn-fab" onClick={() => openModal(null)}>
+      <button className="btn-fab" data-testid="admin-add-btn" onClick={() => openModal(null)}>
         + Agregar categoría
       </button>
       {catList.length === 0 ? (
@@ -104,66 +110,80 @@ export default function AdminCategories() {
           No hay categorías cargadas todavía. ¡Creá la primera!
         </p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {catList.map((c) => (
-              <tr key={c.id}>
-                <td>{c.id}</td>
-                <td>{c.name}</td>
-                <td>{c.description || "—"}</td>
-                <td>
-                  <button className="btn-edit" onClick={() => openModal(c)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(c.id, c.name)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
+        <>
+          <table>
+            <thead>
+              <tr>
+                <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>ID</SortableTh>
+                <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Nombre</SortableTh>
+                <SortableTh columnKey="description" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Descripción</SortableTh>
+                <SortableTh columnKey="icon" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Ícono</SortableTh>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pageItems.map((c) => (
+                <tr key={c.id} data-testid={`row-${c.id}`}>
+                  <td>{c.id}</td>
+                  <td>{c.name}</td>
+                  <td>{c.description || "—"}</td>
+                  <td>
+                    <Icon name={c.icon} /> <code>{c.icon}</code>
+                  </td>
+                  <td>
+                    <button className="btn-edit" data-testid="row-edit-btn" onClick={() => openModal(c)}>
+                      Editar
+                    </button>
+                    <button
+                      className="btn-delete"
+                      data-testid="row-delete-btn"
+                      onClick={() => handleDelete(c.id, c.name)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {showModal && (
         <div className="modal-overlay" onClick={cancel.handleCancel}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
             <h2>{editing ? "Editar categoría" : "Nueva categoría"}</h2>
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
-                <input value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
-                {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
+                <input data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
+                {fieldErrors.name && <span className="field-error" data-testid="error-name">{fieldErrors.name}</span>}
               </label>
               <label>
                 Descripción
                 <textarea
+                  data-testid="field-description"
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
                 />
               </label>
-              {error && <p className="form-error">{error}</p>}
+              <label>
+                Ícono
+                <IconPicker value={form.icon} onChange={(val) => setForm({ ...form, icon: val })} placeholder="Buscar ícono" />
+              </label>
+              {error && <p className="form-error" data-testid="admin-form-error">{error}</p>}
               <p className="required-note">* Campos obligatorios</p>
               <div className="modal-actions">
-                <button type="submit" className="btn-save">
+                <button type="submit" className="btn-save" data-testid="admin-save-btn">
                   {editing ? "Guardar cambios" : "Crear"}
                 </button>
                 <button
                   type="button"
                   className="btn-cancel"
+                  data-testid="admin-cancel-btn"
                   onClick={cancel.handleCancel}
                 >
                   Cancelar
@@ -179,6 +199,7 @@ export default function AdminCategories() {
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
         onConfirm={() => { cancel.confirmCancel(); }}
         onCancel={cancel.dismissConfirm}
+        testId="confirm-cancel"
       />
 
       <ConfirmDialog
@@ -186,6 +207,7 @@ export default function AdminCategories() {
         message={deleteConfirm ? `¿Eliminar la categoría "${deleteConfirm.name}"? Los alojamientos asociados quedarán sin categoría.` : ""}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
+        testId="confirm-delete"
       />
     </>
   );

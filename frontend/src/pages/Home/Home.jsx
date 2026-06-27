@@ -251,6 +251,9 @@ export default function Home() {
             <button disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
               Siguiente
             </button>
+            <button disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>
+              Última
+            </button>
           </div>
         )}
       </section>

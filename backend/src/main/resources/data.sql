@@ -3,13 +3,14 @@
 -- ============================================================
 
 -- Categorías
-INSERT IGNORE INTO categories (id, name, description) VALUES
-(1, 'Hoteles', 'Hoteles urbanos y de negocios'),
-(2, 'Cabañas', 'Cabañas rústicas en la naturaleza'),
-(3, 'Departamentos', 'Departamentos céntricos totalmente equipados'),
-(4, 'Hostels', 'Hostels económicos y sociales'),
-(5, 'Resorts', 'Resorts y complejos de lujo'),
-(6, 'Glamping', 'Glamping y naturaleza con comodidades');
+INSERT INTO categories (id, name, description, icon) VALUES
+(1, 'Hoteles', 'Hoteles urbanos y de negocios', 'hotel'),
+(2, 'Cabañas', 'Cabañas rústicas en la naturaleza', 'tree-pine'),
+(3, 'Departamentos', 'Departamentos céntricos totalmente equipados', 'building-2'),
+(4, 'Hostels', 'Hostels económicos y sociales', 'bed-double'),
+(5, 'Resorts', 'Resorts y complejos de lujo', 'water'),
+(6, 'Glamping', 'Glamping y naturaleza con comodidades', 'tent')
+ON DUPLICATE KEY UPDATE icon = COALESCE(icon, VALUES(icon));
 
 -- Características (amenities)
 INSERT IGNORE INTO features (id, name, icon) VALUES

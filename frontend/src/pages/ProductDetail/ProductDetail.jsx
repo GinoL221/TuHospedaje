@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -9,12 +9,14 @@ import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import GalleryModal from "../../components/GalleryModal/GalleryModal";
 import Icon from "../../components/Icons/Icon";
+import { minCheckoutDate } from "../../utils/dateRange";
 
 import "./ProductDetail.css";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [lodging, setLodging] = useState(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -194,7 +196,7 @@ export default function ProductDetail() {
                 selectsEnd
                 startDate={checkIn}
                 endDate={checkOut}
-                minDate={checkIn || new Date()}
+                minDate={minCheckoutDate(checkIn)}
                 filterDate={(date) => !isDateOccupied(date)}
                 placeholderText="Check-out"
                 dateFormat="dd/MM/yyyy"
@@ -226,7 +228,10 @@ export default function ProductDetail() {
             </button>
           ) : (
             <p className="login-prompt">
-              <Link to="/login">Iniciá sesión</Link> para reservar
+              <Link to="/login" state={{ from: location }}>
+                Iniciá sesión
+              </Link>{" "}
+              para reservar
             </p>
           )}
         </section>

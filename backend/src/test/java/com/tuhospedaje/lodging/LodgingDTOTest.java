@@ -6,26 +6,22 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.repository.CategoryRepository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class LodgingDTOTest {
 
-    @Mock
-    private CategoryRepository categoryRepository;
+    private final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    private final Validator validator = factory.getValidator();
 
-    @Test
-    void shouldMapToEntityWithoutCategory() {
+    private LodgingDTO createValidLodgingDTO() {
         LodgingDTO dto = new LodgingDTO();
         dto.setName("Gran Hotel");
         dto.setDescription("Descripción");
@@ -34,45 +30,104 @@ class LodgingDTOTest {
         dto.setCountry("País");
         dto.setPhoneNumber("123456");
         dto.setEmail("hotel@test.com");
-
-        Lodging entity = dto.toEntity();
-
-        assertThat(entity.getName()).isEqualTo("Gran Hotel");
-        assertThat(entity.getDescription()).isEqualTo("Descripción");
-        assertThat(entity.getAddress()).isEqualTo("Calle 123");
-        assertThat(entity.getCity()).isEqualTo("Ciudad");
-        assertThat(entity.getCountry()).isEqualTo("País");
-        assertThat(entity.getPhoneNumber()).isEqualTo("123456");
-        assertThat(entity.getEmail()).isEqualTo("hotel@test.com");
-        assertThat(entity.getCategory()).isNull();
+        dto.setPricePerNight(new BigDecimal("150.00"));
+        dto.setMaxGuests(4);
+        return dto;
     }
 
     @Test
-    void shouldMapCategoryInToEntityWhenCategoryIdProvided() {
-        Category category = new Category();
-        category.setId(10L);
-        category.setName("Hotel");
-
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Gran Hotel");
-        dto.setCategoryId(10L);
-
-        when(categoryRepository.findById(10L)).thenReturn(Optional.of(category));
-
-        Lodging entity = dto.toEntity(categoryRepository);
-
-        assertThat(entity.getCategory()).isNotNull();
-        assertThat(entity.getCategory().getId()).isEqualTo(10L);
+    void shouldPassValidationWhenDtoIsValid() {
+        LodgingDTO dto = createValidLodgingDTO();
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isEmpty();
     }
 
     @Test
-    void shouldThrowWhenCategoryIdInToEntityDoesNotExist() {
-        LodgingDTO dto = new LodgingDTO();
-        dto.setCategoryId(999L);
+    void shouldFailValidationWhenNameIsBlank() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setName("");
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
 
-        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
+    @Test
+    void shouldFailValidationWhenAddressIsBlank() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setAddress("   ");
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
 
-        assertThrows(RuntimeException.class, () -> dto.toEntity(categoryRepository));
+    @Test
+    void shouldFailValidationWhenCityIsBlank() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setCity(null);
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenCountryIsBlank() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setCountry("");
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenPhoneNumberIsBlank() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setPhoneNumber("");
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenEmailIsBlank() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setEmail("");
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenEmailIsInvalid() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setEmail("not-an-email");
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenPricePerNightIsNegativeOrZero() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setPricePerNight(BigDecimal.ZERO);
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+
+        dto.setPricePerNight(new BigDecimal("-1.00"));
+        violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenMaxGuestsIsNegativeOrZero() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setMaxGuests(0);
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+
+        dto.setMaxGuests(-5);
+        violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenIdIsNotNull() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setId(1L);
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+        assertThat(violations).isNotEmpty();
     }
 
     @Test

@@ -9,6 +9,7 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(defaultFavorite);
   const [imgError, setImgError] = useState(false);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     setIsFavorite(defaultFavorite);
@@ -20,7 +21,9 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
   async function toggleFavorite(e) {
     e.preventDefault();
     e.stopPropagation();
+    if (pending) return;
     const next = !isFavorite;
+    setPending(true);
     setIsFavorite(next);
     onFavoriteToggle?.(lodging.id, next);
     try {
@@ -33,6 +36,8 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
       console.error(err);
       setIsFavorite(!next);
       onFavoriteToggle?.(lodging.id, !next);
+    } finally {
+      setPending(false);
     }
   }
 
@@ -52,6 +57,7 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
             <button
               className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
               onClick={toggleFavorite}
+              disabled={pending}
               aria-label={
                 isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
               }
@@ -63,6 +69,15 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
               />
             </button>
           )}
+          {lodging.averageRating > 0 && (
+            <div className="card-rating-overlay">
+              {Array.from({ length: 5 }, (_, i) => {
+                const fill = lodging.averageRating - i;
+                const cls = fill >= 1 ? "ov-star-full" : fill >= 0.25 ? "ov-star-half" : "ov-star-empty";
+                return <span key={i} className={cls}>★</span>;
+              })}
+            </div>
+          )}
         </div>
         <div className="hotel-card-body">
           <h3>{lodging.name}</h3>
@@ -70,12 +85,6 @@ export default function ProductCard({ lodging, defaultFavorite = false, onFavori
             {lodging.city}, {lodging.country}
           </p>
           <p className="description">{lodging.description}</p>
-          {lodging.averageRating > 0 && (
-            <p className="card-rating">
-              ⭐ {lodging.averageRating.toFixed(1)}{" "}
-              <span className="rating-count">({lodging.ratingCount})</span>
-            </p>
-          )}
         </div>
       </article>
     </Link>

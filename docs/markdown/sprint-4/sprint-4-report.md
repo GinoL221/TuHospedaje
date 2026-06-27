@@ -31,7 +31,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 # BITÁCORA DE EJECUCIÓN Y CIERRE — SPRINT 4
 
 **Foco del Incremento:** Reservas, Historial y Comunicación — Flujo de booking dedicado, historial personal de reservas, botón flotante de WhatsApp y notificación por correo electrónico
-**Stack Tecnológico:** Java 21 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
+**Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
 
 ## 1. Resumen del Incremento (Scope)
 
@@ -42,6 +42,8 @@ Se implementó el historial personal de reservas (`/my-reservations`) con ordena
 En el backend, se corrigió el endpoint de disponibilidad para retornar los rangos ocupados (`occupiedRanges`) sin necesidad de recibir fechas, permitiendo el bloqueo visual del calendario al cargar la página. Se agregó validación de reserva confirmada antes de permitir puntuaciones (`RatingServiceImpl`), y se añadieron 5 nuevos tests de integración con Testcontainers que llevan el total a 144 tests en verde.
 
 Como mejora complementaria al panel de administración, se extendió `LodgingFormModal` con soporte de edición (prop `lodging` opcional + `PUT`) y se incorporaron los botones "Editar" por fila en la tabla de alojamientos.
+
+Adicionalmente, como agregado por iniciativa del equipo fuera del alcance original del sprint, se incorporó una suite de pruebas end-to-end con Playwright (carpeta `e2e/`), que valida los flujos críticos de la aplicación en Chromium y Firefox e introduce pruebas de regresión visual con capturas de referencia.
 
 ## 2. Arquitectura del Sistema e Integración
 
@@ -179,20 +181,25 @@ src/
 
 ## 7. Testing
 
-* **144 tests backend:** Todos en verde. Distribuidos en tests unitarios (JUnit 5 + Mockito) y de integración (MockMvc + Testcontainers con MariaDB 10.11). Se agregaron 5 tests nuevos en `ReservationControllerIntegrationTest`:
-  1. Crear reserva válida → HTTP 201
-  2. Crear reserva en fechas solapadas → HTTP 409 Conflict
-  3. Crear reserva sin autenticación → HTTP 401/403
-  4. Historial propio del usuario autenticado → HTTP 200
-  5. Disponibilidad con `occupiedRanges` → HTTP 200
-* **Cobertura del incremento:** Creación de reservas, solapamiento de fechas, seguridad de endpoints, historial por usuario, y retorno de rangos ocupados.
-* **Frontend:** Sin test runner configurado. `npm run build` exitoso con 0 errores y 0 warnings. Las validaciones funcionales son manuales (ver Plan de Pruebas Sprint 4).
+* **265 tests backend — todos en verde.** Distribuidos en tests unitarios (JUnit 5 + Mockito) y de integración (MockMvc + Testcontainers con MariaDB 10.11). Los tests de reservas cubren:
+  - `ReservationServiceImplTest`: creación, solapamiento de fechas, `getReservationById` (owner / admin / non-owner), `getMyReservations` (lista mapeada y lista vacía).
+  - `ReservationControllerIntegrationTest`: happy path con verificación de envío de email, historial ordenado por `checkIn DESC`, aislamiento de usuario (user A no ve reservas de user B), autenticación requerida en creación e historial, RBAC en `GET /api/reservations`, fechas no disponibles → 409.
+  - `ReservationOwnershipIntegrationTest`: 5 escenarios IDOR en `GET /api/reservations/{id}`.
+  - `ReservationConcurrencyTest`: doble booking concurrente, fechas adyacentes y alojamientos distintos.
+* **232 tests frontend — todos en verde.** Vitest + React Testing Library. Cobertura de componentes Sprint 4:
+  - `RequireAuth.test.jsx`: redirección sin sesión (con `state.from` y mensaje), renderizado autenticado, bloqueo durante bootstrap.
+  - `BookingPage.test.jsx`: carga y summary, prefill de teléfono (desde reserva más reciente), cálculo de noches y total, habilitación del botón, error sin fechas, flujo exitoso con navegación a confirmación, error del servidor, mínimo de checkout, bloqueo de fechas ocupadas, datos del usuario autenticado.
+  - `BookingConfirmation.test.jsx`: renderiza nombre del alojamiento, fechas formateadas, nombre del huésped, total, email note, links de navegación, redirección a `/` sin state.
+  - `MyReservationsPage.test.jsx`: lista con noches calculadas, singular/plural, estado vacío con CTA, error de fetch.
+  - `Header.test.jsx`: link "Mis reservas" visible solo para usuarios autenticados; login/register solo para anónimos.
+  - `WhatsAppButton.test.jsx`: no renderiza si `VITE_WHATSAPP_NUMBER` está vacía; URL `wa.me` correcta, posicionamiento fijo, sin requisito de autenticación.
+* **Suite E2E con Playwright (agregado complementario):** Fuera del alcance original del sprint, se incorporó una suite end-to-end en `e2e/` con 17 escenarios ejecutados en Chromium y Firefox (34 ejecuciones en total, todas en verde). Está organizada con Page Object Model (`pages/`), fixtures de autenticación y datos de prueba (`fixtures/`, `data/`), y cubre: smoke de páginas principales (3), flujo de autenticación con login, logout y registro (4), búsqueda por ciudad (2), historial de reservas con y sin sesión (2), y regresión visual con capturas de referencia de seis vistas (6).
 
 ## 8. Limitaciones Conocidas y Deuda Técnica Controlada
 
 1. **WhatsApp Business API:** El enlace `wa.me` no provee confirmación de envío ni manejo de errores desde la aplicación. La integración con la API oficial de WhatsApp Business (Meta) requiere cuenta verificada, número dedicado y proceso de aprobación — queda como mejora futura.
 2. **Email SMTP desactivado por defecto:** `ConsoleEmailServiceImpl` es el default de desarrollo. Para activar el envío real se requiere `MAIL_SMTP_ENABLED=true` más las credenciales de Mailtrap (`MAILTRAP_HOST`, `MAILTRAP_PORT`, `MAILTRAP_USERNAME`, `MAILTRAP_PASSWORD`) en las variables de entorno.
-3. **Frontend sin tests automatizados:** No hay test runner configurado en el frontend. La cobertura es manual + build sin errores.
+3. **Tests unitarios de frontend incorporados:** Vitest + React Testing Library configurados en el sprint de cierre. Los 232 tests cubren los componentes y páginas críticos del flujo de reservas. La cobertura de happy path de UI se complementa con la suite E2E de Playwright.
 4. **Precios por temporada:** El total de reserva se calcula como `días × pricePerNight`. No hay soporte para tarifas variables por temporada o fin de semana.
 5. **Refresh tokens:** El JWT expira a las 8 horas sin mecanismo de renovación, forzando reautenticación manual. Pendiente para iteración futura.
 6. **Gestión de reservas en admin:** El panel de administración no incluye una vista para que el administrador cancele, modifique o gestione reservas de usuarios. El flujo actual es solo del lado del huésped.

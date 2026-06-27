@@ -31,7 +31,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 # BITÁCORA DE EJECUCIÓN Y CIERRE — SPRINT 3
 
 **Foco del Incremento:** Búsqueda y Disponibilidad — Búsqueda por ciudad y fechas, Calendario de disponibilidad, Favoritos, Políticas, Galería de imágenes, Lucide Icons, Reseñas y Compartir en redes
-**Stack Tecnológico:** Java 21 / Spring Boot 3.5 / Spring Security 6 / MariaDB / React 19 / Vite / Lucide React / SpringDoc OpenAPI
+**Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / MariaDB / React 19 / Vite / Lucide React / SpringDoc OpenAPI
 
 ## 1. Resumen del Incremento (Scope)
 

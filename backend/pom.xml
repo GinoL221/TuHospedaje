@@ -139,6 +139,68 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.15</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<excludes>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/entity/**</exclude>
+						<exclude>**/enums/**</exclude>
+						<exclude>**/openapi/**</exclude>
+						<exclude>**/BackendApplication.*</exclude>
+						<!-- exclude config wiring classes by name, keeping JwtService + JwtAuthenticationFilter visible -->
+						<exclude>**/configuration/ApplicationConfig.*</exclude>
+						<exclude>**/configuration/SecurityConfig.*</exclude>
+						<exclude>**/configuration/CloudinaryConfig.*</exclude>
+						<exclude>**/configuration/CorsProperties.*</exclude>
+						<exclude>**/configuration/OpenApiConfig.*</exclude>
+						<exclude>**/configuration/TestcontainersConfiguration.*</exclude>
+					</excludes>
+					<!-- Floor set below the current measured coverage (87.7% instruction / 68.3% branch
+					     as of 2026-06) so the build fails on real regressions without blocking on today's gaps. -->
+					<rules>
+						<rule>
+							<element>BUNDLE</element>
+							<limits>
+								<limit>
+									<counter>LINE</counter>
+									<value>COVEREDRATIO</value>
+									<minimum>0.80</minimum>
+								</limit>
+								<limit>
+									<counter>BRANCH</counter>
+									<value>COVEREDRATIO</value>
+									<minimum>0.60</minimum>
+								</limit>
+							</limits>
+						</rule>
+					</rules>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>

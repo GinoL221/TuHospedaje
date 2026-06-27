@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 import DatePicker from "react-datepicker";
 import Icon from "../../components/Icons/Icon";
+import { minCheckoutDate } from "../../utils/dateRange";
 
 import "./BookingPage.css";
 
@@ -33,8 +34,9 @@ export default function BookingPage() {
     get("/reservations/my")
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          const last = data[data.length - 1];
-          if (last.guestPhone) setGuestPhone(last.guestPhone);
+          // data is sorted checkIn DESC — first element is the most recent reservation
+          const latest = data[0];
+          if (latest.guestPhone) setGuestPhone(latest.guestPhone);
         }
       })
       .catch(() => {});
@@ -171,25 +173,27 @@ export default function BookingPage() {
         <form className="booking-form" onSubmit={handleSubmit}>
           <h2>Datos de la reserva</h2>
 
-          <label>Nombre</label>
-          <input value={user.firstName} readOnly />
+          <label htmlFor="booking-first-name">Nombre</label>
+          <input id="booking-first-name" value={user.firstName} readOnly />
 
-          <label>Apellido</label>
-          <input value={user.lastName} readOnly />
+          <label htmlFor="booking-last-name">Apellido</label>
+          <input id="booking-last-name" value={user.lastName} readOnly />
 
-          <label>Email</label>
-          <input value={user.email} readOnly />
+          <label htmlFor="booking-email">Email</label>
+          <input id="booking-email" value={user.email} readOnly />
 
-          <label>Teléfono</label>
+          <label htmlFor="booking-phone">Teléfono</label>
           <input
+            id="booking-phone"
             value={guestPhone}
             onChange={(e) => setGuestPhone(e.target.value)}
             placeholder="Ingresá tu teléfono"
             required
           />
 
-          <label>Check-in</label>
+          <label htmlFor="booking-check-in">Check-in</label>
           <DatePicker
+            id="booking-check-in"
             selected={checkIn}
             onChange={(date) => setCheckIn(date)}
             selectsStart
@@ -201,14 +205,15 @@ export default function BookingPage() {
             placeholderText="Check-in"
           />
 
-          <label>Check-out</label>
+          <label htmlFor="booking-check-out">Check-out</label>
           <DatePicker
+            id="booking-check-out"
             selected={checkOut}
             onChange={(date) => setCheckOut(date)}
             selectsEnd
             startDate={checkIn}
             endDate={checkOut}
-            minDate={checkIn || new Date()}
+            minDate={minCheckoutDate(checkIn)}
             filterDate={(date) => !isDateOccupied(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Check-out"

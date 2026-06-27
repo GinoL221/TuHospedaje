@@ -6,6 +6,7 @@ import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.service.PolicyService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
@@ -21,6 +22,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
+    @Transactional
     public PolicyDTO save(PolicyDTO dto) {
         if (policyRepository.existsByName(dto.getName())) {
             throw new IllegalArgumentException("Ya existe una política con el nombre: " + dto.getName());
@@ -31,6 +33,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
+    @Transactional
     public PolicyDTO update(PolicyDTO dto) throws ResourceNotFoundException {
         Policy policy = policyRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Política no encontrada con ID: " + dto.getId()));
@@ -48,6 +51,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
+    @Transactional
     public Optional<PolicyDTO> delete(Long id) throws ResourceNotFoundException {
         Policy policy = policyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Política no encontrada con ID: " + id));
@@ -56,6 +60,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PolicyDTO> findAll() {
         return policyRepository.findAll()
                 .stream()
@@ -65,6 +70,7 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<PolicyDTO> findById(Long id) {
         return policyRepository.findById(id).map(PolicyDTO::fromEntity);
     }

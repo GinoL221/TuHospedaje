@@ -1,24 +1,32 @@
 import { useState } from "react";
+import { getCsrfToken } from "../../services/api";
 
 export default function ImageUpload({ urls, onUrlsChange }) {
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setError(null);
     try {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include",
+        headers: { "X-XSRF-TOKEN": getCsrfToken() },
         body: formData,
       });
+      if (!res.ok) {
+        throw new Error("No se pudo subir la imagen. Intentá de nuevo.");
+      }
       const data = await res.json();
       onUrlsChange([...urls, data.url]);
     } catch (err) {
       console.error(err);
+      setError("No se pudo subir la imagen. Intentá de nuevo.");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -46,6 +54,7 @@ export default function ImageUpload({ urls, onUrlsChange }) {
           {uploading ? "Subiendo..." : "Subir imagen"}
         </button>
       </div>
+      {error && <p className="field-error">{error}</p>}
       {urls.length > 0 && (
         <div className="image-preview-list">
           {urls.map((url, i) => (

@@ -26,5 +26,5 @@ public class Category {
     private String description;
 
     @Column
-    private String imageUrl;
+    private String icon;
 }

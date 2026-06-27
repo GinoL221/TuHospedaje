@@ -11,9 +11,12 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.RatingService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class RatingServiceImpl implements RatingService {
@@ -30,6 +33,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional
     public RatingDTO createRating(User user, Long lodgingId, Integer score, String comment) {
         if (!reservationRepository.existsByUserIdAndLodgingIdAndStatus(
                 user.getId(), lodgingId, ReservationStatus.CONFIRMED)) {
@@ -39,16 +43,26 @@ public class RatingServiceImpl implements RatingService {
         Lodging lodging = lodgingRepository.findById(lodgingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado"));
 
-        Rating rating = new Rating();
-        rating.setLodging(lodging);
-        rating.setUser(user);
-        rating.setScore(score);
-        rating.setComment(comment);
+        Optional<Rating> existingRatingOpt = ratingRepository.findByUserIdAndLodgingId(user.getId(), lodgingId);
+        Rating rating;
+        if (existingRatingOpt.isPresent()) {
+            rating = existingRatingOpt.get();
+            rating.setScore(score);
+            rating.setComment(comment);
+            rating.setCreatedAt(LocalDateTime.now());
+        } else {
+            rating = new Rating();
+            rating.setLodging(lodging);
+            rating.setUser(user);
+            rating.setScore(score);
+            rating.setComment(comment);
+        }
 
         return RatingDTO.fromEntity(ratingRepository.save(rating));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> getRatingsByLodging(Long lodgingId) {
         List<Rating> ratings = ratingRepository.findByLodgingIdOrderByCreatedAtDesc(lodgingId);
         double average = ratings.isEmpty() ? 0.0
