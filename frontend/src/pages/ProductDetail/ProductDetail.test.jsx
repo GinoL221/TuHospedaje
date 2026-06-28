@@ -5,6 +5,18 @@ import { get } from "../../services/api";
 
 vi.mock("../../services/api");
 
+vi.mock("../../components/ShareModal/ShareModal", () => ({
+  default: ({ onClose }) => (
+    <div data-testid="share-modal">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
+
+vi.mock("../../components/GalleryModal/GalleryModal", () => ({
+  default: () => <div data-testid="gallery-modal" />,
+}));
+
 function BookingSentinel() {
   return <div data-testid="booking-sentinel">booking page</div>;
 }
@@ -205,6 +217,52 @@ describe("ProductDetail - navigation to booking", () => {
     );
 
     expect(sameDayInCheckoutCalendar).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
+describe("ProductDetail - ShareModal", () => {
+  it("opens ShareModal when the Compartir button is clicked", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderProductDetail();
+
+    await screen.findByText("Cabaña del Lago");
+
+    expect(screen.queryByTestId("share-modal")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Compartir" }));
+
+    expect(screen.getByTestId("share-modal")).toBeInTheDocument();
+  });
+
+  it("closes ShareModal when onClose is called", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderProductDetail();
+
+    await screen.findByText("Cabaña del Lago");
+
+    await user.click(screen.getByRole("button", { name: "Compartir" }));
+    expect(screen.getByTestId("share-modal")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByTestId("share-modal")).not.toBeInTheDocument();
+  });
+});
+
+describe("ProductDetail - GalleryModal", () => {
+  it("opens GalleryModal when the main gallery image trigger is clicked", async () => {
+    mockGetDefaults();
+    const user = userEvent.setup();
+    renderProductDetail();
+
+    await screen.findByText("Cabaña del Lago");
+
+    expect(screen.queryByTestId("gallery-modal")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Abrir galería" }));
+
+    expect(screen.getByTestId("gallery-modal")).toBeInTheDocument();
   });
 });
 

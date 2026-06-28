@@ -1,6 +1,6 @@
 # Backend
 backend/target/
-backend/.mvn/
+backend/.mvn/wrapper/maven-wrapper.jar
 backend/*.log
 backend/src/main/resources/application-local.properties
 backend/.env
