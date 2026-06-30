@@ -14,7 +14,6 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -68,7 +67,7 @@ public class LodgingDTO {
     private Set<Long> featureIds;
 
     @Schema(description = "Full feature objects (id, name, icon) associated with this lodging")
-    private List<Map<String, Object>> features;
+    private List<FeatureSummaryDTO> features;
 
     @Positive(message = "El precio por noche debe ser positivo")
     @Schema(description = "Price per night in USD", example = "120.00")
@@ -82,7 +81,7 @@ public class LodgingDTO {
     private Set<Long> policyIds;
 
     @Schema(description = "Full policy objects (id, name, description, icon) associated with this lodging")
-    private List<Map<String, Object>> policies;
+    private List<PolicySummaryDTO> policies;
 
     @Schema(description = "Average guest rating (0.0 – 5.0)", example = "4.7")
     private Double averageRating;
@@ -123,25 +122,16 @@ public class LodgingDTO {
         }
         if (lodging.getFeatures() != null) {
             dto.setFeatureIds(lodging.getFeatures().stream().map(Feature::getId).collect(Collectors.toSet()));
-            dto.setFeatures(lodging.getFeatures().stream().map(f -> {
-                Map<String, Object> feat = new java.util.HashMap<>();
-                feat.put("id", f.getId());
-                feat.put("name", f.getName());
-                feat.put("icon", f.getIcon());
-                return feat;
-            }).collect(Collectors.toList()));
+            dto.setFeatures(lodging.getFeatures().stream()
+                    .map(FeatureSummaryDTO::fromEntity)
+                    .collect(Collectors.toList()));
         }
 
         if (lodging.getPolicies() != null) {
             dto.setPolicyIds(lodging.getPolicies().stream().map(Policy::getId).collect(Collectors.toSet()));
-            dto.setPolicies(lodging.getPolicies().stream().map(p -> {
-                Map<String, Object> pol = new java.util.HashMap<>();
-                pol.put("id", p.getId());
-                pol.put("name", p.getName());
-                pol.put("description", p.getDescription());
-                pol.put("icon", p.getIcon());
-                return pol;
-            }).collect(Collectors.toList()));
+            dto.setPolicies(lodging.getPolicies().stream()
+                    .map(PolicySummaryDTO::fromEntity)
+                    .collect(Collectors.toList()));
         }
 
         if (lodging.getImages() != null) {
