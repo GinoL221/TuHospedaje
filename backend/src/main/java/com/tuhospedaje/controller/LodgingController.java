@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lodgings")
@@ -123,19 +124,23 @@ public class LodgingController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search lodgings", description = "Filters lodgings by city, check-in/check-out dates, number of guests, category, and price range. All parameters are optional.")
+    @Operation(summary = "Search lodgings", description = "Filters lodgings by city, check-in/check-out dates, number of guests, one or more categories, and price range, with pagination (?page=0&size=9 by default). All filter parameters are optional.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Search results returned"),
+            @ApiResponse(responseCode = "200", description = "Search results returned as a paginated wrapper ({lodgings, currentPage, totalItems, totalPages})"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination parameters (e.g. negative page)", content = @Content),
     })
-    public ResponseEntity<List<LodgingDTO>> search(
+    public ResponseEntity<Map<String, Object>> search(
             @RequestParam(required = false) String city,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
             @RequestParam(required = false) Integer guests,
-            @RequestParam(required = false) Long category,
+            @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice) {
-        return ResponseEntity.ok(lodgingService.search(city, checkIn, checkOut, guests, category, minPrice, maxPrice));
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size) {
+        return ResponseEntity.ok(lodgingService.search(
+                city, checkIn, checkOut, guests, categories, minPrice, maxPrice, page, size));
     }
 
     @GetMapping("/cities")

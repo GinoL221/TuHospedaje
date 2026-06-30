@@ -232,9 +232,10 @@ public class LodgingServiceImpl implements LodgingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
-                                   Integer guests, Long category,
-                                   BigDecimal minPrice, BigDecimal maxPrice) {
+    public Map<String, Object> search(String city, LocalDate checkIn, LocalDate checkOut,
+                                      Integer guests, List<Long> categories,
+                                      BigDecimal minPrice, BigDecimal maxPrice,
+                                      int page, int size) {
         Specification<Lodging> spec = (root, query, cb) -> cb.conjunction();
 
         if (city != null && !city.isBlank()) {
@@ -245,9 +246,9 @@ public class LodgingServiceImpl implements LodgingService {
             spec = spec.and((root, query, cb) ->
                     cb.greaterThanOrEqualTo(root.get("maxGuests"), guests));
         }
-        if (category != null) {
+        if (categories != null && !categories.isEmpty()) {
             spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("category").get("id"), category));
+                    root.get("category").get("id").in(categories));
         }
         if (minPrice != null) {
             spec = spec.and((root, query, cb) ->
@@ -273,14 +274,20 @@ public class LodgingServiceImpl implements LodgingService {
             });
         }
 
-        List<Lodging> results = lodgingRepository
-                .findAll(spec, PageRequest.of(0, MAX_UNFILTERED_RESULTS))
-                .getContent();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Lodging> resultsPage = lodgingRepository.findAll(spec, pageable);
 
-        List<LodgingDTO> dtos = results.stream()
+        List<LodgingDTO> dtos = resultsPage.getContent().stream()
                 .map(LodgingDTO::fromEntity)
                 .collect(Collectors.toList());
-        return enrichWithRatings(dtos);
+        List<LodgingDTO> lodgings = enrichWithRatings(dtos);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("lodgings", lodgings);
+        response.put("currentPage", resultsPage.getNumber());
+        response.put("totalItems", resultsPage.getTotalElements());
+        response.put("totalPages", resultsPage.getTotalPages());
+        return response;
     }
 
     @Override

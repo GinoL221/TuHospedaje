@@ -3,11 +3,13 @@ package com.tuhospedaje.lodging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
+import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
@@ -49,6 +51,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private LodgingRepository lodgingRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Autowired
     private ReservationRepository reservationRepository;
@@ -238,7 +243,57 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/lodgings/search")
                         .param("city", "Ciudad"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Hotel Boutique"));
+                .andExpect(jsonPath("$.lodgings[0].name").value("Hotel Boutique"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalItems").isNumber())
+                .andExpect(jsonPath("$.totalPages").isNumber());
+    }
+
+    @Test
+    void shouldSearchLodgingsWithDefaultPagination() throws Exception {
+        createTestLodgingWithCity("Hotel Default Page", "default-page@tdd-pag-01.com", "tdd-pag-01");
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-pag-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.lodgings[0].name").value("Hotel Default Page"));
+    }
+
+    @Test
+    void shouldFilterSearchByMultipleCategories() throws Exception {
+        Long categoryHotelId = createTestCategory("Hotel Multi-Cat A");
+        Long categoryHostelId = createTestCategory("Hostel Multi-Cat B");
+
+        Long hotelId = createTestLodgingWithCategory("Hotel In Categories", "in-cat@tdd-multicat-01.com", categoryHotelId);
+        Long hostelId = createTestLodgingWithCategory("Hostel In Categories", "in-cat-2@tdd-multicat-01.com", categoryHostelId);
+        createTestLodging("Lodging Without Category", "no-cat@tdd-multicat-01.com");
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("categories", categoryHotelId + "," + categoryHostelId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings[*].id", hasItems(hotelId.intValue(), hostelId.intValue())));
+    }
+
+    @Test
+    void shouldReturnEmptyLodgingsWhenSearchPageIsOutOfBounds() throws Exception {
+        createTestLodgingWithCity("Hotel Out Of Bounds", "oob@tdd-oob-01.com", "tdd-oob-01");
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-oob-01")
+                        .param("page", "999")
+                        .param("size", "9"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings").isArray())
+                .andExpect(jsonPath("$.lodgings").isEmpty())
+                .andExpect(jsonPath("$.currentPage").value(999));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSearchPageIsNegative() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -344,6 +399,39 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
         return objectMapper.readTree(response).get("id").asLong();
     }
 
+    private Long createTestCategory(String name) {
+        Category category = new Category();
+        category.setName(name);
+        category.setDescription(name + " description");
+        return categoryRepository.save(category).getId();
+    }
+
+    private Long createTestLodgingWithCategory(String name, String email, Long categoryId) throws Exception {
+        Map<String, Object> request = new java.util.HashMap<>();
+        request.put("name", name);
+        request.put("description", "Descripción");
+        request.put("address", "Calle 123");
+        request.put("city", "Ciudad");
+        request.put("country", "País");
+        request.put("phoneNumber", "123456789");
+        request.put("email", email);
+        request.put("categoryId", categoryId);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        String response = mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
     @Test
     void shouldReturnDistinctCities() throws Exception {
         createTestLodgingWithCity("Hotel A", "a@testcities.com", "Springfield");
@@ -403,7 +491,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -417,7 +505,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", not(hasItem(id.intValue()))));
+                .andExpect(jsonPath("$.lodgings[*].id", not(hasItem(id.intValue()))));
     }
 
     @Test
@@ -432,7 +520,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -447,7 +535,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -462,7 +550,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -479,7 +567,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
 
         // search (1 query with NOT EXISTS subquery) + ratings aggregate (1 query) = 2 max
         long queryCount = sf.getStatistics().getQueryExecutionCount();
