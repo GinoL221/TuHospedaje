@@ -297,6 +297,13 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenSearchSizeIsNotPositive() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldReturnPaginatedLodgings() throws Exception {
         createTestLodging("Page Lodging 1", "p1@test.com");
         createTestLodging("Page Lodging 2", "p2@test.com");

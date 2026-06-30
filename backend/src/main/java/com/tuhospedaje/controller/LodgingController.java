@@ -10,10 +10,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +34,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/lodgings")
 @Tag(name = "Lodgings", description = "Search and manage lodging listings")
+@Validated
 public class LodgingController {
 
     private final LodgingService lodgingService;
@@ -137,8 +140,8 @@ public class LodgingController {
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "9") int size) {
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
+            @RequestParam(defaultValue = "9") @Min(value = 1, message = "{error.size.negative}") int size) {
         return ResponseEntity.ok(lodgingService.search(
                 city, checkIn, checkOut, guests, categories, minPrice, maxPrice, page, size));
     }
