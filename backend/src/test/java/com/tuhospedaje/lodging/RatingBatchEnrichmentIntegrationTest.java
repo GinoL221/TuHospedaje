@@ -106,8 +106,8 @@ class RatingBatchEnrichmentIntegrationTest extends AbstractIntegrationTest {
     void searchEndpoint_returnsCorrectAverageRating() throws Exception {
         mockMvc.perform(get("/api/lodgings/search").param("city", "city"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.name=='Rated Hotel')].averageRating").value(3.5))
-                .andExpect(jsonPath("$[?(@.name=='Unrated Hotel')].averageRating").value(0.0));
+                .andExpect(jsonPath("$.lodgings[?(@.name=='Rated Hotel')].averageRating").value(3.5))
+                .andExpect(jsonPath("$.lodgings[?(@.name=='Unrated Hotel')].averageRating").value(0.0));
     }
 
     private Lodging buildLodging(String name, String email) {

@@ -1,5 +1,6 @@
 package com.tuhospedaje.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -13,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,6 +32,26 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage(), "status", 400));
+    }
+
+    /**
+     * Interim handler for `@Min`-style request-param validation failures (e.g. negative
+     * `page` / non-positive `size` on `/api/lodgings/search`).
+     * <p>
+     * This is intentionally minimal: it preserves the pre-existing 400 contract for these
+     * parameters without regressing it to the generic 500 catch-all below (which is what
+     * happens to {@link ConstraintViolationException} / {@link HandlerMethodValidationException}
+     * when left unhandled, since {@code @ExceptionHandler(Exception.class)} always wins over
+     * Spring's native exception-to-status resolution).
+     * TODO(PR3): replace `ex.getMessage()` with `MessageSource`/`Locale`-aware resolution of
+     * the `{error.page.negative}` / `{error.size.negative}` keys once messages.properties /
+     * messages_es.properties exist (see design: GlobalExceptionHandler Validation & Dynamic
+     * i18n Handling).
+     */
+    @ExceptionHandler({ConstraintViolationException.class, HandlerMethodValidationException.class})
+    public ResponseEntity<Map<String, Object>> handleParamValidation(Exception ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage(), "status", 400));
     }

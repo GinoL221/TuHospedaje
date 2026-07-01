@@ -29,9 +29,10 @@ public interface LodgingService {
 
     List<LodgingDTO> findAllRandom();
 
-    List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
-                            Integer guests, Long category,
-                            BigDecimal minPrice, BigDecimal maxPrice);
+    Map<String, Object> search(String city, LocalDate checkIn, LocalDate checkOut,
+                               Integer guests, List<Long> categories,
+                               BigDecimal minPrice, BigDecimal maxPrice,
+                               int page, int size);
 
     List<String> findCities(String query);
 
