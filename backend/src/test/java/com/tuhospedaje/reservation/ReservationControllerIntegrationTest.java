@@ -301,4 +301,31 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    /**
+     * Real reservation-not-found path (ReservationServiceImpl.getReservationById), the
+     * only production throw site for ResourceNotFoundException today. It uses the plain
+     * `(String message)` constructor (no errorCode), so the handler's fallback branch —
+     * `messageSource.getMessage("error.resource.not_found", new Object[]{ex.getMessage()},
+     * locale)` — is the one actually exercised. `error.resource.not_found={0}` in both
+     * bundles is a passthrough: the underlying message stays in whatever language it was
+     * thrown in, only the wrapping resolution changes (proving the fallback resolves
+     * instead of throwing an uncaught NoSuchMessageException, which would 500).
+     */
+    @Test
+    void shouldReturnNotFoundWithOriginalMessageWhenAcceptLanguageIsEs() throws Exception {
+        mockMvc.perform(get("/api/reservations/999999")
+                        .cookie(accessCookie(userAuthHeader))
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Reserva no encontrada con ID: 999999"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWithOriginalMessageWhenAcceptLanguageIsMissing() throws Exception {
+        mockMvc.perform(get("/api/reservations/999999")
+                        .cookie(accessCookie(userAuthHeader)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Reserva no encontrada con ID: 999999"));
+    }
 }

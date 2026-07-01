@@ -3,6 +3,9 @@ package com.tuhospedaje.exception;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -17,43 +20,116 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", ex.getMessage(), "status", 404));
-    }
+    private final MessageSource messageSource;
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage(), "status", 400));
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
     }
 
     /**
-     * Interim handler for `@Min`-style request-param validation failures (e.g. negative
-     * `page` / non-positive `size` on `/api/lodgings/search`).
-     * <p>
-     * This is intentionally minimal: it preserves the pre-existing 400 contract for these
-     * parameters without regressing it to the generic 500 catch-all below (which is what
-     * happens to {@link ConstraintViolationException} / {@link HandlerMethodValidationException}
-     * when left unhandled, since {@code @ExceptionHandler(Exception.class)} always wins over
-     * Spring's native exception-to-status resolution).
-     * TODO(PR3): replace `ex.getMessage()` with `MessageSource`/`Locale`-aware resolution of
-     * the `{error.page.negative}` / `{error.size.negative}` keys once messages.properties /
-     * messages_es.properties exist (see design: GlobalExceptionHandler Validation & Dynamic
-     * i18n Handling).
+     * Resolves via {@code MessageSource}. Handles the only real throw site
+     * ({@code ReservationServiceImpl.getReservationById}), which uses the plain
+     * {@code (String message)} constructor — no {@code errorCode} — so the fallback
+     * branch ({@code error.resource.not_found={0}}, a passthrough) is the one actually
+     * exercised in production today. The {@code errorCode}/{@code args} branch exists for
+     * future callers that want real per-key localization.
      */
-    @ExceptionHandler({ConstraintViolationException.class, HandlerMethodValidationException.class})
-    public ResponseEntity<Map<String, Object>> handleParamValidation(Exception ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex, Locale locale) {
+        String resolvedMsg;
+        if (ex.getErrorCode() != null) {
+            resolvedMsg = messageSource.getMessage(ex.getErrorCode(), ex.getArgs(), locale);
+        } else {
+            resolvedMsg = messageSource.getMessage("error.resource.not_found", new Object[]{ex.getMessage()}, locale);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", resolvedMsg, "status", 404));
+    }
+
+    /**
+     * Resolves via {@code MessageSource}, keyed by the exception message itself. The 13
+     * real throw sites in this codebase (e.g. {@code AuthServiceImpl},
+     * {@code LodgingServiceImpl}) all use hardcoded literal Spanish text, not message
+     * keys, so none of them match a registered key — the {@link NoSuchMessageException}
+     * fallback to {@code ex.getMessage()} verbatim is what actually runs for all of them
+     * today, regardless of {@code Accept-Language}. This is documented, accepted
+     * behavior, not a regression: converting those 13 sites to keys is out of scope.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex, Locale locale) {
+        String resolvedMsg;
+        try {
+            resolvedMsg = messageSource.getMessage(ex.getMessage(), null, locale);
+        } catch (NoSuchMessageException e) {
+            resolvedMsg = ex.getMessage();
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage(), "status", 400));
+                .body(Map.of("error", resolvedMsg, "status", 400));
+    }
+
+    /**
+     * Enhances the interim handler added in the PR2 follow-up (raw {@code ex.getMessage()},
+     * no {@code MessageSource}) with locale-aware resolution for `@Min`-style request-param
+     * validation failures (e.g. negative `page` / non-positive `size` on
+     * `/api/lodgings/search`). {@code @Validated} at class level throws this exception
+     * (legacy AOP method validation) — verified empirically in the PR2 follow-up.
+     * <p>
+     * Each violation's {@code messageTemplate} is expected in {@code {key}} form (see
+     * {@code @Min(message = "{error.page.negative}")} on {@code LodgingController}); the
+     * key is looked up via {@code MessageSource} with the already-interpolated Bean
+     * Validation message as the default fallback.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolations(ConstraintViolationException ex, Locale locale) {
+        String resolved = ex.getConstraintViolations().stream()
+                .map(violation -> resolveTemplateMessage(violation.getMessageTemplate(), violation.getMessage(), locale))
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", resolved, "status", 400));
+    }
+
+    /**
+     * Enhances the interim handler added in the PR2 follow-up with locale-aware
+     * resolution. Defensive: no request path in this codebase is currently known to throw
+     * this exception type (the native Spring 6.1+ method-validation mechanism) rather than
+     * {@link ConstraintViolationException} — see class-level note above — but it is kept
+     * mapped so it never silently falls through to the generic 500 catch-all if that ever
+     * changes.
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodValidation(HandlerMethodValidationException ex, Locale locale) {
+        String resolved = ex.getParameterValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream())
+                .map(error -> resolveResolvableMessage(error, locale))
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", resolved, "status", 400));
+    }
+
+    private String resolveTemplateMessage(String messageTemplate, String fallback, Locale locale) {
+        if (messageTemplate != null && messageTemplate.startsWith("{") && messageTemplate.endsWith("}")) {
+            String key = messageTemplate.substring(1, messageTemplate.length() - 1);
+            return messageSource.getMessage(key, null, fallback, locale);
+        }
+        return fallback;
+    }
+
+    private String resolveResolvableMessage(MessageSourceResolvable resolvable, Locale locale) {
+        try {
+            return messageSource.getMessage(resolvable, locale);
+        } catch (NoSuchMessageException e) {
+            String[] codes = resolvable.getCodes();
+            return (codes != null && codes.length > 0) ? codes[codes.length - 1] : "Validation error";
+        }
     }
 
     @ExceptionHandler(AuthenticationException.class)

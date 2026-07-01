@@ -304,6 +304,41 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnSpanishMessageWhenSearchPageIsNegativeAndAcceptLanguageIsEs() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("page", "-1")
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El índice de página no debe ser negativo."));
+    }
+
+    @Test
+    void shouldReturnEnglishMessageWhenSearchPageIsNegativeAndAcceptLanguageIsMissing() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Page index must not be negative."));
+    }
+
+    @Test
+    void shouldReturnEnglishMessageWhenSearchSizeIsNotPositiveAndAcceptLanguageIsEn() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("size", "0")
+                        .header("Accept-Language", "en"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Size must be greater than zero."));
+    }
+
+    @Test
+    void shouldReturnSpanishMessageWhenSearchSizeIsNotPositiveAndAcceptLanguageIsEs() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("size", "0")
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El tamaño debe ser mayor a cero."));
+    }
+
+    @Test
     void shouldReturnPaginatedLodgings() throws Exception {
         createTestLodging("Page Lodging 1", "p1@test.com");
         createTestLodging("Page Lodging 2", "p2@test.com");

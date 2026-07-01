@@ -14,16 +14,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -156,7 +161,7 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         when(ex.getBindingResult()).thenReturn(bindingResult);
 
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(mock(MessageSource.class));
         ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
 
         @SuppressWarnings("unchecked")
@@ -164,5 +169,61 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
 
         assertThat(new ArrayList<>(fields.keySet()))
                 .containsExactly("z", "y", "x", "w", "v");
+    }
+
+    /**
+     * i18n scope note: the 13 real {@link IllegalArgumentException} throw sites in this
+     * codebase all use hardcoded literal Spanish text (e.g. {@code AuthServiceImpl},
+     * {@code LodgingServiceImpl}), not message keys. {@code handleIllegalArgument} tries
+     * {@code messageSource.getMessage(ex.getMessage(), null, locale)} first — since the
+     * literal text is never a registered key, this MUST fall back to the literal message
+     * unchanged, regardless of {@code Accept-Language}. This is accepted, documented
+     * behavior (see design doc), not a bug.
+     */
+    @Test
+    void illegalArgument_withUnregisteredLiteralMessage_fallsBackVerbatim_regardlessOfLocale() throws Exception {
+        String literalSpanishMessage = "El email ya está registrado";
+        when(lodgingService.findAll()).thenThrow(new IllegalArgumentException(literalSpanishMessage));
+
+        mockMvc.perform(get("/api/lodgings"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(literalSpanishMessage));
+
+        mockMvc.perform(get("/api/lodgings").header("Accept-Language", "es"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(literalSpanishMessage));
+
+        mockMvc.perform(get("/api/lodgings").header("Accept-Language", "en"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(literalSpanishMessage));
+    }
+
+    /**
+     * {@code HandlerMethodValidationException} is defensively handled (per design) even
+     * though empirical testing in PR2 found that {@code @Validated} + request-param
+     * {@code @Min} on this codebase's controllers actually throws
+     * {@link jakarta.validation.ConstraintViolationException}, not this exception type —
+     * there is no real request path in this app that triggers it today. Tested directly
+     * against the handler method (not via MockMvc) since no reachable endpoint exists.
+     */
+    @Test
+    void handleMethodValidation_resolvesMessageViaMessageSource() {
+        MessageSource messageSource = mock(MessageSource.class);
+        Locale locale = new Locale("es");
+
+        MessageSourceResolvable resolvable = mock(MessageSourceResolvable.class);
+        when(messageSource.getMessage(resolvable, locale)).thenReturn("El tamaño debe ser mayor a cero.");
+
+        ParameterValidationResult result = mock(ParameterValidationResult.class);
+        when(result.getResolvableErrors()).thenReturn(List.of(resolvable));
+
+        HandlerMethodValidationException ex = mock(HandlerMethodValidationException.class);
+        when(ex.getParameterValidationResults()).thenReturn(List.of(result));
+
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+        ResponseEntity<Map<String, Object>> response = handler.handleMethodValidation(ex, locale);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().get("error")).isEqualTo("El tamaño debe ser mayor a cero.");
     }
 }
