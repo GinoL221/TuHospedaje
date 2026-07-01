@@ -1,9 +1,13 @@
 package com.tuhospedaje.lodging;
 
+import com.tuhospedaje.dto.lodging.FeatureSummaryDTO;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.lodging.PolicySummaryDTO;
 import com.tuhospedaje.entity.Category;
+import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
+import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.repository.CategoryRepository;
 import org.junit.jupiter.api.Test;
 import jakarta.validation.ConstraintViolation;
@@ -236,5 +240,63 @@ class LodgingDTOTest {
         assertThat(dto.getCountry()).isEqualTo("Argentina");
         assertThat(dto.getPhoneNumber()).isEqualTo("+54111234567");
         assertThat(dto.getEmail()).isEqualTo("completo@test.com");
+    }
+
+    @Test
+    void shouldMapFeaturesAsTypedFeatureSummaryDTOFromEntity() {
+        Feature feature = new Feature();
+        feature.setId(1L);
+        feature.setName("Pileta");
+        feature.setIcon("fa-swimming-pool");
+
+        Lodging lodging = new Lodging();
+        lodging.setId(6L);
+        lodging.setName("Con Features");
+        lodging.setFeatures(Set.of(feature));
+
+        LodgingDTO dto = LodgingDTO.fromEntity(lodging);
+
+        assertThat(dto.getFeatures()).hasSize(1);
+        FeatureSummaryDTO mapped = dto.getFeatures().get(0);
+        assertThat(mapped).isInstanceOf(FeatureSummaryDTO.class);
+        assertThat(mapped.getId()).isEqualTo(1L);
+        assertThat(mapped.getName()).isEqualTo("Pileta");
+        assertThat(mapped.getIcon()).isEqualTo("fa-swimming-pool");
+    }
+
+    @Test
+    void shouldMapPoliciesAsTypedPolicySummaryDTOFromEntity() {
+        Policy policy = new Policy();
+        policy.setId(2L);
+        policy.setName("No Fumar");
+        policy.setDescription("Prohibido fumar en espacios cerrados");
+        policy.setIcon("fa-ban-smoking");
+
+        Lodging lodging = new Lodging();
+        lodging.setId(7L);
+        lodging.setName("Con Policies");
+        lodging.setPolicies(Set.of(policy));
+
+        LodgingDTO dto = LodgingDTO.fromEntity(lodging);
+
+        assertThat(dto.getPolicies()).hasSize(1);
+        PolicySummaryDTO mapped = dto.getPolicies().get(0);
+        assertThat(mapped).isInstanceOf(PolicySummaryDTO.class);
+        assertThat(mapped.getId()).isEqualTo(2L);
+        assertThat(mapped.getName()).isEqualTo("No Fumar");
+        assertThat(mapped.getDescription()).isEqualTo("Prohibido fumar en espacios cerrados");
+        assertThat(mapped.getIcon()).isEqualTo("fa-ban-smoking");
+    }
+
+    @Test
+    void shouldMapNullFeaturesAndPoliciesWhenEntityHasNone() {
+        Lodging lodging = new Lodging();
+        lodging.setId(8L);
+        lodging.setName("Sin Features Ni Policies");
+
+        LodgingDTO dto = LodgingDTO.fromEntity(lodging);
+
+        assertThat(dto.getFeatures()).isNull();
+        assertThat(dto.getPolicies()).isNull();
     }
 }
