@@ -1,7 +1,7 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-export default function RequireAdmin({ children }) {
+export default function RequireAdmin() {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -19,6 +19,8 @@ export default function RequireAdmin({ children }) {
       />
     );
   }
-  if (user.role !== "ADMIN") return <Navigate to="/" replace />;
-  return children;
+
+  if (user.role !== "ADMIN") return <Navigate to="/unauthorized" replace />;
+
+  return <Outlet />;
 }

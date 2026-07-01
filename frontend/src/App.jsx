@@ -15,6 +15,7 @@ import FavoritesPage from "./pages/Favorites/FavoritesPage";
 import BookingPage from "./pages/Booking/BookingPage";
 import BookingConfirmationPage from "./pages/Booking/BookingConfirmation";
 import MyReservationsPage from "./pages/MyReservations/MyReservationsPage";
+import Unauthorized from "./pages/Unauthorized/Unauthorized";
 import WhatsAppButton from "./components/WhatsAppButton/WhatsAppButton";
 
 function AppLayout() {
@@ -32,6 +33,7 @@ function AppLayout() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/lodgings/:id" element={<ProductDetail />} />
         <Route path="/favorites" element={<FavoritesPage />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route element={<RequireAuth />}>
           <Route path="/booking/:lodgingId" element={<BookingPage />} />
@@ -39,14 +41,9 @@ function AppLayout() {
           <Route path="/my-reservations" element={<MyReservationsPage />} />
         </Route>
 
-        <Route
-          path="/admin"
-          element={
-            <RequireAdmin>
-              <Admin />
-            </RequireAdmin>
-          }
-        />
+        <Route element={<RequireAdmin />}>
+          <Route path="/admin" element={<Admin />} />
+        </Route>
       </Routes>
       {!isAdmin && <Footer />}
     </>
