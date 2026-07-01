@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useTransition } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Calendar, X, Tag, DollarSign } from "lucide-react";
 import DatePicker from "react-datepicker";
-import { get } from "../../services/api";
+import { searchLodgings } from "../../services/lodgingService";
+import { getCategories } from "../../services/categoryService";
+import { getFavorites } from "../../services/favoriteService";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import Pagination from "../../components/Pagination/Pagination";
@@ -48,32 +50,46 @@ export default function SearchResults() {
   const [appliedMaxPrice, setAppliedMaxPrice] = useState("");
 
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 9;
+  const [totalPages, setTotalPages] = useState(0);
 
   const [, startTransition] = useTransition();
   const skipNextSearchRef = useRef(false);
+  const lastSearchRef = useRef({ cats: new Set(), baseParams: new URLSearchParams() });
 
   useEffect(() => {
     setSidebarCheckIn(parseDate(checkIn));
     setSidebarCheckOut(parseDate(checkOut));
   }, [checkIn, checkOut]);
 
-  function searchLodgings(params) {
-    startTransition(() => { setLoading(true); setError(""); setPage(0); });
-    get(`/lodgings/search?${params.toString()}`)
-      .then((data) => { setResults(Array.isArray(data) ? data : []); setLoading(false); })
+  // Single fetch path for both the initial load and every filter/pagination
+  // change: categories are always sent to the backend (no more client-side
+  // intersection), and pagination is server-driven via `page`/`currentPage`.
+  function runSearch(cats, baseParams, pageNum = 0) {
+    lastSearchRef.current = { cats, baseParams };
+    const params = new URLSearchParams(baseParams);
+    cats.forEach((id) => params.append("categories", id));
+    params.set("page", pageNum);
+
+    startTransition(() => { setLoading(true); setError(""); });
+    searchLodgings(params)
+      .then((data) => {
+        setResults(Array.isArray(data?.lodgings) ? data.lodgings : []);
+        setPage(data?.currentPage ?? pageNum);
+        setTotalPages(data?.totalPages ?? 0);
+        setLoading(false);
+      })
       .catch((err) => { setError(err.message); setLoading(false); });
   }
 
   useEffect(() => {
-    get("/categories")
+    getCategories()
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!user) { setFavoriteIds(new Set()); return; }
-    get("/favorites")
+    getFavorites()
       .then((data) => {
         if (Array.isArray(data)) setFavoriteIds(new Set(data.map((l) => l.id)));
       })
@@ -86,7 +102,7 @@ export default function SearchResults() {
     if (city) params.set("city", city);
     if (checkIn) params.set("checkIn", checkIn);
     if (checkOut) params.set("checkOut", checkOut);
-    searchLodgings(params);
+    runSearch(new Set(), params);
   }, [city, checkIn, checkOut]);
 
   function handleFavoriteToggle(id, add) {
@@ -111,23 +127,6 @@ export default function SearchResults() {
     return params;
   }
 
-  function runCategorySearch(cats, baseParams) {
-    if (cats.size === 0) {
-      searchLodgings(baseParams);
-    } else if (cats.size === 1) {
-      baseParams.set("category", [...cats][0]);
-      searchLodgings(baseParams);
-    } else {
-      get(`/lodgings/search?${baseParams.toString()}`)
-        .then((data) => {
-          setPage(0);
-          setResults((Array.isArray(data) ? data : []).filter((l) => cats.has(l.categoryId)));
-          setLoading(false);
-        })
-        .catch((err) => { setError(err.message); setLoading(false); });
-    }
-  }
-
   function handleFilter() {
     // Commit pending → applied
     const cats = new Set(pendingCategories);
@@ -138,7 +137,7 @@ export default function SearchResults() {
     const params = buildParams({ min: pendingMinPrice, max: pendingMaxPrice });
     skipNextSearchRef.current = true;
     navigate(`/search?${params.toString()}`, { replace: true });
-    runCategorySearch(cats, params);
+    runSearch(cats, params);
   }
 
   function clearFilters() {
@@ -158,7 +157,7 @@ export default function SearchResults() {
     next.delete(id);
     setAppliedCategories(next);
     setPendingCategories(new Set(next));
-    runCategorySearch(next, buildParams({ min: appliedMinPrice, max: appliedMaxPrice }));
+    runSearch(next, buildParams({ min: appliedMinPrice, max: appliedMaxPrice }));
   }
 
   function removePriceChip() {
@@ -166,7 +165,7 @@ export default function SearchResults() {
     setAppliedMaxPrice("");
     setPendingMinPrice("");
     setPendingMaxPrice("");
-    runCategorySearch(appliedCategories, buildParams({ min: "", max: "" }));
+    runSearch(appliedCategories, buildParams({ min: "", max: "" }));
   }
 
   function removeDateChip() {
@@ -174,12 +173,10 @@ export default function SearchResults() {
     setSidebarCheckOut(null);
     skipNextSearchRef.current = true;
     navigate(`/search${city ? `?city=${encodeURIComponent(city)}` : ""}`, { replace: true });
-    runCategorySearch(appliedCategories, buildParams({ ci: "", co: "", min: appliedMinPrice, max: appliedMaxPrice }));
+    runSearch(appliedCategories, buildParams({ ci: "", co: "", min: appliedMinPrice, max: appliedMaxPrice }));
   }
 
   const hasChips = checkIn || appliedCategories.size > 0 || appliedMinPrice || appliedMaxPrice;
-  const totalPages = Math.ceil(results.length / PAGE_SIZE);
-  const paginatedResults = results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <main className="search-results page-container">
@@ -297,7 +294,7 @@ export default function SearchResults() {
         ) : (
           <>
             <div className="hotel-list">
-              {paginatedResults.map((lodging) => (
+              {results.map((lodging) => (
                 <ProductCard
                   key={lodging.id}
                   lodging={lodging}
@@ -309,7 +306,9 @@ export default function SearchResults() {
             <Pagination
               page={page}
               totalPages={totalPages}
-              onPageChange={setPage}
+              onPageChange={(newPage) =>
+                runSearch(lastSearchRef.current.cats, lastSearchRef.current.baseParams, newPage)
+              }
               className="search-pagination"
             />
           </>
