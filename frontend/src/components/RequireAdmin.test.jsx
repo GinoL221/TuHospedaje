@@ -13,6 +13,10 @@ function LoginSentinel() {
   );
 }
 
+function UnauthorizedSentinel() {
+  return <div data-testid="unauthorized-sentinel">unauthorized page</div>;
+}
+
 function AdminSentinel() {
   return <div data-testid="admin-sentinel">admin content</div>;
 }
@@ -21,15 +25,10 @@ function renderGuardedRoute({ authValue, route = "/admin" } = {}) {
   return customRender(
     <Routes>
       <Route path="/login" element={<LoginSentinel />} />
-      <Route path="/" element={<div data-testid="home-sentinel">home</div>} />
-      <Route
-        path="/admin"
-        element={
-          <RequireAdmin>
-            <AdminSentinel />
-          </RequireAdmin>
-        }
-      />
+      <Route path="/unauthorized" element={<UnauthorizedSentinel />} />
+      <Route element={<RequireAdmin />}>
+        <Route path="/admin" element={<AdminSentinel />} />
+      </Route>
     </Routes>,
     { authValue, route }
   );
@@ -49,20 +48,21 @@ describe("RequireAdmin - unauthenticated user", () => {
 });
 
 describe("RequireAdmin - authenticated non-admin user", () => {
-  it("redirects to / without exposing the admin content", () => {
+  it("redirects to /unauthorized without exposing the admin content", () => {
     renderGuardedRoute();
 
-    expect(screen.getByTestId("home-sentinel")).toBeInTheDocument();
+    expect(screen.getByTestId("unauthorized-sentinel")).toBeInTheDocument();
     expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
   });
 });
 
 describe("RequireAdmin - authenticated admin user", () => {
-  it("renders the admin content, no redirect occurs", () => {
+  it("renders the nested Outlet content, no redirect occurs", () => {
     renderGuardedRoute({ authValue: makeAuthValue({ user: mockAdmin }) });
 
     expect(screen.getByTestId("admin-sentinel")).toBeInTheDocument();
     expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("unauthorized-sentinel")).not.toBeInTheDocument();
   });
 });
 
