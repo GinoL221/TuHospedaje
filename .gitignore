@@ -29,8 +29,9 @@ Thumbs.db
 # Postman
 TuHospedaje.postman_collection.json
 
-# AI assistant config (local, not part of the project)
+# AI assistant config/indexes (local, not part of the project)
 AGENTS.md
+.codegraph/
 
 # OpenSpec (discontinued — using Engram instead)
 openspec/
