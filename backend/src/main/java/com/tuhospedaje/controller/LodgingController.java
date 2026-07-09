@@ -1,5 +1,6 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.service.LodgingService;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -98,6 +100,24 @@ public class LodgingController {
     })
     public ResponseEntity<List<LodgingDTO>> random() {
         return ResponseEntity.ok(lodgingService.findAllRandom());
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "List lodgings for Admin", description = "Returns server-paginated lodging rows for the Admin table.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Admin lodging page returned"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+    })
+    public ResponseEntity<PageResponse<LodgingDTO>> adminPage(
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
+            @RequestParam(defaultValue = "10") @Max(value = 100, message = "{error.size.max}") @Min(value = 1, message = "{error.size.negative}") int size,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(required = false) String q) {
+        return ResponseEntity.ok(lodgingService.findAdminPage(page, size, sort, direction, q));
     }
 
     @GetMapping("/{id}")

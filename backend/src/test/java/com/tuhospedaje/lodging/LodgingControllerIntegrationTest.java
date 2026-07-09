@@ -237,6 +237,59 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void adminLodgings_returnsServerPaginatedSearchResults() throws Exception {
+        createTestLodgingWithCity("Admin Page Alpha", "admin-page-alpha@tdd.com", "tdd-admin-page");
+        createTestLodgingWithCity("Admin Page Beta", "admin-page-beta@tdd.com", "tdd-admin-page");
+        createTestLodgingWithCity("Admin Page Gamma", "admin-page-gamma@tdd.com", "tdd-admin-page");
+
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sort", "name")
+                        .param("direction", "asc")
+                        .param("q", "tdd-admin-page"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].name").value("Admin Page Alpha"))
+                .andExpect(jsonPath("$.items[1].name").value("Admin Page Beta"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalItems").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void adminLodgings_forbidsAuthenticatedNonAdminUser() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(userToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminLodgings_rejectsOversizedPageSize() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminLodgings_rejectsUnknownSortField() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("sort", "notARealField"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminLodgings_rejectsUnknownSortDirection() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("direction", "sideways"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldSearchLodgingsByCity() throws Exception {
         createTestLodging("Hotel Boutique", "boutique@test.com");
 
