@@ -1,5 +1,6 @@
 package com.tuhospedaje.service.impl;
 
+import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.reservation.CreateReservationRequest;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.Lodging;
@@ -10,14 +11,21 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.repository.specification.ReservationSpecifications;
 import com.tuhospedaje.service.EmailService;
 import com.tuhospedaje.service.ReservationService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ReservationServiceImpl implements ReservationService {
@@ -102,5 +110,54 @@ public class ReservationServiceImpl implements ReservationService {
                 .stream()
                 .map(ReservationResponse::fromEntity)
                 .toList();
+    }
+
+    private static final Set<String> ADMIN_SORT_FIELDS = Set.of(
+            "id", "checkIn", "checkOut", "status", "totalPrice"
+    );
+
+    private ReservationStatus parseReservationStatus(String status) {
+        return ReservationStatus.valueOf(status.toUpperCase(Locale.ROOT));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ReservationResponse> getAdminReservations(int page, int size, String sort, String direction, String status, String q) {
+        if (!ADMIN_SORT_FIELDS.contains(sort)) {
+            throw new IllegalArgumentException("Campo de ordenamiento inválido: " + sort);
+        }
+
+        Sort.Direction sortDirection = Sort.Direction.fromOptionalString(direction)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección de ordenamiento inválida: " + direction));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+
+        Page<Reservation> reservationPage;
+
+        if (status != null && q != null && !q.trim().isEmpty()) {
+            String searchTerm = q.trim();
+            reservationPage = reservationRepository.findAll(
+                    ReservationSpecifications.withStatusAndSearchQuery(parseReservationStatus(status), searchTerm),
+                    pageable);
+        } else if (status != null) {
+            reservationPage = reservationRepository.findByStatus(parseReservationStatus(status), pageable);
+        } else if (q != null && !q.trim().isEmpty()) {
+            String searchTerm = q.trim();
+            reservationPage = reservationRepository.findAll(
+                    ReservationSpecifications.withSearchQuery(searchTerm),
+                    pageable);
+        } else {
+            reservationPage = reservationRepository.findAll(pageable);
+        }
+
+        List<ReservationResponse> items = reservationPage.getContent().stream()
+                .map(ReservationResponse::fromEntity)
+                .toList();
+
+        return new PageResponse<>(
+                items,
+                reservationPage.getNumber(),
+                reservationPage.getTotalElements(),
+                reservationPage.getTotalPages()
+        );
     }
 }

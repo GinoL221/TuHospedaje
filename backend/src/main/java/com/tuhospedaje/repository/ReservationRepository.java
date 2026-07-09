@@ -3,7 +3,10 @@ package com.tuhospedaje.repository;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+public interface ReservationRepository extends JpaRepository<Reservation, Long>, JpaSpecificationExecutor<Reservation> {
 
     List<Reservation> findByLodgingIdAndStatus(Long lodgingId, ReservationStatus status);
 
@@ -35,4 +38,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     boolean existsByUserIdAndLodgingIdAndStatus(Long userId, Long lodgingId, ReservationStatus status);
 
     List<Reservation> findAllByOrderByIdDesc();
+
+    Page<Reservation> findByStatus(ReservationStatus status, Pageable pageable);
 }
