@@ -16,8 +16,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.BindingResult;
@@ -65,6 +68,9 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private MessageSource messageSource;
 
     @MockitoBean
     private LodgingService lodgingService;
@@ -161,14 +167,41 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         when(ex.getBindingResult()).thenReturn(bindingResult);
 
-        GlobalExceptionHandler handler = new GlobalExceptionHandler(mock(MessageSource.class));
-        ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
+        MessageSource messageSource = mock(MessageSource.class);
+        when(messageSource.getMessage("error.validation", null, Locale.ENGLISH)).thenReturn("Validation error.");
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+        ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex, Locale.ENGLISH);
 
         @SuppressWarnings("unchecked")
         Map<String, String> fields = (Map<String, String>) response.getBody().get("fields");
 
         assertThat(new ArrayList<>(fields.keySet()))
                 .containsExactly("z", "y", "x", "w", "v");
+    }
+
+    @Test
+    void standardHandlers_resolveMessagesViaAcceptLanguageLocale() throws Exception {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+
+        assertThat(errorOf(handler.handleAuthError(new BadCredentialsException("bad"), Locale.ENGLISH)))
+                .isEqualTo("Invalid credentials.");
+        assertThat(errorOf(handler.handleAuthError(new BadCredentialsException("bad"), new Locale("es"))))
+                .isEqualTo("Credenciales inválidas.");
+
+        assertThat(errorOf(handler.handleOptimisticLock(mock(ObjectOptimisticLockingFailureException.class), Locale.ENGLISH)))
+                .isEqualTo("The reservation was modified by another user. Try again.");
+        assertThat(errorOf(handler.handlePessimisticLock(new PessimisticLockingFailureException("lock"), Locale.ENGLISH)))
+                .isEqualTo("The resource is being modified. Try again in a few seconds.");
+        assertThat(errorOf(handler.handleUploadError(new UploadException("upload failed"), Locale.ENGLISH)))
+                .isEqualTo("Error processing the image.");
+        assertThat(errorOf(handler.handleDataIntegrity(new DataIntegrityViolationException("bad data"), Locale.ENGLISH)))
+                .isEqualTo("Missing required fields or invalid data.");
+        assertThat(errorOf(handler.handleGeneric(new RuntimeException("boom"), Locale.ENGLISH)))
+                .isEqualTo("Internal server error.");
+    }
+
+    private String errorOf(ResponseEntity<Map<String, Object>> response) {
+        return (String) response.getBody().get("error");
     }
 
     /**
