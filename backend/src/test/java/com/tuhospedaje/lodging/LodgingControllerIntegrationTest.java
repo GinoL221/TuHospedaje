@@ -596,6 +596,37 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void availabilityEndpoint_returnsOccupiedRangesAndUnavailableForOverlappingRequestedRange() throws Exception {
+        Long id = createTestLodgingWithCity("Availability Hotel", "availability@tdd-endpoint-01.com", "tdd-endpoint-01");
+        LocalDate today = LocalDate.now();
+        seedReservation(id, today.plusDays(2), today.plusDays(5), ReservationStatus.CONFIRMED);
+        seedReservation(id, today.plusDays(8), today.plusDays(10), ReservationStatus.CANCELLED);
+
+        mockMvc.perform(get("/api/lodgings/{id}/availability", id)
+                        .param("checkIn", today.plusDays(3).toString())
+                        .param("checkOut", today.plusDays(4).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(false))
+                .andExpect(jsonPath("$.occupiedRanges.length()").value(1))
+                .andExpect(jsonPath("$.occupiedRanges[0].checkIn").value(today.plusDays(2).toString()))
+                .andExpect(jsonPath("$.occupiedRanges[0].checkOut").value(today.plusDays(5).toString()));
+    }
+
+    @Test
+    void availabilityEndpoint_treatsAdjacentRequestedRangeAsAvailable() throws Exception {
+        Long id = createTestLodgingWithCity("Adjacent Availability Hotel", "availability@tdd-endpoint-02.com", "tdd-endpoint-02");
+        LocalDate today = LocalDate.now();
+        seedReservation(id, today.plusDays(2), today.plusDays(5), ReservationStatus.CONFIRMED);
+
+        mockMvc.perform(get("/api/lodgings/{id}/availability", id)
+                        .param("checkIn", today.plusDays(5).toString())
+                        .param("checkOut", today.plusDays(7).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(true))
+                .andExpect(jsonPath("$.occupiedRanges.length()").value(1));
+    }
+
+    @Test
     void searchWithDates_executesAtMostTwoQueries() throws Exception {
         Long id = createTestLodgingWithCity("Perf Hotel", "perf@tdd-perf-06.com", "tdd-perf-06");
         LocalDate today = LocalDate.now();
