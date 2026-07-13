@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 32,
+  "name": "Resort Termas Federación",
+  "category": "resort",
+  "location": {
+    "city": "Federación",
+    "country": "Argentina"
+  },
+  "capacity": 6,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Resort termal superior, accesible y familiar para hasta seis huéspedes por unidad representada, ubicado junto al lago en Federación. Debe transmitir bienestar, agua, amplitud y calma para familias y parejas; sin parecer un parque acuático, una clínica ni un spa de lujo exclusivo para adultos.",
+    "architecture": "Complejo de pabellones bajos de hasta dos pisos. Implantación alrededor de jardines y piscinas termales. Circuito de piscinas interiores y exteriores conectadas. Volúmenes de revoque arena y piedra beige. Grandes aleros para sombra y protección climática. Habitaciones con balcones orientados hacia jardines o lago. Circulaciones amplias, continuas y sin desniveles innecesarios. Rampas integradas en la arquitectura. Restaurante abierto visualmente hacia el lago. Áreas de descanso distribuidas alrededor del circuito termal. Vestuarios y servicios agrupados. Instalaciones hidráulicas y técnicas ocultas. Sin toboganes, juegos de colores, pasillos clínicos ni arquitectura monumental de spa.",
+    "palette": [
+      "arena",
+      "beige piedra",
+      "azul agua",
+      "verde salvia",
+      "roble claro",
+      "bronce oscuro",
+      "blanco cálido como tono complementario"
+    ],
+    "floors": "Lobby y restaurante: piedra beige mate. Habitaciones: madera de ingeniería tono roble claro. Baños: porcelanato antideslizante color arena. Duchas accesibles: mosaico verde salvia. Circuito termal: piedra atérmica y antideslizante. Circulaciones exteriores: superficie mineral de drenaje rápido. Balcones: porcelanato exterior beige. Áreas de descanso: superficies continuas sin resaltos.",
+    "wallsAndFinishes": "Lobby: revoque arena, piedra beige y paneles de roble. Habitaciones: blanco cálido con cabeceros de madera. Baños: porcelanato claro y mosaico salvia. Restaurante: piedra, roble y textiles azul agua. Piscinas interiores: microcemento claro y revestimientos resistentes a humedad. Áreas exteriores: revoques minerales y piedra. Acústica controlada para evitar ambiente de parque acuático. Sin azulejos de colores intensos, señalética clínica ni decoración marina.",
+    "joinery": "Ventanas de aluminio bronce oscuro con doble vidrio. Puertas corredizas hacia balcones. Puertas de acceso amplias y sin umbrales. Puertas interiores en roble claro. Placares integrados con alturas accesibles. Mamparas amplias con perfilería bronce. Barrales y herrajes ergonómicos de acabado oscuro. Cortinas de lino beige y blackout azul grisáceo.",
+    "furniture": "Dormitorio principal con cama queen o king. Configuración familiar secundaria para cuatro huéspedes. Cabeceros de roble con bordes redondeados. Mesas de luz suspendidas y accesibles. Sofá familiar beige. Sillones compactos verde salvia. Mesa para seis personas. Mobiliario de balcón resistente a humedad. Reposeras con apoyabrazos en áreas termales. Bancos accesibles en vestuarios y descansos. Sin mobiliario clínico, piezas angulosas peligrosas ni estética de spa exclusivo.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz natural abundante y controlada. Iluminación indirecta en lobby y habitaciones. Apliques de bronce junto a las camas. Luz uniforme y sin deslumbramiento en circulaciones. Iluminación difusa en piscinas interiores. Balizas bajas en jardines y circuitos. Piscinas iluminadas en blanco cálido. Sin luces de colores, efectos acuáticos ni iluminación hospitalaria.",
+    "continuityElements": [
+      "Pabellones bajos de hasta dos pisos.",
+      "Revoques arena y piedra beige.",
+      "Azul agua y verde salvia en textiles y revestimientos.",
+      "Roble claro en habitaciones y mobiliario.",
+      "Carpinterías y herrajes de bronce oscuro.",
+      "Recorridos amplios, accesibles y sin desniveles.",
+      "Mobiliario de bordes redondeados para familias y parejas.",
+      "Conexión continua entre jardines, lago, piscinas interiores y exteriores."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Complejo entre jardines y piscinas",
+        "brief": "Mostrar el complejo bajo entre jardines y piscinas."
+      },
+      {
+        "order": 2,
+        "title": "Habitación familiar",
+        "brief": "Mostrar la habitación familiar con balcón para seis huéspedes."
+      },
+      {
+        "order": 3,
+        "title": "Baño accesible",
+        "brief": "Mostrar el baño accesible con ducha amplia y mosaico verde salvia."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante junto al lago",
+        "brief": "Mostrar el restaurante orientado hacia el lago."
+      },
+      {
+        "order": 5,
+        "title": "Circuito termal",
+        "brief": "Mostrar el circuito termal interior-exterior conectado con áreas de descanso."
+      }
+    ]
+  }
+}

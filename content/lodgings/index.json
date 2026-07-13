@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "source": "recovered-from-approved-context",
+  "lodgings": [
+    {
+      "lodgingId": 1,
+      "name": "Hotel Buenos Aires Centro",
+      "category": "hotel",
+      "file": "01-hotel-buenos-aires-centro.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 2,
+      "name": "Cabaña Los Arrayanes",
+      "category": "cabin",
+      "file": "02-cabana-los-arrayanes.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 3,
+      "name": "Departamento Palermo Soho",
+      "category": "apartment",
+      "file": "03-departamento-palermo-soho.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 4,
+      "name": "Hostel Córdoba Backpackers",
+      "category": "hostel",
+      "file": "04-hostel-cordoba-backpackers.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 5,
+      "name": "Cabaña del Lago",
+      "category": "cabin",
+      "file": "05-cabana-del-lago.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 6,
+      "name": "Hotel Internacional",
+      "category": "hotel",
+      "file": "06-hotel-internacional.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 7,
+      "name": "Cabaña El Mirador",
+      "category": "cabin",
+      "file": "07-cabana-el-mirador.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 8,
+      "name": "Hotel Mar del Plata",
+      "category": "hotel",
+      "file": "08-hotel-mar-del-plata.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 9,
+      "name": "Departamento Puerto Madero",
+      "category": "apartment",
+      "file": "09-departamento-puerto-madero.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 10,
+      "name": "Hostel Salta Andino",
+      "category": "hostel",
+      "file": "10-hostel-salta-andino.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 11,
+      "name": "Hotel Riviera Rosario",
+      "category": "hotel",
+      "file": "11-hotel-riviera-rosario.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 12,
+      "name": "Cabaña Los Cipreses",
+      "category": "cabin",
+      "file": "12-cabana-los-cipreses.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 13,
+      "name": "Departamento Nueva Córdoba",
+      "category": "apartment",
+      "file": "13-departamento-nueva-cordoba.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 14,
+      "name": "Gran Hotel Tucumán",
+      "category": "hotel",
+      "file": "14-gran-hotel-tucuman.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 15,
+      "name": "Cabaña El Bolsón",
+      "category": "cabin",
+      "file": "15-cabana-el-bolson.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 16,
+      "name": "Departamento Chacras de Coria",
+      "category": "apartment",
+      "file": "16-departamento-chacras-de-coria.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 17,
+      "name": "Hotel del Glaciar",
+      "category": "hotel",
+      "file": "17-hotel-del-glaciar.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 18,
+      "name": "Cabaña San Roque",
+      "category": "cabin",
+      "file": "18-cabana-san-roque.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 19,
+      "name": "Departamento Belgrano",
+      "category": "apartment",
+      "file": "19-departamento-belgrano.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 20,
+      "name": "Hotel La Perla",
+      "category": "hotel",
+      "file": "20-hotel-la-perla.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 21,
+      "name": "Cabaña Lacar",
+      "category": "cabin",
+      "file": "21-cabana-lacar.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 22,
+      "name": "Departamento Pichincha",
+      "category": "apartment",
+      "file": "22-departamento-pichincha.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 23,
+      "name": "Hotel Cataratas Iguazú",
+      "category": "hotel",
+      "file": "23-hotel-cataratas-iguazu.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 24,
+      "name": "Cabaña Los Glaciares",
+      "category": "cabin",
+      "file": "24-cabana-los-glaciares.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 25,
+      "name": "Departamento Recoleta",
+      "category": "apartment",
+      "file": "25-departamento-recoleta.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 26,
+      "name": "Hotel Legado Mítico",
+      "category": "hotel",
+      "file": "26-hotel-legado-mitico.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 27,
+      "name": "Hostel La Plata Centro",
+      "category": "hostel",
+      "file": "27-hostel-la-plata-centro.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 28,
+      "name": "Hostel Patagónico",
+      "category": "hostel",
+      "file": "28-hostel-patagonico.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 29,
+      "name": "Hostel San Telmo",
+      "category": "hostel",
+      "file": "29-hostel-san-telmo.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 30,
+      "name": "Hostel Las Viñas",
+      "category": "hostel",
+      "file": "30-hostel-las-vinas.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 31,
+      "name": "Resort Iguazú Grand",
+      "category": "resort",
+      "file": "31-resort-iguazu-grand.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 32,
+      "name": "Resort Termas Federación",
+      "category": "resort",
+      "file": "32-resort-termas-federacion.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 33,
+      "name": "Resort Valle de Uco",
+      "category": "resort",
+      "file": "33-resort-valle-de-uco.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 34,
+      "name": "Resort Llao Llao",
+      "category": "resort",
+      "file": "34-resort-llao-llao.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 35,
+      "name": "Glamping Bosques del Sur",
+      "category": "glamping",
+      "file": "35-glamping-bosques-del-sur.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 36,
+      "name": "Glamping Cerro Chapelco",
+      "category": "glamping",
+      "file": "36-glamping-cerro-chapelco.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 37,
+      "name": "Glamping Valle Encantado",
+      "category": "glamping",
+      "file": "37-glamping-valle-encantado.json",
+      "status": "approved",
+      "version": 1
+    },
+    {
+      "lodgingId": 38,
+      "name": "Glamping Viñas del Sur",
+      "category": "glamping",
+      "file": "38-glamping-vinas-del-sur.json",
+      "status": "approved",
+      "version": 1
+    }
+  ]
+}

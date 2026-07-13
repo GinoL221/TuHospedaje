@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 9,
+  "name": "Departamento Puerto Madero",
+  "category": "apartment",
+  "location": {
+    "city": "Buenos Aires",
+    "country": "Argentina"
+  },
+  "capacity": 6,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Apart-hotel premium para hasta seis personas, ubicado frente al agua en Puerto Madero. Debe combinar privacidad residencial, servicios hoteleros y calidad contemporánea; sin parecer una residencia de lujo vacía, un showroom ostentoso ni una habitación de hotel ampliada.",
+    "architecture": "Torre contemporánea de veinte pisos. Basamento de doble altura con acceso hotelero claramente identificado. Fachada combinada de vidrio, hormigón claro y perfilería grafito. Modulación vertical regular. Grandes ventanas orientadas hacia el agua y la ciudad. Unidades residenciales con cocina, comedor y estar propios. Núcleo de servicios y circulación independiente. Piscina climatizada y gimnasio compartidos. Áreas comunes compactas y de calidad superior. Balcones o expansiones integrados en la modulación. Instalaciones técnicas ocultas. Sin remates monumentales, dorados, mármol dominante ni escala de penthouse privado.",
+    "palette": [
+      "gris claro",
+      "grafito",
+      "nogal",
+      "taupe",
+      "azul petróleo",
+      "acero satinado",
+      "blanco cálido como tono complementario"
+    ],
+    "floors": "Acceso y lobby: piedra sinterizada gris clara de gran formato. Estar, comedor y dormitorios: madera de ingeniería tono nogal. Cocina: porcelanato gris mate. Baños: porcelanato grafito antideslizante. Ducha: piedra oscura texturada. Circulaciones comunes: alfombra modular taupe. Piscina y gimnasio: piedra técnica antideslizante y piso deportivo. Sin mármol brillante, pisos espejados ni superficies excesivamente oscuras.",
+    "wallsAndFinishes": "Departamento: pintura blanco cálido y taupe. Living: panel puntual de nogal. Dormitorios: cabeceros tapizados y paneles de madera. Cocina: frente de piedra sinterizada gris. Baños: porcelanato grafito y piedra oscura. Lobby: hormigón claro, nogal y metal grafito. Piscina: microcemento gris y superficies resistentes a humedad. Sin boiserie ornamental, dorados, espejos decorativos excesivos ni revestimientos de lujo escenográfico.",
+    "joinery": "Ventanas de aluminio grafito con doble vidrio y control solar. Grandes paños fijos y hojas practicables controladas. Puerta principal de seguridad enchapada en nogal. Puertas interiores lisas del mismo tono. Placares empotrados de piso a techo. Muebles de cocina integrados en nogal y gris. Mamparas transparentes con perfilería grafito. Herrajes de acero satinado. Cortinas dobles taupe y blackout en dormitorios.",
+    "furniture": "Dormitorio principal con cama king. Dormitorios secundarios configurados para cuatro huéspedes. Cabeceros integrados de nogal y taupe. Mesas de luz suspendidas. Sofá amplio y modular para seis personas. Sillones compactos azul petróleo. Mesa de comedor para seis. Cocina completa con isla y banquetas. Escritorio residencial integrado. Muebles de guardado suficientes para estadías prolongadas. Mobiliario común de piscina y gimnasio sobrio y funcional. Sin muebles escultóricos imprácticos ni ambientes vacíos de residencia de exhibición.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz natural aprovechada mediante los grandes paños vidriados. Iluminación indirecta en living y cabeceros. Apliques grafito junto a las camas. Colgantes sobrios sobre comedor e isla. Luz lineal bajo alacenas. Iluminación uniforme en baños y placares. Piscina con luz blanca cálida y reflejos controlados. Sin arañas ornamentales, neón ni iluminación azul intensa.",
+    "continuityElements": [
+      "Torre de veinte pisos con basamento de doble altura.",
+      "Vidrio, hormigón claro y perfilería grafito.",
+      "Nogal en pisos, puertas y mobiliario fijo.",
+      "Taupe en textiles y tapizados.",
+      "Azul petróleo como acento.",
+      "Acero satinado en herrajes y detalles.",
+      "Equipamiento residencial completo para seis huéspedes.",
+      "Integración equilibrada entre privacidad del departamento, piscina, gimnasio y servicios hoteleros."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Torre y acceso frente al agua",
+        "brief": "Mostrar vidrio, hormigón y el basamento de doble altura."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal panorámico",
+        "brief": "Mostrar nogal y textiles taupe."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar la ducha de piedra oscura."
+      },
+      {
+        "order": 4,
+        "title": "Living, comedor y cocina",
+        "brief": "Mostrar el equipamiento completo para seis huéspedes."
+      },
+      {
+        "order": 5,
+        "title": "Piscina climatizada",
+        "brief": "Mostrar la vista urbana y el gimnasio visible en segundo plano."
+      }
+    ]
+  }
+}

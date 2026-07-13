@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 25,
+  "name": "Departamento Recoleta",
+  "category": "apartment",
+  "location": {
+    "city": "Buenos Aires",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Residencia premium de dos dormitorios para hasta cuatro personas, ubicada en un edificio histórico de Recoleta. Debe transmitir amplitud, elegancia residencial y respeto por la arquitectura original; incorporando comodidades actuales sin parecer un palacio, un museo, un ambiente barroco ni una colección de antigüedades.",
+    "architecture": "Departamento dentro de un edificio de estilo francés restaurado de seis pisos. Fachada de piedra París con balcones de hierro negro. Acceso común de proporciones históricas conservadas. Ambientes con cielorrasos altos. Molduras y carpinterías originales restauradas. Grandes ventanas verticales orientadas hacia una calle o parque arbolado. Living y comedor conectados mediante una abertura amplia. Cocina contemporánea integrada de forma discreta. Dos dormitorios separados del área social. Balcón angosto pero utilizable. Instalaciones modernas incorporadas sin alterar las proporciones. Sin dorados dominantes, columnas agregadas, muebles palaciegos ni acumulación de objetos antiguos.",
+    "palette": [
+      "marfil",
+      "piedra París",
+      "roble en espiga",
+      "verde bosque apagado",
+      "azul grisáceo",
+      "latón envejecido",
+      "blanco cálido como tono complementario"
+    ],
+    "floors": "Living, comedor y dormitorios: parquet de roble colocado en espiga. Acceso interior: mosaico restaurado o piedra clara mate. Cocina: piedra sinterizada color marfil. Baños: porcelanato símil mármol con acabado mate. Ducha: mosaico gris claro antideslizante. Balcón: baldosa exterior gris piedra. Sin mármol espejado, porcelanato brillante ni pisos envejecidos artificialmente.",
+    "wallsAndFinishes": "Muros generales en marfil mate. Molduras originales restauradas en el mismo tono. Cabeceros tapizados en verde bosque o azul grisáceo. Cocina con frente de piedra clara y paneles de roble. Baños con revestimiento símil mármol mate. Paños puntuales en azul grisáceo. Obras gráficas contemporáneas de escala contenida. Sin empapelados recargados, frescos, dorados, retratos históricos ni ornamentación barroca agregada.",
+    "joinery": "Ventanas altas de madera restaurada. Doble vidrio incorporado sin alterar las proporciones. Puertas interiores originales restauradas en marfil. Placares integrados con frentes clásicos simplificados. Muebles de cocina en roble y marfil. Mamparas transparentes con perfilería de latón oscuro. Herrajes de latón envejecido. Balcones de hierro negro restaurado. Cortinas de lino blanco cálido y blackout azul grisáceo.",
+    "furniture": "Dormitorio principal con cama king. Segundo dormitorio con dos camas individuales o configuración queen. Cabeceros tapizados de proporción contemporánea. Mesas de luz de roble con detalles de latón. Sofá amplio en beige o gris cálido. Sillones compactos verde bosque. Mesa de comedor para cuatro personas. Cocina completa con isla o península discreta. Escritorio pequeño de líneas clásicas simplificadas. Mobiliario de balcón de hierro negro y textiles claros. Sin reproducciones Luis XV, terciopelo dominante ni vitrinas cargadas de antigüedades.",
+    "lighting": "Temperatura cálida de 2700 K. Araña contemporánea sobria en living o comedor. Iluminación indirecta para destacar molduras. Apliques de latón envejecido junto a las camas. Lámparas de mesa con pantallas de lino. Colgantes simples sobre comedor y cocina. Luz frontal integrada en baños. Apliques discretos en el balcón. Sin candelabros palaciegos, iluminación teatral ni exceso de lámparas ornamentales.",
+    "continuityElements": [
+      "Fachada histórica de piedra París.",
+      "Cielorrasos altos y molduras restauradas.",
+      "Parquet de roble en espiga.",
+      "Ventanas verticales y puertas originales.",
+      "Verde bosque y azul grisáceo en textiles.",
+      "Latón envejecido en herrajes y luminarias.",
+      "Mobiliario contemporáneo-clásico de proporciones contenidas.",
+      "Relación constante entre interiores elegantes, balcón de hierro y entorno arbolado."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada histórica y balcón",
+        "brief": "Mostrar la fachada histórica de piedra París y el balcón de hierro negro."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar el dormitorio de cielorraso alto con vista hacia el entorno arbolado."
+      },
+      {
+        "order": 3,
+        "title": "Baño actualizado",
+        "brief": "Mostrar el revestimiento símil mármol mate y los detalles contemporáneos."
+      },
+      {
+        "order": 4,
+        "title": "Living, comedor y cocina",
+        "brief": "Mostrar el living-comedor conectado con la cocina contemporánea."
+      },
+      {
+        "order": 5,
+        "title": "Balcón de hierro negro",
+        "brief": "Mostrar el balcón equipado y orientado hacia una calle o parque arbolado."
+      }
+    ]
+  }
+}

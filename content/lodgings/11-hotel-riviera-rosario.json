@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 11,
+  "name": "Hotel Riviera Rosario",
+  "category": "hotel",
+  "location": {
+    "city": "Rosario",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel boutique superior frente al río Paraná, orientado a parejas, viajeros de diseño y estadías gastronómicas. Debe transmitir calma, atención personalizada y una relación constante con el río; sin parecer un hotel corporativo convencional, una torre de lujo ostentosa ni un resort.",
+    "architecture": "Edificio boutique de siete pisos frente al río. Volumen vertical esbelto de hormigón gris. Fachada modulada mediante aletas verticales de bronce envejecido. Grandes ventanas protegidas y orientadas hacia el Paraná. Basamento con atrio de doble altura. Acceso retranqueado y claramente legible. Restaurante conectado visualmente con la costa. Terraza-bar en la azotea. Balcones puntuales integrados en la modulación. Núcleo de servicios concentrado para liberar las vistas. Instalaciones y equipos ocultos desde la calle y la terraza. Sin muro cortina corporativo, arquitectura monumental ni lenguaje de complejo vacacional.",
+    "palette": [
+      "gris hormigón",
+      "bronce envejecido",
+      "nogal oscuro",
+      "verde río",
+      "beige lino",
+      "negro mate",
+      "gris verdoso como tono complementario"
+    ],
+    "floors": "Acceso y atrio: piedra gris de gran formato con acabado mate. Lobby y restaurante: madera de ingeniería en nogal oscuro. Habitaciones: piso de madera tono nogal. Circulaciones: alfombra modular gris con acentos verde río. Baños: porcelanato gris claro antideslizante. Duchas: mosaico verde grisáceo. Terraza: piedra sinterizada oscura apta para exterior. Sectores de servicio: porcelanato técnico de alta resistencia.",
+    "wallsAndFinishes": "Atrio: hormigón visto controlado, nogal y paños de bronce envejecido. Lobby: pintura gris cálido, paneles de madera y textiles beige lino. Habitaciones: muros gris claro con cabeceros de nogal y tapizados verde río. Baños: porcelanato claro y mosaico verde grisáceo. Restaurante: nogal, revoque mineral gris y superficies acústicas. Rooftop: piedra oscura, metal negro y vegetación resistente al viento. Sin gigantografías del río, decoración náutica ni acabados dorados brillantes.",
+    "joinery": "Ventanas de aluminio negro mate con doble vidrio. Aletas exteriores metálicas en bronce envejecido. Puertas interiores enchapadas en nogal oscuro. Placares y muebles fijos integrados en el mismo tono. Mamparas transparentes con perfilería negra. Puertas vidriadas hacia restaurante y terraza. Herrajes de bronce oscuro. Cortinas dobles en beige lino y gris verdoso.",
+    "furniture": "Camas king o twin orientadas hacia las ventanas. Cabeceros de nogal con paneles tapizados beige. Mesas de luz suspendidas. Sillón boutique tapizado en verde río. Escritorio compacto con base metálica negra. Sofás bajos en lino beige y gris cálido. Mesas auxiliares de piedra y nogal. Restaurante con sillas de respaldo curvo y mesas de madera oscura. Rooftop con mobiliario bajo, resistente al viento y sin obstruir las vistas. Sin escritorios ejecutivos pesados, mobiliario de resort ni piezas decorativas ostentosas.",
+    "lighting": "Temperatura cálida de 2700 K en habitaciones y gastronomía. Luz indirecta integrada en el atrio. Apliques de bronce oscuro junto a las camas. Iluminación puntual sobre texturas de hormigón y nogal. Colgantes escultóricos sobrios en restaurante. Luz integrada bajo barras y mobiliario fijo. Balizas bajas en la terraza. Fachada iluminada suavemente entre las aletas verticales. Sin luces de colores, cartelería luminosa dominante ni contaminación lumínica hacia el río.",
+    "continuityElements": [
+      "Volumen esbelto de hormigón gris.",
+      "Aletas verticales de bronce envejecido.",
+      "Carpinterías negras de grandes paños.",
+      "Nogal oscuro en habitaciones y espacios gastronómicos.",
+      "Verde río en textiles, mosaicos y vegetación.",
+      "Beige lino en tapizados y cortinas.",
+      "Mobiliario boutique de líneas contenidas.",
+      "Vistas al Paraná presentes sin recurrir a decoración temática."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada frente al río y atrio de acceso",
+        "brief": "Mostrar hormigón y aletas de bronce en la fachada frente al río y el atrio de acceso."
+      },
+      {
+        "order": 2,
+        "title": "Habitación boutique",
+        "brief": "Mostrar una gran ventana, nogal y textiles verde río."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar porcelanato gris y mosaico verde grisáceo."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante de autor",
+        "brief": "Mostrar madera oscura y relación visual con el Paraná."
+      },
+      {
+        "order": 5,
+        "title": "Terraza-bar al atardecer",
+        "brief": "Mostrar mobiliario bajo y vista abierta al río."
+      }
+    ]
+  }
+}

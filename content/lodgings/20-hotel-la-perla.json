@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 20,
+  "name": "Hotel La Perla",
+  "category": "hotel",
+  "location": {
+    "city": "Mar del Plata",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel costero superior de ambiente cálido y relajado, ubicado en el barrio La Perla de Mar del Plata, sobre el frente marítimo. Orientado a parejas, familias y estadías de bienestar. Debe sentirse elegante, cercano y vinculado con la arquitectura costera de mediados del siglo XX; sin confundirse con Playa Grande, Avenida Colón ni con la identidad luminosa y contemporánea del Hotel Mar del Plata.",
+    "architecture": "Edificio costero curvo de nueve pisos. Fachada renovada que conserva su geometría horizontal. Balcones semicirculares orientados hacia el mar. Basamento revestido en cuarcita clara. Revoque exterior color crema. Carpinterías resistentes al ambiente marino. Acceso protegido mediante una marquesina de bronce oscuro. Planta baja vidriada y cálida, conectada con lobby y restaurante. Piscina climatizada y spa ubicados en un patio protegido del viento. Terrazas con reparo parcial y vegetación costera controlada. Dirección conceptual coherente con La Perla: Bv. Marítimo Patricio Peralta Ramos 1250. Instalaciones técnicas ocultas. Sin lenguaje tropical, decoración náutica literal ni referencias visuales a Playa Grande.",
+    "palette": [
+      "crema",
+      "cuarcita clara",
+      "verde mar",
+      "coral suave",
+      "roble miel",
+      "bronce oscuro",
+      "beige arena como tono complementario"
+    ],
+    "floors": "Acceso y lobby: cuarcita clara con acabado mate. Restaurante: terrazo crema con agregados suaves. Habitaciones: madera de ingeniería tono roble miel. Circulaciones: alfombra modular beige con detalles verde mar. Baños: porcelanato crema antideslizante. Duchas: piezas coral suave de acabado mate. Piscina y spa: piedra clara antideslizante. Balcones: porcelanato exterior arena resistente a salinidad y humedad.",
+    "wallsAndFinishes": "Lobby: revoque crema, paneles curvos de roble miel y cuarcita. Habitaciones: pintura beige cálido con cabeceros de madera. Baños: porcelanato crema y paños coral suave. Restaurante: terrazo, roble y textiles verde mar. Piscina: microcemento claro, piedra y superficies resistentes a la humedad. Spa: revestimientos arena y madera tratada. Formas curvas utilizadas con moderación como referencia al edificio. Sin anclas, timones, sogas, murales oceánicos ni superficies brillantes de estética náutica.",
+    "joinery": "Ventanas de aluminio color bronce oscuro con protección anticorrosiva. Doble vidrio laminado apto para viento costero. Puertas corredizas hacia balcones semicirculares. Barandas transparentes con fijaciones discretas. Puertas interiores enchapadas en roble miel. Placares y muebles fijos con cantos redondeados. Mamparas transparentes con perfilería bronce. Herrajes de bronce oscuro mate. Cortinas dobles en crema y verde mar apagado.",
+    "furniture": "Camas king o twin orientadas hacia los balcones. Cabeceros curvos de roble miel con tapizado beige. Mesas de luz suspendidas. Sillones compactos verde mar. Banquetas o butacas coral suave utilizadas como acento. Escritorios livianos con esquinas redondeadas. Sofás bajos y curvos en lobby. Restaurante con mesas redondas de roble y sillas tapizadas. Reposeras sobrias en piscina y spa. Referencias mid-century cálidas sin recreación retro literal. Sin ratán tropical dominante, muebles de crucero ni piezas de lujo ostentoso.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta integrada en paneles curvos. Apliques de bronce oscuro junto a las camas. Lámparas opalinas de inspiración mid-century. Colgantes cálidos sobre las mesas del restaurante. Iluminación frontal integrada en espejos. Luz difusa en piscina y spa. Balizas bajas protegidas del ambiente marino. Sin iluminación azul intensa, neón retro ni luces de colores.",
+    "continuityElements": [
+      "Volumetría curva y balcones semicirculares.",
+      "Revoque crema y cuarcita clara.",
+      "Roble miel en cabeceros, puertas y mobiliario fijo.",
+      "Verde mar en textiles y tapizados.",
+      "Coral suave en baños y acentos.",
+      "Carpinterías y luminarias de bronce oscuro.",
+      "Referencias mid-century cálidas y contenidas.",
+      "Materiales resistentes al viento, la humedad y la salinidad de La Perla."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada curva frente al mar en La Perla",
+        "brief": "Mostrar los balcones semicirculares y el basamento de cuarcita."
+      },
+      {
+        "order": 2,
+        "title": "Habitación con balcón semicircular",
+        "brief": "Mostrar roble miel y textiles verde mar."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar una composición crema con ducha revestida en coral suave."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante costero cálido",
+        "brief": "Mostrar terrazo, roble y mobiliario curvo."
+      },
+      {
+        "order": 5,
+        "title": "Piscina climatizada y spa",
+        "brief": "Mostrar ambos espacios protegidos del viento mediante el patio interior."
+      }
+    ]
+  }
+}

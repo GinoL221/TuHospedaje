@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 7,
+  "name": "Cabaña El Mirador",
+  "category": "cabin",
+  "location": {
+    "city": "Salta",
+    "country": "Argentina"
+  },
+  "capacity": 5,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Refugio de categoría media-alta para hasta cinco personas, implantado en una ladera de Salta con vistas abiertas al valle. Debe sentirse artesanal, fresco y conectado con el paisaje seco; sin parecer una réplica colonial, una estancia, una casa suburbana ni una escenografía folclórica.",
+    "architecture": "Cabaña alargada de una sola planta. Implantación paralela a las curvas de nivel. Muros de revoque mineral color arena. Basamento y paños principales de piedra roja regional. Galería profunda orientada hacia el valle. Cubierta inclinada de baja pendiente y terminación oscura. Aberturas profundas protegidas mediante postigos de madera. Estar, cocina y comedor integrados bajo un cielorraso continuo. Dormitorios ubicados en los extremos para dar privacidad. Ventilación cruzada y protección solar pasiva. Fogón exterior integrado al terreno. Hamaca ubicada bajo la galería o entre árboles existentes. Instalaciones técnicas ocultas. Sin arcos decorativos, columnas coloniales, tejas agregadas ni ornamentos folclóricos.",
+    "palette": [
+      "arena",
+      "terracota",
+      "algarrobo oscuro",
+      "verde oliva seco",
+      "negro mate",
+      "piedra roja",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Acceso y galería: piedra roja irregular con acabado antideslizante. Estar, cocina y dormitorios: microcemento color arena. Baños: microcemento gris cálido antideslizante. Duchas: piedra roja texturada. Fogón: grava compactada y lajas naturales. Senderos: suelo estabilizado y piedra local. Sin cerámicos brillantes ni pisos rústicos envejecidos artificialmente.",
+    "wallsAndFinishes": "Interior: revoque mineral arena con textura suave. Estar: paño de piedra roja junto al hogar. Dormitorios: muros claros y cabeceros de algarrobo. Cocina: frente de piedra sinterizada terracota apagada. Baños: microcemento claro y piedra roja en ducha. Exterior: revoque arena, piedra regional y madera oscura. Cielorrasos interiores de tablas de madera. Sin murales regionales, guardas pintadas ni objetos folclóricos usados como revestimiento.",
+    "joinery": "Ventanas de madera oscura con postigos. Aberturas profundas para controlar la radiación solar. Puerta principal de algarrobo macizo. Puertas interiores lisas de madera. Placares integrados con frentes del mismo tono. Mamparas transparentes con perfilería negra. Herrajes negros forjados de diseño simple. Cortinas de lino beige y verde oliva seco.",
+    "furniture": "Cama principal orientada hacia una abertura profunda con vista al valle. Segundo dormitorio flexible para dos huéspedes. Cabeceros bajos de algarrobo. Mesas de luz artesanales de líneas simples. Sofá beige lino y sillones terracota apagado. Mesa familiar de madera para cinco personas. Cocina integrada con muebles de algarrobo. Banco largo bajo la galería. Mobiliario exterior sobrio y resistente al sol. Hamaca de tejido natural sin estampados. Sin muebles coloniales recargados, cuero crudo dominante ni decoración gauchesca.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta sobre cielorrasos de madera. Apliques negros junto a las camas. Colgantes artesanales sobrios sobre mesa y cocina. Iluminación integrada bajo alacenas. Balizas bajas en galería y senderos. Fogón iluminado únicamente mediante luz cálida contenida. Atardecer y sombras profundas como parte central de la atmósfera. Sin faroles coloniales exagerados, guirnaldas ni focos de colores.",
+    "continuityElements": [
+      "Volumen alargado de una sola planta.",
+      "Revoque mineral color arena.",
+      "Piedra roja regional en basamento, hogar y baño.",
+      "Algarrobo oscuro en carpinterías, cielorrasos y mobiliario.",
+      "Terracota apagada en textiles y superficies puntuales.",
+      "Verde oliva seco como acento.",
+      "Galería profunda y postigos como protección climática.",
+      "Relación constante con la ladera, el valle y la vegetación seca."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior sobre la ladera",
+        "brief": "Mostrar la galería profunda y la vista al valle."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio con vista al valle",
+        "brief": "Mostrar la abertura profunda, los postigos y el mobiliario de algarrobo."
+      },
+      {
+        "order": 3,
+        "title": "Baño de microcemento",
+        "brief": "Mostrar la ducha revestida en piedra roja."
+      },
+      {
+        "order": 4,
+        "title": "Estar y cocina integrados",
+        "brief": "Mostrar los espacios bajo el cielorraso continuo de madera."
+      },
+      {
+        "order": 5,
+        "title": "Fogón al atardecer",
+        "brief": "Mostrar la hamaca y la misma cabaña visible en segundo plano."
+      }
+    ]
+  }
+}

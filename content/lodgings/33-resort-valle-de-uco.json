@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 33,
+  "name": "Resort Valle de Uco",
+  "category": "resort",
+  "location": {
+    "city": "Tunuyán",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Resort premium para hasta cuatro huéspedes por unidad, integrado en un viñedo productivo del Valle de Uco. Debe centrar el paisaje, la gastronomía y la elaboración real de vino; sin parecer una bodega industrial, un hotel temático ni depender de barricas, racimos o botellas como decoración.",
+    "architecture": "Conjunto de pabellones bajos de una sola planta. Implantación alineada con las hileras de vides. Volúmenes de piedra local, tierra apisonada y hormigón arena. Cubiertas planas o de pendiente mínima. Grandes aleros para controlar el sol. Habitaciones con terrazas privadas. Pabellón central con recepción, restaurante y sala de degustación. Bodega productiva semienterrada. Conexión controlada entre espacios de huéspedes y producción. Piscina infinita orientada hacia los Andes. Senderos peatonales entre jardines y viñedos. Instalaciones productivas y técnicas ordenadas. Sin torres, arquitectura fabril dominante, barricas decorativas ni ornamentación basada en uvas.",
+    "palette": [
+      "arena",
+      "gris piedra",
+      "roble tostado",
+      "verde vid",
+      "borgoña profundo",
+      "acero corten",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Pabellón central: piedra local de gran formato. Habitaciones: madera de ingeniería tono roble tostado. Baños: microcemento arena antideslizante. Duchas: piedra gris texturada. Restaurante y degustación: hormigón pulido mate. Bodega: pavimento técnico mineral. Terrazas: piedra clara antideslizante. Piscina: piedra atérmica gris arena.",
+    "wallsAndFinishes": "Pabellones: tierra apisonada, piedra local y hormigón arena. Habitaciones: revoque mineral claro y paneles de roble. Baños: microcemento y acentos borgoña mate. Restaurante: piedra, madera y superficies acústicas. Sala de degustación: muros minerales y guardado de botellas integrado. Bodega: terminaciones técnicas limpias y visibles solo donde explican la producción. Sin murales de viñedos, tapas de barricas, corchos ni etiquetas ampliadas como decoración.",
+    "joinery": "Ventanas de aluminio grafito con control solar. Grandes puertas corredizas hacia terrazas privadas. Celosías de acero corten. Puertas interiores enchapadas en roble tostado. Placares integrados y amplios. Muebles fijos de restaurante en madera y piedra. Mamparas transparentes con perfilería oscura. Herrajes en corten sellado o bronce oscuro. Cortinas de lino beige y blackout verde grisáceo.",
+    "furniture": "Habitación con cama king orientada hacia viñedos y Andes. Configuración secundaria para dos huéspedes. Cabeceros de roble y lino. Sofá bajo beige. Sillones verde vid. Mesa privada para cuatro personas. Mobiliario de terraza sobrio y resistente. Restaurante con mesas de roble y sillas tapizadas. Sala de degustación con mesa comunitaria de gran formato. Reposeras bajas junto a la piscina. Sin muebles fabricados con barricas ni estética de restaurante temático.",
+    "lighting": "Temperatura cálida de 2700 K. Luz natural controlada mediante aleros y celosías. Iluminación indirecta sobre tierra, piedra y madera. Apliques de bronce oscuro junto a las camas. Colgantes sobrios sobre mesas de restaurante y degustación. Luz técnica precisa en la bodega. Balizas bajas en senderos. Piscina iluminada en blanco cálido. Sin lámparas hechas con botellas, luces borgoña ni escenografía de cava.",
+    "continuityElements": [
+      "Pabellones bajos alineados con las vides.",
+      "Piedra local y tierra apisonada.",
+      "Hormigón color arena.",
+      "Roble tostado en habitaciones y mobiliario.",
+      "Verde vid y borgoña profundo como acentos.",
+      "Acero corten en celosías y detalles.",
+      "Bodega semienterrada vinculada con restaurante y degustación.",
+      "Orientación constante hacia viñedos, paisaje y cordillera de los Andes."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Pabellones entre viñedos",
+        "brief": "Mostrar los pabellones entre viñedos con la cordillera de los Andes al fondo."
+      },
+      {
+        "order": 2,
+        "title": "Habitación y terraza privada",
+        "brief": "Mostrar la habitación conectada con una terraza privada."
+      },
+      {
+        "order": 3,
+        "title": "Baño mineral",
+        "brief": "Mostrar el baño mineral con acento borgoña mate."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante, degustación y bodega",
+        "brief": "Mostrar el restaurante y la sala de degustación vinculados con la bodega productiva."
+      },
+      {
+        "order": 5,
+        "title": "Piscina infinita y Andes",
+        "brief": "Mostrar la piscina infinita alineada visualmente con los Andes."
+      }
+    ]
+  }
+}

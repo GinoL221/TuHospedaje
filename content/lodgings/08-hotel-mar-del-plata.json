@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 8,
+  "name": "Hotel Mar del Plata",
+  "category": "hotel",
+  "location": {
+    "city": "Mar del Plata",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel costero superior orientado a parejas, familias y viajeros que buscan vistas abiertas al Atlántico, piscina climatizada y servicios de bienestar. Debe sentirse luminoso, amplio y contemporáneo; sin parecer un resort tropical, un hotel de lujo ostentoso ni un espacio decorado con motivos náuticos literales.",
+    "architecture": "Edificio costero escalonado de doce pisos. Volúmenes retranqueados para generar balcones y terrazas orientadas al mar. Basamento transparente conectado con lobby y restaurante. Fachada principal en blanco cálido y tonos perla. Barandas de vidrio con perfilería grafito. Carpinterías preparadas para viento, humedad y salinidad. Balcones semicubiertos para proteger las habitaciones. Acceso urbano mediante una marquesina liviana. Piscina climatizada interior conectada visualmente con el spa. Restaurante abierto hacia el océano. Equipos e instalaciones protegidos de la exposición marina. Sin techos de paja, palmeras decorativas, ojos de buey ni ornamentación basada en barcos.",
+    "palette": [
+      "blanco cálido",
+      "perla",
+      "azul Atlántico",
+      "arena",
+      "roble claro",
+      "grafito",
+      "gris azulado como tono complementario"
+    ],
+    "floors": "Acceso y lobby: porcelanato gran formato color arena. Restaurante: porcelanato perla con sectores de roble claro. Habitaciones: madera de ingeniería en roble claro. Circulaciones: alfombra modular gris azulada. Baños: porcelanato antideslizante color arena. Duchas: mosaico azul grisáceo mate. Piscina y spa: piedra sinterizada clara antideslizante. Balcones: porcelanato exterior gris perla resistente al ambiente marino.",
+    "wallsAndFinishes": "Lobby: blanco cálido, paneles de roble claro y piedra arena. Habitaciones: pintura perla mate con cabeceros de madera y textiles azul Atlántico. Baños: porcelanato claro y mosaico azul grisáceo en ducha. Restaurante: revoque blanco cálido, roble y superficies acústicas arena. Piscina: piedra clara, microcemento perla y paños resistentes a la humedad. Spa: microcemento arena y madera tratada. Sin superficies nacaradas brillantes, sogas decorativas, anclas, timones ni murales marinos.",
+    "joinery": "Ventanas de aluminio grafito con protección anticorrosiva. Doble vidrio laminado apto para presión de viento. Puertas de balcón corredizas de grandes paños. Barandas transparentes con fijaciones discretas. Puertas interiores enchapadas en roble claro. Placares y muebles fijos del mismo tono. Mamparas transparentes con perfilería grafito. Herrajes de acero inoxidable satinado. Cortinas dobles en blanco cálido y gris azulado.",
+    "furniture": "Camas king o twin orientadas hacia la vista. Cabeceros continuos de roble claro. Mesas de luz suspendidas. Sillón compacto tapizado en azul Atlántico. Escritorio liviano con base grafito. Sofás del lobby en arena, perla y azul apagado. Restaurante con mesas de roble y sillas tapizadas resistentes al uso intensivo. Mobiliario exterior de aluminio grafito y textiles técnicos claros. Reposeras sobrias junto a la piscina. Sin muebles tropicales, ratán dominante ni decoración de crucero.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Aprovechamiento prioritario de la luz natural y el reflejo del océano. Luz indirecta en cielorrasos y cabeceros. Apliques grafito junto a las camas. Colgantes de vidrio opalino en lobby y restaurante. Iluminación frontal integrada en espejos. Luz difusa y cálida en piscina y spa. Iluminación exterior protegida contra humedad y salinidad. Sin iluminación azul intensa, efectos acuáticos de colores ni luz blanca fría dominante.",
+    "continuityElements": [
+      "Volumetría escalonada con balcones orientados al Atlántico.",
+      "Blanco cálido y perla en la envolvente y los interiores.",
+      "Azul Atlántico en textiles y acentos.",
+      "Roble claro en cabeceros, puertas y mobiliario fijo.",
+      "Carpinterías y perfiles grafito.",
+      "Mosaico azul grisáceo en los baños.",
+      "Materiales resistentes al viento, la humedad y la salinidad.",
+      "Relación visual constante con el océano, sin decoración náutica literal."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada costera escalonada",
+        "brief": "Mostrar los balcones, el basamento vidriado y la presencia del Atlántico."
+      },
+      {
+        "order": 2,
+        "title": "Habitación con vista al mar",
+        "brief": "Mostrar la cama orientada al mar y el balcón protegido."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar porcelanato arena y ducha de mosaico azul grisáceo."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante frente al océano",
+        "brief": "Mostrar un ambiente luminoso con roble claro y vista directa al océano."
+      },
+      {
+        "order": 5,
+        "title": "Piscina climatizada y spa",
+        "brief": "Mostrar la piscina interior conectada visualmente con el spa."
+      }
+    ]
+  }
+}

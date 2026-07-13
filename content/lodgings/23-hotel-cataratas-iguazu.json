@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 23,
+  "name": "Hotel Cataratas Iguazú",
+  "category": "hotel",
+  "location": {
+    "city": "Puerto Iguazú",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel compacto de categoría alta integrado a la selva misionera, orientado a parejas, familias y visitantes de las Cataratas. Debe transmitir confort, sombra, humedad controlada y contacto constante con la vegetación; manteniendo una escala menor y más hotelera que Resort Iguazú Grand. No debe parecer un complejo de villas, un alojamiento all-inclusive, un parque temático ni mostrar vistas ficticias de las cataratas desde la propiedad.",
+    "architecture": "Conjunto de tres pisos dividido en volúmenes bajos. Implantación adaptada al terreno y a la vegetación existente. Circulaciones exteriores cubiertas. Basamento de piedra roja de Misiones. Muros de hormigón cálido y revoques color tierra. Estructuras y revestimientos puntuales de madera oscura. Grandes paños vidriados protegidos por aleros profundos. Patios y vacíos que permiten conservar árboles. Restaurante abierto visualmente hacia el paisaje. Piscina infinita integrada al borde de la selva. Cubiertas preparadas para lluvias intensas. Instalaciones técnicas ocultas y correctamente ventiladas. Sin villas independientes, techos tropicales exagerados ni vistas inventadas de saltos de agua.",
+    "palette": [
+      "tierra roja",
+      "hormigón cálido",
+      "madera oscura",
+      "verde bosque",
+      "beige lino",
+      "grafito",
+      "verde mineral como tono complementario"
+    ],
+    "floors": "Acceso y lobby: piedra roja de Misiones con acabado antideslizante. Restaurante: porcelanato color tierra combinado con madera tratada. Habitaciones: porcelanato símil piedra, adecuado para humedad elevada. Circulaciones cubiertas: piedra rugosa de drenaje rápido. Baños: porcelanato mineral claro antideslizante. Duchas: mosaico verde mineral mate. Piscina: piedra oscura atérmica. Terrazas: deck técnico de madera tratada para clima húmedo.",
+    "wallsAndFinishes": "Lobby: hormigón cálido, piedra roja y paneles de madera oscura. Habitaciones: revoque mineral beige con cabeceros de madera. Baños: porcelanato claro y mosaico verde mineral. Restaurante: piedra, madera y cerramientos abiertos hacia la vegetación. Circulaciones: revoques resistentes a humedad y zócalos pétreos. Área de piscina: piedra oscura, hormigón cálido y vegetación preservada. Todos los acabados deben tolerar humedad, lluvias y mantenimiento intensivo. Sin murales de cataratas, animales decorativos, estética selvática artificial ni superficies plásticas brillantes.",
+    "joinery": "Ventanas de aluminio grafito con protección anticorrosiva. Vidrios con control solar. Mosquiteros integrados y discretos. Puertas exteriores protegidas por aleros. Puertas interiores enchapadas en madera oscura. Placares ventilados y elevados del piso. Mamparas transparentes con perfilería grafito. Herrajes negros satinados resistentes a humedad. Cortinas livianas beige y sistemas blackout verde oscuro.",
+    "furniture": "Camas king o twin orientadas hacia la vegetación. Cabeceros de madera oscura con paneles beige. Mesas de luz suspendidas. Sillones compactos tapizados en verde bosque. Bancos elevados para equipaje. Escritorios livianos con bases grafito. Sofás del lobby en beige lino y verde apagado. Restaurante con mesas de madera y sillas de fibras técnicas. Mobiliario exterior resistente a lluvia y radiación solar. Reposeras oscuras y contenidas junto a la piscina. Sin muebles coloniales pesados, decoración safari ni piezas de resort all-inclusive.",
+    "lighting": "Temperatura cálida de 2700 K. Aprovechamiento de luz natural filtrada por la vegetación. Iluminación indirecta bajo aleros y pasarelas. Apliques negros junto a las camas. Luz integrada en cabeceros y muebles. Colgantes de fibras técnicas sobrias en el restaurante. Balizas bajas en circulaciones exteriores. Piscina iluminada en blanco cálido y con baja intensidad. Sin focos de colores, iluminación escénica de selva ni contaminación lumínica.",
+    "continuityElements": [
+      "Volúmenes bajos de tres pisos entre la vegetación.",
+      "Circulaciones exteriores cubiertas.",
+      "Piedra roja de Misiones.",
+      "Hormigón cálido y revoques color tierra.",
+      "Madera oscura en revestimientos y mobiliario.",
+      "Verde bosque y beige lino en textiles.",
+      "Materiales preparados para humedad y lluvia intensa.",
+      "Contacto visual con la selva sin vistas ficticias de las cataratas."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior entre la vegetación",
+        "brief": "Mostrar los volúmenes bajos y las pasarelas cubiertas entre la vegetación."
+      },
+      {
+        "order": 2,
+        "title": "Habitación hacia la selva",
+        "brief": "Mostrar una gran abertura orientada hacia la selva."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado mineral",
+        "brief": "Mostrar porcelanato mineral y mosaico verde."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante regional",
+        "brief": "Mostrar el restaurante abierto visualmente al paisaje."
+      },
+      {
+        "order": 5,
+        "title": "Piscina infinita junto a la selva",
+        "brief": "Mostrar la piscina integrada al borde de la selva, sin mostrar cataratas."
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 31,
+  "name": "Resort Iguazú Grand",
+  "category": "resort",
+  "location": {
+    "city": "Puerto Iguazú",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Resort de lujo para hasta cuatro huéspedes por villa, integrado profundamente en la selva de Puerto Iguazú. Debe sentirse exclusivo, amplio y preparado para estadías con servicios completos; superando claramente la escala del Hotel Cataratas mediante villas independientes, spa y áreas comunes mayores. No debe parecer un parque temático tropical ni mostrar vistas inventadas de las cataratas.",
+    "architecture": "Conjunto de villas privadas de una sola planta. Pabellón central independiente con recepción, lounge, restaurante y bar. Pabellón de spa conectado con la piscina. Circulaciones mediante pasarelas cubiertas. Implantación adaptada al terreno y a los árboles existentes. Basamentos de piedra roja profunda. Muros de hormigón color arena. Revestimientos y celosías de madera oscura. Cubiertas amplias preparadas para lluvias intensas. Grandes paños vidriados protegidos por aleros. Patios privados en cada villa. Piscina infinita integrada al borde de la vegetación. Instalaciones técnicas ocultas y correctamente ventiladas. Sin edificios altos, palmeras decorativas, techos tropicales exagerados ni vistas ficticias de saltos de agua.",
+    "palette": [
+      "tierra roja profunda",
+      "hormigón arena",
+      "madera ébano",
+      "verde selva oscuro",
+      "beige lino",
+      "bronce envejecido",
+      "grafito como tono complementario"
+    ],
+    "floors": "Pabellón central: piedra roja y hormigón pulido mate. Villas: madera de ingeniería oscura y porcelanato mineral. Baños: piedra clara antideslizante. Duchas: piedra verde grisácea texturada. Patios privados: deck de madera tratada. Pasarelas: piedra rugosa de drenaje rápido. Spa y piscina: piedra oscura atérmica. Restaurante: porcelanato tierra combinado con madera.",
+    "wallsAndFinishes": "Pabellón central: hormigón arena, piedra roja y paneles de ébano. Villas: revoque mineral beige y cabeceros de madera oscura. Baños: piedra clara, microcemento y piedra verde en áreas húmedas. Restaurante y bar: madera, piedra y superficies acústicas color tierra. Spa: microcemento cálido y revestimientos resistentes a humedad. Exteriores preparados para lluvias y alta humedad. Sin murales de cataratas, animales decorativos, motivos selváticos artificiales ni superficies plásticas visibles.",
+    "joinery": "Ventanas de aluminio grafito con control solar. Grandes puertas corredizas hacia patios privados. Celosías exteriores de madera oscura. Puertas de villa revestidas en ébano. Puertas interiores lisas del mismo tono. Placares amplios y ventilados. Mamparas transparentes con perfilería de bronce oscuro. Herrajes de bronce envejecido. Cortinas de lino beige y blackout verde oscuro.",
+    "furniture": "Villa con cama king orientada hacia el patio y la vegetación. Configuración secundaria para dos huéspedes. Cabeceros de madera oscura y lino. Sofá bajo y amplio en beige. Sillones verde selva. Mesa para cuatro personas. Mobiliario exterior privado y resistente a humedad. Restaurante con mesas de madera y sillas tapizadas. Lounge con piezas orgánicas de líneas contenidas. Reposeras sobrias junto a piscina y spa. Sin muebles safari, ratán tropical dominante ni decoración all-inclusive estridente.",
+    "lighting": "Temperatura cálida de 2700 K. Luz natural filtrada por vegetación y aleros. Iluminación indirecta sobre piedra y madera. Apliques de bronce junto a las camas. Colgantes orgánicos sobrios en restaurante y lounge. Balizas bajas en pasarelas. Luz difusa en spa. Piscina iluminada en blanco cálido. Sin focos de colores, antorchas escenográficas ni contaminación lumínica de la selva.",
+    "continuityElements": [
+      "Villas privadas de una sola planta.",
+      "Pabellones centrales conectados mediante pasarelas cubiertas.",
+      "Piedra roja profunda.",
+      "Hormigón color arena.",
+      "Madera ébano y carpinterías grafito.",
+      "Verde selva y beige lino en textiles.",
+      "Bronce envejecido en herrajes y luminarias.",
+      "Integración constante entre villas, patios, spa, piscina y vegetación sin vistas ficticias de cataratas."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Panorama del pabellón central y las villas",
+        "brief": "Mostrar el pabellón central y las villas entre la selva."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio de villa",
+        "brief": "Mostrar el dormitorio conectado con un patio privado."
+      },
+      {
+        "order": 3,
+        "title": "Baño de piedra",
+        "brief": "Mostrar la bañera y la ducha independiente."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante y bar",
+        "brief": "Mostrar ambos espacios con servicio completo."
+      },
+      {
+        "order": 5,
+        "title": "Piscina infinita y spa",
+        "brief": "Mostrar la piscina conectada visualmente con el pabellón de spa, integrada a la selva y sin vistas de cataratas."
+      }
+    ]
+  }
+}
