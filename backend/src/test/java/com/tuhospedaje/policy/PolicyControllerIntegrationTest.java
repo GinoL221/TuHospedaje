@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.dto.policy.PolicyDTO;
+import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
@@ -21,6 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -45,6 +49,9 @@ class PolicyControllerIntegrationTest {
     private PolicyRepository policyRepository;
 
     @Autowired
+    private LodgingRepository lodgingRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -58,6 +65,7 @@ class PolicyControllerIntegrationTest {
 
     private String adminAuthHeader;
     private String userAuthHeader;
+    private Long policyFixtureLodgingId;
 
     @BeforeEach
     void setUp() {
@@ -86,6 +94,11 @@ class PolicyControllerIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        if (policyFixtureLodgingId != null) {
+            lodgingRepository.deleteById(policyFixtureLodgingId);
+            lodgingRepository.flush();
+            policyFixtureLodgingId = null;
+        }
         // Seeded ratings and reservations reference users, so they must go first
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
@@ -240,8 +253,25 @@ class PolicyControllerIntegrationTest {
 
     @Test
     void shouldReturnBadRequestWhenDeletingPolicyReferencedByLodging() throws Exception {
+        Policy policy = new Policy();
+        policy.setName("PL-Referenced");
+        policy.setDescription("Referenced by a lodging");
+        policy.setIcon("fa-solid fa-link");
+        Policy savedPolicy = policyRepository.save(policy);
+
+        Lodging lodging = new Lodging();
+        lodging.setName("Policy reference lodging");
+        lodging.setDescription("Fixture for policy deletion constraint");
+        lodging.setAddress("123 Test Street");
+        lodging.setCity("Test City");
+        lodging.setCountry("Argentina");
+        lodging.setPhoneNumber("123456789");
+        lodging.setEmail("policy-reference-lodging@tuhospedaje.test");
+        lodging.setPolicies(Set.of(savedPolicy));
+        policyFixtureLodgingId = lodgingRepository.saveAndFlush(lodging).getId();
+
         Cookie csrfCookie = obtainCsrfCookie();
-        mockMvc.perform(delete("/api/policies/{id}", 1L)
+        mockMvc.perform(delete("/api/policies/{id}", savedPolicy.getId())
                         .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))

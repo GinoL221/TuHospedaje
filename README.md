@@ -92,6 +92,40 @@ cd backend
 ```
 > Disponible en `http://localhost:8080`
 
+#### Ciclo de vida del esquema
+
+Flyway aplica `db/migration/V1__baseline_schema.sql` en una base vacía y Hibernate valida el mapeo sin crear ni cambiar tablas. Los perfiles default y `prod` no cargan usuarios ni datos demo.
+
+1. Para un entorno nuevo o descartable, creá la base y ejecutá el backend: Flyway aplica V1 automáticamente.
+2. Para un cambio de esquema posterior, agregá una migración versionada nueva; nunca edites una migración ya aplicada.
+3. Para revertir un despliegue en una base descartable, revertí la configuración de la aplicación y recreá la base desde el proceso anterior.
+
+En producción, `DB_USERNAME`/`DB_PASSWORD` pertenecen a la cuenta de ejecución, sin permisos DDL. Flyway se ejecuta en cada inicio, por eso `DB_MIGRATION_USERNAME`/`DB_MIGRATION_PASSWORD` deben estar disponibles en cada inicio y reinicio para una cuenta distinta, limitada al DDL/DML necesario para migrar. Rotá esas credenciales periódicamente; no revoques ni deshabilites la cuenta después de una migración. El perfil `prod` falla al iniciar si faltan y no usa las credenciales de la aplicación como reemplazo.
+
+#### Adopción controlada de una base existente
+
+`baseline-on-migrate=false` sigue siendo el valor seguro. Una base no vacía creada por Hibernate requiere una adopción manual y planificada:
+
+1. Detené todas las instancias de la aplicación y bloqueá escrituras. Tomá un backup restaurable y verificá la restauración en un entorno aislado.
+2. Compará tablas, columnas, índices, claves y restricciones contra `V1__baseline_schema.sql`. Continuá únicamente si el esquema coincide exactamente y no hay una tabla `flyway_schema_history` parcial.
+3. Con una versión compatible de Flyway y credenciales administrativas temporales, creá una configuración efímera que no exponga la contraseña en los argumentos del proceso y ejecutá una sola vez:
+   ```bash
+   FLYWAY_CONF=$(mktemp)
+   chmod 600 "$FLYWAY_CONF"
+   trap 'rm -f "$FLYWAY_CONF"' EXIT
+   printf 'flyway.url=%s\nflyway.user=%s\nflyway.password=%s\nflyway.baselineVersion=1\nflyway.baselineDescription=existing schema adoption\n' \
+     "$DB_URL" "$DB_ADMIN_USER" "$DB_ADMIN_PASSWORD" >"$FLYWAY_CONF"
+   flyway -configFiles="$FLYWAY_CONF" baseline
+   rm -f "$FLYWAY_CONF"
+   trap - EXIT
+   ```
+4. Verificá que `flyway_schema_history` contenga un baseline exitoso en versión 1. Iniciá una instancia con las credenciales normales y confirmá que `migrate` no intenta ejecutar V1 y que Hibernate valida el esquema.
+5. Quitá las credenciales administrativas temporales y recién entonces reabrí escrituras.
+
+La frontera de rollback termina antes de ejecutar `baseline`: ante cualquier diferencia o error, no modifiques el esquema, restaurá el backup en una base nueva y volvé a la versión anterior de la aplicación. Después de registrar el baseline no borres ni edites manualmente `flyway_schema_history`; restaurá el backup completo para deshacer la adopción.
+
+MariaDB puede confirmar cada sentencia DDL aunque una migración completa falle. En una base nueva no descartable, ante un fallo de V1: detené todas las instancias y bloqueá escrituras; guardá los logs; inspeccioná `flyway_schema_history` y compará el esquema real con V1 sin ejecutar `repair` ni reintentar. Restaurá el backup verificado en una base nueva, o eliminá y recreá la base únicamente si confirmaste que no contiene datos que deban conservarse. Corregí la causa fuera de producción y ejecutá V1 desde cero sobre esa base restaurada o recreada. No habilites `baseline-on-migrate`: puede adoptar por accidente el esquema equivocado.
+
 ---
 
 ### Frontend (`/frontend`)
