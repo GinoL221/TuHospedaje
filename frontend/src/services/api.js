@@ -8,7 +8,11 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
 // Endpoints that legitimately return 401 for reasons unrelated to an
 // expired/missing session cookie (e.g. wrong credentials on login). These
 // must not trigger the global auth:unauthorized redirect.
-const AUTH_BOOTSTRAP_ENDPOINTS = new Set(["/auth/login", "/auth/register"]);
+const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/me",
+]);
 
 // Reads the XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository
 // (non-httpOnly by design, readable from JS) and URL-decodes its value —

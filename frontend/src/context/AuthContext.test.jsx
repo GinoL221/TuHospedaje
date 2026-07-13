@@ -88,6 +88,7 @@ describe("AuthContext - bootstrap on mount", () => {
     });
 
     expect(screen.getByTestId("user")).toHaveTextContent("no-user");
+    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
   });
 });
 

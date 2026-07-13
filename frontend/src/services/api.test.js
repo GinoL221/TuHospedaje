@@ -272,7 +272,7 @@ describe("api service - X-XSRF-TOKEN header", () => {
 });
 
 describe("api service - 401 unauthorized", () => {
-  it("dispatches auth:unauthorized and rejects with 'Sesión expirada' on any 401", async () => {
+  it("dispatches auth:unauthorized once for a protected API 401", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -283,6 +283,23 @@ describe("api service - 401 unauthorized", () => {
     expect(eventSpy).toHaveBeenCalledTimes(1);
     expect(eventSpy.mock.calls[0][0]).toBeInstanceOf(CustomEvent);
     expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
+
+    window.removeEventListener("auth:unauthorized", eventSpy);
+  });
+
+  it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: "No autenticado" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const eventSpy = vi.fn();
+    window.addEventListener("auth:unauthorized", eventSpy);
+
+    await expect(get("/auth/me")).rejects.toThrow("No autenticado");
+    expect(eventSpy).not.toHaveBeenCalled();
 
     window.removeEventListener("auth:unauthorized", eventSpy);
   });
