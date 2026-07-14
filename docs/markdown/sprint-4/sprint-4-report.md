@@ -67,6 +67,21 @@ Cierre de deuda técnica identificada durante el desarrollo del panel de adminis
 
 **Nota sobre paginación:** el Incremento 2 había documentado como deuda técnica controlada "migrar [alojamientos] a paginación por base de datos únicamente si la volumetría de producción lo requiere". El Incremento 3 resuelve esto específicamente para `/api/lodgings/search` (endpoint público, donde el filtrado en memoria de categorías múltiples ya era una ineficiencia medible), **no** para las tablas del panel de administración (`AdminLodgings` y el resto), que permanecen con paginación client-side por decisión explícita del Incremento 2 — volúmenes de datos bajos/medios en un contexto exclusivamente administrativo.
 
+### 1.4. Actualización posterior al reporte original
+
+Después del cierre de los tres incrementos anteriores, la rama `sprint-4` incorporó los siguientes cambios. Esta sección actualiza el estado vigente sin alterar la narración histórica de los incrementos 1 a 3:
+
+* `AdminLodgings` volvió a paginación, ordenamiento y búsqueda dirigidos por el servidor. Las tablas administrativas de Categorías, Características, Políticas y Usuarios conservan el esquema client-side.
+* `AdminReservations` incorporó consulta, filtrado, ordenamiento y paginación desde el servidor. La gestión de reservas continúa sin acciones administrativas de cancelación o reprogramación.
+* Se localizaron las respuestas restantes de `GlobalExceptionHandler`, se corrigió la configuración de ESLint para tests y se eliminó la deuda de lint registrada en el reporte original.
+* El workflow de CI quedó configurado para ejecutarse en pushes y pull requests de `main` y `sprint-4`. Esta actualización describe el alcance del workflow; no afirma el resultado de una ejecución remota específica.
+* Flyway pasó a administrar el ciclo de vida del esquema mediante una migración base. Hibernate valida el esquema y los datos de demostración se separaron en un seed de desarrollo versionado, descartable y de activación explícita.
+* Se aprobaron 38 identidades visuales canónicas, una por alojamiento, en `content/lodgings/`. Cada identidad define cinco escenas, por lo que queda una producción pendiente de 190 imágenes.
+
+#### Límite de integración de imágenes
+
+Los archivos JSON de `content/lodgings/` son la fuente canónica para construir prompts y verificar continuidad visual. La base de datos conserva únicamente la URL pública y el título de cada imagen mediante `lodging_images`; no almacena identidades, prompts ni archivos binarios. Las 190 URLs genéricas del seed de desarrollo son datos provisionales y deberán reemplazarse por URLs estables después de generar, revisar y publicar las imágenes canónicas.
+
 ## 2. Arquitectura del Sistema e Integración
 
 ### 2.1. Backend (Spring Boot + Spring Security 6)
@@ -239,11 +254,11 @@ src/
 
 ### 7.1. Cobertura Automatizada
 
-* **Backend — 284 tests, todos en verde** (JUnit 5 + Mockito, integración con MockMvc + Testcontainers/MariaDB 10.11). Incluye, entre otros:
+* **Backend — 284 tests en el cierre original; 325/325 en la verificación local posterior** (JUnit 5 + Mockito, integración con MockMvc + Testcontainers/MariaDB 10.11). Incluye, entre otros:
   - Incremento 1: `ReservationServiceImplTest`, `ReservationControllerIntegrationTest`, `ReservationOwnershipIntegrationTest` (5 escenarios IDOR), `ReservationConcurrencyTest`.
   - Incremento 2: `ReservationControllerIntegrationTest` — RBAC de `GET /api/reservations` (401/403/200) y ordenamiento `id DESC`.
   - Incremento 3: `LodgingDTOTest` (mapeo a DTOs tipados), `LodgingServiceImplTest`/`LodgingControllerIntegrationTest` (paginación, filtro multi-categoría, validación de `page`/`size`), `GlobalExceptionHandlerTest` (localización de los 4 handlers en scope), `ReservationControllerIntegrationTest` (localización del caso real de `ResourceNotFoundException`).
-* **Frontend — 276 tests, todos en verde** (Vitest + React Testing Library, 38 archivos). Incluye, entre otros:
+* **Frontend — 276 tests, todos en verde en el cierre original** (Vitest + React Testing Library, 38 archivos). No se registra aquí un total posterior porque no existe evidencia exacta equivalente en esta actualización. Incluye, entre otros:
   - Incremento 1: `RequireAuth.test.jsx`, `BookingPage.test.jsx`, `BookingConfirmation.test.jsx`, `MyReservationsPage.test.jsx`, `Header.test.jsx`, `WhatsAppButton.test.jsx`.
   - Incremento 2: `useTableData.test.js`, `Pagination.test.jsx`, `AdminCategories/Features/Policies/Users/Lodgings.test.jsx`, `AdminDashboard.test.jsx`, `AdminReservations.test.jsx`.
   - Incremento 3: `lodgingService.test.js`, `categoryService.test.js`, `favoriteService.test.js` (31 tests nuevos), `SearchResults.test.jsx` (reescrito — filtrado server-side, respuesta paginada), `RequireAdmin.test.jsx` (redirect a `/unauthorized`), `Unauthorized.test.jsx` (nuevo).
@@ -257,13 +272,24 @@ src/
 
 ## 8. Limitaciones Conocidas y Deuda Técnica Controlada
 
-1. **Paginación client-side en tablas de administración:** `AdminLodgings` y el resto de las entidades administrativas (Categorías, Características, Políticas, Usuarios) mantienen paginación y ordenamiento del lado del cliente. Si el volumen de datos creciera significativamente, se contempla migrar a paginación por base de datos — el Incremento 3 ya estableció el patrón para `/api/lodgings/search`, reutilizable si se decide extenderlo al panel admin.
+### 8.1. Deuda vigente
+
+1. **Paginación client-side en parte del panel administrativo:** Categorías, Características, Políticas y Usuarios mantienen paginación y ordenamiento del lado del cliente. `AdminLodgings` y `AdminReservations` ya usan contratos server-driven.
 2. **WhatsApp Business API:** el enlace `wa.me` no provee confirmación de envío ni manejo de errores desde la aplicación.
-3. **Email SMTP desactivado por defecto:** requiere `MAIL_SMTP_ENABLED=true` y credenciales de Mailtrap.
+3. **Email SMTP desactivado por defecto:** requiere `MAIL_SMTP_ENABLED=true` y credenciales del proveedor SMTP.
 4. **Precios por temporada:** el total de reserva es `días × pricePerNight`, sin tarifas variables por temporada o fin de semana.
 5. **Refresh tokens:** el JWT expira a las 8 horas sin renovación automática.
-6. **Gestión de reservas en admin:** el Dashboard es informativo; no hay acciones administrativas (cancelar, reprogramar) sobre reservas de usuarios.
-7. **i18n acotada a 4 de 9 exception handlers (Inc. 3):** `AuthenticationException`, `MethodArgumentNotValidException`, `ObjectOptimisticLockingFailureException`, `PessimisticLockingFailureException`, `UploadException`, `DataIntegrityViolationException` y el catch-all genérico mantienen mensajes en español hardcodeado independientemente de `Accept-Language` — decisión explícita para acotar el alcance del cambio, no una omisión.
-8. **`HandlerMethodValidationException` sin cobertura por request real (Inc. 3):** el handler existe de forma defensiva pero ningún endpoint actual lo dispara (ver 7.2); cubierto solo por test unitario directo.
-9. **CI de GitHub Actions no corre sobre `sprint-4`:** el workflow (`.github/workflows/ci.yml`) solo dispara en push/PR contra `main`. Las 6 PRs del Incremento 3 se verificaron con las suites de test locales (284 backend + 276 frontend) antes de cada merge, sin la capa adicional de validación en un runner limpio de GitHub Actions.
-10. **Gap preexistente de configuración de ESLint (detectado, no introducido por el Incremento 3):** falta configurar `no-undef` para los globals de test (`describe`/`it`/`expect`/`vi`), afecta a prácticamente todos los archivos de test del repositorio.
+6. **Gestión de reservas en admin:** las consultas administrativas son server-driven, pero no existen acciones para cancelar o reprogramar reservas de usuarios.
+7. **`HandlerMethodValidationException` sin cobertura por request real:** el handler existe de forma defensiva, pero ningún endpoint actual lo dispara (ver 7.2); está cubierto solo por test unitario directo.
+8. **Producción visual pendiente:** las 38 identidades están aprobadas, pero faltan generar, revisar, publicar e integrar sus cinco escenas canónicas por alojamiento, para un total de 190 imágenes.
+
+### 8.2. Deuda registrada originalmente y resuelta después
+
+| Tema original | Estado vigente | Evidencia principal |
+| --- | --- | --- |
+| `AdminLodgings` con paginación client-side | Resuelto; usa paginación y búsqueda desde el servidor | `LodgingController`, `LodgingServiceImpl`, `AdminLodgings.jsx` |
+| Dashboard/listado de reservas sin contrato server-driven | Resuelto para consulta, filtros, ordenamiento y paginación; las mutaciones siguen pendientes | `ReservationController`, `ReservationSpecifications`, `AdminReservations.jsx` |
+| i18n limitada a parte de `GlobalExceptionHandler` | Resuelto para las respuestas restantes | `GlobalExceptionHandler`, `messages.properties`, `messages_es.properties` |
+| CI sin disparadores para `sprint-4` | Resuelto en configuración; no se infiere un resultado remoto | `.github/workflows/ci.yml` |
+| Globals de tests ausentes en ESLint y deuda de lint | Resuelto | `frontend/eslint.config.js` y correcciones posteriores de lint |
+| Esquema administrado por Hibernate y datos demo acoplados | Resuelto; Flyway administra el esquema y el seed de desarrollo requiere opt-in | `db/migration/V1__baseline_schema.sql`, `db/dev/V1_9000__dev_demo_data.sql`, `DevSeedFlywayGuard` |
