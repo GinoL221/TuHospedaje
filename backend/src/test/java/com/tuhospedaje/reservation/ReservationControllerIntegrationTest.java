@@ -5,7 +5,9 @@ import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
@@ -21,6 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,13 +33,19 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.never;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
 class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
@@ -63,6 +73,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     private EmailService emailService;
 
     private String userAuthHeader;
+    private User reservationOwner;
 
     @BeforeEach
     void setUp() {
@@ -80,8 +91,8 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build();
 
-        User savedUser = userRepository.save(user);
-        userAuthHeader = jwtService.generateToken(savedUser);
+        reservationOwner = userRepository.save(user);
+        userAuthHeader = jwtService.generateToken(reservationOwner);
     }
 
     @Test
@@ -161,6 +172,163 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void ownerCanCancelReservationWithCsrfAndReadCancelledStatus() throws Exception {
+        Long lodgingId = createTestLodging();
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+        Long reservationId = reservationRepository.findAll().get(0).getId();
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(patch("/api/reservations/{id}/cancel", reservationId)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        mockMvc.perform(get("/api/reservations/{id}", reservationId)
+                        .cookie(accessCookie(userAuthHeader)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+        verify(emailService).sendReservationCancellation(any(ReservationResponse.class));
+    }
+
+    @Test
+    void cancelledStatusIsVisibleThroughCustomerAndAdminReadAndListPaths() throws Exception {
+        Long lodgingId = createTestLodging();
+        Reservation reservation = saveReservation(lodgingId, LocalDate.now().plusDays(10));
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        mockMvc.perform(get("/api/reservations/my")
+                        .cookie(accessCookie(userAuthHeader)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("CANCELLED"));
+
+        String adminAuth = createAdminAuth();
+        mockMvc.perform(get("/api/reservations/{id}", reservation.getId())
+                        .cookie(accessCookie(adminAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+        mockMvc.perform(get("/api/reservations")
+                        .cookie(accessCookie(adminAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("CANCELLED"));
+        mockMvc.perform(get("/api/reservations/admin")
+                        .cookie(accessCookie(adminAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].status").value("CANCELLED"));
+    }
+
+    @Test
+    void repeatedCancellationReturnsCancelledWithoutDuplicateEmail() throws Exception {
+        Long lodgingId = createTestLodging();
+        createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
+        Long reservationId = reservationRepository.findAll().get(0).getId();
+        clearInvocations(emailService);
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        for (int request = 0; request < 2; request++) {
+            mockMvc.perform(patch("/api/reservations/{id}/cancel", reservationId)
+                            .cookie(accessCookie(userAuthHeader))
+                            .cookie(csrfCookie)
+                            .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("CANCELLED"));
+        }
+
+        verify(emailService, times(1)).sendReservationCancellation(any(ReservationResponse.class));
+    }
+
+    @Test
+    void missingAndNonOwnerCancellationReturnIdenticalNotFoundResponse() throws Exception {
+        Long lodgingId = createTestLodging();
+        Reservation reservation = saveReservation(lodgingId, LocalDate.now().plusDays(10));
+        User other = userRepository.save(User.builder()
+                .firstName("Other").lastName("User").email("other-cancel@test.com")
+                .password("hash").role(RoleEnum.USER).build());
+        String otherToken = jwtService.generateToken(other);
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        String nonOwnerBody = mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
+                        .cookie(accessCookie(otherToken)).cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+        String missingBody = mockMvc.perform(patch("/api/reservations/999999/cancel")
+                        .cookie(accessCookie(otherToken)).cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+
+        assertThat(objectMapper.readTree(nonOwnerBody).get("status").asInt()).isEqualTo(404);
+        assertThat(objectMapper.readTree(missingBody).get("status").asInt()).isEqualTo(404);
+        assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+    }
+
+    @Test
+    void cancellationOnCheckInDateReturnsBadRequestAndPreservesConfirmedStatus() throws Exception {
+        Long lodgingId = createTestLodging();
+        Reservation reservation = saveReservation(lodgingId, LocalDate.now());
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
+                        .cookie(accessCookie(userAuthHeader)).cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest());
+
+        assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+        verify(emailService, never()).sendReservationCancellation(any());
+    }
+
+    @Test
+    void cancellationRequiresAuthenticationAndCsrf() throws Exception {
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(patch("/api/reservations/999/cancel")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/api/reservations/999/cancel")
+                        .cookie(accessCookie(userAuthHeader)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void corsPreflightAllowsCredentialedPatch() throws Exception {
+        mockMvc.perform(options("/api/reservations/1/cancel")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "PATCH"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Access-Control-Allow-Methods",
+                                org.hamcrest.Matchers.containsString("PATCH")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Access-Control-Allow-Credentials", "true"));
+    }
+
+    @Test
+    void actualCrossOriginPatchReturnsCorsHeaders() throws Exception {
+        Long lodgingId = createTestLodging();
+        Reservation reservation = saveReservation(lodgingId, LocalDate.now().plusDays(10));
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
+                        .header("Origin", "http://localhost:5173")
+                        .cookie(accessCookie(userAuthHeader)).cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Access-Control-Allow-Credentials", "true"));
+    }
+
+    @Test
     void shouldReturnAllReservationsForAdminOrderedByIdDesc() throws Exception {
         String adminAuth = createAdminAuth();
 
@@ -204,6 +372,20 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         lodging.setMaxGuests(4);
 
         return lodgingRepository.save(lodging).getId();
+    }
+
+    private Reservation saveReservation(Long lodgingId, LocalDate checkIn) {
+        Reservation reservation = new Reservation();
+        reservation.setLodging(lodgingRepository.findById(lodgingId).orElseThrow());
+        reservation.setUser(reservationOwner);
+        reservation.setCheckIn(checkIn);
+        reservation.setCheckOut(checkIn.plusDays(2));
+        reservation.setGuestName("Juan Perez");
+        reservation.setGuestEmail("juan-reservas@test.com");
+        reservation.setGuestPhone("+5491122334455");
+        reservation.setTotalPrice(new BigDecimal("200.00"));
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        return reservationRepository.save(reservation);
     }
 
     private void createReservation(Long lodgingId, LocalDate checkIn, LocalDate checkOut) throws Exception {
