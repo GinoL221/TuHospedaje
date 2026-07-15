@@ -20,9 +20,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Locale;
 import java.util.List;
 import java.util.Set;
@@ -30,15 +36,60 @@ import java.util.Set;
 @Service
 public class ReservationServiceImpl implements ReservationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReservationServiceImpl.class);
+
     private final ReservationRepository reservationRepository;
     private final LodgingRepository lodgingRepository;
     private final EmailService emailService;
+    private final Clock clock;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  LodgingRepository lodgingRepository, EmailService emailService) {
+                                  LodgingRepository lodgingRepository, EmailService emailService,
+                                  Clock clock) {
         this.reservationRepository = reservationRepository;
         this.lodgingRepository = lodgingRepository;
         this.emailService = emailService;
+        this.clock = clock;
+    }
+
+    @Override
+    @Transactional
+    public ReservationResponse cancelReservation(Long id, User requester) {
+        Reservation reservation = reservationRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> reservationNotFound(id));
+        if (!reservation.getUser().getId().equals(requester.getId())) {
+            throw reservationNotFound(id);
+        }
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            log.info("reservation.cancel.idempotent reservationId={}", id);
+            return ReservationResponse.fromEntity(reservation);
+        }
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new IllegalArgumentException("La reserva no se puede cancelar");
+        }
+        if (!LocalDate.now(clock).isBefore(reservation.getCheckIn())) {
+            log.info("reservation.cancel.rejected_deadline reservationId={}", id);
+            throw new IllegalArgumentException("La reserva ya no se puede cancelar");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        ReservationResponse response = ReservationResponse.fromEntity(reservation);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    emailService.sendReservationCancellation(response);
+                } catch (RuntimeException ex) {
+                    log.warn("reservation.cancel.email_failed reservationId={}", id);
+                }
+            }
+        });
+        log.info("reservation.cancelled reservationId={}", id);
+        return response;
+    }
+
+    private ResourceNotFoundException reservationNotFound(Long id) {
+        return new ResourceNotFoundException("Reserva no encontrada con ID: " + id);
     }
 
     @Override

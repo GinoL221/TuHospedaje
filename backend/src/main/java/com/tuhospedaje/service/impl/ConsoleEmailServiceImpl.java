@@ -35,4 +35,9 @@ public class ConsoleEmailServiceImpl implements EmailService {
         log.info("Contacto alojamiento - Email: {}", reservation.getLodgingEmail());
         log.info("=======================================================");
     }
+
+    @Override
+    public void sendReservationCancellation(ReservationResponse reservation) {
+        log.info("reservation.cancel.email reservationId={}", reservation.getId());
+    }
 }

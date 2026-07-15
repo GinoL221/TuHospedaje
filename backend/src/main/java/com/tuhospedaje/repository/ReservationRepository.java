@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long>, JpaSpecificationExecutor<Reservation> {
@@ -40,4 +41,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     List<Reservation> findAllByOrderByIdDesc();
 
     Page<Reservation> findByStatus(ReservationStatus status, Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Reservation r WHERE r.id = :id")
+    Optional<Reservation> findByIdForUpdate(@Param("id") Long id);
 }
