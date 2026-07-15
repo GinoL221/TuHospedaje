@@ -1,4 +1,4 @@
-import { get, post, put, del, getCsrfToken } from "./api";
+import { get, post, put, patch, del, getCsrfToken } from "./api";
 
 // NOTE: `api.js` reads `import.meta.env.VITE_API_URL` into a module-level
 // `const API_BASE` at import time. Most tests below assert only the
@@ -82,6 +82,25 @@ describe("api service - successful requests", () => {
     const [, config] = fetchMock.mock.calls[0];
     expect(config.method).toBe("DELETE");
     expect(config.body).toBeUndefined();
+  });
+
+  it("PATCH sends an unsafe request without a body", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+    const fetchMock = mockFetchResolved({ json: async () => ({ status: "CANCELLED" }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await patch("/reservations/1/cancel");
+
+    expect(result).toEqual({ status: "CANCELLED" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/reservations/1/cancel"),
+      expect.objectContaining({
+        method: "PATCH",
+        credentials: "include",
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-abc" }),
+      }),
+    );
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
   });
 });
 
