@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, sprint-4]
   pull_request:
-    branches: [main, sprint-4]
 
 jobs:
   backend:
