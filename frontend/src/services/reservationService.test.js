@@ -1,5 +1,5 @@
-import { getAdminReservations } from "./reservationService";
-import { get } from "./api";
+import { cancelReservation, getAdminReservations } from "./reservationService";
+import { get, patch } from "./api";
 
 vi.mock("./api");
 
@@ -29,5 +29,14 @@ describe("reservationService - getAdminReservations", () => {
 		expect(get).toHaveBeenCalledWith(
 			"/reservations/admin?page=0&size=10&sort=id&direction=asc",
 		);
+	});
+});
+
+describe("reservationService - cancelReservation", () => {
+	it("calls the owner cancellation endpoint", async () => {
+		patch.mockResolvedValue({ id: 7, status: "CANCELLED" });
+
+		await expect(cancelReservation(7)).resolves.toEqual({ id: 7, status: "CANCELLED" });
+		expect(patch).toHaveBeenCalledWith("/reservations/7/cancel");
 	});
 });
