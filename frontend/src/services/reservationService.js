@@ -1,4 +1,8 @@
-import { get } from "./api";
+import { get, patch } from "./api";
+
+export function cancelReservation(id) {
+	return patch(`/reservations/${id}/cancel`);
+}
 
 function appendParam(params, key, value) {
 	if (value === undefined || value === null || value === "") return;

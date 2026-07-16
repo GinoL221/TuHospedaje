@@ -13,6 +13,8 @@ public interface ReservationService {
 
     ReservationResponse getReservationById(Long id, User requester);
 
+    ReservationResponse cancelReservation(Long id, User requester);
+
     List<ReservationResponse> getMyReservations(User user);
 
     List<ReservationResponse> getAllReservations();

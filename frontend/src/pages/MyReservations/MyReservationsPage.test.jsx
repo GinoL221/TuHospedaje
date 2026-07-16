@@ -1,8 +1,11 @@
+import userEvent from "@testing-library/user-event";
 import { customRender, screen } from "../../test/test-utils";
 import MyReservationsPage from "./MyReservationsPage";
 import { get } from "../../services/api";
+import { cancelReservation } from "../../services/reservationService";
 
 vi.mock("../../services/api");
+vi.mock("../../services/reservationService");
 
 const reservationFixture = {
   id: 1,
@@ -19,6 +22,12 @@ const reservationFixture = {
 };
 
 describe("MyReservationsPage - reservation list", () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date("2026-06-30T15:00:00-03:00"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
   it("renders the user's reservations with nights computed from checkIn/checkOut", async () => {
     get.mockResolvedValue([reservationFixture]);
     customRender(<MyReservationsPage />);
@@ -40,6 +49,65 @@ describe("MyReservationsPage - reservation list", () => {
 
     expect(await screen.findByText("1 reserva")).toBeInTheDocument();
     expect(screen.getByText("1 noche")).toBeInTheDocument();
+  });
+
+  it("offers cancellation only for confirmed reservations before check-in", async () => {
+    get.mockResolvedValue([
+      reservationFixture,
+      { ...reservationFixture, id: 2, lodgingName: "Cancelled", status: "CANCELLED" },
+      { ...reservationFixture, id: 3, lodgingName: "Today", checkIn: "2026-06-30" },
+    ]);
+    customRender(<MyReservationsPage />);
+
+    expect(await screen.findByRole("button", { name: "Cancelar reserva" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Cancelar reserva" })).toHaveLength(1);
+  });
+
+  it("requires confirmation, prevents duplicate requests, and replaces the cancelled row", async () => {
+    const user = userEvent.setup();
+    let resolveCancellation;
+    cancelReservation.mockReturnValue(new Promise((resolve) => { resolveCancellation = resolve; }));
+    get.mockResolvedValue([reservationFixture]);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    customRender(<MyReservationsPage />);
+
+    const button = await screen.findByRole("button", { name: "Cancelar reserva" });
+    await user.click(button);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent("Cancelando...");
+    await user.click(button);
+    expect(cancelReservation).toHaveBeenCalledTimes(1);
+
+    resolveCancellation({ ...reservationFixture, status: "CANCELLED" });
+    expect(await screen.findByText("CANCELLED")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancelar reserva" })).not.toBeInTheDocument();
+  });
+
+  it("does not cancel when confirmation is declined", async () => {
+    const user = userEvent.setup();
+    get.mockResolvedValue([reservationFixture]);
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    customRender(<MyReservationsPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Cancelar reserva" }));
+
+    expect(cancelReservation).not.toHaveBeenCalled();
+  });
+
+  it("keeps the row usable and shows an inline error when cancellation fails", async () => {
+    const user = userEvent.setup();
+    get.mockResolvedValue([reservationFixture]);
+    cancelReservation.mockRejectedValue(new Error("Intentá nuevamente."));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    customRender(<MyReservationsPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Cancelar reserva" }));
+
+    expect(await screen.findByText("Intentá nuevamente.")).toBeInTheDocument();
+    expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancelar reserva" })).toBeEnabled();
   });
 });
 
