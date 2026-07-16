@@ -73,6 +73,10 @@ export function put(endpoint, data) {
   return request("PUT", endpoint, data);
 }
 
+export function patch(endpoint, data) {
+  return request("PATCH", endpoint, data);
+}
+
 export function del(endpoint) {
   return request("DELETE", endpoint);
 }
