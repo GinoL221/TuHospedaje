@@ -150,6 +150,33 @@
   text-decoration: underline;
 }
 
+.reservation-actions {
+  padding: 0 20px 14px;
+}
+
+.reservation-cancel {
+  border: 1px solid #c0392b;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #c0392b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.reservation-cancel:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.reservation-cancel-error {
+  color: #c0392b;
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+}
+
 /* --- EMPTY STATE --- */
 .reservations-empty {
   display: flex;

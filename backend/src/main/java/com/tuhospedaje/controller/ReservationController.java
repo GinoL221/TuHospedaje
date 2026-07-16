@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,6 +80,23 @@ public class ReservationController {
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(reservationService.getReservationById(id, user));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Cancel an owned reservation")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservation cancelled or already cancelled"),
+            @ApiResponse(responseCode = "400", description = "Cancellation deadline passed", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Reservation not found or not owned", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Concurrent update conflict", content = @Content)
+    })
+    public ResponseEntity<ReservationResponse> cancel(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(reservationService.cancelReservation(id, user));
     }
 
     @GetMapping("/my")
