@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -5,7 +6,8 @@ import RequireAuth from "./components/RequireAuth";
 import RequireAdmin from "./components/RequireAdmin";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
-import Home from "./pages/Home/Home";
+import RouteChunkErrorBoundary from "./components/RouteChunkErrorBoundary";
+import RouteLoadingFallback from "./components/RouteLoadingFallback";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProductDetail from "./pages/ProductDetail/ProductDetail";
@@ -17,6 +19,8 @@ import BookingConfirmationPage from "./pages/Booking/BookingConfirmation";
 import MyReservationsPage from "./pages/MyReservations/MyReservationsPage";
 import WhatsAppButton from "./components/WhatsAppButton/WhatsAppButton";
 
+const Home = lazy(() => import("./pages/Home/Home"));
+
 function AppLayout() {
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith("/admin");
@@ -25,7 +29,9 @@ function AppLayout() {
     <>
       {!isAdmin && <Header />}
       {!isAdmin && <WhatsAppButton />}
-      <Routes>
+      <RouteChunkErrorBoundary resetKey={pathname}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/login" element={<LoginPage />} />
@@ -47,7 +53,9 @@ function AppLayout() {
             </RequireAdmin>
           }
         />
-      </Routes>
+          </Routes>
+        </Suspense>
+      </RouteChunkErrorBoundary>
       {!isAdmin && <Footer />}
     </>
   );
