@@ -8,18 +8,18 @@ import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import RouteChunkErrorBoundary from "./components/RouteChunkErrorBoundary";
 import RouteLoadingFallback from "./components/RouteLoadingFallback";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ProductDetail from "./pages/ProductDetail/ProductDetail";
-import Admin from "./pages/Admin/Admin";
-import SearchResults from "./pages/SearchResults/SearchResults";
-import FavoritesPage from "./pages/Favorites/FavoritesPage";
-import BookingPage from "./pages/Booking/BookingPage";
-import BookingConfirmationPage from "./pages/Booking/BookingConfirmation";
-import MyReservationsPage from "./pages/MyReservations/MyReservationsPage";
 import WhatsAppButton from "./components/WhatsAppButton/WhatsAppButton";
 
 const Home = lazy(() => import("./pages/Home/Home"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail/ProductDetail"));
+const Admin = lazy(() => import("./pages/Admin/Admin"));
+const SearchResults = lazy(() => import("./pages/SearchResults/SearchResults"));
+const FavoritesPage = lazy(() => import("./pages/Favorites/FavoritesPage"));
+const BookingPage = lazy(() => import("./pages/Booking/BookingPage"));
+const BookingConfirmationPage = lazy(() => import("./pages/Booking/BookingConfirmation"));
+const MyReservationsPage = lazy(() => import("./pages/MyReservations/MyReservationsPage"));
 
 function AppLayout() {
   const { pathname } = useLocation();
