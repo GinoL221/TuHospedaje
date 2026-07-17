@@ -294,14 +294,15 @@ describe("App admin route authorization", () => {
 });
 
 describe("App document title", () => {
-  it("stays fixed and route-independent across public, authenticated, and admin resolution", async () => {
+  it("never sets document.title while resolving public, authenticated, and admin routes", async () => {
+    const titleSetter = vi.spyOn(document, "title", "set");
+
     const search = deferred();
     const publicRender = await renderAppAt({
       path: "/search",
       pages: { "./pages/SearchResults/SearchResults": search.promise },
     });
     await act(async () => search.resolve({ default: () => <main>Search resolved</main> }));
-    const publicTitle = document.title;
     publicRender.unmount();
 
     const reservations = deferred();
@@ -312,7 +313,6 @@ describe("App document title", () => {
       pages: { "./pages/MyReservations/MyReservationsPage": reservations.promise },
     });
     await act(async () => reservations.resolve({ default: () => <main>Reservations resolved</main> }));
-    const protectedTitle = document.title;
     protectedRender.unmount();
 
     const admin = deferred();
@@ -323,10 +323,8 @@ describe("App document title", () => {
       pages: { "./pages/Admin/Admin": admin.promise },
     });
     await act(async () => admin.resolve({ default: () => <main>Admin resolved</main> }));
-    const adminTitle = document.title;
     adminRender.unmount();
 
-    expect(publicTitle).toBe(protectedTitle);
-    expect(protectedTitle).toBe(adminTitle);
+    expect(titleSetter).not.toHaveBeenCalled();
   });
 });
