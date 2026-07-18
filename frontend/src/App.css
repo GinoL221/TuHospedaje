@@ -58,3 +58,44 @@ body {
   border-radius: 8px;
   border: 1px dashed #ccc;
 }
+
+.route-loading,
+.route-error {
+  min-height: 12rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.route-loading {
+  gap: 0.75rem;
+  color: var(--primary);
+}
+
+.route-loading__spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  box-sizing: border-box;
+  border: 0.2rem solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: route-loading-spin 0.8s linear infinite;
+}
+
+.route-error {
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+@keyframes route-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-loading__spinner {
+    animation: none;
+  }
+}
