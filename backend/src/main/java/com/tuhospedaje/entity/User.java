@@ -59,6 +59,10 @@ public class User implements UserDetails {
     @Column
     private String imageUrl;
 
+    @Column(nullable = false)
+    @lombok.Builder.Default
+    private boolean enabled = true;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_favorites",
