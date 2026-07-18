@@ -15,8 +15,8 @@ vi.mock("./components/Footer/Footer", () => ({ default: () => <footer>Footer she
 vi.mock("./components/WhatsAppButton/WhatsAppButton", () => ({
   default: () => <div>WhatsApp shell</div>,
 }));
-vi.mock("./components/RequireAuth", () => ({ default: () => null }));
-vi.mock("./components/RequireAdmin", () => ({ default: ({ children }) => children }));
+vi.mock("./components/RequireAuth", () => vi.importActual("./components/RequireAuth"));
+vi.mock("./components/RequireAdmin", () => vi.importActual("./components/RequireAdmin"));
 vi.mock("./pages/LoginPage", () => ({ default: () => null }));
 vi.mock("./pages/RegisterPage", () => ({ default: () => null }));
 vi.mock("./pages/ProductDetail/ProductDetail", () => ({ default: () => null }));
@@ -49,27 +49,14 @@ const UNAUTHENTICATED = { user: null, loading: false };
 const AUTHENTICATED_USER = { user: { role: "USER" }, loading: false };
 const AUTHENTICATED_ADMIN = { user: { role: "ADMIN" }, loading: false };
 
-// Renders App at an arbitrary route with a controllable auth context, real or
-// inert guards, and per-test page module overrides. Every call re-declares
-// the guard mocks and a sane default for every lazy page so behavior never
-// depends on what a previous test left registered.
-async function renderAppAt({ path, authValue = UNAUTHENTICATED, guards = "inert", pages = {} } = {}) {
+// Renders App at an arbitrary route with a controllable auth context and
+// per-test page module overrides, exercising the real RequireAuth/RequireAdmin
+// guards. Every call re-declares a sane default for every lazy page so
+// behavior never depends on what a previous test left registered.
+async function renderAppAt({ path, authValue = UNAUTHENTICATED, pages = {} } = {}) {
   vi.resetModules();
   authState.value = authValue;
   window.history.replaceState({}, "", path);
-
-  vi.doMock(
-    "./components/RequireAuth",
-    guards === "real"
-      ? () => vi.importActual("./components/RequireAuth")
-      : () => ({ default: () => null })
-  );
-  vi.doMock(
-    "./components/RequireAdmin",
-    guards === "real"
-      ? () => vi.importActual("./components/RequireAdmin")
-      : () => ({ default: ({ children }) => children })
-  );
 
   const defaultPages = {
     "./pages/Home/Home": { default: () => <main>Home shell</main> },
@@ -192,7 +179,6 @@ describe("App protected route authorization", () => {
     await renderAppAt({
       path: "/my-reservations",
       authValue: UNAUTHENTICATED,
-      guards: "real",
       pages: { "./pages/MyReservations/MyReservationsPage": reservations.promise },
     });
 
@@ -207,7 +193,6 @@ describe("App protected route authorization", () => {
     await renderAppAt({
       path: "/my-reservations",
       authValue: AUTHENTICATED_USER,
-      guards: "real",
       pages: { "./pages/MyReservations/MyReservationsPage": reservations.promise },
     });
 
@@ -225,7 +210,6 @@ describe("App admin route authorization", () => {
     await renderAppAt({
       path: "/admin",
       authValue: AUTHENTICATED_USER,
-      guards: "real",
       pages: { "./pages/Admin/Admin": admin.promise },
     });
 
@@ -241,7 +225,6 @@ describe("App admin route authorization", () => {
     await renderAppAt({
       path: "/admin",
       authValue: AUTHENTICATED_ADMIN,
-      guards: "real",
       pages: { "./pages/Admin/Admin": admin.promise },
     });
 
@@ -263,7 +246,6 @@ describe("App admin route authorization", () => {
     await renderAppAt({
       path: "/admin",
       authValue: AUTHENTICATED_ADMIN,
-      guards: "real",
       pages: { "./pages/Admin/Admin": { default: () => <main>Fast Admin</main> } },
     });
     await act(async () => {});
@@ -281,7 +263,6 @@ describe("App admin route authorization", () => {
     await renderAppAt({
       path: "/admin",
       authValue: AUTHENTICATED_ADMIN,
-      guards: "real",
       pages: { "./pages/Admin/Admin": admin.promise },
     });
     vi.stubGlobal("location", { reload });
@@ -291,6 +272,35 @@ describe("App admin route authorization", () => {
     expect(screen.getByRole("button", { name: "Recargar página" })).toBeInTheDocument();
     expect(reload).not.toHaveBeenCalled();
     expect(screen.queryByText("Header shell")).not.toBeInTheDocument();
+  });
+});
+
+describe("App auth loading state", () => {
+  it("renders neither protected nor admin content while auth is still loading, without redirecting or exposing the deferred page", async () => {
+    const reservations = deferred();
+    const { unmount } = await renderAppAt({
+      path: "/my-reservations",
+      authValue: { user: null, loading: true },
+      pages: { "./pages/MyReservations/MyReservationsPage": reservations.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/my-reservations");
+    expect(screen.queryByText("Reservations resolved")).not.toBeInTheDocument();
+    unmount();
+
+    const admin = deferred();
+    await renderAppAt({
+      path: "/admin",
+      authValue: { user: null, loading: true },
+      pages: { "./pages/Admin/Admin": admin.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/admin");
+    expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
   });
 });
 
@@ -310,7 +320,6 @@ describe("App document title", () => {
     const protectedRender = await renderAppAt({
       path: "/my-reservations",
       authValue: AUTHENTICATED_USER,
-      guards: "real",
       pages: { "./pages/MyReservations/MyReservationsPage": reservations.promise },
     });
     await act(async () => reservations.resolve({ default: () => <main>Reservations resolved</main> }));
@@ -320,7 +329,6 @@ describe("App document title", () => {
     const adminRender = await renderAppAt({
       path: "/admin",
       authValue: AUTHENTICATED_ADMIN,
-      guards: "real",
       pages: { "./pages/Admin/Admin": admin.promise },
     });
     await act(async () => admin.resolve({ default: () => <main>Admin resolved</main> }));
