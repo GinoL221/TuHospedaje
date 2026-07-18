@@ -1,6 +1,7 @@
 package com.tuhospedaje.configuration;
 
 import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.security.RefreshTokenHasher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +11,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.security.SecureRandom;
+import java.time.Clock;
 
 @Configuration
 @RequiredArgsConstructor
@@ -31,5 +35,20 @@ public class ApplicationConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecureRandom secureRandom() {
+        return new SecureRandom();
+    }
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
+    }
+
+    @Bean
+    public RefreshTokenHasher refreshTokenHasher(SessionProperties properties, SecureRandom random) {
+        return new RefreshTokenHasher(properties.keyRing(), random);
     }
 }
