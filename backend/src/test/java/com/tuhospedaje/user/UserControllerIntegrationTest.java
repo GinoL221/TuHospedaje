@@ -7,12 +7,12 @@ import com.tuhospedaje.dto.auth.RoleRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -52,8 +52,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedAdmin = userRepository.save(admin);
-        String adminToken = jwtService.generateToken(savedAdmin);
-        adminAuthHeader = "Bearer " + adminToken;
+        adminAuthHeader = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("Regular")
@@ -64,15 +63,14 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(regularUser);
-        String userToken = jwtService.generateToken(savedUser);
-        userAuthHeader = "Bearer " + userToken;
+        userAuthHeader = jwtService.generateToken(savedUser);
         regularUserId = savedUser.getId();
     }
 
     @Test
     void shouldListUsersSuccessfully() throws Exception {
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .cookie(accessCookie(adminAuthHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").isNumber())
                 .andExpect(jsonPath("$[0].email").exists());
@@ -87,7 +85,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnForbiddenWhenListingUsersWithUserRole() throws Exception {
         mockMvc.perform(get("/api/users")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader))
+                        .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isForbidden());
     }
 
@@ -96,8 +94,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -110,8 +111,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("  ");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -123,8 +127,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", 999L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -135,7 +142,12 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -146,8 +158,11 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
         RoleRequest request = new RoleRequest();
         request.setRole("ADMIN");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/users/{id}/role", regularUserId)
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());

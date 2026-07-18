@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 18,
+  "name": "Cabaña San Roque",
+  "category": "cabin",
+  "location": {
+    "city": "Villa Carlos Paz",
+    "country": "Argentina"
+  },
+  "capacity": 6,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña familiar de categoría media-alta para hasta seis personas, ubicada en Villa Carlos Paz y vinculada con el lago San Roque. Debe sentirse fresca, práctica y propia del paisaje serrano cordobés; sin adoptar estética patagónica, alpina, náutica temática ni escala de resort.",
+    "architecture": "Cabaña horizontal de una sola planta. Muros de revoque mineral color arena. Basamento y paños de piedra serrana clara. Cubierta inclinada de baja pendiente en grafito. Galería profunda orientada hacia jardín y lago. Aleros amplios para controlar el sol de verano. Aberturas generosas con ventilación cruzada. Estar, cocina y comedor integrados. Dormitorios agrupados en un sector más privado. Relación directa entre interior, galería y jardín. Sendero discreto hacia un muelle privado. Guardado para kayaks, bicicletas y equipamiento. Instalaciones técnicas ocultas. Sin techos patagónicos pronunciados, madera oscura dominante, ojos de buey ni arquitectura de complejo vacacional.",
+    "palette": [
+      "arena",
+      "terracota",
+      "roble claro",
+      "verde oliva",
+      "grafito",
+      "piedra serrana",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Acceso y galería: piedra serrana antideslizante. Estar, comedor y dormitorios: porcelanato mate color arena. Cocina: porcelanato de alta resistencia en el mismo tono. Baños: microcemento gris cálido antideslizante. Ducha: piezas terracota mate. Senderos: lajas claras y grava compactada. Muelle: madera exterior tratada. Sin pisos oscuros pesados ni superficies brillantes.",
+    "wallsAndFinishes": "Interior: revoque arena y blanco cálido. Estar: paño de piedra serrana clara. Dormitorios: cabeceros de roble y textiles naturales. Cocina: frente de cerámica terracota suave. Baños: microcemento claro y revestimiento terracota en ducha. Exterior: revoque mineral, piedra y detalles de madera clara. Terminaciones resistentes al calor y de mantenimiento simple. Sin decoración náutica, revestimientos de falsa madera ni referencias patagónicas.",
+    "joinery": "Ventanas de aluminio grafito con doble vidrio. Hojas corredizas amplias hacia la galería. Protección solar mediante aleros y postigos puntuales de madera. Puerta principal de roble. Puertas interiores lisas del mismo tono. Placares empotrados con guardado familiar. Mamparas transparentes con perfilería grafito. Herrajes negros satinados. Cortinas livianas beige y blackout verde oliva.",
+    "furniture": "Dormitorio principal con cama queen orientada hacia el jardín. Dormitorios secundarios flexibles para cuatro huéspedes. Cabeceros bajos de roble. Mesas de luz suspendidas. Sofá familiar beige y sillones verde oliva. Mesa de comedor para seis personas. Cocina integrada con isla compacta. Banco de acceso con guardado. Mobiliario de galería resistente al clima cálido. Espacio ordenado para bicicletas y equipo acuático. Sin muebles de troncos, cuero rústico dominante ni decoración marinera.",
+    "lighting": "Temperatura cálida de 2700 K. Aprovechamiento prioritario de la luz natural. Ventiladores de techo discretos con luz independiente. Apliques grafito junto a las camas. Colgantes sobrios sobre mesa e isla. Iluminación integrada bajo alacenas. Balizas bajas en galería, jardín y sendero. Muelle iluminado de forma contenida. Sin guirnaldas, focos de colores ni luz azul decorativa.",
+    "continuityElements": [
+      "Volumen horizontal de una sola planta.",
+      "Revoque mineral color arena.",
+      "Piedra serrana clara.",
+      "Roble claro en puertas, cabeceros y mobiliario.",
+      "Terracota en cocina, baño y textiles puntuales.",
+      "Verde oliva como acento.",
+      "Cubierta y carpinterías grafito.",
+      "Relación continua entre interior, galería, jardín, muelle y lago San Roque."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior desde el jardín",
+        "brief": "Mostrar la galería, la piedra serrana y el lago."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar el dormitorio principal conectado visualmente con la galería."
+      },
+      {
+        "order": 3,
+        "title": "Baño de microcemento",
+        "brief": "Mostrar la ducha revestida en terracota."
+      },
+      {
+        "order": 4,
+        "title": "Estar, cocina y comedor",
+        "brief": "Mostrar los espacios preparados para una familia de seis personas."
+      },
+      {
+        "order": 5,
+        "title": "Muelle privado",
+        "brief": "Mostrar kayaks y bicicletas, mirando hacia la misma cabaña."
+      }
+    ]
+  }
+}

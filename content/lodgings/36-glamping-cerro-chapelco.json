@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 36,
+  "name": "Glamping Cerro Chapelco",
+  "category": "glamping",
+  "location": {
+    "city": "San Martín de los Andes",
+    "country": "Argentina"
+  },
+  "capacity": 2,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Glamping premium de montaña para parejas, operativo durante todo el año y vinculado con actividades de verano e invierno en Cerro Chapelco. Debe combinar contacto directo con el paisaje, confort hotelero y preparación técnica para nieve, lluvia y equipamiento deportivo; sin parecer un refugio de esquí, una cabaña tradicional ni un camping improvisado.",
+    "architecture": "Carpa safari técnica individual para dos personas. Implantación sobre una plataforma elevada. Cubierta textil técnica color gris piedra. Estructura rígida grafito preparada para viento y nieve. Frente panorámico orientado hacia Cerro Chapelco. Aleros y faldones diseñados para escurrimiento. Baño privado aislado dentro de un volumen compacto. Vestíbulo de acceso para botas, mochilas y equipamiento. Terraza conectada mediante el mismo deck. Hogar compacto de combustión cerrada. Cerramientos y aislación aptos para uso invernal. Instalaciones técnicas protegidas y ocultas. Sin chapa de refugio, troncos decorativos, equipos deportivos exhibidos ni apariencia de carpa temporal.",
+    "palette": [
+      "lona gris piedra",
+      "lenga tostada",
+      "beige lana",
+      "verde bosque",
+      "grafito",
+      "naranja quemado",
+      "gris nieve como tono complementario"
+    ],
+    "floors": "Interior principal: madera natural tono lenga tostada. Vestíbulo: caucho técnico grafito antideslizante. Baño: microcemento gris cálido. Ducha: piedra texturada oscura. Terraza y plataforma: deck de madera tratada. Acceso: pasarela elevada con superficie antideslizante. Sector del hogar: placa mineral resistente al calor. Sin superficies pulidas o sensibles a humedad y nieve.",
+    "wallsAndFinishes": "Interior: lona técnica gris piedra con paneles bajos aislados. Cabecero: listones de lenga tostada. Baño: microcemento claro y piedra oscura. Vestíbulo: paneles resistentes a golpes y humedad. Volumen sanitario exterior: madera tratada y chapa grafito. Hogar integrado en un panel mineral. Sin revestimientos brillantes, lona plástica visible ni decoración de refugio.",
+    "joinery": "Estructura principal de metal grafito. Frente panorámico con perfilería reforzada. Puerta exterior aislada de madera y vidrio. Puerta del baño lisa en lenga. Muebles de guardado integrados. Mampara transparente con perfilería grafito. Herrajes negros satinados. Cortinas térmicas en beige lana y verde bosque.",
+    "furniture": "Cama king orientada hacia el frente panorámico. Cabecero bajo de lenga. Mesas de luz suspendidas. Dos sillones compactos verde bosque. Mesa pequeña para desayuno. Banco en el vestíbulo para colocarse botas. Guardado ventilado para equipamiento. Textiles de lana en beige y gris. Mobiliario exterior para dos personas. Sin televisión protagonista, escritorio corporativo ni esquíes usados como decoración.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta en la base y el cabecero. Apliques grafito junto a la cama. Iluminación técnica clara en el vestíbulo. Luz integrada en guardados. Balizas bajas en pasarela y terraza. Hogar como fuente visual cálida. Iluminación exterior mínima para conservar el cielo nocturno. Sin guirnaldas, luces de colores ni estética de bar de montaña.",
+    "continuityElements": [
+      "Carpa safari técnica gris piedra.",
+      "Estructura y detalles grafito.",
+      "Plataforma y pasarela elevadas.",
+      "Lenga tostada en pisos, cabecero y mobiliario.",
+      "Beige lana y verde bosque en textiles.",
+      "Naranja quemado como acento puntual.",
+      "Baño aislado y vestíbulo técnico integrados.",
+      "Relación constante con Cerro Chapelco y el clima de montaña durante todo el año."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Carpa elevada en la montaña",
+        "brief": "Mostrar la carpa elevada en el paisaje de montaña, preparada para condiciones invernales."
+      },
+      {
+        "order": 2,
+        "title": "Cama king panorámica",
+        "brief": "Mostrar la cama king orientada hacia el frente panorámico."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado aislado",
+        "brief": "Mostrar el baño privado aislado con microcemento y piedra."
+      },
+      {
+        "order": 4,
+        "title": "Interior con hogar y desayuno",
+        "brief": "Mostrar el interior completo con hogar y rincón de desayuno."
+      },
+      {
+        "order": 5,
+        "title": "Vestíbulo técnico y terraza",
+        "brief": "Mostrar el vestíbulo de equipamiento conectado con la terraza y la pasarela."
+      }
+    ]
+  }
+}

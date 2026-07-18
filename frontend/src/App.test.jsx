@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import { act, render, screen } from "@testing-library/react";
 
-const authState = vi.hoisted(() => ({ value: { token: null, user: null } }));
+const authState = vi.hoisted(() => ({ value: { user: null, loading: false } }));
 
 vi.mock("./context/AuthContext", () => {
   const AuthContext = createContext();
@@ -45,9 +45,9 @@ async function renderAppWithHome(homeModule) {
   return render(<App />);
 }
 
-const UNAUTHENTICATED = { token: null, user: null };
-const AUTHENTICATED_USER = { token: "fake-token", user: { role: "USER" } };
-const AUTHENTICATED_ADMIN = { token: "fake-token", user: { role: "ADMIN" } };
+const UNAUTHENTICATED = { user: null, loading: false };
+const AUTHENTICATED_USER = { user: { role: "USER" }, loading: false };
+const AUTHENTICATED_ADMIN = { user: { role: "ADMIN" }, loading: false };
 
 // Renders App at an arbitrary route with a controllable auth context, real or
 // inert guards, and per-test page module overrides. Every call re-declares
@@ -73,6 +73,7 @@ async function renderAppAt({ path, authValue = UNAUTHENTICATED, guards = "inert"
 
   const defaultPages = {
     "./pages/Home/Home": { default: () => <main>Home shell</main> },
+    "./pages/Unauthorized/Unauthorized": { default: () => <main>Unauthorized shell</main> },
   };
   for (const [pagePath, moduleOrPromise] of Object.entries({ ...defaultPages, ...pages })) {
     vi.doMock(pagePath, () => moduleOrPromise);
@@ -230,7 +231,7 @@ describe("App admin route authorization", () => {
 
     await act(async () => {});
 
-    expect(window.location.pathname).toBe("/");
+    expect(window.location.pathname).toBe("/unauthorized");
     expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
     expect(screen.getByText("Header shell")).toBeInTheDocument();
   });

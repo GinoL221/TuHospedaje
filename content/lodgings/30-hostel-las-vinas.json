@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 30,
+  "name": "Hostel Las Viñas",
+  "category": "hostel",
+  "location": {
+    "city": "Mendoza",
+    "country": "Argentina"
+  },
+  "capacity": 8,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hostel económico y social para viajeros jóvenes, grupos y turismo vitivinícola, con capacidad para hasta ocho huéspedes por dormitorio representado. Debe sentirse soleado, relajado y preparado para actividades grupales; sin parecer una bodega, un hotel boutique, un bar temático ni un espacio lleno de barricas.",
+    "architecture": "Casa mendocina reciclada de una sola planta. Fachada urbana sencilla de revoque arena. Acceso directo y claramente identificado. Dormitorios compartidos distribuidos alrededor de circulaciones cortas. Cocina y comedor comunitarios conectados con el patio. Baños compartidos agrupados. Patio sombreado mediante una pérgola con vid. Parrilla integrada en un lateral. Piscina compacta de uso común. Guardado ordenado para bicicletas. Aleros y vegetación utilizados para controlar el sol. Instalaciones actualizadas y accesibles para mantenimiento. Sin arquitectura de bodega, cava decorativa, barricas, botellas gigantes ni estética de wine bar.",
+    "palette": [
+      "arena",
+      "blanco cálido",
+      "verde oliva",
+      "borgoña apagado",
+      "madera clara",
+      "negro mate",
+      "terracota suave como tono complementario"
+    ],
+    "floors": "Acceso y áreas comunes: mosaico granítico o porcelanato arena. Dormitorios: piso vinílico resistente tono madera clara. Cocina y comedor: porcelanato gris cálido. Baños: porcelanato antideslizante claro. Duchas: cerámica blanca con detalles oliva. Patio: baldosas terracota antideslizantes. Entorno de piscina: piedra atérmica clara. Sin madera delicada en exteriores, alfombras ni pisos brillantes.",
+    "wallsAndFinishes": "Muros generales en blanco cálido y arena. Paños verde oliva para orientar sectores. Borgoña apagado utilizado en detalles pequeños. Cocina con frente de cerámica terracota suave. Baños revestidos hasta altura funcional. Patio con revoque exterior resistente. Señalética simple y contemporánea. Sin murales de viñedos, etiquetas, botellas, corchos ni referencias literales a bodegas.",
+    "joinery": "Ventanas de madera clara restaurada o aluminio negro. Puertas interiores lisas y resistentes. Puertas de baños aptas para humedad. Lockers individuales metálicos negros. Muebles de cocina en madera clara y oliva. Mamparas resistentes con perfilería negra. Herrajes negros satinados. Cortinas claras, simples y lavables.",
+    "furniture": "Cuchetas metálicas negras con estructura firme. Cortina, luz, toma y estante por cama. Lockers para ocho huéspedes. Mesas comunitarias de madera clara. Sillas resistentes y apilables. Cocina equipada para grupos. Sofás modulares con fundas lavables. Bancos y mesas bajo la pérgola. Reposeras simples junto a la piscina. Bicicletero ordenado y protegido. Sin muebles de barrica, pallets improvisados ni mobiliario de hotel boutique.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz individual de lectura en cada cama. Iluminación uniforme en dormitorios y baños. Luz lineal bajo alacenas. Colgantes simples sobre mesas comunitarias. Apliques negros en el patio. Balizas bajas alrededor de la piscina y bicicletas. Sombra natural de la pérgola como protagonista diurno. Sin guirnaldas temáticas, luces borgoña, neón ni iluminación de bar.",
+    "continuityElements": [
+      "Casa mendocina reciclada de una sola planta.",
+      "Revoques arena y blanco cálido.",
+      "Verde oliva en cocina, textiles y vegetación.",
+      "Borgoña apagado como acento limitado.",
+      "Madera clara y metal negro.",
+      "Pérgola con vid como protección solar.",
+      "Equipamiento durable para ocho huéspedes.",
+      "Relación continua entre dormitorios, cocina, patio, parrilla, piscina y bicicletas."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada urbana",
+        "brief": "Mostrar la fachada urbana sencilla de revoque arena."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio compartido",
+        "brief": "Mostrar el dormitorio compartido con cuchetas y lockers para ocho huéspedes."
+      },
+      {
+        "order": 3,
+        "title": "Baño compartido",
+        "brief": "Mostrar el baño compartido limpio y resistente."
+      },
+      {
+        "order": 4,
+        "title": "Cocina y comedor comunitarios",
+        "brief": "Mostrar la cocina y el comedor comunitarios completamente equipados."
+      },
+      {
+        "order": 5,
+        "title": "Patio con pérgola y piscina",
+        "brief": "Mostrar el patio sin personas con pérgola de vid, parrilla, piscina compacta y bicicletas."
+      }
+    ]
+  }
+}

@@ -77,6 +77,18 @@ public class SmtpEmailServiceImpl implements EmailService {
         send(reservation.getGuestEmail(), subject, body);
     }
 
+    @Override
+    public void sendReservationCancellation(ReservationResponse reservation) {
+        String subject = "Booking cancelled — " + reservation.getLodgingName();
+        String body = """
+                <html><body style="font-family:sans-serif;color:#222;">
+                <h2>Your booking was cancelled</h2>
+                <p>Your reservation at %s from %s to %s is now cancelled.</p>
+                </body></html>
+                """.formatted(reservation.getLodgingName(), reservation.getCheckIn(), reservation.getCheckOut());
+        send(reservation.getGuestEmail(), subject, body);
+    }
+
     private void send(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

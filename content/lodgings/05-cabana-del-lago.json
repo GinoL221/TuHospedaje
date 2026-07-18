@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 5,
+  "name": "Cabaña del Lago",
+  "category": "cabin",
+  "location": {
+    "city": "Bariloche",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña premium íntima para hasta cuatro personas, ubicada frente a un lago de Bariloche. Debe priorizar el agua, la tranquilidad y la relación directa entre interiores, terraza y costa; diferenciándose del carácter familiar tradicional de Los Arrayanes y de la escala de un resort.",
+    "architecture": "Cabaña horizontal de una sola planta. Implantación paralela a la costa. Volúmenes bajos de madera oscura y piedra gris. Grandes paños vidriados orientados hacia el lago. Cubierta inclinada de baja pendiente en grafito. Aleros profundos para proteger vidrios y terraza. Estar, cocina y dormitorio principal alineados con la vista. Terraza continua conectada con los espacios sociales. Hogar cerrado integrado en un volumen de piedra. Sendero discreto hacia un muelle privado. Espacio protegido para guardar kayaks y equipamiento. Instalaciones técnicas ocultas. Sin escala monumental, varios pisos, arquitectura de resort ni rusticidad basada en troncos.",
+    "palette": [
+      "nogal oscuro",
+      "gris piedra",
+      "grafito",
+      "beige lino",
+      "azul lago",
+      "verde musgo",
+      "blanco cálido como tono complementario"
+    ],
+    "floors": "Acceso: piedra gris antideslizante. Estar, cocina y dormitorios: madera sellada tono nogal oscuro. Baños: porcelanato mineral gris cálido. Ducha: piedra texturada gris. Terraza: deck de madera tratada. Sendero al muelle: lajas naturales y grava compactada. Muelle: tablas de madera exterior con terminación antideslizante. Área de kayaks: pavimento drenante oscuro.",
+    "wallsAndFinishes": "Interior: paneles de nogal combinados con revoque beige mate. Estar: muro de piedra gris con hogar cerrado. Dormitorios: cabeceros de madera y textiles de lino. Cocina: frente de piedra sinterizada gris. Baños: microcemento claro y piedra en ducha. Exterior: madera oscura tratada y basamento pétreo. Sin barnices brillantes, revestimientos plásticos ni decoración náutica.",
+    "joinery": "Ventanas de aluminio grafito con doble vidrio. Grandes puertas corredizas hacia la terraza. Marcos delgados para no interrumpir la vista. Puerta de acceso revestida en nogal. Puertas interiores lisas de madera. Placares empotrados con espacio para ropa y equipamiento. Mamparas transparentes con perfilería grafito. Herrajes negros satinados. Cortinas de lino beige y blackout gris.",
+    "furniture": "Cama king orientada directamente hacia el lago. Segundo dormitorio flexible para dos huéspedes. Cabeceros bajos de nogal. Mesas de luz suspendidas. Sofá de líneas simples en beige lino. Dos sillones compactos azul lago. Mesa de comedor para cuatro personas. Cocina integrada con isla pequeña. Banco de acceso para equipamiento. Mobiliario de terraza bajo y resistente al clima. Sin muebles de troncos, cuero rústico dominante ni piezas de lujo ostentoso.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta en cielorrasos y paneles de madera. Apliques grafito junto a las camas. Colgantes sobrios sobre mesa e isla. Iluminación integrada bajo alacenas. Luz puntual sobre el muro de piedra. Balizas bajas en terraza, sendero y muelle. Iluminación exterior contenida para evitar reflejos sobre el lago. Sin guirnaldas, focos de colores ni contaminación lumínica.",
+    "continuityElements": [
+      "Volumen horizontal de una sola planta.",
+      "Nogal oscuro en fachadas, pisos y mobiliario.",
+      "Piedra gris en basamento, hogar y baño.",
+      "Cubierta y carpinterías grafito.",
+      "Beige lino en cortinas y tapizados.",
+      "Azul lago y verde musgo como acentos.",
+      "Grandes paños vidriados protegidos por aleros.",
+      "Relación continua entre interiores, terraza, muelle y lago."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior desde la costa",
+        "brief": "Mostrar la cabaña horizontal entre bosque y lago."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar la cama orientada hacia el agua."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar la ducha de piedra gris."
+      },
+      {
+        "order": 4,
+        "title": "Estar, cocina y hogar",
+        "brief": "Mostrar los espacios conectados con la terraza."
+      },
+      {
+        "order": 5,
+        "title": "Muelle privado con kayaks",
+        "brief": "Mostrar el muelle mirando hacia la misma cabaña."
+      }
+    ]
+  }
+}

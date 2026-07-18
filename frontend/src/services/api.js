@@ -3,21 +3,42 @@
 // change API_BASE; use vi.resetModules() + a dynamic import() to re-evaluate it.
 const API_BASE = import.meta.env.VITE_API_URL;
 
+const UNSAFE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
+
+// Endpoints that legitimately return 401 for reasons unrelated to an
+// expired/missing session cookie (e.g. wrong credentials on login). These
+// must not trigger the global auth:unauthorized redirect.
+const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/me",
+]);
+
+// Reads the XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository
+// (non-httpOnly by design, readable from JS) and URL-decodes its value —
+// Spring URL-encodes the raw token before writing the cookie.
+export function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 async function request(method, endpoint, data) {
-  const token = localStorage.getItem("token");
   const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (UNSAFE_METHODS.has(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers["X-XSRF-TOKEN"] = csrfToken;
+    }
   }
 
-  const config = { method, headers };
+  const config = { method, headers, credentials: "include" };
   if (data) {
     config.body = JSON.stringify(data);
   }
 
   const res = await fetch(`${API_BASE}${endpoint}`, config);
 
-  if (res.status === 401 && token) {
+  if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
     throw new Error("Sesión expirada");
   }
@@ -50,6 +71,10 @@ export function post(endpoint, data) {
 
 export function put(endpoint, data) {
   return request("PUT", endpoint, data);
+}
+
+export function patch(endpoint, data) {
+  return request("PATCH", endpoint, data);
 }
 
 export function del(endpoint) {

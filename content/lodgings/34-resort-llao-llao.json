@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 34,
+  "name": "Resort Llao Llao",
+  "category": "resort",
+  "location": {
+    "city": "Bariloche",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Resort patagónico icónico de máxima categoría para hasta cuatro huéspedes por habitación representada, ubicado en una posición elevada entre lagos, bosque y montañas de Bariloche. Debe transmitir historia, escala y servicio de lujo mediante arquitectura, materiales y paisaje; sin logos, ostentación moderna, imagen de castillo, caricatura alpina ni reproducción exacta de una fotografía existente.",
+    "architecture": "Edificio principal de cinco pisos. Composición central con alas laterales. Implantación elevada sobre una colina. Basamento y volúmenes principales de piedra gris. Revoques color marfil. Estructuras y detalles de madera oscura. Cubiertas inclinadas verdes preparadas para nieve y lluvia. Ventanas verticales repetidas con ritmo regular. Terrazas panorámicas integradas en las alas. Gran salón y restaurante orientados hacia lagos y montañas. Piscina climatizada interior-exterior. Relación visual distante con campo de golf, bosque y costa. Instalaciones técnicas ocultas. Sin torres de castillo, almenas, fachadas de vidrio contemporáneas ni ampliaciones ostentosas.",
+    "palette": [
+      "marfil",
+      "gris piedra",
+      "nogal oscuro",
+      "verde bosque",
+      "borgoña",
+      "latón envejecido",
+      "verde cubierta como tono arquitectónico"
+    ],
+    "floors": "Acceso y lobby: piedra gris noble de acabado mate. Gran salón y restaurante: parquet de nogal restaurado. Habitaciones: madera de ingeniería tono nogal. Circulaciones: alfombra modular verde bosque y borgoña. Baños: piedra clara antideslizante. Duchas: mármol verde mate. Piscina y spa: piedra gris atérmica. Terrazas: piedra exterior resistente a heladas.",
+    "wallsAndFinishes": "Lobby: piedra gris, revoque marfil y paneles de nogal. Gran salón: madera oscura, textiles y muros claros. Habitaciones: marfil mate con cabeceros tapizados. Baños: piedra clara y mármol verde sin brillo. Restaurante: nogal, piedra y superficies acústicas discretas. Piscina: piedra gris, microcemento claro y madera tratada. Elementos históricos restaurados combinados con intervenciones actuales. Sin dorados brillantes, escudos, trofeos, tapices medievales ni decoración alpina temática.",
+    "joinery": "Ventanas de madera oscura restaurada. Doble vidrio integrado sin alterar proporciones. Puertas interiores de nogal con molduras simples. Placares amplios integrados. Carpinterías exteriores protegidas para clima patagónico. Mamparas transparentes con perfilería de latón oscuro. Herrajes de latón envejecido. Cortinas dobles en marfil, verde bosque y borgoña. Cerramientos contemporáneos discretos en la piscina.",
+    "furniture": "Habitación con cama king orientada hacia el paisaje. Configuración secundaria para dos huéspedes. Cabeceros tapizados de proporciones generosas. Mesas de luz de nogal. Sofás y sillones en marfil, verde bosque y borgoña. Mesa privada para cuatro personas. Gran salón con agrupaciones de conversación. Restaurante con mesas de nogal y sillas tapizadas. Mobiliario de terraza sobrio y resistente. Reposeras de alta calidad junto a la piscina. Sin muebles palaciegos, piezas doradas, rusticidad de chalet ni minimalismo frío.",
+    "lighting": "Temperatura cálida de 2700 K. Arañas históricas restauradas solo en espacios principales. Iluminación indirecta sobre piedra, madera y cielorrasos. Apliques de latón envejecido en habitaciones. Lámparas de mesa con pantallas de lino. Colgantes sobrios en restaurante. Luz difusa en piscina y spa. Fachada iluminada de forma contenida. Sin iluminación teatral de castillo, luces de colores ni ostentación lumínica.",
+    "continuityElements": [
+      "Composición central con alas laterales.",
+      "Piedra gris y revoque marfil.",
+      "Cubiertas inclinadas verdes.",
+      "Nogal oscuro en pisos, puertas y mobiliario.",
+      "Verde bosque y borgoña en textiles.",
+      "Latón envejecido en herrajes y luminarias.",
+      "Encuentro equilibrado entre elementos históricos e intervenciones contemporáneas.",
+      "Relación panorámica constante con lagos, bosque, montañas y golf distante."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Edificio sobre la colina",
+        "brief": "Mostrar una vista amplia del edificio sobre la colina, sin copiar ni reproducir exactamente una fotografía existente."
+      },
+      {
+        "order": 2,
+        "title": "Habitación panorámica",
+        "brief": "Mostrar la habitación orientada hacia el lago y las montañas."
+      },
+      {
+        "order": 3,
+        "title": "Baño de piedra y mármol verde",
+        "brief": "Mostrar el baño de piedra clara y mármol verde mate."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante y gran salón",
+        "brief": "Mostrar el restaurante panorámico conectado visualmente con el gran salón."
+      },
+      {
+        "order": 5,
+        "title": "Piscina climatizada interior-exterior",
+        "brief": "Mostrar la piscina climatizada interior-exterior con golf, bosque y lago en contexto distante."
+      }
+    ]
+  }
+}

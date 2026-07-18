@@ -4,13 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.dto.policy.PolicyDTO;
+import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,10 +21,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -44,6 +49,9 @@ class PolicyControllerIntegrationTest {
     private PolicyRepository policyRepository;
 
     @Autowired
+    private LodgingRepository lodgingRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -57,6 +65,7 @@ class PolicyControllerIntegrationTest {
 
     private String adminAuthHeader;
     private String userAuthHeader;
+    private Long policyFixtureLodgingId;
 
     @BeforeEach
     void setUp() {
@@ -69,8 +78,7 @@ class PolicyControllerIntegrationTest {
                 .build();
 
         User savedAdmin = userRepository.save(admin);
-        String adminToken = jwtService.generateToken(savedAdmin);
-        adminAuthHeader = "Bearer " + adminToken;
+        adminAuthHeader = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("User")
@@ -81,12 +89,16 @@ class PolicyControllerIntegrationTest {
                 .build();
 
         User savedUser = userRepository.save(regularUser);
-        String userToken = jwtService.generateToken(savedUser);
-        userAuthHeader = "Bearer " + userToken;
+        userAuthHeader = jwtService.generateToken(savedUser);
     }
 
     @AfterEach
     void tearDown() {
+        if (policyFixtureLodgingId != null) {
+            lodgingRepository.deleteById(policyFixtureLodgingId);
+            lodgingRepository.flush();
+            policyFixtureLodgingId = null;
+        }
         // Seeded ratings and reservations reference users, so they must go first
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
@@ -127,8 +139,11 @@ class PolicyControllerIntegrationTest {
         request.setDescription("Disponible desde las 10:00");
         request.setIcon("fa-solid fa-sun");
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -149,8 +164,11 @@ class PolicyControllerIntegrationTest {
         request.setDescription("Duplicada");
         request.setIcon("fa-solid fa-ban");
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -164,8 +182,11 @@ class PolicyControllerIntegrationTest {
         request.setDescription("Inválida");
         request.setIcon("");
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -185,8 +206,11 @@ class PolicyControllerIntegrationTest {
         request.setDescription("Nueva descripción");
         request.setIcon("fa-solid fa-clock");
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(put("/api/policies/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -201,8 +225,11 @@ class PolicyControllerIntegrationTest {
         request.setDescription("none");
         request.setIcon("fa-solid fa-ban");
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(put("/api/policies/{id}", 888888L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -216,23 +243,49 @@ class PolicyControllerIntegrationTest {
         policy.setIcon("fa-solid fa-trash");
         Policy saved = policyRepository.save(policy);
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(delete("/api/policies/{id}", saved.getId())
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void shouldReturnBadRequestWhenDeletingPolicyReferencedByLodging() throws Exception {
-        mockMvc.perform(delete("/api/policies/{id}", 1L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+        Policy policy = new Policy();
+        policy.setName("PL-Referenced");
+        policy.setDescription("Referenced by a lodging");
+        policy.setIcon("fa-solid fa-link");
+        Policy savedPolicy = policyRepository.save(policy);
+
+        Lodging lodging = new Lodging();
+        lodging.setName("Policy reference lodging");
+        lodging.setDescription("Fixture for policy deletion constraint");
+        lodging.setAddress("123 Test Street");
+        lodging.setCity("Test City");
+        lodging.setCountry("Argentina");
+        lodging.setPhoneNumber("123456789");
+        lodging.setEmail("policy-reference-lodging@tuhospedaje.test");
+        lodging.setPolicies(Set.of(savedPolicy));
+        policyFixtureLodgingId = lodgingRepository.saveAndFlush(lodging).getId();
+
+        Cookie csrfCookie = obtainCsrfCookie();
+        mockMvc.perform(delete("/api/policies/{id}", savedPolicy.getId())
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
     void shouldReturnNotFoundWhenDeletingPolicyDoesNotExist() throws Exception {
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(delete("/api/policies/{id}", 777777L)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound());
     }
 
@@ -243,7 +296,12 @@ class PolicyControllerIntegrationTest {
         request.setDescription("Sin auth");
         request.setIcon("fa-solid fa-lock");
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -256,10 +314,42 @@ class PolicyControllerIntegrationTest {
         request.setDescription("No admin");
         request.setIcon("fa-solid fa-user");
 
+        Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Obtains a real {@code XSRF-TOKEN} cookie via a CSRF-safe public GET, WITHOUT using
+     * Spring Security Test's {@code .with(csrf())} post-processor (that post-processor
+     * corrupts the shared {@code CsrfTokenRepository} at the ServletContext level for
+     * every other test in this Surefire fork — see
+     * {@code com.tuhospedaje.AbstractIntegrationTest#obtainCsrfCookie}). This class does
+     * not extend {@code AbstractIntegrationTest} (it manages its own cleanup via
+     * {@code @AfterEach} instead of {@code @Transactional} rollback), so the same logic
+     * is duplicated here rather than changing this file's test-isolation strategy.
+     */
+    private Cookie obtainCsrfCookie() throws Exception {
+        Cookie csrfCookie = mockMvc.perform(get("/api/policies"))
+                .andReturn()
+                .getResponse()
+                .getCookie("XSRF-TOKEN");
+        assertThat(csrfCookie).isNotNull();
+        return csrfCookie;
+    }
+
+    /**
+     * Builds the {@code ACCESS_TOKEN} cookie used to authenticate {@code MockMvc}
+     * requests. Duplicated here rather than via {@code AbstractIntegrationTest} for the
+     * same reason {@link #obtainCsrfCookie()} is duplicated above — this class does not
+     * extend that base class.
+     */
+    private Cookie accessCookie(String token) {
+        return new Cookie("ACCESS_TOKEN", token);
     }
 }

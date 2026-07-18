@@ -10,10 +10,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Authentication response containing the JWT access token")
+@Schema(description = "Authenticated user's claims. The JWT itself never appears here — "
+        + "it is delivered exclusively via the httpOnly ACCESS_TOKEN cookie.")
 public class AuthResponse {
 
-    @Schema(description = "JWT bearer token to include in the Authorization header for subsequent requests",
-            example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyQGV4YW1wbGUuY29tIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
-    private String token;
+    @Schema(description = "User's first name", example = "John")
+    private String firstName;
+
+    @Schema(description = "User's last name", example = "Doe")
+    private String lastName;
+
+    @Schema(description = "User's email address", example = "john.doe@example.com")
+    private String email;
+
+    @Schema(description = "User's role", example = "USER")
+    private String role;
+
+    @Schema(description = "User's avatar/profile image URL")
+    private String imageUrl;
 }

@@ -1,0 +1,68 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 35,
+  "name": "Glamping Bosques del Sur",
+  "category": "glamping",
+  "location": {
+    "city": "Villa La Angostura",
+    "country": "Argentina"
+  },
+  "capacity": 2,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Glamping premium de desconexión para parejas, ubicado dentro de un bosque de arrayanes. Debe sentirse íntimo, silencioso y confortable, con mínima intervención sobre el terreno; sin parecer una cabaña, un camping tradicional ni un domo futurista.",
+    "architecture": "Domo geodésico individual de aproximadamente 35 m². Estructura grafito con cubierta textil color arena. Frente panorámico transparente orientado al bosque y al cielo. Plataforma elevada para proteger raíces y suelo. Terraza privada conectada mediante el mismo deck. Baño privado alojado en un volumen compacto revestido en madera. Jacuzzi exterior protegido parcialmente por listones. Acceso mediante una pasarela elevada y discreta. Instalaciones técnicas ocultas. Sin antenas, WiFi, carteles, logos, cercos ni tala visible.",
+    "palette": [
+      "arena",
+      "madera miel",
+      "verde musgo",
+      "gris grafito",
+      "beige lana",
+      "cobre apagado"
+    ],
+    "floors": "Interior del domo: madera natural tono miel. Baño: microcemento gris cálido antideslizante. Ducha: piedra texturada verde grisácea. Terraza: deck de madera tratada. Jacuzzi: piedra oscura antideslizante. Pasarela: tablas de madera con iluminación integrada.",
+    "wallsAndFinishes": "Interior: cubierta textil arena con paneles bajos de madera. Cabecero: listones de madera miel. Baño: microcemento claro y piedra verde grisácea. Volumen sanitario exterior: tablas verticales de madera. Protección del jacuzzi: listones oscuros separados para conservar la vista. Sin revestimientos brillantes ni superficies plásticas visibles.",
+    "joinery": "Estructura geodésica grafito. Puerta de acceso de madera y vidrio. Ventana panorámica con paños triangulares. Puerta del baño de madera lisa. Mampara transparente con perfilería grafito. Herrajes de cobre oscuro.",
+    "furniture": "Cama king orientada hacia el frente panorámico. Cabecero bajo de madera. Mesas de luz suspendidas. Dos sillones compactos verde musgo. Mesa pequeña para desayuno. Banco de apoyo y espacio cerrado para equipaje. Textiles de lana y lino en tonos naturales. Mobiliario exterior para dos personas. Sin televisión, escritorio corporativo ni equipamiento tecnológico protagonista.",
+    "lighting": "Luz cálida de 2700 K. Iluminación indirecta en la base del domo. Apliques de cobre junto a la cama. Luz muy baja en pasarela y terraza. Jacuzzi iluminado en blanco cálido. Cielo nocturno y luz filtrada por el bosque como protagonistas. Sin guirnaldas, focos de colores ni contaminación lumínica.",
+    "continuityElements": [
+      "Cubierta textil arena.",
+      "Estructura grafito.",
+      "Madera miel.",
+      "Verde musgo.",
+      "Beige lana.",
+      "Cobre apagado.",
+      "Plataforma y pasarela elevadas.",
+      "Bosque de arrayanes sin intervención visible."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Domo y pasarela entre los arrayanes",
+        "brief": "Mostrar el domo y la pasarela entre los arrayanes."
+      },
+      {
+        "order": 2,
+        "title": "Cama king panorámica",
+        "brief": "Mostrar la cama king orientada al frente panorámico."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar el baño privado de microcemento y piedra."
+      },
+      {
+        "order": 4,
+        "title": "Interior y rincón de desayuno",
+        "brief": "Mostrar el interior completo con rincón de desayuno."
+      },
+      {
+        "order": 5,
+        "title": "Jacuzzi bajo el cielo nocturno",
+        "brief": "Mostrar el jacuzzi exterior bajo el bosque y el cielo nocturno."
+      }
+    ]
+  }
+}

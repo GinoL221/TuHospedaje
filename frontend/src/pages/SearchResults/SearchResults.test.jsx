@@ -1,8 +1,12 @@
 import { customRender, screen, userEvent, makeAuthValue, waitFor } from "../../test/test-utils";
 import SearchResults from "./SearchResults";
-import { get } from "../../services/api";
+import { searchLodgings } from "../../services/lodgingService";
+import { getCategories } from "../../services/categoryService";
+import { getFavorites } from "../../services/favoriteService";
 
-vi.mock("../../services/api");
+vi.mock("../../services/lodgingService");
+vi.mock("../../services/categoryService");
+vi.mock("../../services/favoriteService");
 
 const lodgingFixture = (overrides = {}) => ({
   id: 1,
@@ -21,23 +25,25 @@ const categoriesFixture = [
   { id: 2, name: "Hotel" },
 ];
 
-// SearchResults issues GET requests to three different endpoints from
-// independent effects: /categories (sidebar checkboxes), /favorites
-// (logged-in users only) and /lodgings/search?... (the actual results).
-// Branch by endpoint so each test only needs to override what it cares about.
-function mockGetDefaults({ results = [lodgingFixture()], categories = categoriesFixture, favorites = [] } = {}) {
-  get.mockImplementation((endpoint) => {
-    if (endpoint === "/categories") {
-      return Promise.resolve(categories);
-    }
-    if (endpoint === "/favorites") {
-      return Promise.resolve(favorites);
-    }
-    if (endpoint.startsWith("/lodgings/search")) {
-      return Promise.resolve(results);
-    }
-    return Promise.resolve(null);
-  });
+// The backend now returns a paginated wrapper — { lodgings, currentPage,
+// totalItems, totalPages } — instead of a flat array.
+function searchResponse({ lodgings = [lodgingFixture()], currentPage = 0, totalPages = 1, totalItems } = {}) {
+  return {
+    lodgings,
+    currentPage,
+    totalItems: totalItems ?? lodgings.length,
+    totalPages,
+  };
+}
+
+// SearchResults calls three independent services from independent effects:
+// getCategories (sidebar checkboxes), getFavorites (logged-in users only)
+// and searchLodgings (the actual results). Set sane defaults for all three
+// so each test only needs to override what it cares about.
+function mockServiceDefaults({ lodgings = [lodgingFixture()], categories = categoriesFixture, favorites = [] } = {}) {
+  searchLodgings.mockResolvedValue(searchResponse({ lodgings }));
+  getCategories.mockResolvedValue(categories);
+  getFavorites.mockResolvedValue(favorites);
 }
 
 function renderSearchResults({ authValue, initialEntries = ["/search?city=Bariloche"] } = {}) {
@@ -45,17 +51,18 @@ function renderSearchResults({ authValue, initialEntries = ["/search?city=Barilo
 }
 
 describe("SearchResults - initial unfiltered search from URL params", () => {
-  it("fetches /lodgings/search with the city URL param and renders the results", async () => {
-    mockGetDefaults();
+  it("fetches the search endpoint with the city URL param and default pagination, and renders the results", async () => {
+    mockServiceDefaults();
     renderSearchResults();
 
     expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 
-    expect(get).toHaveBeenCalledWith("/lodgings/search?city=Bariloche");
+    const [params] = searchLodgings.mock.calls[0];
+    expect(params.toString()).toBe("city=Bariloche&page=0");
   });
 
   it('renders the heading with the searched city', async () => {
-    mockGetDefaults();
+    mockServiceDefaults();
     renderSearchResults();
 
     expect(await screen.findByText('Resultados para "Bariloche"')).toBeInTheDocument();
@@ -64,7 +71,7 @@ describe("SearchResults - initial unfiltered search from URL params", () => {
 
 describe("SearchResults - empty and error states", () => {
   it("shows the empty-state message when the search resolves with no results", async () => {
-    mockGetDefaults({ results: [] });
+    mockServiceDefaults({ lodgings: [] });
     renderSearchResults();
 
     expect(
@@ -73,34 +80,35 @@ describe("SearchResults - empty and error states", () => {
   });
 
   it("shows the error message when the search rejects", async () => {
-    get.mockImplementation((endpoint) => {
-      if (endpoint === "/categories") return Promise.resolve(categoriesFixture);
-      if (endpoint === "/favorites") return Promise.resolve([]);
-      if (endpoint.startsWith("/lodgings/search")) return Promise.reject(new Error("fail"));
-      return Promise.resolve(null);
-    });
+    getCategories.mockResolvedValue(categoriesFixture);
+    getFavorites.mockResolvedValue([]);
+    searchLodgings.mockRejectedValue(new Error("fail"));
     renderSearchResults();
 
     expect(await screen.findByText("fail")).toBeInTheDocument();
   });
 });
 
-// Per spec Risks policy: runCategorySearch does NOT filter server-side when
-// 2+ categories are selected. It fetches the full unfiltered result set from
-// /lodgings/search ONCE, then intersects locally against the selected
-// category ids. These tests characterize that two-step client-side flow,
-// not an idealized server-side filter.
-describe("SearchResults - multi-category filter is client-side intersected", () => {
-  it("fetches once and filters locally to lodgings whose categoryId is in the selected set", async () => {
+// Per the PR2/PR3 backend contract, categories are now always filtered
+// server-side (no more client-side intersection): the component always
+// forwards selected categories as repeated `categories` query params and
+// renders whatever the backend returns for that filter set.
+describe("SearchResults - categories are always filtered server-side", () => {
+  it("sends both selected categories to the backend and renders the server-filtered results", async () => {
     const cabin = lodgingFixture({ id: 1, name: "Cabaña del Lago", categoryId: 1 });
     const hotel = lodgingFixture({ id: 2, name: "Hotel Centro", categoryId: 2 });
     const apart = lodgingFixture({ id: 3, name: "Apart Costa", categoryId: 3 });
-    mockGetDefaults({ results: [cabin, hotel, apart] });
+    getCategories.mockResolvedValue(categoriesFixture);
+    getFavorites.mockResolvedValue([]);
+    searchLodgings
+      .mockResolvedValueOnce(searchResponse({ lodgings: [cabin, hotel, apart] }))
+      .mockResolvedValueOnce(searchResponse({ lodgings: [cabin, hotel] }));
+
     const user = userEvent.setup();
     renderSearchResults();
 
     await screen.findByText("Cabaña del Lago");
-    get.mockClear();
+    searchLodgings.mockClear();
 
     await user.click(screen.getByRole("checkbox", { name: "Cabaña" }));
     await user.click(screen.getByRole("checkbox", { name: "Hotel" }));
@@ -112,16 +120,22 @@ describe("SearchResults - multi-category filter is client-side intersected", () 
     expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
     expect(screen.getByText("Hotel Centro")).toBeInTheDocument();
 
-    // Only ONE call to /lodgings/search for the whole multi-category apply —
-    // the intersection happens locally, not via a second filtered request.
-    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
-    expect(searchCalls).toHaveLength(1);
+    // A single fetch carries both categories — no per-category branching left.
+    expect(searchLodgings).toHaveBeenCalledTimes(1);
+    const [params] = searchLodgings.mock.calls[0];
+    expect(params.getAll("categories")).toEqual(["1", "2"]);
   });
 
-  it("re-runs the search without a removed category chip", async () => {
+  it("re-runs the search with only the remaining category after removing a chip", async () => {
     const cabin = lodgingFixture({ id: 1, name: "Cabaña del Lago", categoryId: 1 });
     const hotel = lodgingFixture({ id: 2, name: "Hotel Centro", categoryId: 2 });
-    mockGetDefaults({ results: [cabin, hotel] });
+    getCategories.mockResolvedValue(categoriesFixture);
+    getFavorites.mockResolvedValue([]);
+    searchLodgings
+      .mockResolvedValueOnce(searchResponse({ lodgings: [cabin] })) // initial load
+      .mockResolvedValueOnce(searchResponse({ lodgings: [cabin, hotel] })) // apply both categories
+      .mockResolvedValueOnce(searchResponse({ lodgings: [hotel] })); // remove "Cabaña" chip
+
     const user = userEvent.setup();
     renderSearchResults();
 
@@ -135,7 +149,7 @@ describe("SearchResults - multi-category filter is client-side intersected", () 
       expect(screen.getByText("Hotel Centro")).toBeInTheDocument();
     });
 
-    get.mockClear();
+    searchLodgings.mockClear();
     await user.click(screen.getByRole("button", { name: "Quitar Cabaña" }));
 
     await waitFor(() => {
@@ -143,16 +157,34 @@ describe("SearchResults - multi-category filter is client-side intersected", () 
     });
     expect(screen.getByRole("button", { name: "Quitar Hotel" })).toBeInTheDocument();
 
-    // Removing one of two categories leaves exactly one applied — runCategorySearch
-    // takes the cats.size === 1 server-side branch, issuing exactly one fetch.
-    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
-    expect(searchCalls).toHaveLength(1);
+    expect(searchLodgings).toHaveBeenCalledTimes(1);
+    const [params] = searchLodgings.mock.calls[0];
+    expect(params.getAll("categories")).toEqual(["2"]);
+  });
+
+  it("includes the categories param when exactly one category is selected", async () => {
+    mockServiceDefaults();
+    const user = userEvent.setup();
+    renderSearchResults();
+
+    await screen.findByText("Cabaña del Lago");
+    searchLodgings.mockClear();
+
+    await user.click(screen.getByRole("checkbox", { name: "Cabaña" }));
+    await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+
+    await waitFor(() => {
+      expect(searchLodgings).toHaveBeenCalledTimes(1);
+    });
+
+    const [params] = searchLodgings.mock.calls[0];
+    expect(params.getAll("categories")).toEqual(["1"]);
   });
 });
 
 describe("SearchResults - price chip removal", () => {
   it("removes the price chip and re-runs the search without price params", async () => {
-    mockGetDefaults();
+    mockServiceDefaults();
     const user = userEvent.setup();
     renderSearchResults();
 
@@ -164,7 +196,7 @@ describe("SearchResults - price chip removal", () => {
     await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
 
     const priceChipRemove = await screen.findByRole("button", { name: "Quitar filtro de precio" });
-    get.mockClear();
+    searchLodgings.mockClear();
 
     await user.click(priceChipRemove);
 
@@ -172,16 +204,15 @@ describe("SearchResults - price chip removal", () => {
       expect(screen.queryByRole("button", { name: "Quitar filtro de precio" })).not.toBeInTheDocument();
     });
 
-    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
-    expect(searchCalls).toHaveLength(1);
-    const [calledEndpoint] = searchCalls[0];
-    expect(calledEndpoint).toBe("/lodgings/search?city=Bariloche");
+    expect(searchLodgings).toHaveBeenCalledTimes(1);
+    const [params] = searchLodgings.mock.calls[0];
+    expect(params.toString()).toBe("city=Bariloche&page=0");
   });
 });
 
 describe("SearchResults - date chip removal", () => {
   it("removes the date chip and re-runs the search without checkIn/checkOut params", async () => {
-    mockGetDefaults();
+    mockServiceDefaults();
     const user = userEvent.setup();
     renderSearchResults({
       initialEntries: ["/search?city=Bariloche&checkIn=2026-07-01&checkOut=2026-07-05"],
@@ -189,7 +220,7 @@ describe("SearchResults - date chip removal", () => {
 
     await screen.findByText("Cabaña del Lago");
     const dateChipRemove = await screen.findByRole("button", { name: "Quitar fechas" });
-    get.mockClear();
+    searchLodgings.mockClear();
 
     await user.click(dateChipRemove);
 
@@ -197,56 +228,32 @@ describe("SearchResults - date chip removal", () => {
       expect(screen.queryByRole("button", { name: "Quitar fechas" })).not.toBeInTheDocument();
     });
 
-    const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
-    expect(searchCalls).toHaveLength(1);
-    const [calledEndpoint] = searchCalls[0];
-    expect(calledEndpoint).toBe("/lodgings/search?city=Bariloche");
-  });
-});
-
-describe("SearchResults - single category filter is server-side", () => {
-  it("includes the category param in the search request when exactly one category is selected", async () => {
-    mockGetDefaults();
-    const user = userEvent.setup();
-    renderSearchResults();
-
-    await screen.findByText("Cabaña del Lago");
-    get.mockClear();
-
-    await user.click(screen.getByRole("checkbox", { name: "Cabaña" }));
-    await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
-
-    await waitFor(() => {
-      const searchCalls = get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/search"));
-      expect(searchCalls).toHaveLength(1);
-    });
-
-    const [calledEndpoint] = get.mock.calls.find(([endpoint]) => endpoint.startsWith("/lodgings/search"));
-    const url = new URL(calledEndpoint, "http://localhost");
-    expect(url.searchParams.get("category")).toBe("1");
+    expect(searchLodgings).toHaveBeenCalledTimes(1);
+    const [params] = searchLodgings.mock.calls[0];
+    expect(params.toString()).toBe("city=Bariloche&page=0");
   });
 });
 
 describe("SearchResults - favorites only fetched for logged-in users", () => {
-  it("does not call GET /favorites and keeps favoriteIds empty for anonymous users", async () => {
-    mockGetDefaults();
+  it("does not call getFavorites and keeps favoriteIds empty for anonymous users", async () => {
+    mockServiceDefaults();
     renderSearchResults({ authValue: null });
 
     await screen.findByText("Cabaña del Lago");
 
-    expect(get).not.toHaveBeenCalledWith("/favorites");
+    expect(getFavorites).not.toHaveBeenCalled();
     // Anonymous users don't see the favorite button at all (ProductCard's own
     // useAuth gate), which is the externally observable consequence of
     // favoriteIds staying empty.
     expect(screen.queryByRole("button", { name: "Agregar a favoritos" })).not.toBeInTheDocument();
   });
 
-  it("calls GET /favorites for a logged-in user", async () => {
-    mockGetDefaults({ favorites: [lodgingFixture({ id: 1 })] });
+  it("calls getFavorites for a logged-in user", async () => {
+    mockServiceDefaults({ favorites: [lodgingFixture({ id: 1 })] });
     renderSearchResults({ authValue: makeAuthValue() });
 
     await screen.findByText("Cabaña del Lago");
 
-    expect(get).toHaveBeenCalledWith("/favorites");
+    expect(getFavorites).toHaveBeenCalled();
   });
 });

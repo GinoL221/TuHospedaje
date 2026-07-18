@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 21,
+  "name": "Cabaña Lacar",
+  "category": "cabin",
+  "location": {
+    "city": "San Martín de los Andes",
+    "country": "Argentina"
+  },
+  "capacity": 5,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña premium contemporánea para hasta cinco personas, ubicada frente al lago Lácar en San Martín de los Andes. Debe priorizar privacidad, arquitectura y acceso directo al paisaje; con un nivel superior al resto de las cabañas patagónicas, pero sin alcanzar la escala de lujo de Cabaña Los Glaciares.",
+    "architecture": "Conjunto de una sola planta formado por dos pabellones. Pabellón privado con dormitorios y baños. Pabellón social con estar, comedor y cocina. Conexión mediante un corredor completamente vidriado. Volúmenes revestidos en madera oscura tratada. Basamentos y muros puntuales de piedra clara. Cubiertas asimétricas de chapa grafito. Grandes paños vidriados orientados hacia el lago. Aleros profundos para lluvia, nieve y control solar. Terraza continua frente al pabellón social. Sendero natural hacia la costa y sector de kayaks. Instalaciones técnicas concentradas y ocultas. Sin segundo piso, balcones ornamentales, troncos expuestos ni escala de resort.",
+    "palette": [
+      "carbón",
+      "gris piedra",
+      "roble natural",
+      "beige lana",
+      "azul profundo",
+      "grafito",
+      "blanco niebla como tono complementario"
+    ],
+    "floors": "Acceso y corredor vidriado: piedra gris antideslizante. Pabellón social: madera de ingeniería tono roble. Dormitorios: madera natural sellada. Cocina: piedra sinterizada gris. Baños: porcelanato grafito antideslizante. Duchas: piedra texturada oscura. Terraza: deck de madera tratada. Sendero al lago: grava compactada y lajas naturales.",
+    "wallsAndFinishes": "Interiores: revoque blanco niebla y paneles de roble. Estar: muro de piedra clara con hogar cerrado. Dormitorios: cabeceros de roble y textiles de lana. Cocina: frentes lisos oscuros y mesada mineral. Baños: porcelanato grafito y piedra texturada. Corredor: estructura oscura y vidrio transparente. Exterior: madera carbón, piedra clara y chapa grafito. Sin madera anaranjada, piedra falsa, revestimientos brillantes ni decoración de montaña.",
+    "joinery": "Ventanas de aluminio grafito con ruptura de puente térmico. Doble vidrio de alta aislación. Puertas corredizas de grandes paños hacia la terraza. Corredor vidriado con perfilería mínima. Puerta principal revestida en madera oscura. Puertas interiores lisas en roble. Placares empotrados y ventilados. Mamparas transparentes con perfilería grafito. Herrajes negros satinados. Cortinas térmicas en beige lana y azul profundo.",
+    "furniture": "Dormitorio principal con cama king orientada al lago. Dormitorio secundario flexible para tres huéspedes. Cabeceros bajos de roble. Mesas de luz suspendidas. Sofá amplio en beige lana. Sillones compactos azul profundo. Mesa de comedor para cinco personas. Cocina integrada con isla mineral. Banco de acceso para equipamiento. Mobiliario de terraza bajo y resistente al clima. Guardado discreto para kayaks y remos. Sin muebles de troncos, cuero rústico dominante ni piezas ostentosas.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta integrada en cielorrasos y paneles. Apliques grafito junto a las camas. Colgantes sobrios sobre mesa e isla. Iluminación lineal en el corredor vidriado. Luz puntual sobre piedra y madera. Balizas bajas en terraza y sendero. Iluminación exterior contenida para evitar reflejos sobre el lago. Sin guirnaldas, luces de colores ni contaminación lumínica.",
+    "continuityElements": [
+      "Dos pabellones de una sola planta.",
+      "Corredor vidriado como unión reconocible.",
+      "Madera oscura tratada en las fachadas.",
+      "Piedra clara en basamentos y hogar.",
+      "Cubiertas y carpinterías grafito.",
+      "Roble natural y beige lana en interiores.",
+      "Azul profundo como acento.",
+      "Relación continua entre pabellones, terraza, sendero, kayaks y lago Lácar."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior desde la costa",
+        "brief": "Mostrar los dos pabellones y el corredor vidriado."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar el dormitorio orientado hacia el lago."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar porcelanato grafito y ducha de piedra texturada."
+      },
+      {
+        "order": 4,
+        "title": "Pabellón social",
+        "brief": "Mostrar estar, comedor, cocina y hogar."
+      },
+      {
+        "order": 5,
+        "title": "Terraza y sendero natural",
+        "brief": "Mostrar el recorrido hacia el lago, con kayaks y montañas."
+      }
+    ]
+  }
+}

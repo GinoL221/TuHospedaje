@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, User, Mail, Phone, ExternalLink } from "lucide-react";
 import { get } from "../../services/api";
+import { cancelReservation } from "../../services/reservationService";
 import "./MyReservationsPage.css";
+
+const BUSINESS_TIME_ZONE = "America/Argentina/Buenos_Aires";
 
 function fmtDate(str) {
   return str ? str.split("-").reverse().join("/") : "-";
@@ -13,10 +16,26 @@ function calcNights(checkIn, checkOut) {
   return Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
 }
 
+function businessDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function canCancel(reservation) {
+  return reservation.status === "CONFIRMED" && reservation.checkIn > businessDate();
+}
+
 export default function MyReservationsPage() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pendingIds, setPendingIds] = useState(new Set());
+  const pendingIdsRef = useRef(new Set());
+  const [cancellationErrors, setCancellationErrors] = useState({});
 
   useEffect(() => {
     get("/reservations/my")
@@ -24,6 +43,31 @@ export default function MyReservationsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleCancel(reservation) {
+    if (
+      pendingIdsRef.current.has(reservation.id) ||
+      !window.confirm("¿Querés cancelar esta reserva?")
+    ) return;
+
+    pendingIdsRef.current.add(reservation.id);
+    setPendingIds(new Set(pendingIdsRef.current));
+    setCancellationErrors((current) => ({ ...current, [reservation.id]: "" }));
+    try {
+      const cancelled = await cancelReservation(reservation.id);
+      setReservations((current) =>
+        current.map((item) => (item.id === reservation.id ? cancelled : item)),
+      );
+    } catch (err) {
+      setCancellationErrors((current) => ({
+        ...current,
+        [reservation.id]: err.message || "No se pudo cancelar. Intentá nuevamente.",
+      }));
+    } finally {
+      pendingIdsRef.current.delete(reservation.id);
+      setPendingIds(new Set(pendingIdsRef.current));
+    }
+  }
 
   if (loading) {
     return (
@@ -102,6 +146,23 @@ export default function MyReservationsPage() {
                     Ver alojamiento <ExternalLink size={13} />
                   </Link>
                 </div>
+                {canCancel(r) && (
+                  <div className="reservation-actions">
+                    <button
+                      type="button"
+                      className="reservation-cancel"
+                      disabled={pendingIds.has(r.id)}
+                      onClick={() => handleCancel(r)}
+                    >
+                      {pendingIds.has(r.id) ? "Cancelando..." : "Cancelar reserva"}
+                    </button>
+                    {cancellationErrors[r.id] && (
+                      <p className="reservation-cancel-error" role="alert">
+                        {cancellationErrors[r.id]}
+                      </p>
+                    )}
+                  </div>
+                )}
               </article>
             );
           })}

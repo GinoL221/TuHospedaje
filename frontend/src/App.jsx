@@ -20,6 +20,7 @@ const FavoritesPage = lazy(() => import("./pages/Favorites/FavoritesPage"));
 const BookingPage = lazy(() => import("./pages/Booking/BookingPage"));
 const BookingConfirmationPage = lazy(() => import("./pages/Booking/BookingConfirmation"));
 const MyReservationsPage = lazy(() => import("./pages/MyReservations/MyReservationsPage"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized/Unauthorized"));
 
 function AppLayout() {
   const { pathname } = useLocation();
@@ -32,27 +33,23 @@ function AppLayout() {
       <RouteChunkErrorBoundary resetKey={pathname}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<SearchResults />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/lodgings/:id" element={<ProductDetail />} />
-        <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/search" element={<SearchResults />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/lodgings/:id" element={<ProductDetail />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
-        <Route element={<RequireAuth />}>
-          <Route path="/booking/:lodgingId" element={<BookingPage />} />
-          <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
-          <Route path="/my-reservations" element={<MyReservationsPage />} />
-        </Route>
+            <Route element={<RequireAuth />}>
+              <Route path="/booking/:lodgingId" element={<BookingPage />} />
+              <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
+              <Route path="/my-reservations" element={<MyReservationsPage />} />
+            </Route>
 
-        <Route
-          path="/admin"
-          element={
-            <RequireAdmin>
-              <Admin />
-            </RequireAdmin>
-          }
-        />
+            <Route element={<RequireAdmin />}>
+              <Route path="/admin" element={<Admin />} />
+            </Route>
           </Routes>
         </Suspense>
       </RouteChunkErrorBoundary>

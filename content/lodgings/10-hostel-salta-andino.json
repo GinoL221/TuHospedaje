@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 10,
+  "name": "Hostel Salta Andino",
+  "category": "hostel",
+  "location": {
+    "city": "Salta",
+    "country": "Argentina"
+  },
+  "capacity": 10,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hostel cultural y accesible para viajeros jóvenes, grupos y mochileros, con capacidad para hasta diez huéspedes por dormitorio representado. Debe expresar la arquitectura y los materiales del noroeste argentino con calidez y sobriedad; sin convertirse en una escenografía folclórica ni repetir símbolos culturales como decoración.",
+    "architecture": "Casa histórica restaurada de una sola planta. Organización alrededor de un patio central. Fachada de revoque color arena y blanco cal. Zócalo de piedra regional. Aberturas altas de madera. Galerías cubiertas conectando dormitorios y áreas comunes. Dormitorios compartidos orientados hacia el patio. Cocina y comedor comunitarios integrados. Baños agrupados y preparados para uso intensivo. Patio central como principal espacio social. Ventilación cruzada y sombra profunda. Instalaciones nuevas incorporadas discretamente. Sin arcos decorativos agregados, columnas falsas, murales folclóricos ni ambientación de museo.",
+    "palette": [
+      "arena",
+      "blanco cal",
+      "terracota",
+      "índigo apagado",
+      "algarrobo",
+      "verde seco",
+      "negro mate como tono complementario"
+    ],
+    "floors": "Acceso y galerías: baldosas calcáreas restauradas. Dormitorios: piso vinílico resistente tono algarrobo. Cocina y comedor: mosaico granítico o porcelanato terracota mate. Baños: microcemento arena antideslizante. Duchas: cerámica blanca mate. Patio: piedra clara y baldosas terracota. Sin pisos brillantes, alfombras ni acabados envejecidos artificialmente.",
+    "wallsAndFinishes": "Muros generales en blanco cal y arena. Zócalos lavables en dormitorios y circulaciones. Paños índigo para identificar sectores. Cocina con frente de cerámica verde seco. Baños con microcemento arena y cerámica clara. Galerías con revoque mineral y piedra regional. Señalética discreta y legible. Sin guardas folclóricas repetidas, retratos históricos, instrumentos o textiles regionales usados como escenografía.",
+    "joinery": "Ventanas y puertas altas de madera restaurada. Terminación en algarrobo oscuro. Postigos operables para controlar sol y ventilación. Puertas de baños resistentes a humedad. Lockers individuales metálicos en negro mate. Muebles de cocina en madera y verde seco. Divisores de ducha resistentes y fáciles de limpiar. Herrajes negros satinados. Cortinas simples en beige o índigo apagado.",
+    "furniture": "Cuchetas metálicas negras con estructura firme. Cortina, luz, toma y estante individual. Lockers para diez huéspedes. Bancos de madera junto a los dormitorios. Mesas comunitarias de algarrobo. Sillas resistentes y apilables. Cocina equipada con guardado identificado. Sofás modulares con fundas lavables. Mobiliario bajo en patio y galerías. Sin muebles coloniales recargados, pallets improvisados ni objetos folclóricos decorativos.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz individual de lectura en cada cama. Iluminación uniforme en dormitorios y baños. Colgantes simples sobre mesas comunitarias. Luz lineal bajo alacenas. Apliques negros en galerías. Balizas bajas en el patio. Luz natural filtrada como protagonista durante el día. Sin faroles coloniales exagerados, guirnaldas ni iluminación teatral.",
+    "continuityElements": [
+      "Casa de una sola planta organizada alrededor del patio.",
+      "Revoques arena y blanco cal.",
+      "Baldosas terracota y piedra regional.",
+      "Carpinterías altas de algarrobo.",
+      "Índigo apagado en textiles y señalética.",
+      "Verde seco en cocina y vegetación.",
+      "Equipamiento comunitario durable para diez huéspedes.",
+      "Relación constante entre dormitorios, galerías, cocina y patio central."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada restaurada",
+        "brief": "Mostrar la fachada restaurada de arena y blanco cal."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio compartido",
+        "brief": "Mostrar el dormitorio compartido conectado con el patio, con cuchetas y lockers."
+      },
+      {
+        "order": 3,
+        "title": "Baño compartido",
+        "brief": "Mostrar el baño compartido limpio con microcemento color arena."
+      },
+      {
+        "order": 4,
+        "title": "Cocina y comedor comunitarios",
+        "brief": "Mostrar la cocina y el comedor comunitarios completamente equipados."
+      },
+      {
+        "order": 5,
+        "title": "Patio central y galerías",
+        "brief": "Mostrar el patio central y las galerías sin personas."
+      }
+    ]
+  }
+}

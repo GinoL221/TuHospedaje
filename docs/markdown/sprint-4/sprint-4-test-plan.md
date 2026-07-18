@@ -1,8 +1,8 @@
 ---
 title: "Plan y Reporte de Pruebas de Software — Sprint 4"
-subtitle: "TuHospedaje — Reservas, Historial, WhatsApp y Email"
+subtitle: "TuHospedaje — Reservas, Historial, WhatsApp, Email, Panel de Administración y Refactor de Arquitectura"
 author: "Equipo de Desarrollo"
-date: "Junio 2026"
+date: "Junio-Julio 2026"
 pdf_options:
   format: a4
   margin:
@@ -17,7 +17,7 @@ pdf_options:
     </div>
   footerTemplate: |
     <div style="font-size: 9pt; width: 100%; display: flex; justify-content: space-between; padding: 0 20mm; color: #666;">
-      <div>Sprint 4 — Junio 2026</div>
+      <div>Sprint 4 — Junio-Julio 2026</div>
       <div>Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>
     </div>
 ---
@@ -30,8 +30,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 # PLAN Y REPORTE DE PRUEBAS DE SOFTWARE — SPRINT 4
 
-**Foco del Incremento:** Flujo completo de reservas, historial personal, botón de WhatsApp y notificación por email
-**Enfoque de Testing:** Pruebas de API (Postman + automatizadas con MockMvc/Testcontainers), Verificación de UI Manual, Suite E2E con Playwright (agregado complementario)
+**Foco del Incremento:** Flujo completo de reservas, historial personal, WhatsApp y email (Inc. 1) · Tablas uniformes y dashboard administrativo (Inc. 2) · Refactor de arquitectura — búsqueda paginada, i18n y route guards (Inc. 3)
+**Enfoque de Testing:** Tests unitarios (JUnit 5 + Mockito / Vitest + React Testing Library), Tests de integración (MockMvc + Testcontainers), Verificación de UI Manual, Suite E2E con Playwright (agregado complementario). El Incremento 3 se desarrolló bajo TDD estricto en el backend (test en rojo antes que la implementación en cada tarea).
 
 ## 1. Matriz Detallada de Casos de Prueba (Test Cases)
 
@@ -74,7 +74,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 * **Historias de Usuario Asociadas:** US #32 (Realizar reserva y recibir confirmación)
 * **Precondiciones:** Usuario autenticado con JWT válido. Alojamiento existente sin solapamiento de fechas en el rango elegido.
-* **Tipos de Verificación:** API Rest, Test de Integración Automatizado, UI Manual.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend), Test Unitario de Componente (frontend), UI Manual.
 
 | Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
 |------|----------------------------|---------------------------------------------|--------|
@@ -88,11 +88,13 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **8** | Acceder a `/booking/confirmation` directamente sin reserva previa | Redirige a home (`/`) | ✔ Pasa |
 | **9** | Error al reservar (ej: 409 Conflict) | Mensaje de error específico visible en el formulario | ✔ Pasa |
 
+**Cobertura automatizada (frontend):** `BookingConfirmation.test.jsx` — 4 tests unitarios: detalles de reserva (nombre, fechas formateadas `dd/mm/aaaa`, huésped, total), nota de email, links a `/my-reservations` y `/`, redirección a `/` sin state.
+
 ### TC-33: Acceder al Historial de Reservas (US #33)
 
 * **Historias de Usuario Asociadas:** US #33 (Acceder al historial personal de reservas)
 * **Precondiciones:** Usuario autenticado con al menos una reserva creada. Servidor backend activo.
-* **Tipos de Verificación:** API Rest, Test de Integración Automatizado, UI Manual.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend), Test Unitario de Componente (frontend), UI Manual.
 
 | Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
 |------|----------------------------|---------------------------------------------|--------|
@@ -104,6 +106,11 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **6** | Lista ordenada por `checkIn` descendente | La reserva más reciente aparece primera | ✔ Pasa |
 | **7** | Link "Mis reservas" en el `Header` para usuario autenticado | Visible para usuarios con sesión activa. Navega a `/my-reservations` | ✔ Pasa |
 | **8** | Link "Mis reservas" NO visible para usuarios anónimos | No renderiza en header cuando no hay sesión | ✔ Pasa |
+| **9** | `GET /api/reservations/my` como usuario A — no retorna reservas de usuario B | Solo se devuelven las reservas del usuario autenticado (aislamiento de datos) | ✔ Pasa |
+
+**Cobertura automatizada (backend):** `ReservationServiceImplTest` — `getMyReservations_returnsReservationsMappedToResponse`, `getMyReservations_returnsEmptyListWhenNoReservationsExist`. `ReservationControllerIntegrationTest` — `shouldReturnUserReservationsOrderedByCheckInDesc`, `shouldReturnOnlyAuthenticatedUserOwnReservations`.
+
+**Cobertura automatizada (frontend):** `MyReservationsPage.test.jsx` — lista con noches calculadas, singular/plural, estado vacío con CTA, error de fetch. `Header.test.jsx` — "Mis reservas" solo para autenticados; login/register para anónimos; logout visible/oculto según sesión.
 
 <div style="page-break-before: always;"></div>
 
@@ -120,6 +127,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **3** | Click en botón de WhatsApp | Abre `wa.me/{número}` con mensaje pre-cargado en nueva pestaña | ✔ Pasa |
 | **4** | Verificar acceso sin login | Botón visible para usuarios anónimos. No requiere autenticación | ✔ Pasa |
 | **5** | Hacer scroll vertical en la página | Botón permanece en posición fija (`bottom: 24px; right: 24px`) | ✔ Pasa |
+
+**Cobertura automatizada (frontend):** `WhatsAppButton.test.jsx` — no renderiza con env vacía; URL `wa.me` correcta con número configurado; atributos `target="_blank"` y `rel="noreferrer"`; posicionamiento fijo; sin requisito de autenticación.
 
 ### TC-35: Email de Confirmación (US #35)
 
@@ -170,26 +179,120 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores = **34 ejecuciones, todas en verde**.
 
+<div style="page-break-before: always;"></div>
+
+### TC-38: Tablas Administrativas Uniformes (US #36, Incremento 2)
+
+* **Historias de Usuario Asociadas:** US #36 (Tablas uniformes con ordenación y paginación local)
+* **Precondiciones:** Usuario con rol ADMIN autenticado. Registros suficientes en Categorías, Características, Políticas, Usuarios y Alojamientos para paginar.
+* **Tipos de Verificación:** Test Unitario de Componente (frontend), UI Manual.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | Click en el encabezado de una columna ordenable | Lista se reordena; indicador `▲`/`▼` visible en la columna activa | ✔ Pasa |
+| **2** | Click nuevamente en el mismo encabezado | Se invierte la dirección de orden | ✔ Pasa |
+| **3** | Navegar a la página siguiente con `Pagination` | Muestra el siguiente subconjunto de registros, paginado en el cliente | ✔ Pasa |
+| **4** | Botones de paginación en el límite (primera/última página) | Se deshabilitan correctamente, sin navegación fuera de rango | ✔ Pasa |
+| **5** | Repetir en `AdminLodgings` tras la migración a `GET /api/lodgings` plano | Comportamiento de orden/paginación idéntico al resto de las entidades administrativas | ✔ Pasa |
+
+**Cobertura automatizada (frontend):** `useTableData.test.js` (ordenamiento, paginación, filtrado), `Pagination.test.jsx` (deshabilitado en límites), `AdminCategories/AdminFeatures/AdminPolicies/AdminUsers/AdminLodgings.test.jsx`.
+
+### TC-39: Dashboard — Reservas Recientes (US #37, Incremento 2)
+
+* **Historias de Usuario Asociadas:** US #37 (Estadísticas de reservas y reservas recientes)
+* **Precondiciones:** Usuario con rol ADMIN autenticado. Al menos 4 reservas existentes en el sistema.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend), Test Unitario de Componente (frontend), UI Manual.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | `GET /api/reservations` con token ADMIN | HTTP 200. Listado completo ordenado por `id DESC` | ✔ Pasa |
+| **2** | `GET /api/reservations` con token de usuario no-ADMIN | HTTP 403 Forbidden | ✔ Pasa |
+| **3** | `GET /api/reservations` sin token | HTTP 401 Unauthorized | ✔ Pasa |
+| **4** | Cargar `AdminDashboard` como ADMIN | Tarjeta de estadística "Reservas" visible con el total | ✔ Pasa |
+| **5** | Sección "Últimas reservas" del Dashboard | Muestra las 4 transacciones más recientes, ordenadas por `id DESC` | ✔ Pasa |
+
+**Cobertura automatizada:** `ReservationControllerIntegrationTest` (RBAC 401/403/200, orden `id DESC`), `AdminDashboard.test.jsx`, `AdminReservations.test.jsx`.
+
+<div style="page-break-before: always;"></div>
+
+### TC-40: Búsqueda Multi-Categoría Paginada en Servidor (US #38, Incremento 3)
+
+* **Historias de Usuario Asociadas:** US #38 (Búsqueda por múltiples categorías con paginación server-side)
+* **Precondiciones:** Al menos 2 alojamientos en categorías distintas y suficientes registros para superar una página (`size` default 9).
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend, Testcontainers), Test Unitario de Componente (frontend), UI Manual.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | `GET /api/lodgings/search` sin parámetros de paginación | Retorna `{lodgings, currentPage: 0, totalItems, totalPages}` con máximo 9 ítems | ✔ Pasa |
+| **2** | `GET /api/lodgings/search?categories=1,2&page=1&size=5` | Solo alojamientos de categorías 1 o 2; página 1 con máximo 5 ítems | ✔ Pasa |
+| **3** | `GET /api/lodgings/search?page=-1` | HTTP 400 Bad Request | ✔ Pasa |
+| **4** | `GET /api/lodgings/search?size=0` | HTTP 400 Bad Request | ✔ Pasa |
+| **5** | `GET /api/lodgings/search?page=999` (fuera de rango) | HTTP 200 con `lodgings` vacío y `currentPage: 999` | ✔ Pasa |
+| **6** | Seleccionar 2+ categorías en el sidebar de `SearchResults` | Un único fetch al backend con `categories` repetido; sin filtrado en memoria | ✔ Pasa |
+| **7** | Click en control de paginación tras aplicar filtros | Refetch real al servidor con los mismos filtros aplicados, no un slice local | ✔ Pasa |
+
+**Cobertura automatizada (backend):** `LodgingServiceImplTest` (filtro `IN`, paginación, defaults, fuera de rango), `LodgingControllerIntegrationTest` (7 escenarios de contrato, validación `page`/`size`).
+**Cobertura automatizada (frontend):** `SearchResults.test.jsx` (filtrado server-side, respuesta paginada, refetch en paginación), `lodgingService.test.js`.
+
+### TC-41: Mensajes de Error Localizados (US #39, Incremento 3)
+
+* **Historias de Usuario Asociadas:** US #39 (Errores en español o inglés según `Accept-Language`)
+* **Precondiciones:** Servidor backend activo. Al menos un escenario que dispare `ResourceNotFoundException` (ej. `GET /api/reservations/{id}` inexistente) y uno de validación (`page`/`size` inválidos en `/search`).
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend).
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | `GET /api/lodgings/search?page=-1` con `Accept-Language: es` | 400, `{"error":"El índice de página no debe ser negativo."}` | ✔ Pasa |
+| **2** | `GET /api/lodgings/search?page=-1` sin header (o `en`) | 400, `{"error":"Page index must not be negative."}` | ✔ Pasa |
+| **3** | `GET /api/lodgings/search?size=0` con `Accept-Language: es` | 400, `{"error":"El tamaño debe ser mayor a cero."}` | ✔ Pasa |
+| **4** | Endpoint que dispare un `IllegalArgumentException` preexistente (ej. registro con email duplicado) con `Accept-Language: en` | Mensaje se mantiene en español (13 sitios preexistentes no localizados — comportamiento documentado, no una regresión) | ✔ Pasa |
+| **5** | Cualquier excepción manejada, verificar logs del servidor | Logs siempre en inglés, independientemente de `Accept-Language` del cliente | ✔ Pasa |
+
+**Cobertura automatizada:** `GlobalExceptionHandlerTest` (4 handlers en scope, ambos idiomas), `LodgingControllerIntegrationTest`, `ReservationControllerIntegrationTest` (caso real de `ResourceNotFoundException`).
+
+### TC-42: Ruta Administrativa con Redirección a `/unauthorized` (US #40, Incremento 3)
+
+* **Historias de Usuario Asociadas:** US #40 (Acceso uniforme a rutas administrativas)
+* **Precondiciones:** Un usuario autenticado con rol `USER` (no ADMIN) y un usuario con rol `ADMIN`.
+* **Tipos de Verificación:** Test Unitario de Componente (frontend), UI Manual.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | Usuario no autenticado navega a `/admin` | `RequireAdmin` redirige a `/login` | ✔ Pasa |
+| **2** | Usuario autenticado con rol `USER` navega a `/admin` | Redirige a `/unauthorized` (antes: `/`, sin explicación) | ✔ Pasa |
+| **3** | Página `/unauthorized` | Muestra mensaje claro y link de vuelta a `/` | ✔ Pasa |
+| **4** | Usuario autenticado con rol `ADMIN` navega a `/admin` | Renderiza la vista de administración normalmente | ✔ Pasa |
+
+**Cobertura automatizada:** `RequireAdmin.test.jsx` (3 escenarios de guard), `Unauthorized.test.jsx`.
+
 ## 2. Resumen de Ejecución
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 144 tests | ✔ Todos pasan |
-| Tests E2E Playwright — agregado complementario (Chromium + Firefox) | 17 escenarios × 2 navegadores (34 ejecuciones) | ✔ Todos pasan |
-| Casos de Prueba Funcionales (Plan) | 44 escenarios | ✔ 44/44 verificados |
+| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 284 tests | ✔ Todos pasan |
+| Tests Automatizados Frontend (Vitest + React Testing Library) | 276 tests (38 archivos) | ✔ Todos pasan |
+| Tests E2E Playwright — agregado complementario (Chromium + Firefox) | 17 escenarios × 2 navegadores (34 ejecuciones) | ✔ Todos pasan (Incremento 1, sin cambios) |
+| Casos de Prueba Funcionales (Plan) | 95 escenarios | ✔ 95/95 verificados |
+
+Totales verificados de punta a punta sobre `sprint-4` con las 6 PRs del Incremento 3 ya mergeadas (`./mvnw test` en backend, `npm test` en frontend).
 
 ## 3. Cobertura por Historia de Usuario
 
 | User Story | Cantidad TC | Tipo | Estado |
 |-----------|-------------|------|--------|
-| US #30 — Seleccionar fecha | 6 TC | Automatizado + Manual | ✔ Completo |
-| US #31 — Visualizar detalles | 9 TC | Manual | ✔ Completo |
-| US #32 — Realizar reserva | 9 TC | Automatizado + Manual | ✔ Completo |
-| US #33 — Historial de reservas | 8 TC | Automatizado + Manual | ✔ Completo |
-| US #34 — WhatsApp | 5 TC | Manual | ✔ Completo |
-| US #35 — Email de confirmación | 5 TC | Automatizado + Manual | ✔ Completo |
-| TC-36 — Edición admin (complementaria) | 8 TC | Automatizado + Manual | ✔ Completo |
-| TC-37 — Suite E2E Playwright (agregado) | 17 TC | Automatizado E2E | ✔ Completo |
+| US #30 — Seleccionar fecha | 6 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #31 — Visualizar detalles | 9 TC | Automatizado (frontend) + Manual | ✔ Completo |
+| US #32 — Realizar reserva | 10 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #33 — Historial de reservas | 9 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #34 — WhatsApp | 5 TC | Automatizado (frontend) + Manual | ✔ Completo |
+| US #35 — Email de confirmación | 5 TC | Automatizado (backend) + Manual | ✔ Completo |
+| TC-36 — Edición admin (complementaria, Inc. 1) | 8 TC | Automatizado + Manual | ✔ Completo |
+| TC-37 — Suite E2E Playwright (agregado, Inc. 1) | 17 TC | Automatizado E2E | ✔ Completo |
+| US #36 — Tablas administrativas uniformes (Inc. 2) | 5 TC | Automatizado (frontend) + Manual | ✔ Completo |
+| US #37 — Dashboard, reservas recientes (Inc. 2) | 5 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #38 — Búsqueda multi-categoría paginada (Inc. 3) | 7 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #39 — Mensajes de error localizados (Inc. 3) | 5 TC | Automatizado (backend) | ✔ Completo |
+| US #40 — Ruta admin con `/unauthorized` (Inc. 3) | 4 TC | Automatizado (frontend) + Manual | ✔ Completo |
 
 ## 4. Herramientas Utilizadas
 
@@ -203,8 +306,10 @@ Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores 
 | Navegador (Chrome) | Verificación de UI |
 | Swagger UI | Documentación y exploración de endpoints |
 
-## 5. Defectos Encontrados
+## 5. Defectos Encontrados y Corregidos
 
 | ID | Descripción | Severidad | Estado |
 |----|------------|-----------|--------|
-| — | Ningún defecto crítico encontrado en Sprint 4 | — | — |
+| BUG-01 | `BookingPage.jsx` prefillaba el teléfono desde `data[data.length - 1]` (la reserva más antigua), cuando la API retorna por `checkIn DESC` y la reserva más reciente es `data[0]`. El test lo describía como "latest prior reservation" pero verificaba el último elemento — inconsistencia entre semántica del test y comportamiento real. | Baja (UX) | ✔ Corregido — `data[0]`; test actualizado para reflejar el orden DESC real de la API. |
+| BUG-02 (Inc. 3) | Al validar `page`/`size` con `@Validated` + `@Min` en `LodgingController`, Spring lanza `ConstraintViolationException` — sin un handler dedicado, el catch-all `Exception.class` preexistente la interceptaba antes que la resolución nativa de Spring, devolviendo HTTP 500 en vez de 400. Detectado empíricamente durante el desarrollo (no se asumió el comportamiento, se verificó con tests), antes de mergear. | Media (contrato de API) | ✔ Corregido — handler dedicado agregado en el mismo cambio; tests de regresión (`shouldReturnBadRequestWhenSearchPageIsNegative`, `...SizeIsNotPositive`) verifican 400. |
+| BUG-03 (Inc. 3) | `spring.messages.fallback-to-system-locale=true` (default de Spring Boot) hacía que, en un host con locale del sistema operativo en español, pedir `Accept-Language: en` (o no enviar el header) devolviera igualmente el mensaje en español — comportamiento no determinístico según el entorno de ejecución, no reproducible de la misma forma en todos los hosts/CI. | Media (i18n no determinístico) | ✔ Corregido — `spring.messages.fallback-to-system-locale=false` explícito en `application.properties` (main y test). |

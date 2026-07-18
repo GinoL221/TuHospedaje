@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 37,
+  "name": "Glamping Valle Encantado",
+  "category": "glamping",
+  "location": {
+    "city": "Bariloche",
+    "country": "Argentina"
+  },
+  "capacity": 3,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Glamping de aventura accesible para parejas o familias pequeñas de hasta tres personas, ubicado entre formaciones rocosas y vegetación árida nativa en Valle Encantado. Debe sentirse remoto, auténtico y confortable, con baño privado y accesibilidad real; sin parecer un lodge de lujo, un campamento de expedición ni una escenografía del Lejano Oeste.",
+    "architecture": "Carpa safari técnica individual. Plataforma elevada para proteger el terreno. Acceso mediante rampa de pendiente adecuada. Implantación entre formaciones rocosas existentes. Cubierta textil color arena tostada. Estructura de hierro negro. Frente panorámico orientado hacia el valle. Baño privado accesible dentro de un volumen compacto. Terraza continua sin desniveles. Senderos de suelo compactado. Fogón exterior controlado y delimitado. Instalaciones técnicas ocultas. Vegetación nativa y rocas preservadas sin intervención visible. Sin torres de observación, empalizadas, carros, mobiliario de expedición ni arquitectura de rancho.",
+    "palette": [
+      "arena tostada",
+      "tierra roja",
+      "piedra gris",
+      "madera oscura",
+      "verde jarilla",
+      "cuero suela",
+      "hierro negro"
+    ],
+    "floors": "Interior: deck de madera oscura sellada. Acceso y terraza: tablas antideslizantes continuas. Rampa: deck con bandas de seguridad integradas. Baño: microcemento gris cálido antideslizante. Ducha accesible: piedra texturada gris, sin resalto. Senderos: suelo natural compactado. Fogón: grava y piedra local contenida. Sin desniveles innecesarios ni superficies sueltas en recorridos accesibles.",
+    "wallsAndFinishes": "Interior: lona arena tostada con paneles bajos aislados. Cabecero: madera oscura. Baño: microcemento claro y piedra gris. Volumen sanitario exterior: tablas verticales oscuras. Sectores de guardado integrados en paneles de madera. Protección del viento mediante celosías discretas. Sin revestimientos brillantes, plásticos visibles ni decoración de aventura temática.",
+    "joinery": "Estructura principal de hierro negro. Frente panorámico con paños amplios. Puerta exterior de paso accesible. Puerta corrediza o amplia hacia el baño. Placares y guardados de madera oscura. Mampara transparente sin umbral. Barrales y herrajes ergonómicos negros. Cortinas en beige y verde jarilla.",
+    "furniture": "Cama queen orientada hacia el paisaje. Cama auxiliar integrada para el tercer huésped. Cabecero bajo de madera. Mesas de luz suspendidas. Sillón compacto verde jarilla. Banco de cuero suela. Mesa de comedor para tres personas. Guardado accesible para equipaje. Mobiliario exterior estable y de altura utilizable. Circulaciones interiores despejadas. Sin catres, baúles de expedición, sillas de montar ni muebles de lodge.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta en la base de la carpa. Apliques negros junto a la cama. Iluminación uniforme y sin deslumbramiento en el baño. Balizas bajas en rampa, terraza y senderos. Fogón como fuente visual principal en el exterior. Cielo nocturno preservado. Sin antorchas escenográficas, faroles de querosén decorativos, guirnaldas ni luces de colores.",
+    "continuityElements": [
+      "Carpa safari color arena tostada.",
+      "Estructura de hierro negro.",
+      "Plataforma y rampa elevadas.",
+      "Madera oscura y piedra gris.",
+      "Tierra roja y verde jarilla en el paisaje.",
+      "Cuero suela como acento puntual.",
+      "Accesibilidad continua entre sendero, interior, baño y terraza.",
+      "Formaciones rocosas y vegetación nativa preservadas."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Carpa accesible entre formaciones rocosas",
+        "brief": "Mostrar la carpa accesible, la rampa y las formaciones rocosas intactas."
+      },
+      {
+        "order": 2,
+        "title": "Área de descanso panorámica",
+        "brief": "Mostrar el área de descanso panorámica preparada para tres huéspedes."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado accesible",
+        "brief": "Mostrar el baño privado accesible, sin desniveles."
+      },
+      {
+        "order": 4,
+        "title": "Interior con comedor y lounge",
+        "brief": "Mostrar el interior completo con comedor y lounge compacto."
+      },
+      {
+        "order": 5,
+        "title": "Fogón frente al valle",
+        "brief": "Mostrar el fogón controlado frente al paisaje del río y el valle."
+      }
+    ]
+  }
+}

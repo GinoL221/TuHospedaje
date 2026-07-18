@@ -27,6 +27,15 @@ export default defineConfig({
         'src/test/**',
         'src/**/*.test.{js,jsx}',
       ],
+      // Floor reflects measured coverage after Sprint 4 test additions
+      // (85.34% statements / 80.12% branches / 74.88% functions / 87.79% lines
+      // as of 2026-06). Any regression below these values fails CI.
+      thresholds: {
+        statements: 85,
+        branches: 80,
+        functions: 74,
+        lines: 87,
+      },
     },
   },
 })

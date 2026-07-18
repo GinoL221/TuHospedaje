@@ -6,8 +6,15 @@ function makeFile(name = "photo.png") {
   return new File(["fake-image-content"], name, { type: "image/png" });
 }
 
+beforeEach(() => {
+  document.cookie =
+    "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  document.cookie =
+    "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 });
 
 describe("ImageUpload - successful upload", () => {
@@ -27,6 +34,30 @@ describe("ImageUpload - successful upload", () => {
     await waitFor(() => {
       expect(onUrlsChange).toHaveBeenCalledWith(["https://example.com/uploaded.png"]);
     });
+  });
+
+  it("sends credentials: 'include' and the X-XSRF-TOKEN header, without an Authorization header", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ url: "https://example.com/uploaded.png" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const onUrlsChange = vi.fn();
+    render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
+
+    const input = document.getElementById("imageUpload");
+    await userEvent.upload(input, makeFile());
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const [, config] = fetchMock.mock.calls[0];
+    expect(config.credentials).toBe("include");
+    expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-abc" });
+    expect(config.headers).not.toHaveProperty("Authorization");
   });
 });
 

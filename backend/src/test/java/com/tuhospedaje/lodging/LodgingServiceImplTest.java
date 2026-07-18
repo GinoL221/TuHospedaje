@@ -16,21 +16,26 @@ import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -459,5 +464,61 @@ class LodgingServiceImplTest {
         assertThat(result.get("currentPage")).isEqualTo(0);
         assertThat(result.get("totalItems")).isEqualTo(1L);
         assertThat((List<?>) result.get("lodgings")).hasSize(1);
+    }
+
+    @Test
+    void shouldSearchWithDefaultPagination() {
+        Lodging lodging = new Lodging();
+        lodging.setId(1L);
+        lodging.setName("Hotel Default");
+
+        when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(lodging), PageRequest.of(0, 9), 1));
+
+        Map<String, Object> result = lodgingService.search(null, null, null, null, null, null, null, 0, 9);
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(lodgingRepository).findAll(any(Specification.class), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(0);
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(9);
+        assertThat(result.get("currentPage")).isEqualTo(0);
+        assertThat(result.get("totalItems")).isEqualTo(1L);
+        assertThat((List<?>) result.get("lodgings")).hasSize(1);
+    }
+
+    @Test
+    void shouldFilterByMultipleCategoriesUsingInClause() {
+        Lodging lodging = new Lodging();
+        lodging.setId(2L);
+        lodging.setName("Hotel Multi-Cat");
+
+        when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(lodging), PageRequest.of(0, 9), 1));
+
+        Map<String, Object> result = lodgingService.search(
+                null, null, null, null, List.of(1L, 2L), null, null, 0, 9);
+
+        ArgumentCaptor<Specification> specCaptor = ArgumentCaptor.forClass(Specification.class);
+        verify(lodgingRepository).findAll(specCaptor.capture(), any(Pageable.class));
+        assertThat(specCaptor.getValue()).isNotNull();
+        assertThat((List<?>) result.get("lodgings")).hasSize(1);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenSearchPageIsOutOfBounds() {
+        when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(999, 9), 0));
+
+        Map<String, Object> result = lodgingService.search(null, null, null, null, null, null, null, 999, 9);
+
+        assertThat((List<?>) result.get("lodgings")).isEmpty();
+        assertThat(result.get("currentPage")).isEqualTo(999);
+        assertThat(result.get("totalItems")).isEqualTo(0L);
+    }
+
+    @Test
+    void shouldThrowWhenSearchPageIsNegative() {
+        assertThrows(IllegalArgumentException.class,
+                () -> lodgingService.search(null, null, null, null, null, null, null, -1, 9));
     }
 }

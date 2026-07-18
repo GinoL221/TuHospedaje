@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 26,
+  "name": "Hotel Legado Mítico",
+  "category": "hotel",
+  "location": {
+    "city": "Salta",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel boutique superior en una casa histórica restaurada de Salta, orientado a parejas y viajeros culturales. Debe expresar identidad regional mediante arquitectura, materiales y trabajo artesanal; sin convertirse en una escenografía colonial ni utilizar retratos, nombres históricos, símbolos, armas u objetos temáticos.",
+    "architecture": "Casa histórica restaurada de una sola planta. Organización alrededor de dos patios interiores. Fachada sobria de revoque blanco cal. Zócalo y detalles de piedra roja regional. Portón de acceso de madera oscura. Galerías cubiertas conectando habitaciones y espacios comunes. Cubiertas inclinadas de teja restaurada. Muros gruesos y aberturas profundas. Restaurante pequeño integrado en una de las crujías. Patio principal utilizado como lounge exterior. Intervenciones contemporáneas discretas y reversibles. Instalaciones modernas ocultas. Sin columnas decorativas agregadas, falsa antigüedad, escudos, retratos ni ambientación de museo.",
+    "palette": [
+      "blanco cal",
+      "piedra roja",
+      "algarrobo oscuro",
+      "índigo",
+      "borgoña apagado",
+      "bronce envejecido",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Acceso y galerías: baldosas calcáreas restauradas en tonos neutros. Habitaciones: madera de algarrobo o entablonado oscuro recuperado. Restaurante: mosaico granítico o baldosa regional restaurada. Baños: microcemento beige antideslizante. Duchas: piedra roja texturada. Patios: lajas de piedra clara con juntas permeables. Sectores contemporáneos: microcemento cálido y mate. Sin porcelanatos brillantes ni imitaciones industriales de materiales antiguos.",
+    "wallsAndFinishes": "Fachada y patios: revoque blanco cal con textura natural. Habitaciones: muros blancos con zócalos y cabeceros de algarrobo. Baños: microcemento beige y piedra roja en duchas. Restaurante: revoque claro, madera oscura y textiles índigo. Galerías: muros blancos, piedra y carpinterías profundas. Nichos existentes restaurados y utilizados con moderación. Terminaciones artesanales sin envejecimiento artificial. Sin murales históricos, iconografía gauchesca, armas, monturas ni objetos folclóricos usados como decoración.",
+    "joinery": "Portón principal de algarrobo oscuro. Puertas interiores de madera restaurada. Ventanas de madera con postigos. Vidrios incorporados sin alterar la proporción histórica. Placares integrados de líneas simples. Mamparas transparentes con perfilería de bronce oscuro. Herrajes de bronce envejecido. Cortinas de lino beige e índigo. Cerramientos contemporáneos hacia patios con perfiles discretos.",
+    "furniture": "Camas king o queen con cabeceros bajos de algarrobo. Mesas de luz artesanales de líneas contenidas. Bancos de madera con textiles beige. Sillones compactos tapizados en índigo o borgoña apagado. Escritorios pequeños con estructura liviana. Mesas auxiliares de piedra y madera. Restaurante con mesas de algarrobo y sillas de respaldo tejido. Patio con mobiliario bajo en madera y metal oscuro. Piezas artesanales seleccionadas por material y ejecución, sin tematización. Sin muebles barrocos, reproducciones coloniales recargadas ni objetos atribuidos a personajes históricos.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta en galerías y habitaciones. Apliques de bronce envejecido. Lámparas de mesa con pantallas de lino. Colgantes artesanales sobrios en restaurante. Iluminación baja integrada en patios. Luz puntual sobre piedra y carpinterías restauradas. Cielos abiertos y sombras de las galerías como parte de la atmósfera. Sin faroles coloniales exagerados, velas escenográficas ni iluminación teatral.",
+    "continuityElements": [
+      "Revoque blanco cal en fachada, patios y galerías.",
+      "Piedra roja regional en zócalos, duchas y detalles.",
+      "Algarrobo oscuro en puertas, pisos y mobiliario.",
+      "Índigo en textiles y tapizados.",
+      "Borgoña apagado como acento secundario.",
+      "Bronce envejecido en herrajes y luminarias.",
+      "Relación constante entre habitaciones, galerías y dos patios.",
+      "Artesanía regional expresada mediante materiales y ejecución, nunca mediante objetos temáticos."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada restaurada y portón de algarrobo",
+        "brief": "Mostrar revoque blanco y piedra roja."
+      },
+      {
+        "order": 2,
+        "title": "Habitación boutique conectada con la galería",
+        "brief": "Mostrar la relación con uno de los patios."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar microcemento beige y ducha de piedra roja."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante gourmet pequeño",
+        "brief": "Mostrar algarrobo, índigo e iluminación cálida."
+      },
+      {
+        "order": 5,
+        "title": "Patio principal y galería",
+        "brief": "Mostrar ambos espacios convertidos en lounge, sin personas ni elementos temáticos."
+      }
+    ]
+  }
+}

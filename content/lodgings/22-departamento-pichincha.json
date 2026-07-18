@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 22,
+  "name": "Departamento Pichincha",
+  "category": "apartment",
+  "location": {
+    "city": "Rosario",
+    "country": "Argentina"
+  },
+  "capacity": 3,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Departamento compacto de gama media para hasta tres personas, ubicado en Pichincha, Rosario. Debe sentirse auténtico, cálido y vinculado con el carácter cultural y gastronómico del barrio; sin convertirse en un loft oscuro, una fábrica tematizada ni un bar adaptado como vivienda.",
+    "architecture": "Unidad dentro de un edificio comercial reciclado de cuatro pisos. Fachada original de ladrillo restaurado. Ampliación superior retranqueada en grafito. Aberturas altas conservadas y actualizadas. Planta compacta con living, comedor y cocina integrados. Dormitorio independiente. Sofá cama o cama auxiliar para el tercer huésped. Terraza urbana privada. Parrilla compacta integrada sin dominar el espacio. Estructura original visible solo en sectores controlados. Instalaciones nuevas ordenadas y discretas. Sin tuberías decorativas excesivas, doble altura ficticia, maquinaria antigua ni estética de fábrica abandonada.",
+    "palette": [
+      "terracota",
+      "gris hormigón",
+      "negro mate",
+      "roble tostado",
+      "verde botella",
+      "cuero coñac",
+      "gris claro como tono complementario"
+    ],
+    "floors": "Living, comedor y dormitorio: madera de ingeniería tono roble tostado. Cocina: microcemento gris cálido. Baño: porcelanato gris claro antideslizante. Ducha: piezas grafito mate. Terraza: baldosas exteriores terracota. Acceso: mosaico granítico restaurado cuando resulte coherente. Sin cemento deteriorado, chapa expuesta ni superficies industriales agresivas.",
+    "wallsAndFinishes": "Paño de ladrillo restaurado en living. Muros restantes en gris claro o blanco cálido. Cabecero de roble en dormitorio. Cocina con frente de cerámica verde botella. Baño con porcelanato claro y ducha grafito. Hormigón visto limitado a columnas o vigas existentes. Terminaciones cálidas y de mantenimiento simple. Sin carteles antiguos, engranajes, grafitis ni objetos fabriles decorativos.",
+    "joinery": "Ventanas altas con perfilería negra y doble vidrio. Puerta hacia la terraza con marco grafito. Puertas interiores lisas de roble tostado. Placard empotrado con frente de madera. Muebles de cocina en negro mate y roble. Mampara transparente con perfilería negra. Herrajes negros satinados. Cortinas de lino gris y blackout verde oscuro.",
+    "furniture": "Dormitorio con cama queen. Cabecero bajo de roble. Mesas de luz suspendidas. Sofá cama para el tercer huésped. Sillón compacto de cuero coñac. Mesa redonda para tres personas. Cocina lineal completamente equipada. Barra pequeña para desayunos. Mueble de guardado y escritorio compacto. Mesa exterior junto a la parrilla. Sin muebles metálicos pesados, cuero negro dominante ni piezas construidas con objetos industriales.",
+    "lighting": "Temperatura cálida de 2700 K. Luz natural aprovechada mediante las ventanas altas. Iluminación indirecta sobre ladrillo y madera. Apliques negros junto a la cama. Colgante sobrio sobre la mesa. Riel negro utilizado con moderación en el living. Luz lineal bajo alacenas. Apliques cálidos en la terraza. Sin neón, lámparas de fábrica sobredimensionadas ni iluminación dramática de bar.",
+    "continuityElements": [
+      "Fachada y paños interiores de ladrillo restaurado.",
+      "Ampliación y carpinterías grafito.",
+      "Roble tostado en pisos, puertas y mobiliario.",
+      "Terracota en ladrillo, terraza y textiles.",
+      "Verde botella en cocina y acentos.",
+      "Cuero coñac utilizado en una pieza puntual.",
+      "Lenguaje industrial cálido y controlado.",
+      "Relación cotidiana entre living, cocina, terraza y parrilla compacta."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada reciclada",
+        "brief": "Mostrar la fachada reciclada de ladrillo con la ampliación superior retranqueada."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio con ventana alta",
+        "brief": "Mostrar el dormitorio con ventana alta y cabecero de roble."
+      },
+      {
+        "order": 3,
+        "title": "Baño gris y grafito",
+        "brief": "Mostrar el baño gris claro con la ducha revestida en grafito."
+      },
+      {
+        "order": 4,
+        "title": "Living, comedor y cocina",
+        "brief": "Mostrar los espacios integrados y el sofá cama para el tercer huésped."
+      },
+      {
+        "order": 5,
+        "title": "Terraza urbana privada",
+        "brief": "Mostrar la terraza urbana privada con parrilla compacta."
+      }
+    ]
+  }
+}

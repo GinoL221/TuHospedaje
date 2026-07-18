@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 19,
+  "name": "Departamento Belgrano",
+  "category": "apartment",
+  "location": {
+    "city": "Buenos Aires",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Departamento familiar de categoría media-alta para hasta cuatro personas, pensado para estadías medias en Belgrano. Debe sentirse cómodo, luminoso y genuinamente residencial; sin parecer un alquiler temporal genérico, una residencia de lujo ni una interpretación temática del cercano Barrio Chino.",
+    "architecture": "Unidad de dos dormitorios dentro de un edificio residencial de diez pisos. Fachada combinada de ladrillo visto y hormigón claro. Balcón corrido conectado con living y dormitorio principal. Carpinterías grafito de modulación regular. Planta funcional con living y comedor integrados. Cocina vinculada pero visualmente ordenada. Dormitorios separados del área social. Baño familiar y espacio de guardado suficiente. Buena ventilación e iluminación natural. Expansión exterior orientada hacia una calle arbolada. Equipos e instalaciones integrados discretamente. Sin doble altura, acabados de penthouse ni recursos decorativos temáticos.",
+    "palette": [
+      "blanco cálido",
+      "gris piedra",
+      "roble medio",
+      "azul tinta",
+      "verde eucalipto",
+      "grafito",
+      "beige como tono complementario"
+    ],
+    "floors": "Living, comedor y dormitorios: madera de ingeniería tono roble medio. Cocina: porcelanato gris piedra. Baño: porcelanato beige grisáceo antideslizante. Ducha: cerámica gris mate. Balcón: porcelanato exterior grafito claro. Acceso: superficie resistente al uso familiar. Sin mármol brillante, cemento industrial ni acabados excesivamente delicados.",
+    "wallsAndFinishes": "Muros generales en blanco cálido. Paño gris piedra en living. Cabeceros de roble en dormitorios. Cocina con frente de cerámica gris clara. Baño con porcelanato beige y gris. Azul tinta y verde eucalipto utilizados en textiles. Revestimientos lavables y de mantenimiento simple. Sin murales orientales, carteles, faroles ni referencias decorativas al Barrio Chino.",
+    "joinery": "Ventanas de aluminio grafito con doble vidrio. Puertas corredizas hacia el balcón. Puertas interiores lisas en roble medio. Placares empotrados en ambos dormitorios. Muebles de cocina en blanco cálido y roble. Mampara transparente con perfilería grafito. Herrajes negros satinados. Cortinas beige y blackout azul grisáceo en dormitorios.",
+    "furniture": "Dormitorio principal con cama queen. Segundo dormitorio con dos camas individuales. Cabeceros bajos de roble. Mesas de luz compactas. Sofá familiar beige. Sillón individual azul tinta. Mesa de comedor para cuatro personas. Cocina completa con barra auxiliar. Escritorio pequeño para trabajo o estudio. Muebles de guardado para estadías medias. Mobiliario de balcón para cuatro. Sin muebles de lujo, decoración hotelera ni piezas temáticas.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz natural prioritaria durante el día. Iluminación indirecta en living. Apliques grafito junto a las camas. Colgante sobrio sobre la mesa. Luz lineal bajo alacenas. Iluminación frontal en baño. Apliques cálidos en el balcón. Sin neón, faroles temáticos ni luz blanca fría dominante.",
+    "continuityElements": [
+      "Fachada residencial de ladrillo y hormigón.",
+      "Balcón corrido conectado con living y dormitorio.",
+      "Blanco cálido y gris piedra como base.",
+      "Roble medio en pisos, puertas y mobiliario.",
+      "Carpinterías y detalles grafito.",
+      "Azul tinta y verde eucalipto en textiles.",
+      "Distribución familiar creíble para cuatro personas.",
+      "Relación constante con la calle arbolada sin tematización barrial."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada residencial",
+        "brief": "Mostrar ladrillo, hormigón y el balcón corrido."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar la conexión del dormitorio principal con el balcón."
+      },
+      {
+        "order": 3,
+        "title": "Baño familiar",
+        "brief": "Mostrar el baño familiar en tonos beige y gris."
+      },
+      {
+        "order": 4,
+        "title": "Living, comedor y cocina",
+        "brief": "Mostrar la relación entre el living-comedor y la cocina."
+      },
+      {
+        "order": 5,
+        "title": "Balcón corrido equipado",
+        "brief": "Mostrar el balcón orientado hacia una calle arbolada."
+      }
+    ]
+  }
+}

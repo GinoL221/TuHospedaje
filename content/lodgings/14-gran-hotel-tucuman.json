@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 14,
+  "name": "Gran Hotel Tucumán",
+  "category": "hotel",
+  "location": {
+    "city": "Tucumán",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel urbano superior con carácter histórico, ubicado frente a una plaza central de San Miguel de Tucumán. Debe transmitir amplitud, tradición y una renovación cuidada; sin parecer un palacio, un museo, un hotel antiguo deteriorado ni una recreación historicista artificial.",
+    "architecture": "Edificio urbano de seis pisos construido a comienzos del siglo XX. Fachada académica restaurada con composición simétrica. Basamento de piedra clara. Revoque color marfil con molduras sobrias. Ventanas verticales de proporción histórica. Acceso central protegido mediante una marquesina de bronce envejecido. Patio interior cubierto mediante una estructura contemporánea liviana. Habitaciones con cielorrasos altos y aberturas amplias. Intervenciones nuevas claramente diferenciadas, pero compatibles con el edificio. Spa contemporáneo integrado en un sector interior silencioso. Instalaciones modernas ocultas. Sin cúpulas agregadas, dorados excesivos, columnas monumentales ni ornamentación palaciega.",
+    "palette": [
+      "marfil",
+      "beige piedra",
+      "caoba",
+      "verde botella apagado",
+      "borgoña suave",
+      "latón envejecido",
+      "blanco cálido como apoyo"
+    ],
+    "floors": "Acceso y lobby: mosaico granítico restaurado en tonos marfil y beige. Salón principal: parquet de madera oscura recuperado. Habitaciones: piso de madera tono caoba. Circulaciones: alfombra modular beige con guarda verde botella. Baños: porcelanato claro antideslizante. Duchas: piezas borgoña mate utilizadas como acento. Patio cubierto: piedra beige de gran formato. Spa: microcemento cálido y piedra clara antideslizante.",
+    "wallsAndFinishes": "Lobby: revoque marfil, molduras restauradas y zócalos de madera caoba. Habitaciones: pintura beige cálido con cabeceros tapizados. Pasillos: marfil, señalética sobria y detalles verde botella. Baños: porcelanato claro con paños borgoña. Salón de desayuno: muros marfil, madera oscura y cortinas livianas. Patio-lobby: revoques restaurados y estructura contemporánea en latón oscuro. Spa: microcemento beige, madera y superficies acústicas. Sin empapelados recargados, terciopelo dominante ni acabados envejecidos artificialmente.",
+    "joinery": "Ventanas históricas restauradas con proporción vertical. Marcos pintados en verde botella apagado. Doble vidrio incorporado sin alterar la apariencia exterior. Puertas interiores de madera caoba con paños moldurados simples. Placares integrados en el mismo tono. Mamparas transparentes con perfilería latón oscuro. Herrajes de latón envejecido. Puertas contemporáneas vidriadas hacia el patio cubierto. Cortinas dobles en blanco cálido y beige.",
+    "furniture": "Camas king o twin con cabeceros tapizados de proporción clásica. Mesas de luz de caoba con líneas simplificadas. Sillones compactos en verde botella o borgoña suave. Escritorios de madera con estructura liviana. Sofás del lobby en beige y verde apagado. Mesas auxiliares con tapas de piedra. Salón de desayuno con sillas de respaldo curvo y mesas de madera. Patio con mobiliario contemporáneo sobrio y vegetación interior. Spa con reposeras tapizadas y bancos de madera. Sin muebles barrocos, tronos, capitoné excesivo ni reproducciones antiguas de baja calidad.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Arañas históricas restauradas solo en espacios principales. Iluminación indirecta para destacar molduras sin dramatización. Apliques de latón envejecido junto a las camas. Lámparas contemporáneas de vidrio opalino en habitaciones. Luz natural filtrada en el patio cubierto. Iluminación lineal discreta en el spa. Fachada iluminada de manera uniforme y contenida. Sin exceso de lámparas ornamentales, luces de colores ni contrastes teatrales.",
+    "continuityElements": [
+      "Fachada académica marfil restaurada.",
+      "Ventanas verticales de proporción histórica.",
+      "Madera caoba en pisos, puertas y mobiliario.",
+      "Verde botella apagado en carpinterías y textiles.",
+      "Borgoña suave como acento controlado.",
+      "Latón envejecido en marquesina, herrajes y luminarias.",
+      "Encuentro visible entre elementos históricos restaurados e intervenciones contemporáneas.",
+      "Sensación de amplitud mediante cielorrasos altos, grandes aberturas y el patio cubierto."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada restaurada frente a la plaza",
+        "brief": "Mostrar la composición académica y la marquesina de latón."
+      },
+      {
+        "order": 2,
+        "title": "Habitación amplia",
+        "brief": "Mostrar una ventana alta, piso de caoba y mobiliario clásico simplificado."
+      },
+      {
+        "order": 3,
+        "title": "Baño actualizado",
+        "brief": "Mostrar porcelanato claro y detalle borgoña mate."
+      },
+      {
+        "order": 4,
+        "title": "Salón de desayuno y patio-lobby",
+        "brief": "Mostrar la conexión entre el salón de desayuno y el patio-lobby cubierto."
+      },
+      {
+        "order": 5,
+        "title": "Spa contemporáneo",
+        "brief": "Mostrar microcemento cálido, piedra clara y continuidad material con el hotel."
+      }
+    ]
+  }
+}
