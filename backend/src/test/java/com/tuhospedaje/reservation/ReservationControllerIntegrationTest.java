@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -68,6 +69,9 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private Clock clock;
 
     @MockitoBean
     private EmailService emailService;
@@ -273,7 +277,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void cancellationOnCheckInDateReturnsBadRequestAndPreservesConfirmedStatus() throws Exception {
         Long lodgingId = createTestLodging();
-        Reservation reservation = saveReservation(lodgingId, LocalDate.now());
+        Reservation reservation = saveReservation(lodgingId, LocalDate.now(clock));
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
 
         mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
