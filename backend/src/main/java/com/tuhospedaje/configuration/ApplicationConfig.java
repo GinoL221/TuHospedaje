@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.util.function.Supplier;
 
 @Configuration
 @RequiredArgsConstructor
@@ -43,8 +44,8 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public Clock clock() {
-        return Clock.systemUTC();
+    public Supplier<Clock> utcClockSupplier() {
+        return Clock::systemUTC;
     }
 
     @Bean

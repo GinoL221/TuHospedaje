@@ -21,7 +21,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.MariaDBContainer;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,7 +51,7 @@ class RefreshSessionServiceTest {
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private MariaDBContainer<?> mariaDb;
     @Autowired private JdbcTemplate jdbc;
-    @MockBean(name = "clock") private java.time.Clock clock;
+    @MockBean(name = "utcClockSupplier") private Supplier<Clock> clock;
 
     @Test
     void issuesForExactlyThirtyDaysAndRotatesAtTheOriginalAbsoluteBoundary() {
@@ -281,7 +284,7 @@ class RefreshSessionServiceTest {
     }
 
     private void setClock(Instant instant) {
-        when(clock.instant()).thenReturn(instant);
+        when(clock.get()).thenReturn(Clock.fixed(instant, ZoneOffset.UTC));
     }
 
     private void assertRejected(String credential) {

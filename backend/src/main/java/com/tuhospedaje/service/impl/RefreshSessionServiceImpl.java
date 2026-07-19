@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @Service
 public class RefreshSessionServiceImpl implements RefreshSessionService {
@@ -27,12 +28,13 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     private final SessionSecurityEventRepository events;
     private final RefreshTokenHasher hasher;
     private final SessionProperties properties;
-    private final Clock clock;
+    private final Supplier<Clock> clock;
     private final EntityManager entityManager;
 
     public RefreshSessionServiceImpl(RefreshTokenFamilyRepository families, RefreshTokenRepository tokens,
                                      SessionSecurityEventRepository events, RefreshTokenHasher hasher,
-                                     SessionProperties properties, Clock clock, EntityManager entityManager) {
+                                     SessionProperties properties, Supplier<Clock> clock,
+                                     EntityManager entityManager) {
         this.families = families;
         this.tokens = tokens;
         this.events = events;
@@ -148,6 +150,6 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     }
 
     private Instant now() {
-        return Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
+        return Instant.now(clock.get()).truncatedTo(ChronoUnit.MICROS);
     }
 }
