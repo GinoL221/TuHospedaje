@@ -1,6 +1,7 @@
 package com.tuhospedaje.session;
 
 import com.tuhospedaje.configuration.SessionProperties;
+import com.tuhospedaje.configuration.RefreshKeyRingProperties;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.entity.RefreshToken;
 import com.tuhospedaje.entity.RefreshTokenFamily;
@@ -153,8 +154,6 @@ class RefreshSessionFoundationIntegrationTest {
         assertThat(sessionProperties.accessTokenLifetime()).hasSeconds(900);
         assertThat(sessionProperties.refresh().absoluteLifetime()).hasDays(30);
         assertThat(sessionProperties.refresh().retryGrace()).hasSeconds(5);
-        assertThat(sessionProperties.keyRing().keys()).containsKey(sessionProperties.keyRing().activeKeyId());
-        assertThat(sessionProperties.keyRing().keys().values()).allMatch(value -> !value.isBlank());
 
         List<String> secretBearingColumns = jdbcTemplate.queryForList("""
                 SELECT column_name
@@ -185,14 +184,14 @@ class RefreshSessionFoundationIntegrationTest {
                 Map.entry("app.session.rate-limit.refresh-per-ip-per-minute", "60")
         )));
 
-        SessionProperties properties = Binder.get(environment)
-                .bind("app.session", Bindable.of(SessionProperties.class))
-                .orElseThrow(() -> new IllegalStateException("Session properties did not bind"));
+        RefreshKeyRingProperties properties = Binder.get(environment)
+                .bind("app.session.key-ring", Bindable.of(RefreshKeyRingProperties.class))
+                .orElseThrow(() -> new IllegalStateException("Refresh key-ring properties did not bind"));
 
-        assertThat(properties.keyRing().keys())
+        assertThat(properties.keys())
                 .containsEntry("current", "current-environment-secret")
                 .containsEntry("next", "next-environment-secret");
-        assertThat(properties.keyRing().keys().get(properties.keyRing().activeKeyId()))
+        assertThat(properties.keys().get(properties.activeKeyId()))
                 .isEqualTo("next-environment-secret");
     }
 

@@ -1,6 +1,6 @@
 package com.tuhospedaje.session;
 
-import com.tuhospedaje.configuration.SessionProperties;
+import com.tuhospedaje.configuration.RefreshKeyRingProperties;
 import com.tuhospedaje.security.RefreshTokenHasher;
 import org.junit.jupiter.api.Test;
 
@@ -17,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RefreshTokenHasherTest {
 
     private final RefreshTokenHasher hasher = new RefreshTokenHasher(
-            new SessionProperties.KeyRingProperties("active", List.of(
-                    new SessionProperties.KeyEntry("active", "active-test-pepper"),
-                    new SessionProperties.KeyEntry("retired", "retired-test-pepper")
+            new RefreshKeyRingProperties("active", List.of(
+                    new RefreshKeyRingProperties.KeyEntry("active", "active-test-pepper"),
+                    new RefreshKeyRingProperties.KeyEntry("retired", "retired-test-pepper")
             )),
             new SecureRandom()
     );

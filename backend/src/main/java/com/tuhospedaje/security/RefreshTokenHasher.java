@@ -1,6 +1,6 @@
 package com.tuhospedaje.security;
 
-import com.tuhospedaje.configuration.SessionProperties;
+import com.tuhospedaje.configuration.RefreshKeyRingProperties;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,7 +16,7 @@ public final class RefreshTokenHasher {
     private final Map<String, String> keys;
     private final SecureRandom random;
 
-    public RefreshTokenHasher(SessionProperties.KeyRingProperties keyRing, SecureRandom random) {
+    public RefreshTokenHasher(RefreshKeyRingProperties keyRing, SecureRandom random) {
         this.activeKeyId = keyRing.activeKeyId();
         this.keys = keyRing.keys();
         this.random = random;

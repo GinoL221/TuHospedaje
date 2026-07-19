@@ -1,7 +1,6 @@
 package com.tuhospedaje.configuration;
 
 import com.tuhospedaje.repository.UserRepository;
-import com.tuhospedaje.security.RefreshTokenHasher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,8 +47,4 @@ public class ApplicationConfig {
         return Clock::systemUTC;
     }
 
-    @Bean
-    public RefreshTokenHasher refreshTokenHasher(SessionProperties properties, SecureRandom random) {
-        return new RefreshTokenHasher(properties.keyRing(), random);
-    }
 }

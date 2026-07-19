@@ -2,10 +2,13 @@ package com.tuhospedaje;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import com.tuhospedaje.configuration.CookieProperties;
+import com.tuhospedaje.configuration.CorsProperties;
+import com.tuhospedaje.configuration.SessionProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@ConfigurationPropertiesScan
+@EnableConfigurationProperties({CookieProperties.class, CorsProperties.class, SessionProperties.class})
 public class BackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);

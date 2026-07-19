@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.session.refresh.enabled=true")
 @Import(TestcontainersConfiguration.class)
 class RefreshSessionServiceTest {
     private static final Instant ISSUED_AT = Instant.parse("2030-01-01T12:00:00.123456Z");
