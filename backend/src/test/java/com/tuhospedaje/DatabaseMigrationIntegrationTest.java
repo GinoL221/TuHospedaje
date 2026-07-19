@@ -100,8 +100,8 @@ class DatabaseMigrationIntegrationTest {
                 )) {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
-            assertThat(probeJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(2);
+assertThat(probeJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(3);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories", Integer.class)).isEqualTo(6);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM features", Integer.class)).isEqualTo(8);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM policies", Integer.class)).isEqualTo(6);
@@ -221,7 +221,7 @@ class DatabaseMigrationIntegrationTest {
     }
 
     @Test
-    void migratesAndValidatesV1InAnIndependentSecondMariaDbContainer() {
+    void migratesAndValidatesTheV1ToV2ChainInAnIndependentSecondMariaDbContainer() {
         try (MariaDBContainer<?> independentContainer = new MariaDBContainer<>("mariadb:10.11")
                 .withDatabaseName("independent_v1_probe")
                 .withUsername("test")
@@ -236,7 +236,7 @@ class DatabaseMigrationIntegrationTest {
                     .locations("classpath:db/migration")
                     .load();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
 
             try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
                     .properties("spring.main.web-application-type=none")
@@ -248,6 +248,84 @@ class DatabaseMigrationIntegrationTest {
                             ))))
                     .run()) {
                 assertThat(context.isActive()).isTrue();
+            }
+        }
+    }
+
+    @Test
+    void retriesV2AfterEnabledColumnWasCommittedByPartialDdl() {
+        ProbeDatabase probe = createProbeDatabase("partial_v2_probe");
+        try {
+            Flyway.configure()
+                    .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
+                    .locations("classpath:db/migration")
+                    .target("1")
+                    .load()
+                    .migrate();
+            JdbcTemplate template = jdbcTemplateFor(probe);
+            template.execute("ALTER TABLE users ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT TRUE");
+
+            int migrationsExecuted = Flyway.configure()
+                    .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate().migrationsExecuted;
+
+            assertThat(migrationsExecuted).isEqualTo(1);
+            assertThat(template.queryForObject("""
+                    SELECT COUNT(*) FROM information_schema.columns
+                    WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'enabled'
+                      AND data_type = 'tinyint' AND is_nullable = 'NO' AND column_default = '1'
+                    """, Integer.class)).isEqualTo(1);
+            assertThat(template.queryForObject("""
+                    SELECT COUNT(*) FROM information_schema.tables
+                    WHERE table_schema = DATABASE()
+                      AND table_name IN ('refresh_token_families', 'refresh_tokens', 'session_security_events')
+                    """, Integer.class)).isEqualTo(3);
+            assertThat(template.queryForObject(
+                    "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '2' AND success = 1",
+                    Integer.class)).isEqualTo(1);
+        } finally {
+            dropProbeDatabase(probe);
+        }
+    }
+
+    @Test
+    void retriesV2AfterEachRefreshSessionTableWasCommittedByPartialDdl() {
+        String[] v2Statements = loadV2Statements();
+
+        for (int completedStatementCount : List.of(2, 3, 4)) {
+            ProbeDatabase probe = createProbeDatabase("partial_v2_table_probe");
+            try {
+                Flyway.configure()
+                        .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
+                        .locations("classpath:db/migration")
+                        .target("1")
+                        .load()
+                        .migrate();
+
+                JdbcTemplate template = jdbcTemplateFor(probe);
+                for (int statementIndex = 0; statementIndex < completedStatementCount; statementIndex++) {
+                    template.execute(v2Statements[statementIndex]);
+                }
+
+                int migrationsExecuted = Flyway.configure()
+                        .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
+                        .locations("classpath:db/migration")
+                        .load()
+                        .migrate().migrationsExecuted;
+
+                assertThat(migrationsExecuted).isEqualTo(1);
+                assertThat(template.queryForObject("""
+                        SELECT COUNT(*) FROM information_schema.tables
+                        WHERE table_schema = DATABASE()
+                          AND table_name IN ('refresh_token_families', 'refresh_tokens', 'session_security_events')
+                        """, Integer.class)).isEqualTo(3);
+                assertThat(template.queryForObject(
+                        "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '2' AND success = 1",
+                        Integer.class)).isEqualTo(1);
+            } finally {
+                dropProbeDatabase(probe);
             }
         }
     }
@@ -392,6 +470,7 @@ class DatabaseMigrationIntegrationTest {
                 .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                 .locations("classpath:db/migration", "classpath:db/dev")
                 .placeholders(Map.of("dev_admin_password_hash", adminPasswordHash))
+                .outOfOrder(true)
                 .load();
     }
 
@@ -477,6 +556,17 @@ class DatabaseMigrationIntegrationTest {
             return manifest;
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to load canonical dev seed manifest", exception);
+        }
+    }
+
+    private String[] loadV2Statements() {
+        try (InputStream input = getClass().getResourceAsStream("/db/migration/V2__refresh_session_families.sql")) {
+            if (input == null) {
+                throw new IllegalStateException("Missing V2 migration");
+            }
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8).trim().split(";\\s*");
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to load V2 migration", exception);
         }
     }
 
