@@ -10,6 +10,8 @@ import com.tuhospedaje.repository.RefreshTokenRepository;
 import com.tuhospedaje.repository.SessionSecurityEventRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.RefreshSessionService;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,6 +50,7 @@ class RefreshSessionServiceTest {
     @Autowired private RefreshTokenRepository tokens;
     @Autowired private RefreshTokenFamilyRepository families;
     @Autowired private SessionSecurityEventRepository events;
+    @Autowired private EntityManagerFactory entityManagerFactory;
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private MariaDBContainer<?> mariaDb;
     @Autowired private JdbcTemplate jdbc;
@@ -142,13 +145,22 @@ class RefreshSessionServiceTest {
         User user = user("revoke-all@example.test");
         var first = sessions.issue(user);
         var second = sessions.issue(user);
+        var alreadyRevoked = sessions.issue(user);
+        RefreshTokenFamily revokedFamily = families.findById(alreadyRevoked.familyId()).orElseThrow();
+        revokedFamily.setRevokedAt(ISSUED_AT.minusSeconds(1));
+        revokedFamily.setRevocationReason("ADMIN");
+        families.saveAndFlush(revokedFamily);
+        var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
 
         sessions.revokeAll(user.getId(), "LOGOUT_ALL");
 
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
         assertThat(families.findById(first.familyId()).orElseThrow().getRevokedAt()).isNotNull();
         assertThat(families.findById(second.familyId()).orElseThrow().getRevokedAt()).isNotNull();
         assertTokensTerminallyRevoked(first.familyId());
         assertTokensTerminallyRevoked(second.familyId());
+        assertTokensTerminallyRevoked(alreadyRevoked.familyId());
     }
 
     @Test

@@ -97,8 +97,8 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     @Transactional
     public void revokeAll(long userId, String reason) {
         Instant now = now();
-        families.findActiveByUserIdForUpdate(userId)
-                .forEach(family -> revokeFamily(family, now, reason, false));
+        tokens.revokeActiveTokensForUser(userId, now);
+        families.revokeActiveFamiliesForUser(userId, now, reason);
     }
 
     private RefreshToken lockedToken(String refreshCredential) {

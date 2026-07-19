@@ -5,7 +5,13 @@ import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.entity.RefreshToken;
 import com.tuhospedaje.entity.RefreshTokenFamily;
 import com.tuhospedaje.entity.SessionSecurityEvent;
+import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.RefreshTokenFamilyRepository;
+import com.tuhospedaje.repository.RefreshTokenRepository;
+import com.tuhospedaje.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.FlushModeType;
 import jakarta.persistence.LockModeType;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.repository.Lock;
@@ -20,8 +26,11 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +44,18 @@ class RefreshSessionFoundationIntegrationTest {
 
     @Autowired
     private SessionProperties sessionProperties;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RefreshTokenFamilyRepository familyRepository;
+
+    @Autowired
+    private RefreshTokenRepository tokenRepository;
 
     @Test
     void migratesRefreshSessionSchemaWithConstraintsIndexesAndUtcMicrosecondColumns() {
@@ -79,6 +100,49 @@ class RefreshSessionFoundationIntegrationTest {
 
         assertThat(lock.value()).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
         assertThat(revocation.value()).contains("family.user.id = :userId", "family.revokedAt IS NULL");
+    }
+
+    @Test
+    void revokingFamilyFlushesPendingChangesAndClearsManagedTokens() {
+        Instant issuedAt = Instant.parse("2026-07-18T12:00:00Z");
+        Instant lastPresentedAt = issuedAt.plusSeconds(30);
+        Instant revokedAt = issuedAt.plusSeconds(60);
+        User user = userRepository.save(User.builder()
+                .firstName("Repository")
+                .lastName("Contract")
+                .email("refresh-repository-contract@example.test")
+                .password("bcrypt-placeholder")
+                .role(RoleEnum.USER)
+                .build());
+        RefreshTokenFamily family = new RefreshTokenFamily();
+        family.setFamilyUuid(UUID.randomUUID());
+        family.setUser(user);
+        family.setIssuedAt(issuedAt);
+        family.setAbsoluteExpiresAt(issuedAt.plusSeconds(3600));
+        familyRepository.save(family);
+        RefreshToken token = new RefreshToken();
+        token.setFamily(family);
+        token.setTokenHmac(new byte[32]);
+        token.setHmacKeyId("active");
+        token.setIssuedAt(issuedAt);
+        token.setExpiresAt(family.getAbsoluteExpiresAt());
+        tokenRepository.saveAndFlush(token);
+        entityManager.clear();
+
+        RefreshToken managedToken = tokenRepository.findById(token.getId()).orElseThrow();
+        entityManager.setFlushMode(FlushModeType.COMMIT);
+        managedToken.setLastPresentedAt(lastPresentedAt);
+
+        tokenRepository.revokeAllForFamily(family.getId(), revokedAt);
+
+        assertThat(entityManager.contains(managedToken)).isFalse();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT last_presented_at FROM refresh_tokens WHERE id = ?",
+                java.sql.Timestamp.class,
+                token.getId()).toLocalDateTime())
+                .isEqualTo(lastPresentedAt.atOffset(ZoneOffset.UTC).toLocalDateTime());
+        RefreshToken reloadedToken = tokenRepository.findById(token.getId()).orElseThrow();
+        assertThat(reloadedToken.getRevokedAt()).isEqualTo(revokedAt);
     }
 
     @Test

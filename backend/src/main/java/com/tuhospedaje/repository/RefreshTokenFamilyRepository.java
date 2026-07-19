@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,11 +17,6 @@ public interface RefreshTokenFamilyRepository extends JpaRepository<RefreshToken
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT family FROM RefreshTokenFamily family WHERE family.id = :id")
     Optional<RefreshTokenFamily> findByIdForUpdate(@Param("id") Long id);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT family FROM RefreshTokenFamily family WHERE family.user.id = :userId "
-            + "AND family.revokedAt IS NULL ORDER BY family.id ASC")
-    List<RefreshTokenFamily> findActiveByUserIdForUpdate(@Param("userId") Long userId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
