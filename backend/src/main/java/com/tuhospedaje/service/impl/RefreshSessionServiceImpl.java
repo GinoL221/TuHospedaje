@@ -67,12 +67,10 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         RefreshTokenFamily family = token.getFamily();
         Instant now = now();
         if (token.getConsumedAt() != null) {
-            revokeFamily(family, now, "REUSE", true);
+            revokeFamily(family, now, FamilyRevocation.REUSE);
             throw new Rejected();
         }
-        if (family.getRevokedAt() != null || !family.getAbsoluteExpiresAt().isAfter(now)
-                || token.getRevokedAt() != null || !token.getExpiresAt().isAfter(now)
-                || token.getGeneration() != family.getCurrentGeneration() || !family.getUser().isEnabled()) {
+        if (!isEligibleForRotation(token, family, now)) {
             throw new Rejected();
         }
         RefreshTokenHasher.GeneratedCredential successor = hasher.generate();
@@ -90,7 +88,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     @Transactional
     public void revokeCurrent(String refreshCredential) {
         RefreshToken token = lockedToken(refreshCredential);
-        revokeFamily(token.getFamily(), now(), "LOGOUT", false);
+        revokeFamily(token.getFamily(), now(), FamilyRevocation.LOGOUT);
     }
 
     @Override
@@ -129,24 +127,41 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         return token;
     }
 
-    private void revokeFamily(RefreshTokenFamily family, Instant now, String reason, boolean reuse) {
+    private boolean isEligibleForRotation(RefreshToken token, RefreshTokenFamily family, Instant now) {
+        boolean familyIsActive = family.getRevokedAt() == null;
+        boolean familyIsWithinAbsoluteLifetime = family.getAbsoluteExpiresAt().isAfter(now);
+        boolean tokenIsActive = token.getRevokedAt() == null;
+        boolean tokenIsUnexpired = token.getExpiresAt().isAfter(now);
+        boolean tokenIsCurrentGeneration = token.getGeneration() == family.getCurrentGeneration();
+        boolean userIsEnabled = family.getUser().isEnabled();
+        return familyIsActive && familyIsWithinAbsoluteLifetime && tokenIsActive && tokenIsUnexpired
+                && tokenIsCurrentGeneration && userIsEnabled;
+    }
+
+    private void revokeFamily(RefreshTokenFamily family, Instant now, FamilyRevocation revocation) {
         if (family.getRevokedAt() == null) {
             family.setRevokedAt(now);
-            family.setRevocationReason(reason);
-            if (reuse) {
+            family.setRevocationReason(revocation.name());
+            if (revocation == FamilyRevocation.REUSE) {
                 family.setReuseDetectedAt(now);
             }
             tokens.revokeAllForFamily(family.getId(), now);
         }
-        if (reuse && !events.existsByFamilyIdAndEventType(family.getId(), "REFRESH_REUSE")) {
+        if (revocation == FamilyRevocation.REUSE
+                && !events.existsByFamilyIdAndEventType(family.getId(), SessionSecurityEvent.Type.REFRESH_REUSE)) {
             SessionSecurityEvent event = new SessionSecurityEvent();
             event.setUser(family.getUser());
             event.setFamily(family);
-            event.setEventType("REFRESH_REUSE");
+            event.setEventType(SessionSecurityEvent.Type.REFRESH_REUSE);
             event.setOccurredAt(now);
-            event.setDeliveryState("PENDING");
+            event.setDeliveryState(SessionSecurityEvent.DeliveryState.PENDING);
             events.save(event);
         }
+    }
+
+    private enum FamilyRevocation {
+        LOGOUT,
+        REUSE
     }
 
     private Instant now() {

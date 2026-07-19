@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SessionSecurityEventRepository extends JpaRepository<SessionSecurityEvent, Long> {
-    boolean existsByFamilyIdAndEventType(Long familyId, String eventType);
+    boolean existsByFamilyIdAndEventType(Long familyId, SessionSecurityEvent.Type eventType);
     long countByFamilyId(Long familyId);
 }

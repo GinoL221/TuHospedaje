@@ -117,6 +117,10 @@ class RefreshSessionServiceTest {
         assertThat(revokedFamilyA.getReuseDetectedAt()).isEqualTo(reuseDetectedAt);
         assertTokensTerminallyRevoked(familyA.familyId());
         assertThat(events.countByFamilyId(familyA.familyId())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT revocation_reason FROM refresh_token_families WHERE id = ?",
+                String.class, familyA.familyId())).isEqualTo("REUSE");
+        assertThat(jdbc.queryForMap("SELECT event_type, delivery_state FROM session_security_events WHERE family_id = ?",
+                familyA.familyId())).containsEntry("event_type", "REFRESH_REUSE").containsEntry("delivery_state", "PENDING");
 
         assertThat(families.findById(familyB.familyId()).orElseThrow().getRevokedAt()).isNull();
         assertThat(tokensFor(familyB.familyId())).allSatisfy(token -> assertThat(token.getRevokedAt()).isNull());
