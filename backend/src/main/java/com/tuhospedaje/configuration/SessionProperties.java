@@ -23,7 +23,11 @@ public record SessionProperties(
         @NotNull @Valid CleanupProperties cleanup,
         @NotNull @Valid RateLimitProperties rateLimit
 ) {
-    public record RefreshProperties(boolean enabled, @NotNull @DurationMin(seconds = 1) Duration absoluteLifetime) {
+    public record RefreshProperties(
+            boolean enabled,
+            @NotNull @DurationMin(seconds = 1) Duration absoluteLifetime,
+            @NotNull @DurationMin(seconds = 1) Duration retryGrace
+    ) {
     }
 
     public record KeyRingProperties(

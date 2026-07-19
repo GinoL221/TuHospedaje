@@ -15,6 +15,8 @@ import java.time.Instant;
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByHmacKeyIdAndTokenHmac(String hmacKeyId, byte[] tokenHmac);
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    Optional<RefreshToken> findByPredecessorId(Long predecessorId);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT token FROM RefreshToken token WHERE token.id = :id")
     Optional<RefreshToken> findByIdForUpdate(@Param("id") Long id);

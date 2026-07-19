@@ -106,11 +106,65 @@ class RefreshSessionServiceTest {
         assertThat(lineage.get(1).getPredecessor().getId()).isEqualTo(lineage.get(0).getId());
         assertThat(families.findById(first.familyId()).orElseThrow().getCurrentGeneration()).isEqualTo(1);
 
+        setClock(ISSUED_AT.plus(1, ChronoUnit.HOURS).plusSeconds(5));
         assertThatThrownBy(() -> sessions.rotate(first.refreshCredential())).isInstanceOf(RefreshSessionService.Rejected.class);
         assertThatThrownBy(() -> sessions.rotate(successor.refreshCredential())).isInstanceOf(RefreshSessionService.Rejected.class);
         assertThat(families.findById(first.familyId()).orElseThrow().getRevokedAt()).isNotNull();
         assertThat(events.countByFamilyId(first.familyId())).isEqualTo(1);
         assertThat(tokensFor(first.familyId())).allSatisfy(token -> assertThat(token.getRevokedAt()).isNotNull());
+    }
+
+    @Test
+    void retriesTheDirectPredecessorBeforeGraceEndsWithoutChangingPersistedState() {
+        setClock(ISSUED_AT);
+        var first = sessions.issue(user("retry@example.test"));
+        Instant consumedAt = ISSUED_AT.plusSeconds(10);
+        setClock(consumedAt);
+        var successor = sessions.rotate(first.refreshCredential());
+        List<RefreshToken> afterRotation = tokensFor(first.familyId());
+        Instant familyLastRotatedAt = families.findById(first.familyId()).orElseThrow().getLastRotatedAt();
+        serviceLogs.list.clear();
+
+        setClock(consumedAt.plusSeconds(4).plusMillis(999));
+        var retry = sessions.rotate(first.refreshCredential());
+
+        assertThat(retry.refreshCredential()).isEqualTo(successor.refreshCredential());
+        assertThat(tokensFor(first.familyId())).hasSize(2);
+        assertThat(families.findById(first.familyId()).orElseThrow()).satisfies(family -> {
+            assertThat(family.getCurrentGeneration()).isEqualTo(1);
+            assertThat(family.getLastRotatedAt()).isEqualTo(familyLastRotatedAt);
+            assertThat(family.getRevokedAt()).isNull();
+        });
+        assertThat(tokensFor(first.familyId()).get(0).getConsumedAt()).isEqualTo(afterRotation.get(0).getConsumedAt());
+        assertThat(events.countByFamilyId(first.familyId())).isZero();
+        assertThat(serviceLogs.list).isEmpty();
+    }
+
+    @Test
+    void exactGraceBoundaryIsReuseAndRevokesTheFamily() {
+        setClock(ISSUED_AT);
+        var first = sessions.issue(user("retry-boundary@example.test"));
+        sessions.rotate(first.refreshCredential());
+
+        setClock(ISSUED_AT.plusSeconds(5));
+        assertRejected(first.refreshCredential());
+
+        assertThat(families.findById(first.familyId()).orElseThrow().getRevocationReason()).isEqualTo("REUSE");
+        assertThat(events.countByFamilyId(first.familyId())).isEqualTo(1);
+    }
+
+    @Test
+    void advancedAncestorInsideGraceIsReuse() {
+        setClock(ISSUED_AT);
+        var first = sessions.issue(user("advanced-ancestor@example.test"));
+        var second = sessions.rotate(first.refreshCredential());
+        setClock(ISSUED_AT.plusSeconds(1));
+        sessions.rotate(second.refreshCredential());
+
+        setClock(ISSUED_AT.plusSeconds(2));
+        assertRejected(first.refreshCredential());
+
+        assertThat(families.findById(first.familyId()).orElseThrow().getRevocationReason()).isEqualTo("REUSE");
     }
 
     @Test
@@ -188,6 +242,7 @@ class RefreshSessionServiceTest {
         User user = user("reuse-log-secret@example.test");
         var first = sessions.issue(user);
         sessions.rotate(first.refreshCredential());
+        setClock(ISSUED_AT.plusSeconds(5));
         serviceLogs.list.clear();
 
         assertThatThrownBy(() -> sessions.revokeCurrent(first.refreshCredential()))
@@ -335,24 +390,21 @@ class RefreshSessionServiceTest {
     }
 
     @Test
-    void concurrentPresentationCreatesOneSuccessorThenRecordsOneReuseEvent() throws Exception {
+    void concurrentOriginalAndRetryReturnTheSameSuccessorWithoutAdvancingAgain() throws Exception {
         setClock(ISSUED_AT);
         var issued = sessions.issue(user("concurrent@example.test"));
         var executor = Executors.newFixedThreadPool(2);
         try {
-            java.util.List<Future<Boolean>> results = executor.invokeAll(java.util.List.of(
-                    () -> attempt(issued.refreshCredential()), () -> attempt(issued.refreshCredential())));
-            long successes = 0;
-            for (Future<Boolean> result : results) {
-                if (result.get()) successes++;
-            }
-            assertThat(successes).isEqualTo(1);
+            java.util.List<Future<String>> results = executor.invokeAll(java.util.List.of(
+                    () -> sessions.rotate(issued.refreshCredential()).refreshCredential(),
+                    () -> sessions.rotate(issued.refreshCredential()).refreshCredential()));
+            assertThat(results.get(0).get()).isEqualTo(results.get(1).get());
         } finally {
             executor.shutdownNow();
         }
         assertThat(tokens.countByFamilyId(issued.familyId())).isEqualTo(2);
-        assertThat(events.countByFamilyId(issued.familyId())).isEqualTo(1);
-        assertThat(families.findById(issued.familyId()).orElseThrow().getRevokedAt()).isNotNull();
+        assertThat(events.countByFamilyId(issued.familyId())).isZero();
+        assertThat(families.findById(issued.familyId()).orElseThrow().getRevokedAt()).isNull();
     }
 
     @Test

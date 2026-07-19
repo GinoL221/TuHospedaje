@@ -71,16 +71,23 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         RefreshTokenFamily family = token.getFamily();
         Instant now = now();
         if (token.getConsumedAt() != null) {
+            RefreshToken successor = tokens.findByPredecessorId(token.getId()).orElse(null);
+            if (isEligibleRetry(token, successor, family, now)) {
+                RefreshTokenHasher.GeneratedCredential credential = hasher.deriveSuccessor(
+                        refreshCredential, family.getFamilyUuid(), successor.getGeneration(), successor.getHmacKeyId());
+                return new Session(family.getId(), credential.presentedValue(), family.getAbsoluteExpiresAt());
+            }
             revokeFamily(family, now, FamilyRevocation.REUSE);
             throw new Rejected();
         }
         if (!isEligibleForRotation(token, family, now)) {
             throw new Rejected();
         }
-        RefreshTokenHasher.GeneratedCredential successor = hasher.generate();
+        long generation = family.getCurrentGeneration() + 1;
+        RefreshTokenHasher.GeneratedCredential successor = hasher.deriveSuccessor(
+                refreshCredential, family.getFamilyUuid(), generation, hasher.activeKeyId());
         token.setConsumedAt(now);
         token.setLastPresentedAt(now);
-        long generation = family.getCurrentGeneration() + 1;
         tokens.save(token(family, generation, successor, token, now));
         family.setCurrentGeneration(generation);
         family.setLastRotatedAt(now);
@@ -146,6 +153,19 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         boolean userIsEnabled = family.getUser().isEnabled();
         return familyIsActive && familyIsWithinAbsoluteLifetime && tokenIsActive && tokenIsUnexpired
                 && tokenIsCurrentGeneration && userIsEnabled;
+    }
+
+    private boolean isEligibleRetry(RefreshToken predecessor, RefreshToken successor,
+                                    RefreshTokenFamily family, Instant now) {
+        return successor != null
+                && now.isBefore(predecessor.getConsumedAt().plus(properties.refresh().retryGrace()))
+                && successor.getGeneration() == predecessor.getGeneration() + 1
+                && successor.getGeneration() == family.getCurrentGeneration()
+                && family.getRevokedAt() == null
+                && family.getAbsoluteExpiresAt().isAfter(now)
+                && family.getUser().isEnabled()
+                && successor.getRevokedAt() == null
+                && successor.getExpiresAt().isAfter(now);
     }
 
     private void revokeFamily(RefreshTokenFamily family, Instant now, FamilyRevocation revocation) {
