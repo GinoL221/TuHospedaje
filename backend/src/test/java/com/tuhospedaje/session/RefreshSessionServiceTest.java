@@ -1,5 +1,9 @@
 package com.tuhospedaje.session;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.entity.RefreshToken;
 import com.tuhospedaje.entity.RefreshTokenFamily;
@@ -10,9 +14,13 @@ import com.tuhospedaje.repository.RefreshTokenRepository;
 import com.tuhospedaje.repository.SessionSecurityEventRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.RefreshSessionService;
+import com.tuhospedaje.service.impl.RefreshSessionServiceImpl;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -51,6 +59,20 @@ class RefreshSessionServiceTest {
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private JdbcTemplate jdbc;
     @MockBean(name = "utcClockSupplier") private Supplier<Clock> clock;
+    private ListAppender<ILoggingEvent> serviceLogs;
+
+    @BeforeEach
+    void captureServiceLogs() {
+        serviceLogs = new ListAppender<>();
+        serviceLogs.start();
+        ((Logger) LoggerFactory.getLogger(RefreshSessionServiceImpl.class)).addAppender(serviceLogs);
+    }
+
+    @AfterEach
+    void stopCapturingServiceLogs() {
+        ((Logger) LoggerFactory.getLogger(RefreshSessionServiceImpl.class)).detachAppender(serviceLogs);
+        serviceLogs.stop();
+    }
 
     @Test
     void issuesForExactlyThirtyDaysAndRotatesAtTheOriginalAbsoluteBoundary() {
@@ -161,6 +183,29 @@ class RefreshSessionServiceTest {
     }
 
     @Test
+    void logsPersistedRefreshReuseOnceWithoutCredentialOrUserPii() {
+        setClock(ISSUED_AT);
+        User user = user("reuse-log-secret@example.test");
+        var first = sessions.issue(user);
+        sessions.rotate(first.refreshCredential());
+        serviceLogs.list.clear();
+
+        assertThatThrownBy(() -> sessions.revokeCurrent(first.refreshCredential()))
+                .isInstanceOf(RefreshSessionService.Rejected.class);
+        assertThatThrownBy(() -> sessions.revokeCurrent(first.refreshCredential()))
+                .isInstanceOf(RefreshSessionService.Rejected.class);
+
+        assertThat(serviceLogs.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.WARN);
+            assertThat(event.getFormattedMessage()).isEqualTo(
+                    "event=refresh_session.reuse_detected family_id=" + first.familyId()
+                            + " user_id=" + user.getId() + " delivery_state=PENDING");
+            assertThat(event.getFormattedMessage())
+                    .doesNotContain(first.refreshCredential(), "reuse-log-secret@example.test", "secret");
+        });
+    }
+
+    @Test
     void revokingWithAFreshTokenPerformsLogoutWithoutReuseEvent() {
         setClock(ISSUED_AT);
         var issued = sessions.issue(user("ordinary-logout@example.test"));
@@ -172,6 +217,28 @@ class RefreshSessionServiceTest {
         assertThat(family.getReuseDetectedAt()).isNull();
         assertTokensTerminallyRevoked(issued.familyId());
         assertThat(events.countByFamilyId(issued.familyId())).isZero();
+    }
+
+    @Test
+    void logsOrdinaryFamilyLogoutAndDistinguishesARevocationNoOp() {
+        setClock(ISSUED_AT);
+        User user = user("logout-log-secret@example.test");
+        var issued = sessions.issue(user);
+        serviceLogs.list.clear();
+
+        sessions.revokeCurrent(issued.refreshCredential());
+        sessions.revokeCurrent(issued.refreshCredential());
+
+        assertThat(serviceLogs.list).extracting(ILoggingEvent::getLevel)
+                .containsExactly(Level.INFO, Level.INFO);
+        assertThat(serviceLogs.list).extracting(ILoggingEvent::getFormattedMessage)
+                .containsExactly(
+                        "event=refresh_session.family_revoked family_id=" + issued.familyId()
+                                + " user_id=" + user.getId() + " reason=LOGOUT revoked=true",
+                        "event=refresh_session.family_revoked family_id=" + issued.familyId()
+                                + " user_id=" + user.getId() + " reason=LOGOUT revoked=false");
+        assertThat(serviceLogs.list).allSatisfy(event -> assertThat(event.getFormattedMessage())
+                .doesNotContain(issued.refreshCredential(), "logout-log-secret@example.test", "secret"));
     }
 
     @Test
@@ -196,6 +263,26 @@ class RefreshSessionServiceTest {
         assertTokensTerminallyRevoked(first.familyId());
         assertTokensTerminallyRevoked(second.familyId());
         assertTokensTerminallyRevoked(alreadyRevoked.familyId());
+    }
+
+    @Test
+    void logsMassRevocationCountsWithoutCopyingAnUnsafeReason() {
+        setClock(ISSUED_AT);
+        User user = user("mass-log-secret@example.test");
+        sessions.issue(user);
+        sessions.issue(user);
+        serviceLogs.list.clear();
+
+        sessions.revokeAll(user.getId(), "admin-secret@example.test");
+
+        assertThat(serviceLogs.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.INFO);
+            assertThat(event.getFormattedMessage()).isEqualTo(
+                    "event=refresh_session.mass_revoked user_id=" + user.getId()
+                            + " reason=OTHER active_tokens_revoked=2 active_families_revoked=2");
+            assertThat(event.getFormattedMessage())
+                    .doesNotContain("admin-secret@example.test", "mass-log-secret@example.test", "secret");
+        });
     }
 
     @Test

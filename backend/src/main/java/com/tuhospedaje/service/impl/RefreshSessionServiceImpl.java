@@ -12,6 +12,8 @@ import com.tuhospedaje.security.RefreshTokenHasher;
 import com.tuhospedaje.service.RefreshSessionService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,8 @@ import java.util.function.Supplier;
 
 @Service
 public class RefreshSessionServiceImpl implements RefreshSessionService {
+    private static final Logger log = LoggerFactory.getLogger(RefreshSessionServiceImpl.class);
+
     private final RefreshTokenFamilyRepository families;
     private final RefreshTokenRepository tokens;
     private final SessionSecurityEventRepository events;
@@ -99,8 +103,10 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     @Transactional
     public void revokeAll(long userId, String reason) {
         Instant now = now();
-        tokens.revokeActiveTokensForUser(userId, now);
-        families.revokeActiveFamiliesForUser(userId, now, reason);
+        int revokedTokens = tokens.revokeActiveTokensForUser(userId, now);
+        int revokedFamilies = families.revokeActiveFamiliesForUser(userId, now, reason);
+        log.info("event=refresh_session.mass_revoked user_id={} reason={} active_tokens_revoked={} active_families_revoked={}",
+                userId, safeReason(reason), revokedTokens, revokedFamilies);
     }
 
     private RefreshToken lockedToken(String refreshCredential) {
@@ -143,6 +149,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     }
 
     private void revokeFamily(RefreshTokenFamily family, Instant now, FamilyRevocation revocation) {
+        boolean revoked = false;
         if (family.getRevokedAt() == null) {
             family.setRevokedAt(now);
             family.setRevocationReason(revocation.name());
@@ -150,6 +157,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
                 family.setReuseDetectedAt(now);
             }
             tokens.revokeAllForFamily(family.getId(), now);
+            revoked = true;
         }
         if (revocation == FamilyRevocation.REUSE
                 && !events.existsByFamilyIdAndEventType(family.getId(), SessionSecurityEvent.Type.REFRESH_REUSE)) {
@@ -160,7 +168,20 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
             event.setOccurredAt(now);
             event.setDeliveryState(SessionSecurityEvent.DeliveryState.PENDING);
             events.save(event);
+            log.warn("event=refresh_session.reuse_detected family_id={} user_id={} delivery_state=PENDING",
+                    family.getId(), family.getUser().getId());
+        } else if (revocation == FamilyRevocation.LOGOUT) {
+            log.info("event=refresh_session.family_revoked family_id={} user_id={} reason=LOGOUT revoked={}",
+                    family.getId(), family.getUser().getId(), revoked);
         }
+    }
+
+    private String safeReason(String reason) {
+        if (reason == null) return "OTHER";
+        return switch (reason) {
+            case "LOGOUT", "LOGOUT_ALL", "ADMIN", "REUSE" -> reason;
+            default -> "OTHER";
+        };
     }
 
     private enum FamilyRevocation {
