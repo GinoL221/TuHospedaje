@@ -12,7 +12,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 
+import java.sql.Types;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ public class RefreshTokenFamily {
     private Long id;
 
     @Column(name = "family_uuid", nullable = false, unique = true, columnDefinition = "BINARY(16)")
+    @JdbcTypeCode(Types.BINARY)
     private UUID familyUuid;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

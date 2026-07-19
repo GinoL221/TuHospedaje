@@ -2,6 +2,8 @@ package com.tuhospedaje.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,13 +34,15 @@ public class SessionSecurityEvent {
     private RefreshTokenFamily family;
 
     @Column(nullable = false, length = 32)
-    private String eventType;
+    @Enumerated(EnumType.STRING)
+    private Type eventType;
 
     @Column(nullable = false, columnDefinition = "DATETIME(6)")
     private Instant occurredAt;
 
     @Column(nullable = false, length = 16)
-    private String deliveryState;
+    @Enumerated(EnumType.STRING)
+    private DeliveryState deliveryState;
 
     @Column(nullable = false)
     private int deliveryAttempts;
@@ -51,4 +55,12 @@ public class SessionSecurityEvent {
 
     @Column(length = 64)
     private String lastErrorCode;
+
+    public enum Type {
+        REFRESH_REUSE
+    }
+
+    public enum DeliveryState {
+        PENDING
+    }
 }

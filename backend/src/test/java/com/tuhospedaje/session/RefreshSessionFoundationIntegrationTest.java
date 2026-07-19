@@ -1,11 +1,18 @@
 package com.tuhospedaje.session;
 
 import com.tuhospedaje.configuration.SessionProperties;
+import com.tuhospedaje.configuration.RefreshKeyRingProperties;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.entity.RefreshToken;
 import com.tuhospedaje.entity.RefreshTokenFamily;
 import com.tuhospedaje.entity.SessionSecurityEvent;
+import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.RefreshTokenFamilyRepository;
+import com.tuhospedaje.repository.RefreshTokenRepository;
+import com.tuhospedaje.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.FlushModeType;
 import jakarta.persistence.LockModeType;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.repository.Lock;
@@ -20,8 +27,11 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +45,18 @@ class RefreshSessionFoundationIntegrationTest {
 
     @Autowired
     private SessionProperties sessionProperties;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RefreshTokenFamilyRepository familyRepository;
+
+    @Autowired
+    private RefreshTokenRepository tokenRepository;
 
     @Test
     void migratesRefreshSessionSchemaWithConstraintsIndexesAndUtcMicrosecondColumns() {
@@ -82,14 +104,56 @@ class RefreshSessionFoundationIntegrationTest {
     }
 
     @Test
+    void revokingFamilyFlushesPendingChangesAndClearsManagedTokens() {
+        Instant issuedAt = Instant.parse("2026-07-18T12:00:00Z");
+        Instant lastPresentedAt = issuedAt.plusSeconds(30);
+        Instant revokedAt = issuedAt.plusSeconds(60);
+        User user = userRepository.save(User.builder()
+                .firstName("Repository")
+                .lastName("Contract")
+                .email("refresh-repository-contract@example.test")
+                .password("bcrypt-placeholder")
+                .role(RoleEnum.USER)
+                .build());
+        RefreshTokenFamily family = new RefreshTokenFamily();
+        family.setFamilyUuid(UUID.randomUUID());
+        family.setUser(user);
+        family.setIssuedAt(issuedAt);
+        family.setAbsoluteExpiresAt(issuedAt.plusSeconds(3600));
+        familyRepository.save(family);
+        RefreshToken token = new RefreshToken();
+        token.setFamily(family);
+        token.setTokenHmac(new byte[32]);
+        token.setHmacKeyId("active");
+        token.setIssuedAt(issuedAt);
+        token.setExpiresAt(family.getAbsoluteExpiresAt());
+        tokenRepository.saveAndFlush(token);
+        entityManager.clear();
+
+        RefreshToken managedToken = tokenRepository.findById(token.getId()).orElseThrow();
+        entityManager.setFlushMode(FlushModeType.COMMIT);
+        managedToken.setLastPresentedAt(lastPresentedAt);
+
+        tokenRepository.revokeAllForFamily(family.getId(), revokedAt);
+
+        assertThat(entityManager.contains(managedToken)).isFalse();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT last_presented_at FROM refresh_tokens WHERE id = ?",
+                java.sql.Timestamp.class,
+                token.getId()).toLocalDateTime())
+                .isEqualTo(lastPresentedAt.atOffset(ZoneOffset.UTC).toLocalDateTime());
+        RefreshToken reloadedToken = tokenRepository.findById(token.getId()).orElseThrow();
+        assertThat(reloadedToken.getRevokedAt()).isEqualTo(revokedAt);
+    }
+
+    @Test
     void validatesMappedEntitiesAndEnvironmentBackedSessionConfigurationWithoutPersistingSecrets() {
         assertThat(RefreshTokenFamily.class.getAnnotation(jakarta.persistence.Entity.class)).isNotNull();
         assertThat(RefreshToken.class.getAnnotation(jakarta.persistence.Entity.class)).isNotNull();
         assertThat(SessionSecurityEvent.class.getAnnotation(jakarta.persistence.Entity.class)).isNotNull();
         assertThat(sessionProperties.accessTokenLifetime()).hasSeconds(900);
         assertThat(sessionProperties.refresh().absoluteLifetime()).hasDays(30);
-        assertThat(sessionProperties.keyRing().keys()).containsKey(sessionProperties.keyRing().activeKeyId());
-        assertThat(sessionProperties.keyRing().keys().values()).allMatch(value -> !value.isBlank());
+        assertThat(sessionProperties.refresh().retryGrace()).hasSeconds(5);
 
         List<String> secretBearingColumns = jdbcTemplate.queryForList("""
                 SELECT column_name
@@ -108,6 +172,7 @@ class RefreshSessionFoundationIntegrationTest {
                 Map.entry("app.session.access-token-lifetime", "PT15M"),
                 Map.entry("app.session.refresh.enabled", "false"),
                 Map.entry("app.session.refresh.absolute-lifetime", "P30D"),
+                Map.entry("app.session.refresh.retry-grace", "PT5S"),
                 Map.entry("app.session.key-ring.active-key-id", "next"),
                 Map.entry("app.session.key-ring.key-entries[0].id", "current"),
                 Map.entry("app.session.key-ring.key-entries[0].secret", "current-environment-secret"),
@@ -119,14 +184,14 @@ class RefreshSessionFoundationIntegrationTest {
                 Map.entry("app.session.rate-limit.refresh-per-ip-per-minute", "60")
         )));
 
-        SessionProperties properties = Binder.get(environment)
-                .bind("app.session", Bindable.of(SessionProperties.class))
-                .orElseThrow(() -> new IllegalStateException("Session properties did not bind"));
+        RefreshKeyRingProperties properties = Binder.get(environment)
+                .bind("app.session.key-ring", Bindable.of(RefreshKeyRingProperties.class))
+                .orElseThrow(() -> new IllegalStateException("Refresh key-ring properties did not bind"));
 
-        assertThat(properties.keyRing().keys())
+        assertThat(properties.keys())
                 .containsEntry("current", "current-environment-secret")
                 .containsEntry("next", "next-environment-secret");
-        assertThat(properties.keyRing().keys().get(properties.keyRing().activeKeyId()))
+        assertThat(properties.keys().get(properties.activeKeyId()))
                 .isEqualTo("next-environment-secret");
     }
 
