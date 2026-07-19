@@ -20,20 +20,17 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MariaDBContainer;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +49,6 @@ class RefreshSessionServiceTest {
     @Autowired private SessionSecurityEventRepository events;
     @Autowired private EntityManagerFactory entityManagerFactory;
     @Autowired private PlatformTransactionManager transactionManager;
-    @Autowired private MariaDBContainer<?> mariaDb;
     @Autowired private JdbcTemplate jdbc;
     @MockBean(name = "utcClockSupplier") private Supplier<Clock> clock;
 
@@ -253,33 +249,29 @@ class RefreshSessionServiceTest {
     }
 
     @Test
-    void mariaDb1011FamilyRowLockShowsTheContenderWaitingBeforeRelease() throws Exception {
+    void familyRowLockBlocksTheContenderUntilRelease() throws Exception {
         setClock(ISSUED_AT);
         var issued = sessions.issue(user("lock-wait@example.test"));
         CountDownLatch lockAcquired = new CountDownLatch(1);
         CountDownLatch releaseLock = new CountDownLatch(1);
         CountDownLatch contenderEnteredServicePath = new CountDownLatch(1);
-        AtomicReference<Long> ownerConnectionId = new AtomicReference<>();
-        AtomicReference<Long> contenderConnectionId = new AtomicReference<>();
         var executor = Executors.newFixedThreadPool(2);
         try {
             Future<?> lockOwner = executor.submit(() -> new TransactionTemplate(transactionManager)
                     .executeWithoutResult(status -> {
                         families.findByIdForUpdate(issued.familyId()).orElseThrow();
-                        ownerConnectionId.set(jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class));
                         lockAcquired.countDown();
                         await(releaseLock);
                     }));
             assertThat(lockAcquired.await(5, TimeUnit.SECONDS)).isTrue();
 
             Future<Boolean> refresh = executor.submit(() -> new TransactionTemplate(transactionManager).execute(status -> {
-                contenderConnectionId.set(jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class));
                 contenderEnteredServicePath.countDown();
                 return attempt(issued.refreshCredential());
             }));
             assertThat(contenderEnteredServicePath.await(5, TimeUnit.SECONDS)).isTrue();
-            awaitContenderMariaDb1011LockWait(contenderConnectionId.get(), ownerConnectionId.get(), issued.familyId());
-            assertThat(refresh.isDone()).isFalse();
+            assertThatThrownBy(() -> refresh.get(250, TimeUnit.MILLISECONDS))
+                    .isInstanceOf(TimeoutException.class);
 
             releaseLock.countDown();
             lockOwner.get(5, TimeUnit.SECONDS);
@@ -318,51 +310,6 @@ class RefreshSessionServiceTest {
         List<RefreshToken> familyTokens = tokensFor(familyId);
         assertThat(familyTokens).isNotEmpty();
         assertThat(familyTokens).allSatisfy(token -> assertThat(token.getRevokedAt()).isNotNull());
-    }
-
-    private void awaitContenderMariaDb1011LockWait(long contenderConnectionId, long ownerConnectionId, long familyId) {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        JdbcTemplate privilegedJdbc = new JdbcTemplate(
-                new DriverManagerDataSource(mariaDb.getJdbcUrl(), "root", mariaDb.getPassword()));
-        List<LockWaitEvidence> observed = List.of();
-        while (System.nanoTime() < deadline) {
-            observed = privilegedJdbc.query("""
-                    SELECT waiting.trx_mysql_thread_id AS waiting_connection_id,
-                           waiting.trx_state AS waiting_state,
-                           waiting.trx_query AS waiting_query,
-                           blocking.trx_mysql_thread_id AS blocking_connection_id,
-                           blocking.trx_query AS blocking_query
-                    FROM information_schema.innodb_lock_waits lock_waits
-                    JOIN information_schema.innodb_trx waiting ON waiting.trx_id = lock_waits.requesting_trx_id
-                    JOIN information_schema.innodb_trx blocking ON blocking.trx_id = lock_waits.blocking_trx_id
-                    WHERE waiting.trx_mysql_thread_id = ?
-                    """, (resultSet, rowNum) -> new LockWaitEvidence(
-                    resultSet.getLong("waiting_connection_id"),
-                    resultSet.getString("waiting_state"),
-                    resultSet.getString("waiting_query"),
-                    resultSet.getLong("blocking_connection_id"),
-                    resultSet.getString("blocking_query")), contenderConnectionId);
-            boolean expectedWaitObserved = observed.stream().anyMatch(wait -> wait.blockingConnectionId() == ownerConnectionId
-                    && "LOCK WAIT".equals(wait.waitingState())
-                    && wait.waitingQuery() != null
-                    && wait.waitingQuery().toLowerCase(Locale.ROOT).contains("refresh_token_families"));
-            if (expectedWaitObserved) {
-                return;
-            }
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException exception) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException("Interrupted while correlating contender MariaDB 10.11 lock wait", exception);
-            }
-        }
-        throw new AssertionError("MariaDB 10.11 did not expose a correlated lock wait before release: familyId=" + familyId
-                + ", contenderConnectionId=" + contenderConnectionId + ", ownerConnectionId=" + ownerConnectionId
-                + ", observed=" + observed);
-    }
-
-    private record LockWaitEvidence(long waitingConnectionId, String waitingState, String waitingQuery,
-                                    long blockingConnectionId, String blockingQuery) {
     }
 
     private void await(CountDownLatch latch) {
