@@ -85,9 +85,13 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = Rejected.class)
     public void revokeCurrent(String refreshCredential) {
         RefreshToken token = lockedToken(refreshCredential);
+        if (token.getConsumedAt() != null) {
+            revokeFamily(token.getFamily(), now(), FamilyRevocation.REUSE);
+            throw new Rejected();
+        }
         revokeFamily(token.getFamily(), now(), FamilyRevocation.LOGOUT);
     }
 

@@ -140,6 +140,41 @@ class RefreshSessionServiceTest {
     }
 
     @Test
+    void revokingWithAConsumedTokenRejectsAndPersistsReuseSecurityState() {
+        setClock(ISSUED_AT);
+        var first = sessions.issue(user("logout-reuse@example.test"));
+        sessions.rotate(first.refreshCredential());
+
+        Instant reuseDetectedAt = ISSUED_AT.plus(1, ChronoUnit.HOURS);
+        setClock(reuseDetectedAt);
+        assertThatThrownBy(() -> sessions.revokeCurrent(first.refreshCredential()))
+                .isInstanceOf(RefreshSessionService.Rejected.class);
+
+        RefreshTokenFamily family = families.findById(first.familyId()).orElseThrow();
+        assertThat(family.getRevokedAt()).isEqualTo(reuseDetectedAt);
+        assertThat(family.getReuseDetectedAt()).isEqualTo(reuseDetectedAt);
+        assertThat(family.getRevocationReason()).isEqualTo("REUSE");
+        assertTokensTerminallyRevoked(first.familyId());
+        assertThat(events.countByFamilyId(first.familyId())).isEqualTo(1);
+        assertThat(jdbc.queryForMap("SELECT event_type, delivery_state FROM session_security_events WHERE family_id = ?",
+                first.familyId())).containsEntry("event_type", "REFRESH_REUSE").containsEntry("delivery_state", "PENDING");
+    }
+
+    @Test
+    void revokingWithAFreshTokenPerformsLogoutWithoutReuseEvent() {
+        setClock(ISSUED_AT);
+        var issued = sessions.issue(user("ordinary-logout@example.test"));
+
+        sessions.revokeCurrent(issued.refreshCredential());
+
+        RefreshTokenFamily family = families.findById(issued.familyId()).orElseThrow();
+        assertThat(family.getRevocationReason()).isEqualTo("LOGOUT");
+        assertThat(family.getReuseDetectedAt()).isNull();
+        assertTokensTerminallyRevoked(issued.familyId());
+        assertThat(events.countByFamilyId(issued.familyId())).isZero();
+    }
+
+    @Test
     void revokeAllTerminatesEveryActiveFamilyForTheSameUser() {
         setClock(ISSUED_AT);
         User user = user("revoke-all@example.test");
