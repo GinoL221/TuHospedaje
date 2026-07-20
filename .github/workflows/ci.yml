@@ -44,7 +44,10 @@ jobs:
         image: mariadb:11
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: tuhospedaje
+          # Named tuhospedaje_test (not just tuhospedaje) because the dev
+          # seed's chk_dev_seed_database_name guard requires a standalone
+          # "dev" or "test" segment in the database name.
+          MYSQL_DATABASE: tuhospedaje_test
           MYSQL_USER: tuhospedaje
           MYSQL_PASSWORD: tuhospedaje123
         ports:
@@ -87,6 +90,9 @@ jobs:
           SPRING_PROFILES_ACTIVE: dev
           SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
           DEV_ADMIN_PASSWORD_HASH: ${{ steps.admin-hash.outputs.hash }}
+          # application.properties hardcodes the DB name to "tuhospedaje";
+          # override it to match the service container's tuhospedaje_test.
+          SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/tuhospedaje_test
         run: nohup ./mvnw -B spring-boot:run > ../backend.log 2>&1 &
 
       - name: Wait for backend
