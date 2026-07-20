@@ -43,10 +43,10 @@ jobs:
       mariadb:
         image: mariadb:11
         env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: tuhospedaje
           MYSQL_USER: tuhospedaje
           MYSQL_PASSWORD: tuhospedaje123
-          MYSQL_ROOT_PASSWORD: root
         ports:
           - 3306:3306
         options: >-
