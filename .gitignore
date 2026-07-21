@@ -31,6 +31,8 @@ TuHospedaje.postman_collection.json
 
 # AI assistant config/indexes (local, not part of the project)
 AGENTS.md
+mcp.json
+opencode.json
 .codegraph/
 
 # OpenSpec (discontinued — using Engram instead)

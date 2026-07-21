@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "openpencil": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["<OPENPENCIL_MCP_ENTRY_PATH>"],
+      "env": {
+        "OPENPENCIL_MCP_ROOT": "<REPOSITORY_ROOT>"
+      }
+    }
+  }
+}
