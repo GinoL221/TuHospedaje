@@ -1,0 +1,99 @@
+package com.tuhospedaje.auth;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuhospedaje.AbstractIntegrationTest;
+import com.tuhospedaje.dto.auth.LoginRequest;
+import com.tuhospedaje.dto.auth.RegisterRequest;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void authenticatedBootstrapReturnsFreshReadableCookieAndNoBody() throws Exception {
+        Cookie accessToken = login("csrf-bootstrap@test.com");
+
+        MvcResult result = mockMvc.perform(get("/api/auth/csrf").cookie(accessToken))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""))
+                .andReturn();
+
+        Cookie csrfToken = result.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(csrfToken).isNotNull();
+        assertThat(csrfToken.isHttpOnly()).isFalse();
+        assertThat(csrfToken.getPath()).isEqualTo("/");
+    }
+
+    @Test
+    void bootstrapRequiresAuthentication() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        assertThat(result.getResponse().getCookie("XSRF-TOKEN")).isNull();
+    }
+
+    @Test
+    void logoutAcceptsRawCookieTokenInHeaderAfterBootstrap() throws Exception {
+        Cookie accessToken = login("csrf-logout@test.com");
+        Cookie csrfToken = csrfToken(accessToken);
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(accessToken, csrfToken)
+                        .header("X-XSRF-TOKEN", csrfToken.getValue()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void logoutRejectsMissingAndMismatchedTokens() throws Exception {
+        Cookie accessToken = login("csrf-reject@test.com");
+        Cookie csrfToken = csrfToken(accessToken);
+
+        mockMvc.perform(post("/api/auth/logout").cookie(accessToken, csrfToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(accessToken, csrfToken)
+                        .header("X-XSRF-TOKEN", "stale-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    private Cookie login(String email) throws Exception {
+        RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                .andExpect(status().isOk())
+                .andReturn();
+        return result.getResponse().getCookie("ACCESS_TOKEN");
+    }
+
+    private Cookie csrfToken(Cookie accessToken) throws Exception {
+        return mockMvc.perform(get("/api/auth/csrf").cookie(accessToken))
+                .andExpect(status().isNoContent())
+                .andReturn().getResponse().getCookie("XSRF-TOKEN");
+    }
+}

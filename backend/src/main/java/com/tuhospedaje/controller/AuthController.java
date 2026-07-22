@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -84,6 +85,14 @@ public class AuthController {
     public ResponseEntity<AuthResponse> me(Authentication authentication) {
         AuthResponse response = authService.currentUser(authentication.getName());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Bootstrap the browser CSRF token")
+    @ApiResponse(responseCode = "204", description = "Fresh readable XSRF-TOKEN cookie materialized")
+    @GetMapping("/csrf")
+    public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
+        csrfToken.getToken();
+        return ResponseEntity.noContent().build();
     }
 
     private ResponseEntity<AuthResponse> withAccessTokenCookie(HttpStatus status, AuthResult result) {

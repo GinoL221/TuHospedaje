@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import logo from "../../assets/images/TuHospedaje_Isologotipo.png";
 
 export default function Header() {
-  const { user, logout } = useAuth();
+	  const { user, logout, logoutError } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,6 +31,7 @@ export default function Header() {
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
         <div className={`nav-links${menuOpen ? " nav-links--open" : ""}`}>
+          {logoutError && <p role="alert">{logoutError}</p>}
           {user ? (
             <>
               <img
@@ -79,7 +80,7 @@ export default function Header() {
               </Link>
               <button
                 onClick={() => {
-                  logout();
+                  logout().catch(() => {});
                   setMenuOpen(false);
                 }}
                 className="btn-logout"

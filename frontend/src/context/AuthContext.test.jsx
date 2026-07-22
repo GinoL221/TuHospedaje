@@ -2,7 +2,7 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./AuthContext";
 import { useAuth } from "../hooks/useAuth";
-import { get, post } from "../services/api";
+import { get, post, bootstrapCsrf } from "../services/api";
 
 vi.mock("../services/api");
 
@@ -60,6 +60,7 @@ const meUser = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  bootstrapCsrf.mockResolvedValue(undefined);
 });
 
 describe("AuthContext - bootstrap on mount", () => {
