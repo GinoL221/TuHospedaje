@@ -8,11 +8,12 @@ import { get, post, bootstrapCsrf } from "../services/api";
 vi.mock("../services/api");
 
 function Consumer() {
-  const { user, loading, login, register, logout } = useAuth();
+  const { user, loading, login, register, logout, logoutError } = useAuth();
   const [lastError, setLastError] = useState("");
   return <div>
     <span data-testid="status">{loading ? "loading" : user ? user.email : "anonymous"}</span>
     <span data-testid="last-error">{lastError}</span>
+    <span data-testid="logout-error">{logoutError}</span>
     <button onClick={() => login("test@example.com", "secret").catch((e) => setLastError(e.message))}>login</button>
     <button onClick={() => register("Test", "User", "test@example.com", "secret").catch((e) => setLastError(e.message))}>register</button>
     <button onClick={() => logout().catch(() => {})}>logout</button>
@@ -60,6 +61,7 @@ describe("authenticated CSRF sequencing", () => {
     post.mockRejectedValue(new Error("Logout rejected"));
     await act(async () => screen.getByText("logout").click());
     expect(screen.getByTestId("status")).toHaveTextContent(user.email);
+    expect(screen.getByTestId("logout-error")).toHaveTextContent("Logout rejected");
   });
 
   it("surfaces a clear retry-via-login message when register succeeds but bootstrap fails", async () => {
