@@ -6,6 +6,8 @@ import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +37,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final AuthCookieFactory authCookieFactory;
+    private final CsrfTokenRepository csrfTokenRepository;
 
     @Operation(summary = "Register a new user", description = "Creates a new user account and sets the ACCESS_TOKEN session cookie")
     @ApiResponses({
@@ -43,8 +47,10 @@ public class AuthController {
             @ApiResponse(responseCode = "409", description = "Email address is already registered", content = @Content)
     })
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
+            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         AuthResult result = authService.register(request);
+        invalidateExistingCsrfToken(httpRequest, httpResponse);
         return withAccessTokenCookie(HttpStatus.CREATED, result);
     }
 
@@ -56,8 +62,10 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content)
     })
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         AuthResult result = authService.login(request);
+        invalidateExistingCsrfToken(httpRequest, httpResponse);
         return withAccessTokenCookie(HttpStatus.OK, result);
     }
 
@@ -93,6 +101,20 @@ public class AuthController {
     public ResponseEntity<Void> csrf(CsrfToken csrfToken) {
         csrfToken.getToken();
         return ResponseEntity.noContent().build();
+    }
+
+    // SecurityConfig disables Spring's default per-request CsrfAuthenticationStrategy (it
+    // rotated the XSRF-TOKEN cookie on every authenticated request, not just login, which
+    // raced against concurrent requests — see the comment there). But a token issued before
+    // authentication must still not remain valid afterward, or an attacker able to plant a
+    // cookie value for this origin pre-login could replay it post-login. Clear any such
+    // token exactly once, here, at the moment a new identity is established; the frontend's
+    // explicit GET /api/auth/csrf bootstrap call right after this response materializes a
+    // fresh replacement.
+    private void invalidateExistingCsrfToken(HttpServletRequest request, HttpServletResponse response) {
+        if (csrfTokenRepository.loadToken(request) != null) {
+            csrfTokenRepository.saveToken(null, request, response);
+        }
     }
 
     private ResponseEntity<AuthResponse> withAccessTokenCookie(HttpStatus status, AuthResult result) {

@@ -77,6 +77,61 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void loginClearsAnyPreExistingCsrfCookie() throws Exception {
+        Cookie preLoginToken = mockMvc.perform(get("/api/categories"))
+                .andReturn().getResponse().getCookie("XSRF-TOKEN");
+        assertThat(preLoginToken).isNotNull();
+
+        RegisterRequest request = new RegisterRequest("Test", "User", "csrf-fixation@test.com", "123456");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("csrf-fixation@test.com", "123456")))
+                        .cookie(preLoginToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Cookie clearedToken = loginResult.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(clearedToken).isNotNull();
+        assertThat(clearedToken.getMaxAge()).isZero();
+    }
+
+    @Test
+    void registerClearsAnyPreExistingCsrfCookie() throws Exception {
+        Cookie preRegisterToken = mockMvc.perform(get("/api/categories"))
+                .andReturn().getResponse().getCookie("XSRF-TOKEN");
+        assertThat(preRegisterToken).isNotNull();
+
+        RegisterRequest request = new RegisterRequest("Test", "User", "csrf-fixation-register@test.com", "123456");
+        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                        .cookie(preRegisterToken))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        Cookie clearedToken = registerResult.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(clearedToken).isNotNull();
+        assertThat(clearedToken.getMaxAge()).isZero();
+    }
+
+    @Test
+    void unrelatedAuthenticatedRequestDoesNotRotateCsrfCookie() throws Exception {
+        Cookie accessToken = login("csrf-stable@test.com");
+        Cookie csrfToken = csrfToken(accessToken);
+
+        MvcResult result = mockMvc.perform(get("/api/categories").cookie(accessToken, csrfToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertThat(result.getResponse().getCookie("XSRF-TOKEN")).isNull();
+    }
+
     private Cookie login(String email) throws Exception {
         RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
         mockMvc.perform(post("/api/auth/register")
