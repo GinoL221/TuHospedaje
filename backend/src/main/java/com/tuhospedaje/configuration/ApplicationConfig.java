@@ -11,6 +11,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.security.SecureRandom;
+import java.time.Clock;
+import java.util.function.Supplier;
+
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
@@ -32,4 +36,15 @@ public class ApplicationConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public SecureRandom secureRandom() {
+        return new SecureRandom();
+    }
+
+    @Bean
+    public Supplier<Clock> utcClockSupplier() {
+        return Clock::systemUTC;
+    }
+
 }

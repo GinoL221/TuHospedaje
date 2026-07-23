@@ -1,6 +1,6 @@
 # Backend
 backend/target/
-backend/.mvn/
+backend/.mvn/wrapper/maven-wrapper.jar
 backend/*.log
 backend/src/main/resources/application-local.properties
 backend/.env
@@ -29,8 +29,11 @@ Thumbs.db
 # Postman
 TuHospedaje.postman_collection.json
 
-# AI assistant config (local, not part of the project)
+# AI assistant config/indexes (local, not part of the project)
 AGENTS.md
+mcp.json
+opencode.json
+.codegraph/
 
 # OpenSpec (discontinued — using Engram instead)
 openspec/

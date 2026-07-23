@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 6,
+  "name": "Hotel Internacional",
+  "category": "hotel",
+  "location": {
+    "city": "Mendoza",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel urbano cuatro estrellas en Mendoza, orientado al bienestar, la gastronomía y estadías de parejas o viajeros de negocios. Debe transmitir confort superior y una identidad mendocina contemporánea; sin recurrir a barricas, racimos de uva, viñedos decorativos ni tematización vitivinícola obvia.",
+    "architecture": "Edificio urbano de ocho pisos. Basamento revestido en piedra caliza clara. Volúmenes superiores terminados en beige arena. Aletas verticales para control solar. Carpinterías oscuras y paños vidriados protegidos. Acceso cubierto mediante una marquesina profunda. Patio interior arbolado conectado con el restaurante. Planta baja permeable entre lobby, restaurante y patio. Piscina climatizada y spa ubicados en un sector protegido. Terrazas y expansiones con sombra para el clima mendocino. Equipos e instalaciones ocultos. Sin arquitectura colonial simulada, ornamentación temática ni fachadas completamente vidriadas sin protección solar.",
+    "palette": [
+      "arena",
+      "piedra caliza",
+      "nogal",
+      "verde oliva",
+      "terracota",
+      "bronce oscuro",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Acceso y lobby: piedra caliza mate de gran formato. Restaurante: porcelanato arena combinado con sectores de nogal. Habitaciones: madera de ingeniería tono nogal. Circulaciones: alfombra modular beige y oliva. Baños: porcelanato arena antideslizante. Duchas: piezas terracota de acabado mate. Spa y piscina: piedra clara antideslizante, apta para áreas húmedas. Patio: piedra irregular clara con juntas permeables.",
+    "wallsAndFinishes": "Lobby: piedra caliza, revoque mineral arena y paneles de nogal. Habitaciones: pintura beige cálido con cabeceros de madera y textiles oliva. Baños: porcelanato claro y paños de revestimiento terracota en duchas. Restaurante: muros arena, nogal y sectores de revoque texturado. Spa: microcemento cálido, piedra clara y superficies resistentes a la humedad. Patio: revoques minerales y piedra natural. Sin superficies brillantes, murales de viñedos ni decoración basada en botellas o barricas.",
+    "joinery": "Ventanas de aluminio color bronce oscuro. Doble vidrio con control solar. Aletas exteriores metálicas en el mismo tono. Puertas interiores enchapadas en nogal. Placares y muebles fijos integrados en nogal. Mamparas transparentes con perfilería bronce oscuro. Puertas vidriadas hacia el patio. Herrajes de bronce oscuro con acabado mate. Cortinas dobles en lino beige y verde oliva suave.",
+    "furniture": "Camas king o twin con cabeceros de nogal y tapizado beige. Mesas de luz suspendidas. Sillón de lectura verde oliva. Escritorio compacto con silla tapizada. Sofás del lobby en beige lino, oliva y terracota apagado. Mesas auxiliares de piedra clara y madera. Restaurante con mesas de nogal y sillas contemporáneas de respaldo curvo. Mobiliario del patio apto para exterior, en metal oscuro y textiles naturales. Reposeras sobrias en piscina y spa. Sin muebles rústicos pesados ni referencias literales a bodegas.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz natural controlada mediante aletas y cortinas. Iluminación indirecta sobre piedra y paneles de nogal. Apliques de bronce oscuro junto a las camas. Colgantes de vidrio opalino y metal sobre mesas del restaurante. Luz baja integrada en senderos y patio. Iluminación cálida y difusa en spa. Luz subacuática blanca cálida en la piscina. Sin luces de colores, lámparas temáticas ni iluminación blanca fría dominante.",
+    "continuityElements": [
+      "Piedra caliza clara en basamento, lobby y áreas húmedas.",
+      "Revoques y superficies beige arena.",
+      "Nogal en puertas, cabeceros y mobiliario fijo.",
+      "Verde oliva en textiles y vegetación.",
+      "Terracota mate en duchas y acentos.",
+      "Carpinterías y herrajes de bronce oscuro.",
+      "Aletas verticales de control solar.",
+      "Relación visual constante entre interiores, patio y vegetación mendocina."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada y acceso cubierto",
+        "brief": "Mostrar piedra caliza, volumen beige y aletas solares."
+      },
+      {
+        "order": 2,
+        "title": "Habitación superior",
+        "brief": "Mostrar piso de nogal, textiles oliva y carpintería bronce."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar ducha revestida en terracota mate y piedra clara."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante gastronómico",
+        "brief": "Mostrar la conexión visual con el patio arbolado."
+      },
+      {
+        "order": 5,
+        "title": "Piscina climatizada y spa",
+        "brief": "Mostrar piedra clara e iluminación cálida en el acceso al spa."
+      }
+    ]
+  }
+}

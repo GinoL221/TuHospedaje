@@ -3,22 +3,24 @@ package com.tuhospedaje.lodging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
+import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.servlet.http.Cookie;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -51,6 +53,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     private LodgingRepository lodgingRepository;
 
     @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
     private ReservationRepository reservationRepository;
 
     @Autowired
@@ -62,8 +67,8 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private EntityManagerFactory emf;
 
-    private String adminAuthHeader;
-    private String userAuthHeader;
+    private String adminToken;
+    private String userToken;
 
     @BeforeEach
     void setUp() {
@@ -75,7 +80,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.ADMIN)
                 .build();
         User savedAdmin = userRepository.save(admin);
-        adminAuthHeader = "Bearer " + jwtService.generateToken(savedAdmin);
+        adminToken = jwtService.generateToken(savedAdmin);
 
         User regularUser = User.builder()
                 .firstName("User")
@@ -85,7 +90,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build();
         User savedUser = userRepository.save(regularUser);
-        userAuthHeader = "Bearer " + jwtService.generateToken(savedUser);
+        userToken = jwtService.generateToken(savedUser);
     }
 
     @Test
@@ -100,8 +105,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "hotel-test@tuhospedaje.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -120,8 +128,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "invalid-email"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -139,8 +150,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "id-test@tuhospedaje.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -154,7 +168,12 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "noauth@test.com"
         );
 
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -172,8 +191,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "userrole@test.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
@@ -215,13 +237,158 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void adminLodgings_returnsServerPaginatedSearchResults() throws Exception {
+        createTestLodgingWithCity("Admin Page Alpha", "admin-page-alpha@tdd.com", "tdd-admin-page");
+        createTestLodgingWithCity("Admin Page Beta", "admin-page-beta@tdd.com", "tdd-admin-page");
+        createTestLodgingWithCity("Admin Page Gamma", "admin-page-gamma@tdd.com", "tdd-admin-page");
+
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sort", "name")
+                        .param("direction", "asc")
+                        .param("q", "tdd-admin-page"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].name").value("Admin Page Alpha"))
+                .andExpect(jsonPath("$.items[1].name").value("Admin Page Beta"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalItems").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void adminLodgings_forbidsAuthenticatedNonAdminUser() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(userToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminLodgings_rejectsOversizedPageSize() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminLodgings_rejectsUnknownSortField() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("sort", "notARealField"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminLodgings_rejectsUnknownSortDirection() throws Exception {
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .cookie(accessCookie(adminToken))
+                        .param("direction", "sideways"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldSearchLodgingsByCity() throws Exception {
         createTestLodging("Hotel Boutique", "boutique@test.com");
 
         mockMvc.perform(get("/api/lodgings/search")
                         .param("city", "Ciudad"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Hotel Boutique"));
+                .andExpect(jsonPath("$.lodgings[0].name").value("Hotel Boutique"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalItems").isNumber())
+                .andExpect(jsonPath("$.totalPages").isNumber());
+    }
+
+    @Test
+    void shouldSearchLodgingsWithDefaultPagination() throws Exception {
+        createTestLodgingWithCity("Hotel Default Page", "default-page@tdd-pag-01.com", "tdd-pag-01");
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-pag-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.lodgings[0].name").value("Hotel Default Page"));
+    }
+
+    @Test
+    void shouldFilterSearchByMultipleCategories() throws Exception {
+        Long categoryHotelId = createTestCategory("Hotel Multi-Cat A");
+        Long categoryHostelId = createTestCategory("Hostel Multi-Cat B");
+
+        Long hotelId = createTestLodgingWithCategory("Hotel In Categories", "in-cat@tdd-multicat-01.com", categoryHotelId);
+        Long hostelId = createTestLodgingWithCategory("Hostel In Categories", "in-cat-2@tdd-multicat-01.com", categoryHostelId);
+        createTestLodging("Lodging Without Category", "no-cat@tdd-multicat-01.com");
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("categories", categoryHotelId + "," + categoryHostelId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings[*].id", hasItems(hotelId.intValue(), hostelId.intValue())));
+    }
+
+    @Test
+    void shouldReturnEmptyLodgingsWhenSearchPageIsOutOfBounds() throws Exception {
+        createTestLodgingWithCity("Hotel Out Of Bounds", "oob@tdd-oob-01.com", "tdd-oob-01");
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "tdd-oob-01")
+                        .param("page", "999")
+                        .param("size", "9"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings").isArray())
+                .andExpect(jsonPath("$.lodgings").isEmpty())
+                .andExpect(jsonPath("$.currentPage").value(999));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSearchPageIsNegative() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSearchSizeIsNotPositive() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnSpanishMessageWhenSearchPageIsNegativeAndAcceptLanguageIsEs() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("page", "-1")
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El índice de página no debe ser negativo."));
+    }
+
+    @Test
+    void shouldReturnEnglishMessageWhenSearchPageIsNegativeAndAcceptLanguageIsMissing() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Page index must not be negative."));
+    }
+
+    @Test
+    void shouldReturnEnglishMessageWhenSearchSizeIsNotPositiveAndAcceptLanguageIsEn() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("size", "0")
+                        .header("Accept-Language", "en"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Size must be greater than zero."));
+    }
+
+    @Test
+    void shouldReturnSpanishMessageWhenSearchSizeIsNotPositiveAndAcceptLanguageIsEs() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("size", "0")
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El tamaño debe ser mayor a cero."));
     }
 
     @Test
@@ -252,8 +419,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "update@test.com"
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", id)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -263,7 +433,12 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnForbiddenWhenUpdatingLodgingWithoutAuth() throws Exception {
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (design's explicit ordering-trap warning).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", 1L)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("name", "Hack"))))
                 .andExpect(status().isForbidden());
@@ -271,7 +446,10 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnForbiddenWhenDeletingLodgingWithoutAuth() throws Exception {
-        mockMvc.perform(delete("/api/lodgings/{id}", 1L))
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/lodgings/{id}", 1L)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isForbidden());
     }
 
@@ -279,8 +457,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     void shouldDeleteLodgingSuccessfully() throws Exception {
         Long id = createTestLodging("To Delete", "delete@test.com");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/lodgings/{id}", id)
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader))
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/lodgings/{id}", id))
@@ -298,8 +479,44 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", email
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         String response = mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    private Long createTestCategory(String name) {
+        Category category = new Category();
+        category.setName(name);
+        category.setDescription(name + " description");
+        return categoryRepository.save(category).getId();
+    }
+
+    private Long createTestLodgingWithCategory(String name, String email, Long categoryId) throws Exception {
+        Map<String, Object> request = new java.util.HashMap<>();
+        request.put("name", name);
+        request.put("description", "Descripción");
+        request.put("address", "Calle 123");
+        request.put("city", "Ciudad");
+        request.put("country", "País");
+        request.put("phoneNumber", "123456789");
+        request.put("email", email);
+        request.put("categoryId", categoryId);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        String response = mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -340,8 +557,11 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", email
         );
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         String response = mockMvc.perform(post("/api/lodgings")
-                        .header(HttpHeaders.AUTHORIZATION, adminAuthHeader)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -366,7 +586,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -380,7 +600,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", not(hasItem(id.intValue()))));
+                .andExpect(jsonPath("$.lodgings[*].id", not(hasItem(id.intValue()))));
     }
 
     @Test
@@ -395,7 +615,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -410,7 +630,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
     }
 
     @Test
@@ -425,7 +645,38 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
+    }
+
+    @Test
+    void availabilityEndpoint_returnsOccupiedRangesAndUnavailableForOverlappingRequestedRange() throws Exception {
+        Long id = createTestLodgingWithCity("Availability Hotel", "availability@tdd-endpoint-01.com", "tdd-endpoint-01");
+        LocalDate today = LocalDate.now();
+        seedReservation(id, today.plusDays(2), today.plusDays(5), ReservationStatus.CONFIRMED);
+        seedReservation(id, today.plusDays(8), today.plusDays(10), ReservationStatus.CANCELLED);
+
+        mockMvc.perform(get("/api/lodgings/{id}/availability", id)
+                        .param("checkIn", today.plusDays(3).toString())
+                        .param("checkOut", today.plusDays(4).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(false))
+                .andExpect(jsonPath("$.occupiedRanges.length()").value(1))
+                .andExpect(jsonPath("$.occupiedRanges[0].checkIn").value(today.plusDays(2).toString()))
+                .andExpect(jsonPath("$.occupiedRanges[0].checkOut").value(today.plusDays(5).toString()));
+    }
+
+    @Test
+    void availabilityEndpoint_treatsAdjacentRequestedRangeAsAvailable() throws Exception {
+        Long id = createTestLodgingWithCity("Adjacent Availability Hotel", "availability@tdd-endpoint-02.com", "tdd-endpoint-02");
+        LocalDate today = LocalDate.now();
+        seedReservation(id, today.plusDays(2), today.plusDays(5), ReservationStatus.CONFIRMED);
+
+        mockMvc.perform(get("/api/lodgings/{id}/availability", id)
+                        .param("checkIn", today.plusDays(5).toString())
+                        .param("checkOut", today.plusDays(7).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(true))
+                .andExpect(jsonPath("$.occupiedRanges.length()").value(1));
     }
 
     @Test
@@ -442,7 +693,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("checkIn", today.plusDays(1).toString())
                         .param("checkOut", today.plusDays(3).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", hasItem(id.intValue())));
+                .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
 
         // search (1 query with NOT EXISTS subquery) + ratings aggregate (1 query) = 2 max
         long queryCount = sf.getStatistics().getQueryExecutionCount();

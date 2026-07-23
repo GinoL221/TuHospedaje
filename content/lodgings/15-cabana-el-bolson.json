@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 15,
+  "name": "Cabaña El Bolsón",
+  "category": "cabin",
+  "location": {
+    "city": "El Bolsón",
+    "country": "Argentina"
+  },
+  "capacity": 5,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña ecológica de categoría media-alta para hasta cinco personas, vinculada con el bosque, la huerta y la producción artesanal de El Bolsón. Debe sentirse simple, saludable y bien construida; sin parecer precaria, improvisada ni utilizar la tecnología sustentable como decoración.",
+    "architecture": "Cabaña compacta de una sola planta. Construcción de entramado de madera con alta aislación. Fachadas combinadas con madera recuperada, revoque a la cal y piedra local. Cubierta inclinada preparada para lluvia. Aleros profundos para controlar sol y humedad. Galería orientada hacia el jardín y el bosque. Grandes aberturas protegidas hacia las mejores vistas. Estar, cocina y comedor integrados. Dormitorios separados del área social. Huerta productiva integrada al terreno. Guardado para bicicletas y equipamiento exterior. Sistemas sustentables discretos y técnicamente creíbles. Instalaciones ocultas. Sin paneles o dispositivos exhibidos como ornamentos, formas experimentales ni estética de vivienda precaria.",
+    "palette": [
+      "blanco cal",
+      "madera miel",
+      "verde salvia",
+      "terracota apagado",
+      "gris piedra",
+      "negro mate",
+      "beige natural como tono complementario"
+    ],
+    "floors": "Acceso y galería: piedra local antideslizante. Estar y dormitorios: madera recuperada restaurada y sellada. Cocina: microcemento gris cálido. Baños: microcemento claro antideslizante. Ducha: piezas cerámicas verde salvia mate. Senderos: grava compactada y lajas. Fogón: suelo mineral contenido mediante piedra. Sin pisos plásticos, superficies brillantes ni acabados envejecidos artificialmente.",
+    "wallsAndFinishes": "Interior: revoque blanco a la cal. Estar: muro de piedra local con hogar cerrado. Dormitorios: paneles bajos de madera miel. Cocina: frente de cerámica artesanal terracota suave. Baños: microcemento y cerámica verde salvia. Exterior: madera recuperada, revoque a la cal y piedra. Terminaciones transpirables y de bajo impacto. Sin carteles ecológicos, frases decorativas ni materiales reciclados exhibidos de forma forzada.",
+    "joinery": "Ventanas de madera oscura con doble vidrio. Marcos exteriores protegidos en negro mate. Puerta principal de madera recuperada correctamente restaurada. Puertas interiores lisas de madera. Placares integrados y ventilados. Mamparas transparentes con perfilería negra. Herrajes negros satinados. Cortinas de lino beige y verde salvia.",
+    "furniture": "Cama principal orientada hacia el bosque. Segundo dormitorio flexible para dos personas. Cabeceros bajos de madera recuperada. Mesas de luz artesanales de líneas simples. Sofá beige natural. Sillones compactos verde salvia. Mesa para cinco personas fabricada en madera local. Cocina integrada con muebles de madera miel. Banco de acceso con guardado. Mobiliario exterior simple y reparable. Bicicletas guardadas de forma ordenada junto a la galería. Sin muebles de pallets, rusticidad improvisada ni exceso de objetos artesanales.",
+    "lighting": "Temperatura cálida de 2700 K. Aprovechamiento prioritario de la luz natural. Iluminación indirecta sobre madera y revoque. Apliques negros junto a las camas. Colgantes artesanales sobrios sobre mesa y cocina. Luz integrada bajo alacenas. Balizas solares discretas en senderos, sin protagonismo tecnológico. Fogón iluminado con luz cálida y baja. Sin guirnaldas, luminarias hechas con objetos reciclados ni focos de colores.",
+    "continuityElements": [
+      "Volumen compacto de una sola planta.",
+      "Revoque blanco a la cal.",
+      "Madera recuperada tono miel.",
+      "Piedra local en basamento, hogar y senderos.",
+      "Verde salvia en cerámicas y textiles.",
+      "Terracota apagado en cocina y acentos.",
+      "Soluciones ecológicas integradas sin exhibición decorativa.",
+      "Relación constante entre galería, huerta, bosque, bicicletas y fogón."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior de la cabaña",
+        "brief": "Mostrar la galería y la huerta integradas al jardín."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar el dormitorio principal con vista hacia el bosque."
+      },
+      {
+        "order": 3,
+        "title": "Baño de microcemento",
+        "brief": "Mostrar la ducha revestida en cerámica verde."
+      },
+      {
+        "order": 4,
+        "title": "Estar y cocina",
+        "brief": "Mostrar los espacios integrados alrededor del hogar de piedra."
+      },
+      {
+        "order": 5,
+        "title": "Fogón en el jardín",
+        "brief": "Mostrar las bicicletas guardadas y el bosque como fondo."
+      }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tuhospedaje.example/schemas/lodging-identity.schema.json",
+  "title": "TuHospedaje lodging visual identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "lodgingId", "name", "category", "location", "capacity", "version", "status", "source", "identity"],
+  "properties": {
+    "$schema": {"const": "./lodging-identity.schema.json"},
+    "lodgingId": {"type": "integer", "minimum": 1, "maximum": 38},
+    "name": {"type": "string", "minLength": 1},
+    "category": {"enum": ["hotel", "cabin", "apartment", "hostel", "resort", "glamping"]},
+    "location": {
+      "type": "object", "additionalProperties": false,
+      "required": ["city", "country"],
+      "properties": {"city": {"type": "string", "minLength": 1}, "country": {"const": "Argentina"}}
+    },
+    "capacity": {"type": "integer", "minimum": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "status": {"enum": ["reconstructed", "approved"]},
+    "source": {"const": "recovered-from-approved-context"},
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["positioning", "architecture", "palette", "floors", "wallsAndFinishes", "joinery", "furniture", "lighting", "continuityElements", "recommendedScenes"],
+      "properties": {
+        "positioning": {"type": "string", "minLength": 20},
+        "architecture": {"type": "string", "minLength": 20},
+        "palette": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "minLength": 2}},
+        "floors": {"type": "string", "minLength": 20},
+        "wallsAndFinishes": {"type": "string", "minLength": 20},
+        "joinery": {"type": "string", "minLength": 20},
+        "furniture": {"type": "string", "minLength": 20},
+        "lighting": {"type": "string", "minLength": 20},
+        "continuityElements": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "minLength": 3}},
+        "recommendedScenes": {
+          "type": "array", "minItems": 5, "maxItems": 5,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["order", "title", "brief"],
+            "properties": {"order": {"type": "integer", "minimum": 1, "maximum": 5}, "title": {"type": "string", "minLength": 3}, "brief": {"type": "string", "minLength": 20}}
+          }
+        }
+      }
+    }
+  }
+}

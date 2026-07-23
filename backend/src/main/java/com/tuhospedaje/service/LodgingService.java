@@ -1,5 +1,6 @@
 package com.tuhospedaje.service;
 
+import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.exception.ResourceNotFoundException;
@@ -27,11 +28,14 @@ public interface LodgingService {
 
     Map<String, Object> findAllPaginated(int page, int size);
 
+    PageResponse<LodgingDTO> findAdminPage(int page, int size, String sort, String direction, String query);
+
     List<LodgingDTO> findAllRandom();
 
-    List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
-                            Integer guests, Long category,
-                            BigDecimal minPrice, BigDecimal maxPrice);
+    Map<String, Object> search(String city, LocalDate checkIn, LocalDate checkOut,
+                               Integer guests, List<Long> categories,
+                               BigDecimal minPrice, BigDecimal maxPrice,
+                               int page, int size);
 
     List<String> findCities(String query);
 

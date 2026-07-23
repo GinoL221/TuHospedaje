@@ -1,0 +1,68 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 1,
+  "name": "Hotel Buenos Aires Centro",
+  "category": "hotel",
+  "location": {
+    "city": "Buenos Aires",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel urbano medio-alto orientado a viajeros de negocios, parejas y visitantes que recorren Buenos Aires. Debe sentirse contemporáneo, sobrio y eficiente, con identidad porteña discreta; sin parecer un hotel corporativo genérico, una propiedad de lujo ostentoso ni un alojamiento histórico tematizado.",
+    "architecture": "Edificio entre medianeras renovado de diez pisos. Fachada vertical ordenada, integrada a una calle urbana consolidada. Basamento de doble altura con acceso retranqueado. Marquesina delgada de metal grafito. Planta baja vidriada para conectar visualmente lobby y calle. Pisos superiores modulados mediante ventanas verticales y paños gris cálido. Parasoles y marcos metálicos grafito para dar profundidad. Patio interior destinado a iluminación y ventilación. Circulaciones y espacios comunes compactos, acordes con el lote urbano. Instalaciones, equipos y cartelería integrados sin dominar la fachada. Sin columnas clásicas, ornamentación palaciega, muro cortina corporativo ni escala monumental.",
+    "palette": [
+      "gris cálido",
+      "grafito",
+      "beige arena",
+      "nogal medio",
+      "azul petróleo",
+      "blanco cálido",
+      "negro satinado en detalles puntuales"
+    ],
+    "floors": "Acceso y lobby: porcelanato de gran formato gris piedra con acabado mate. Restaurante y bar: porcelanato gris cálido combinado con sectores de madera. Habitaciones: madera de ingeniería tono nogal medio. Circulaciones: alfombra modular gris con detalles azul petróleo. Baños: porcelanato beige antideslizante. Área de trabajo y reuniones: alfombra acústica gris grafito. Sin mármol brillante, pisos dorados ni superficies excesivamente reflectantes.",
+    "wallsAndFinishes": "Lobby: pintura gris cálido, paneles de nogal y revestimiento pétreo claro en recepción. Habitaciones: muros beige mate con cabecero continuo de nogal. Pasillos: pintura gris cálido y señalética discreta azul petróleo. Baños: porcelanato beige de gran formato y sectores de microcemento claro. Restaurante: combinación de nogal, pintura cálida y paneles acústicos azul petróleo. Área de trabajo: superficies acústicas textiles en gris y petróleo. Sin murales turísticos, fileteado decorativo forzado ni imágenes temáticas de Buenos Aires.",
+    "joinery": "Ventanas de aluminio grafito con doble vidrio. Marcos delgados y modulación vertical constante. Puertas de habitaciones lisas, enchapadas en nogal. Placares empotrados del mismo tono. Muebles fijos de recepción y bar en nogal medio. Mamparas de baño transparentes con perfilería grafito. Herrajes negros satinados. Cortinas dobles en beige y gris cálido.",
+    "furniture": "Camas queen o twin con cabecero bajo integrado de nogal. Mesas de luz suspendidas para liberar superficie. Escritorio compacto con silla ergonómica de apariencia residencial. Sillón individual tapizado en azul petróleo. Bancos y sofás del lobby en beige, gris y petróleo. Mesas auxiliares de nogal con bases metálicas negras. Restaurante con sillas compactas, tapizados lavables y mesas de madera. Área de trabajo con mesas compartidas, conexiones ocultas y pequeñas salas de reunión. Espacios aptos para equipaje sin saturar las circulaciones. Sin mobiliario ejecutivo pesado, cuero negro dominante ni piezas ornamentales de falso lujo.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz lineal indirecta en recepción y cielorrasos del lobby. Apliques orientables junto a las camas. Luz integrada bajo cabeceros y estantes. Colgantes sobrios sobre mesas del restaurante y bar. Iluminación uniforme y controlada en áreas de trabajo. Espejos de baño con luz frontal integrada. Fachada iluminada mediante líneas verticales discretas. Sin lámparas de cristal, luces de colores ni iluminación blanca fría dominante.",
+    "continuityElements": [
+      "Gris cálido y grafito en fachada y espacios comunes.",
+      "Carpinterías metálicas grafito de perfiles delgados.",
+      "Nogal medio en puertas, cabeceros y mobiliario fijo.",
+      "Azul petróleo en textiles, señalética y paneles acústicos.",
+      "Porcelanato gris piedra en los espacios públicos.",
+      "Mobiliario contemporáneo compacto con bases metálicas negras.",
+      "Iluminación lineal cálida e indirecta."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada y acceso urbano",
+        "brief": "Mostrar el edificio de diez pisos, la marquesina grafito y la planta baja vidriada."
+      },
+      {
+        "order": 2,
+        "title": "Habitación doble",
+        "brief": "Mostrar el piso de nogal, el cabecero integrado, el escritorio compacto y el sillón azul petróleo."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar porcelanato beige, microcemento claro y mampara con perfilería grafito."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante y bar",
+        "brief": "Mostrar madera de nogal, paneles acústicos azul petróleo y luminarias colgantes cálidas."
+      },
+      {
+        "order": 5,
+        "title": "Lobby de trabajo y reuniones",
+        "brief": "Mostrar la recepción, el área de espera, las mesas de trabajo y una pequeña sala de reunión."
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 2,
+  "name": "Cabaña Los Arrayanes",
+  "category": "cabin",
+  "location": {
+    "city": "Bariloche",
+    "country": "Argentina"
+  },
+  "capacity": 6,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña superior de montaña para familias o grupos de hasta seis personas, ubicada en un entorno boscoso de Bariloche. Debe sentirse auténtica, cálida y vinculada con el paisaje patagónico; sin parecer una casa suburbana revestida en madera, un refugio rústico ni una propiedad de lujo exagerado.",
+    "architecture": "Cabaña compacta de dos plantas. Basamento y chimenea revestidos en piedra gris. Estructura y fachadas de madera tono miel. Cubierta inclinada de chapa grafito preparada para lluvia y nieve. Aleros profundos para proteger accesos y aventanamientos. Grandes paños vidriados orientados hacia el lago y el bosque. Aberturas laterales más controladas para conservar el calor. Galería exterior conectada con estar y cocina. Jacuzzi exterior protegido y relacionado con el baño. Fogón integrado en un claro existente del bosque. Guardado para equipamiento y ropa húmeda cerca del acceso. Instalaciones técnicas ocultas. Sin troncos torneados, piedra falsa, balcones ornamentales ni estética de chalet alpino.",
+    "palette": [
+      "madera miel",
+      "cuero coñac",
+      "verde bosque",
+      "piedra gris",
+      "grafito",
+      "beige lana como tono complementario"
+    ],
+    "floors": "Acceso: piedra gris antideslizante. Estar, comedor y dormitorios: madera natural sellada tono miel. Cocina: porcelanato gris piedra de alta resistencia. Baños: porcelanato gris cálido antideslizante. Duchas: piedra texturada oscura. Galería: deck de madera tratada. Entorno del jacuzzi: piedra oscura antideslizante. Acceso al fogón: grava compactada y lajas naturales.",
+    "wallsAndFinishes": "Interior: tablas de madera miel combinadas con revoque beige mate. Estar: muro principal de piedra gris con hogar cerrado. Dormitorios: cabeceros de madera y textiles de lana. Cocina: frente de piedra sinterizada gris. Baños: porcelanato mineral y piedra texturada en duchas. Exterior: madera tratada y basamento pétreo. Sin barnices brillantes, madera anaranjada, trofeos de caza ni decoración temática de montaña.",
+    "joinery": "Ventanas de madera oscura con doble vidrio. Marcos exteriores protegidos en grafito. Puertas de acceso macizas de madera. Puertas interiores lisas en tono miel. Placares empotrados con ventilación. Mamparas transparentes con perfilería grafito. Herrajes negros satinados. Cortinas dobles en beige lana y verde bosque.",
+    "furniture": "Dormitorio principal con cama king orientada hacia el paisaje. Dormitorios secundarios con camas individuales o cuchetas de diseño simple. Cabeceros bajos de madera. Mesas de luz suspendidas. Sofá amplio en beige y sillones de cuero coñac. Mesa familiar de madera maciza para seis personas. Cocina integrada con isla compacta. Banco de acceso para calzado y equipamiento. Mobiliario exterior resistente al clima. Sin muebles hechos con troncos, cuero dominante ni piezas sobredimensionadas.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta sobre madera y piedra. Apliques negros junto a las camas. Colgantes sobrios sobre mesa e isla. Iluminación integrada bajo alacenas. Lámparas bajas alrededor del estar. Balizas discretas en galería y senderos. Jacuzzi y fogón iluminados con luz blanca cálida y baja intensidad. Sin guirnaldas, focos de colores ni contaminación lumínica del bosque.",
+    "continuityElements": [
+      "Volumen compacto de dos plantas.",
+      "Madera miel en fachadas, pisos y mobiliario.",
+      "Piedra gris en basamento, chimenea y áreas húmedas.",
+      "Cubierta y detalles grafito.",
+      "Cuero coñac en piezas puntuales.",
+      "Verde bosque y beige lana en textiles.",
+      "Carpinterías oscuras con doble vidrio.",
+      "Relación constante entre interiores, lago, bosque, jacuzzi y fogón."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior entre el bosque",
+        "brief": "Mostrar madera, piedra y cubierta grafito."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar el dormitorio principal orientado hacia el lago."
+      },
+      {
+        "order": 3,
+        "title": "Baño de piedra y jacuzzi",
+        "brief": "Mostrar el baño de piedra conectado visualmente con el jacuzzi exterior protegido."
+      },
+      {
+        "order": 4,
+        "title": "Estar, cocina y comedor",
+        "brief": "Mostrar los espacios integrados alrededor del hogar."
+      },
+      {
+        "order": 5,
+        "title": "Fogón en el bosque",
+        "brief": "Mostrar el fogón contenido en un claro del bosque y conectado mediante un sendero discreto."
+      }
+    ]
+  }
+}

@@ -1,19 +1,54 @@
 -- ============================================================
--- Seed data for TuHospedaje — Sprint 3
+-- Development-only, explicit opt-in demo data for TuHospedaje
+-- Requires Flyway placeholder dev_admin_password_hash from DEV_ADMIN_PASSWORD_HASH.
+-- The application first requires "dev" as the sole active profile. This database-name
+-- check is defense-in-depth. The preflight performs no persistent writes and catches
+-- known invalid inputs before the first strict INSERT. MariaDB does not make the whole
+-- migration transactional: after any failure, drop and recreate the disposable dev
+-- database before retrying.
+
+CREATE TEMPORARY TABLE dev_seed_guard (
+    database_name VARCHAR(64) NOT NULL,
+    password_hash VARCHAR(60) NOT NULL,
+    seed_tables_empty BOOLEAN NOT NULL,
+    CONSTRAINT chk_dev_seed_database_name CHECK (
+        LOWER(database_name) REGEXP '(^|_)(dev|test)(_|$)'
+        AND LOWER(database_name) NOT REGEXP '(^|_)(prod|production|stage|staging|uat)(_|$)'
+    ),
+    CONSTRAINT chk_dev_seed_tables_empty CHECK (seed_tables_empty = TRUE),
+    CONSTRAINT chk_dev_seed_bcrypt_hash CHECK (
+        CHAR_LENGTH(password_hash) = 60
+        AND LEFT(password_hash, 4) IN ('$2a$', '$2b$', '$2y$')
+        AND SUBSTRING(password_hash, 5, 2) REGEXP '^[0-9]{2}$'
+        AND CAST(SUBSTRING(password_hash, 5, 2) AS UNSIGNED) BETWEEN 10 AND 14
+        AND SUBSTRING(password_hash, 7, 1) = '$'
+        AND SUBSTRING(password_hash, 8) REGEXP '^[./A-Za-z0-9]{53}$'
+    )
+);
+INSERT INTO dev_seed_guard (database_name, password_hash, seed_tables_empty)
+SELECT DATABASE(), '${dev_admin_password_hash}',
+       (SELECT COUNT(*) FROM categories) = 0
+       AND (SELECT COUNT(*) FROM features) = 0
+       AND (SELECT COUNT(*) FROM policies) = 0
+       AND (SELECT COUNT(*) FROM users) = 0
+       AND (SELECT COUNT(*) FROM lodgings) = 0
+       AND (SELECT COUNT(*) FROM lodging_images) = 0
+       AND (SELECT COUNT(*) FROM lodging_features) = 0
+       AND (SELECT COUNT(*) FROM lodging_policies) = 0;
+DROP TEMPORARY TABLE dev_seed_guard;
 -- ============================================================
 
--- Categorías
+-- Categories
 INSERT INTO categories (id, name, description, icon) VALUES
 (1, 'Hoteles', 'Hoteles urbanos y de negocios', 'hotel'),
 (2, 'Cabañas', 'Cabañas rústicas en la naturaleza', 'tree-pine'),
 (3, 'Departamentos', 'Departamentos céntricos totalmente equipados', 'building-2'),
 (4, 'Hostels', 'Hostels económicos y sociales', 'bed-double'),
 (5, 'Resorts', 'Resorts y complejos de lujo', 'water'),
-(6, 'Glamping', 'Glamping y naturaleza con comodidades', 'tent')
-ON DUPLICATE KEY UPDATE icon = COALESCE(icon, VALUES(icon));
+(6, 'Glamping', 'Glamping y naturaleza con comodidades', 'tent');
 
--- Características (amenities)
-INSERT IGNORE INTO features (id, name, icon) VALUES
+-- Features
+INSERT INTO features (id, name, icon) VALUES
 (1, 'WiFi gratis', 'wifi'),
 (2, 'Estacionamiento', 'car'),
 (3, 'Aire acondicionado', 'thermometer-snowflake'),
@@ -23,8 +58,8 @@ INSERT IGNORE INTO features (id, name, icon) VALUES
 (7, 'TV', 'tv'),
 (8, 'Cocina equipada', 'kitchen-set');
 
--- Políticas
-INSERT IGNORE INTO policies (id, name, description, icon) VALUES
+-- Policies
+INSERT INTO policies (id, name, description, icon) VALUES
 (1, 'Check-in', 'A partir de las 14:00', 'clock'),
 (2, 'Check-out', 'Hasta las 11:00', 'clock'),
 (3, 'Cancelación', 'Cancelación gratuita hasta 48 horas antes del check-in', 'ban'),
@@ -32,12 +67,12 @@ INSERT IGNORE INTO policies (id, name, description, icon) VALUES
 (5, 'Mascotas', 'Mascotas pequeñas permitidas con cargo adicional', 'paw-print'),
 (6, 'Fiestas', 'No se permiten fiestas ni eventos', 'party-popper');
 
--- Usuario admin (contraseña: Admin1)
-INSERT IGNORE INTO users (id, first_name, last_name, email, password, role) VALUES
-(1, 'Admin', 'TuHospedaje', 'admin@tuhospedaje.com', '$2a$10$/Di38qfA1eeuSbekhbf74OHF0a.gN.seovg9A7lKbY336bLp3bZnW', 'ADMIN');
+-- Administrator password is supplied at migration time; no credential is stored in source.
+INSERT INTO users (id, first_name, last_name, email, password, role) VALUES
+(1, 'Admin', 'TuHospedaje', 'admin@tuhospedaje.com', '${dev_admin_password_hash}', 'ADMIN');
 
--- Alojamientos
-INSERT IGNORE INTO lodgings (id, name, description, address, city, country, phone_number, email, category_id, price_per_night, max_guests) VALUES
+-- Lodgings
+INSERT INTO lodgings (id, name, description, address, city, country, phone_number, email, category_id, price_per_night, max_guests) VALUES
 (1, 'Hotel Buenos Aires Centro', 'Hotel céntrico con vista al obelisco. Habitaciones amplias y modernas con baño privado, TV LED y aire acondicionado. Cuenta con restaurante, bar y sala de negocios.', 'Av. Corrientes 1234', 'Buenos Aires', 'Argentina', '+54111234567', 'centro@hotelba.com', 1, 150.00, 4),
 (2, 'Cabaña Los Arrayanes', 'Hermosa cabaña de montaña con vista al lago. Rodeada de bosques nativos, ideal para desconectarse. Incluye chimenea, hidromasaje y fogón exterior.', 'Ruta 40 Km 2050', 'Bariloche', 'Argentina', '+54294456789', 'arrayanes@cabanas.com', 2, 200.00, 6),
 (3, 'Departamento Palermo Soho', 'Moderno departamento en el barrio más trendy de Buenos Aires. Cerca de bares, restaurantes y tiendas de diseño. Cuenta con balcón, cocina completa y laundry.', 'Gurruchaga 2100', 'Buenos Aires', 'Argentina', '+541198765432', 'palermo@departamento.com', 3, 180.00, 4),
@@ -49,8 +84,8 @@ INSERT IGNORE INTO lodgings (id, name, description, address, city, country, phon
 (9, 'Departamento Puerto Madero', 'Exclusivo departamento en Puerto Madero con vista al dique. Cerca de los mejores restaurantes de la ciudad. Cuenta con cocina equipada, laundry y balcón.', 'Juana Manso 1200', 'Buenos Aires', 'Argentina', '+541167890123', 'puertomadero@departamento.com', 3, 320.00, 6),
 (10, 'Hostel Salta Andino', 'Hostel temático andino en el centro de Salta. Ambiente internacional con decoración regional. Incluye desayuno, WiFi y excursiones grupales.', 'Balcarce 850', 'Salta', 'Argentina', '+54387456789', 'salta@hostelandino.com', 4, 45.00, 10);
 
--- Imágenes (5 por alojamiento, todas Unsplash, todas verificadas 200 OK, 0 repeticiones)
-INSERT IGNORE INTO lodging_images (id, image_url, title, lodging_id) VALUES
+-- Images (5 per lodging)
+INSERT INTO lodging_images (id, image_url, title, lodging_id) VALUES
 -- Hotel Buenos Aires Centro
 (1, 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop', 'Hotel Buenos Aires Centro - Fachada', 1),
 (2, 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'Hotel Buenos Aires Centro - Habitación', 1),
@@ -112,8 +147,8 @@ INSERT IGNORE INTO lodging_images (id, image_url, title, lodging_id) VALUES
 (49, 'https://images.unsplash.com/photo-1768289269971-6171457bed13?w=800&h=600&fit=crop', 'Hostel Salta - Patio', 10),
 (50, 'https://images.unsplash.com/photo-1692153142886-9881d0457b82?w=800&h=600&fit=crop', 'Hostel Salta - Fachada', 10);
 
--- Relaciones lodging_features
-INSERT IGNORE INTO lodging_features (lodging_id, feature_id) VALUES
+-- Lodging-feature relationships
+INSERT INTO lodging_features (lodging_id, feature_id) VALUES
 (1, 1), (1, 3), (1, 7), (1, 2),
 (2, 1), (2, 2), (2, 6), (2, 5),
 (3, 1), (3, 3), (3, 7), (3, 8),
@@ -125,8 +160,8 @@ INSERT IGNORE INTO lodging_features (lodging_id, feature_id) VALUES
 (9, 1), (9, 3), (9, 7), (9, 8), (9, 2),
 (10, 1), (10, 2), (10, 4);
 
--- Relaciones lodging_policies
-INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
+-- Lodging-policy relationships
+INSERT INTO lodging_policies (lodging_id, policy_id) VALUES
 (1, 1), (1, 2), (1, 3), (1, 4),
 (2, 1), (2, 2), (2, 3), (2, 5), (2, 6),
 (3, 1), (3, 2), (3, 3), (3, 4),
@@ -139,10 +174,10 @@ INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
 (10, 1), (10, 2), (10, 3), (10, 6);
 
 -- ============================================================
--- Seed data extra — Sprint 4 (IDs 11–30, 20 alojamientos)
+-- Sprint 4 seed extension (lodging IDs 11–30)
 -- ============================================================
 
-INSERT IGNORE INTO lodgings (id, name, description, address, city, country, phone_number, email, category_id, price_per_night, max_guests) VALUES
+INSERT INTO lodgings (id, name, description, address, city, country, phone_number, email, category_id, price_per_night, max_guests) VALUES
 (11, 'Hotel Riviera Rosario', 'Moderno hotel boutique frente al río Paraná. Diseño contemporáneo con vistas panorámicas, restaurante de cocina de autor y terraza bar. Ideal para viajes de negocios y turismo.', 'Av. Belgrano 1056', 'Rosario', 'Argentina', '+54341555123', 'riviera@hotelrosario.com', 1, 170.00, 4),
 (12, 'Cabaña Los Cipreses', 'Cabaña de montaña rodeada de cipreses y arrayanes en Villa La Angostura. Chimenea a leña, hidromasaje exterior y acceso directo al lago Correntoso. Perfecta para parejas y familias.', 'Calle Los Arrayanes 450', 'Villa La Angostura', 'Argentina', '+54294470123', 'cipreses@cabanas.com', 2, 230.00, 6),
 (13, 'Departamento Nueva Córdoba', 'Luminoso departamento en el corazón del barrio universitario de Córdoba. Cocina completa, balcón con vistas a la ciudad y a pasos de bares y restaurantes. Ideal para estadías largas.', 'Obispo Trejo 890', 'Córdoba', 'Argentina', '+54351789456', 'nuevacba@departamento.com', 3, 140.00, 3),
@@ -164,132 +199,132 @@ INSERT IGNORE INTO lodgings (id, name, description, address, city, country, phon
 (29, 'Hostel San Telmo', 'Hostel en el barrio más bohemio de Buenos Aires, a pasos de la feria de San Telmo y el Caminito. Ambiente artístico, terraza con vista a la ciudad, cocina equipada y tours de tango incluidos.', 'Defensa 890', 'Buenos Aires', 'Argentina', '+541134567890', 'santelmo@hostel.com', 4, 48.00, 10),
 (30, 'Hostel Las Viñas', 'Hostel vitivinícola en el corazón de la zona de bodegas de Mendoza. Organiza visitas guiadas a bodegas, catas de vino y excursiones a la montaña. Patio con parrilla y pileta.', 'Emilio Civit 1200', 'Mendoza', 'Argentina', '+54261890123', 'lasvinias@hostel.com', 4, 42.00, 8);
 
--- Imágenes para alojamientos 11–30 (5 por alojamiento, IDs 51–150, todas verificadas 200 OK)
--- Cada lodging arranca con un cover único — sets rotados por tipo para evitar duplicados en la grilla
-INSERT IGNORE INTO lodging_images (id, image_url, title, lodging_id) VALUES
--- Hotel Riviera Rosario (11) — hotel set C
+-- Images for lodging IDs 11–30 (5 per lodging, image IDs 51–150)
+-- The first image of each lodging is its grid cover.
+INSERT INTO lodging_images (id, image_url, title, lodging_id) VALUES
+-- Hotel Riviera Rosario (11)
 (51, 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', 'Hotel Riviera - Fachada', 11),
 (52, 'https://images.unsplash.com/photo-1711059985570-4c32ed12a12c?w=800&h=600&fit=crop', 'Hotel Riviera - Habitación', 11),
 (53, 'https://images.unsplash.com/photo-1714454838107-28ef0e25188d?w=800&h=600&fit=crop', 'Hotel Riviera - Piscina', 11),
 (54, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop', 'Hotel Riviera - Restaurante', 11),
 (55, 'https://images.unsplash.com/photo-1665249934445-1de680641f50?w=800&h=600&fit=crop', 'Hotel Riviera - Suite', 11),
--- Cabaña Los Cipreses (12) — cabaña set C
+-- Cabaña Los Cipreses (12)
 (56, 'https://images.unsplash.com/photo-1551927411-95e412943b58?w=800&h=600&fit=crop', 'Los Cipreses - Interior con vista', 12),
 (57, 'https://images.unsplash.com/photo-1671683886944-6478e6c84cbc?w=800&h=600&fit=crop', 'Los Cipreses - Exterior', 12),
 (58, 'https://images.unsplash.com/photo-1662982692115-743f9e716b98?w=800&h=600&fit=crop', 'Los Cipreses - Fogón exterior', 12),
 (59, 'https://images.unsplash.com/photo-1668480441891-3744c25337a3?w=800&h=600&fit=crop', 'Los Cipreses - Entorno natural', 12),
 (60, 'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&h=600&fit=crop', 'Los Cipreses - Baño', 12),
--- Departamento Nueva Córdoba (13) — depto set A shifted +3
+-- Departamento Nueva Córdoba (13)
 (61, 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=800&h=600&fit=crop', 'Nueva Córdoba - Cocina', 13),
 (62, 'https://images.unsplash.com/photo-1738168246881-40f35f8aba0a?w=800&h=600&fit=crop', 'Nueva Córdoba - Living', 13),
 (63, 'https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?w=800&h=600&fit=crop', 'Nueva Córdoba - Dormitorio', 13),
 (64, 'https://images.unsplash.com/photo-1738168279272-c08d6dd22002?w=800&h=600&fit=crop', 'Nueva Córdoba - Comedor', 13),
 (65, 'https://images.unsplash.com/photo-1556593825-c11de986cb0b?w=800&h=600&fit=crop', 'Nueva Córdoba - Vestidor', 13),
--- Gran Hotel Tucumán (14) — hotel set B
+-- Gran Hotel Tucumán (14)
 (66, 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop', 'Gran Hotel - Fachada', 14),
 (67, 'https://images.unsplash.com/photo-1716667282993-cd8f2bffb91f?w=800&h=600&fit=crop', 'Gran Hotel - Piscina', 14),
 (68, 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&h=600&fit=crop', 'Gran Hotel - Suite', 14),
 (69, 'https://images.unsplash.com/photo-1664917555352-f3f66e57ccc2?w=800&h=600&fit=crop', 'Gran Hotel - Baño', 14),
 (70, 'https://images.unsplash.com/photo-1652348716053-3447e551dd1f?w=800&h=600&fit=crop', 'Gran Hotel - Vista habitación', 14),
--- Cabaña El Bolsón (15) — cabaña set B (Lago)
+-- Cabaña El Bolsón (15)
 (71, 'https://images.unsplash.com/photo-1696860740793-1bb7bf33cdc1?w=800&h=600&fit=crop', 'El Bolsón - Living con fogón', 15),
 (72, 'https://images.unsplash.com/photo-1680703486830-1b5af60635d7?w=800&h=600&fit=crop', 'El Bolsón - Interior acogedor', 15),
 (73, 'https://images.unsplash.com/photo-1727706572437-4fcda0cbd66f?w=800&h=600&fit=crop', 'El Bolsón - Habitación', 15),
 (74, 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=800&h=600&fit=crop', 'El Bolsón - Sala de estar', 15),
 (75, 'https://images.unsplash.com/photo-1564540583246-934409427776?w=800&h=600&fit=crop', 'El Bolsón - Baño', 15),
--- Departamento Chacras de Coria (16) — depto set A shifted +1
+-- Departamento Chacras de Coria (16)
 (76, 'https://images.unsplash.com/photo-1628592102751-ba83b0314276?w=800&h=600&fit=crop', 'Chacras - Dormitorio', 16),
 (77, 'https://images.unsplash.com/photo-1576698483491-8c43f0862543?w=800&h=600&fit=crop', 'Chacras - Baño', 16),
 (78, 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=800&h=600&fit=crop', 'Chacras - Cocina', 16),
 (79, 'https://images.unsplash.com/photo-1613575831056-0acd5da8f085?w=800&h=600&fit=crop', 'Chacras - Terraza', 16),
 (80, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', 'Chacras - Living', 16),
--- Hotel del Glaciar (17) — hotel set B shifted +1
+-- Hotel del Glaciar (17)
 (81, 'https://images.unsplash.com/photo-1716667282993-cd8f2bffb91f?w=800&h=600&fit=crop', 'Glaciar - Fachada', 17),
 (82, 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&h=600&fit=crop', 'Glaciar - Habitación', 17),
 (83, 'https://images.unsplash.com/photo-1664917555352-f3f66e57ccc2?w=800&h=600&fit=crop', 'Glaciar - Baño', 17),
 (84, 'https://images.unsplash.com/photo-1652348716053-3447e551dd1f?w=800&h=600&fit=crop', 'Glaciar - Vista canal', 17),
 (85, 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop', 'Glaciar - Suite', 17),
--- Cabaña La Cumbrecita (18) — cabaña set A shifted +1
+-- Cabaña La Cumbrecita (18)
 (86, 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&h=600&fit=crop', 'Cumbrecita - Interior chimenea', 18),
 (87, 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop', 'Cumbrecita - Vista lago', 18),
 (88, 'https://images.unsplash.com/photo-1631630259742-c0f0b17c6c10?w=800&h=600&fit=crop', 'Cumbrecita - Habitación', 18),
 (89, 'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=800&h=600&fit=crop', 'Cumbrecita - Baño', 18),
 (90, 'https://images.unsplash.com/photo-1590490359683-658d3d23f972?w=800&h=600&fit=crop', 'Cumbrecita - Exterior', 18),
--- Departamento Belgrano (19) — depto set B shifted +1
+-- Departamento Belgrano (19)
 (91, 'https://images.unsplash.com/photo-1738168246881-40f35f8aba0a?w=800&h=600&fit=crop', 'Belgrano - Living', 19),
 (92, 'https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?w=800&h=600&fit=crop', 'Belgrano - Dormitorio', 19),
 (93, 'https://images.unsplash.com/photo-1738168279272-c08d6dd22002?w=800&h=600&fit=crop', 'Belgrano - Comedor', 19),
 (94, 'https://images.unsplash.com/photo-1556593825-c11de986cb0b?w=800&h=600&fit=crop', 'Belgrano - Vestidor', 19),
 (95, 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop', 'Belgrano - Balcón', 19),
--- Hotel La Perla (20) — hotel set A shifted +1
+-- Hotel La Perla (20)
 (96, 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'La Perla - Habitación mar', 20),
 (97, 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&h=600&fit=crop', 'La Perla - Baño', 20),
 (98, 'https://images.unsplash.com/photo-1534612899740-55c821a90129?w=800&h=600&fit=crop', 'La Perla - Piscina', 20),
 (99, 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop', 'La Perla - Suite', 20),
 (100, 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop', 'La Perla - Fachada', 20),
--- Cabaña Lacar (21) — cabaña set B shifted +1
+-- Cabaña Lacar (21)
 (101, 'https://images.unsplash.com/photo-1680703486830-1b5af60635d7?w=800&h=600&fit=crop', 'Lacar - Interior acogedor', 21),
 (102, 'https://images.unsplash.com/photo-1727706572437-4fcda0cbd66f?w=800&h=600&fit=crop', 'Lacar - Vista lago', 21),
 (103, 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=800&h=600&fit=crop', 'Lacar - Sala de estar', 21),
 (104, 'https://images.unsplash.com/photo-1564540583246-934409427776?w=800&h=600&fit=crop', 'Lacar - Baño', 21),
 (105, 'https://images.unsplash.com/photo-1696860740793-1bb7bf33cdc1?w=800&h=600&fit=crop', 'Lacar - Exterior', 21),
--- Departamento Pichincha (22) — depto set A shifted +2
+-- Departamento Pichincha (22)
 (106, 'https://images.unsplash.com/photo-1576698483491-8c43f0862543?w=800&h=600&fit=crop', 'Pichincha - Baño', 22),
 (107, 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=800&h=600&fit=crop', 'Pichincha - Cocina', 22),
 (108, 'https://images.unsplash.com/photo-1613575831056-0acd5da8f085?w=800&h=600&fit=crop', 'Pichincha - Balcón', 22),
 (109, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop', 'Pichincha - Living', 22),
 (110, 'https://images.unsplash.com/photo-1628592102751-ba83b0314276?w=800&h=600&fit=crop', 'Pichincha - Dormitorio', 22),
--- Hotel Cataratas Iguazú (23) — hotel set C shifted +1
+-- Hotel Cataratas Iguazú (23)
 (111, 'https://images.unsplash.com/photo-1711059985570-4c32ed12a12c?w=800&h=600&fit=crop', 'Cataratas - Habitación', 23),
 (112, 'https://images.unsplash.com/photo-1714454838107-28ef0e25188d?w=800&h=600&fit=crop', 'Cataratas - Piscina', 23),
 (113, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop', 'Cataratas - Restaurante', 23),
 (114, 'https://images.unsplash.com/photo-1665249934445-1de680641f50?w=800&h=600&fit=crop', 'Cataratas - Suite', 23),
 (115, 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', 'Cataratas - Fachada', 23),
--- Cabaña Los Glaciares (24) — cabaña set C shifted +1
+-- Cabaña Los Glaciares (24)
 (116, 'https://images.unsplash.com/photo-1671683886944-6478e6c84cbc?w=800&h=600&fit=crop', 'Glaciares - Exterior', 24),
 (117, 'https://images.unsplash.com/photo-1662982692115-743f9e716b98?w=800&h=600&fit=crop', 'Glaciares - Fogón', 24),
 (118, 'https://images.unsplash.com/photo-1668480441891-3744c25337a3?w=800&h=600&fit=crop', 'Glaciares - Entorno', 24),
 (119, 'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&h=600&fit=crop', 'Glaciares - Baño', 24),
 (120, 'https://images.unsplash.com/photo-1551927411-95e412943b58?w=800&h=600&fit=crop', 'Glaciares - Interior', 24),
--- Departamento Recoleta (25) — depto set B shifted +2
+-- Departamento Recoleta (25)
 (121, 'https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?w=800&h=600&fit=crop', 'Recoleta - Dormitorio', 25),
 (122, 'https://images.unsplash.com/photo-1738168279272-c08d6dd22002?w=800&h=600&fit=crop', 'Recoleta - Comedor', 25),
 (123, 'https://images.unsplash.com/photo-1556593825-c11de986cb0b?w=800&h=600&fit=crop', 'Recoleta - Vestidor', 25),
 (124, 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop', 'Recoleta - Vista exterior', 25),
 (125, 'https://images.unsplash.com/photo-1738168246881-40f35f8aba0a?w=800&h=600&fit=crop', 'Recoleta - Living', 25),
--- Hotel Legado Mítico (26) — hotel set A shifted +2
+-- Hotel Legado Mítico (26)
 (126, 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&h=600&fit=crop', 'Legado - Patio colonial', 26),
 (127, 'https://images.unsplash.com/photo-1534612899740-55c821a90129?w=800&h=600&fit=crop', 'Legado - Piscina', 26),
 (128, 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop', 'Legado - Suite', 26),
 (129, 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop', 'Legado - Fachada', 26),
 (130, 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'Legado - Habitación', 26),
--- Hostel La Plata Centro (27) — hostel set A
+-- Hostel La Plata Centro (27)
 (131, 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&h=600&fit=crop', 'La Plata - Sala común', 27),
 (132, 'https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=800&h=600&fit=crop', 'La Plata - Dormitorio', 27),
 (133, 'https://images.unsplash.com/photo-1587527901949-ab0341697c1e?w=800&h=600&fit=crop', 'La Plata - Baño', 27),
 (134, 'https://images.unsplash.com/photo-1488992783499-418eb1f62d08?w=800&h=600&fit=crop', 'La Plata - Cocina', 27),
 (135, 'https://images.unsplash.com/photo-1596276020587-8044fe049813?w=800&h=600&fit=crop', 'La Plata - Fachada', 27),
--- Hostel Patagónico (28) — hostel set B
+-- Hostel Patagónico (28)
 (136, 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop', 'Patagónico - Habitación', 28),
 (137, 'https://images.unsplash.com/photo-1549881567-c622c1080d78?w=800&h=600&fit=crop', 'Patagónico - Sala', 28),
 (138, 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&h=600&fit=crop', 'Patagónico - Habitación privada', 28),
 (139, 'https://images.unsplash.com/photo-1768289269971-6171457bed13?w=800&h=600&fit=crop', 'Patagónico - Patio', 28),
 (140, 'https://images.unsplash.com/photo-1692153142886-9881d0457b82?w=800&h=600&fit=crop', 'Patagónico - Fachada', 28),
--- Hostel San Telmo (29) — hostel set A shifted +2
+-- Hostel San Telmo (29)
 (141, 'https://images.unsplash.com/photo-1587527901949-ab0341697c1e?w=800&h=600&fit=crop', 'San Telmo - Baño', 29),
 (142, 'https://images.unsplash.com/photo-1488992783499-418eb1f62d08?w=800&h=600&fit=crop', 'San Telmo - Cocina', 29),
 (143, 'https://images.unsplash.com/photo-1596276020587-8044fe049813?w=800&h=600&fit=crop', 'San Telmo - Fachada', 29),
 (144, 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&h=600&fit=crop', 'San Telmo - Sala común', 29),
 (145, 'https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=800&h=600&fit=crop', 'San Telmo - Dormitorio', 29),
--- Hostel Las Viñas (30) — hostel set B shifted +2
+-- Hostel Las Viñas (30)
 (146, 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&h=600&fit=crop', 'Las Viñas - Habitación privada', 30),
 (147, 'https://images.unsplash.com/photo-1768289269971-6171457bed13?w=800&h=600&fit=crop', 'Las Viñas - Patio', 30),
 (148, 'https://images.unsplash.com/photo-1692153142886-9881d0457b82?w=800&h=600&fit=crop', 'Las Viñas - Fachada', 30),
 (149, 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop', 'Las Viñas - Habitación', 30),
 (150, 'https://images.unsplash.com/photo-1549881567-c622c1080d78?w=800&h=600&fit=crop', 'Las Viñas - Sala', 30);
 
--- Features para alojamientos 11–30
-INSERT IGNORE INTO lodging_features (lodging_id, feature_id) VALUES
+-- Features for lodging IDs 11–30
+INSERT INTO lodging_features (lodging_id, feature_id) VALUES
 (11, 1), (11, 3), (11, 7), (11, 5), (11, 2),
 (12, 1), (12, 2), (12, 6), (12, 5),
 (13, 1), (13, 7), (13, 8), (13, 2),
@@ -311,8 +346,8 @@ INSERT IGNORE INTO lodging_features (lodging_id, feature_id) VALUES
 (29, 1), (29, 4), (29, 8),
 (30, 1), (30, 2), (30, 4), (30, 5);
 
--- Policies para alojamientos 11–30
-INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
+-- Policies for lodging IDs 11–30
+INSERT INTO lodging_policies (lodging_id, policy_id) VALUES
 (11, 1), (11, 2), (11, 3), (11, 4),
 (12, 1), (12, 2), (12, 3), (12, 5),
 (13, 1), (13, 2), (13, 3), (13, 6),
@@ -335,10 +370,10 @@ INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
 (30, 1), (30, 2), (30, 3), (30, 6);
 
 -- ============================================================
--- Seed data extra — Sprint 4 (IDs 31–38, Resorts y Glamping)
+-- Sprint 4 seed extension (lodging IDs 31–38, resorts and glamping)
 -- ============================================================
 
-INSERT IGNORE INTO lodgings (id, name, description, address, city, country, phone_number, email, category_id, price_per_night, max_guests) VALUES
+INSERT INTO lodgings (id, name, description, address, city, country, phone_number, email, category_id, price_per_night, max_guests) VALUES
 -- Resorts (category_id = 5)
 (31, 'Resort Iguazú Grand', 'Resort de lujo en la selva misionera a minutos de las Cataratas del Iguazú. Villas privadas con piscina desbordante, spa de tratamientos amazónicos y acceso privado al parque nacional. Todo incluido disponible.', 'Ruta 12 Km 1640', 'Puerto Iguazú', 'Argentina', '+54375890123', 'grand@resortiguazu.com', 5, 450.00, 4),
 (32, 'Resort Termas Federación', 'Resort termal a orillas del lago Salto Grande. Acceso directo a las termas naturales, spa con circuito termal propio, restaurante gourmet y actividades náuticas en el lago. Ideal para familias y parejas.', 'Av. Las Termas 800', 'Federación', 'Argentina', '+54345567890', 'termas@resortfederacion.com', 5, 320.00, 6),
@@ -350,59 +385,59 @@ INSERT IGNORE INTO lodgings (id, name, description, address, city, country, phon
 (37, 'Glamping Valle Encantado', 'Carpas safari en el Valle Encantado, rodeadas de formaciones rocosas únicas y el río Limay. Plataforma elevada, baño privado con agua caliente, fogón y traslados desde Bariloche incluidos.', 'Valle Encantado, Ruta 237', 'Bariloche', 'Argentina', '+54294489012', 'valle@glamping.com', 6, 210.00, 3),
 (38, 'Glamping Viñas del Sur', 'Domos de lujo entre viñedos orgánicos en Luján de Cuyo. Desayuno con productos de la finca, cata privada de vinos al atardecer, bicicletas para recorrer bodegas y piscina con vistas a los Andes. La experiencia glamping más sofisticada de Cuyo.', 'Finca El Sosneado, Carril Barriales 1800', 'Luján de Cuyo', 'Argentina', '+54261567890', 'vinas@glamping.com', 6, 260.00, 2);
 
--- Imágenes para alojamientos 31–38 (5 por alojamiento, IDs 151–190, todas verificadas 200 OK)
-INSERT IGNORE INTO lodging_images (id, image_url, title, lodging_id) VALUES
--- Resort Iguazú Grand (31) — pool resort (set lodging 1)
+-- Images for lodging IDs 31–38 (5 per lodging, image IDs 151–190)
+INSERT INTO lodging_images (id, image_url, title, lodging_id) VALUES
+-- Resort Iguazú Grand (31)
 (151, 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop', 'Iguazú Grand - Fachada', 31),
 (152, 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop', 'Iguazú Grand - Suite', 31),
 (153, 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&h=600&fit=crop', 'Iguazú Grand - Baño', 31),
 (154, 'https://images.unsplash.com/photo-1534612899740-55c821a90129?w=800&h=600&fit=crop', 'Iguazú Grand - Piscina', 31),
 (155, 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop', 'Iguazú Grand - Villa', 31),
--- Resort Termas Federación (32) — pool resort (set lodging 6)
+-- Resort Termas Federación (32)
 (156, 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop', 'Termas - Habitación', 32),
 (157, 'https://images.unsplash.com/photo-1716667282993-cd8f2bffb91f?w=800&h=600&fit=crop', 'Termas - Piscina termal', 32),
 (158, 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&h=600&fit=crop', 'Termas - Suite', 32),
 (159, 'https://images.unsplash.com/photo-1664917555352-f3f66e57ccc2?w=800&h=600&fit=crop', 'Termas - Baño', 32),
 (160, 'https://images.unsplash.com/photo-1652348716053-3447e551dd1f?w=800&h=600&fit=crop', 'Termas - Fachada', 32),
--- Resort Valle de Uco (33) — pool resort (set lodging 8)
+-- Resort Valle de Uco (33)
 (161, 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', 'Valle de Uco - Fachada', 33),
 (162, 'https://images.unsplash.com/photo-1711059985570-4c32ed12a12c?w=800&h=600&fit=crop', 'Valle de Uco - Habitación', 33),
 (163, 'https://images.unsplash.com/photo-1714454838107-28ef0e25188d?w=800&h=600&fit=crop', 'Valle de Uco - Piscina', 33),
 (164, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop', 'Valle de Uco - Restaurante', 33),
 (165, 'https://images.unsplash.com/photo-1665249934445-1de680641f50?w=800&h=600&fit=crop', 'Valle de Uco - Vista viñedos', 33),
--- Resort Llao Llao (34) — hotel set C shifted +3
+-- Resort Llao Llao (34)
 (166, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop', 'Llao Llao - Vista', 34),
 (167, 'https://images.unsplash.com/photo-1665249934445-1de680641f50?w=800&h=600&fit=crop', 'Llao Llao - Suite', 34),
 (168, 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop', 'Llao Llao - Fachada', 34),
 (169, 'https://images.unsplash.com/photo-1711059985570-4c32ed12a12c?w=800&h=600&fit=crop', 'Llao Llao - Habitación', 34),
 (170, 'https://images.unsplash.com/photo-1714454838107-28ef0e25188d?w=800&h=600&fit=crop', 'Llao Llao - Piscina', 34),
--- Glamping Bosques del Sur (35) — nature (set lodging 2)
+-- Glamping Bosques del Sur (35)
 (171, 'https://images.unsplash.com/photo-1590490359683-658d3d23f972?w=800&h=600&fit=crop', 'Bosques del Sur - Domo exterior', 35),
 (172, 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&h=600&fit=crop', 'Bosques del Sur - Interior', 35),
 (173, 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop', 'Bosques del Sur - Vista bosque', 35),
 (174, 'https://images.unsplash.com/photo-1631630259742-c0f0b17c6c10?w=800&h=600&fit=crop', 'Bosques del Sur - Cama', 35),
 (175, 'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=800&h=600&fit=crop', 'Bosques del Sur - Entorno', 35),
--- Glamping Cerro Chapelco (36) — nature (set lodging 5)
+-- Glamping Cerro Chapelco (36)
 (176, 'https://images.unsplash.com/photo-1696860740793-1bb7bf33cdc1?w=800&h=600&fit=crop', 'Chapelco - Carpa glamping', 36),
 (177, 'https://images.unsplash.com/photo-1680703486830-1b5af60635d7?w=800&h=600&fit=crop', 'Chapelco - Interior', 36),
 (178, 'https://images.unsplash.com/photo-1727706572437-4fcda0cbd66f?w=800&h=600&fit=crop', 'Chapelco - Vista cerro', 36),
 (179, 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=800&h=600&fit=crop', 'Chapelco - Sala de estar', 36),
 (180, 'https://images.unsplash.com/photo-1564540583246-934409427776?w=800&h=600&fit=crop', 'Chapelco - Baño', 36),
--- Glamping Valle Encantado (37) — nature (set lodging 7)
+-- Glamping Valle Encantado (37)
 (181, 'https://images.unsplash.com/photo-1551927411-95e412943b58?w=800&h=600&fit=crop', 'Valle Encantado - Carpa safari', 37),
 (182, 'https://images.unsplash.com/photo-1671683886944-6478e6c84cbc?w=800&h=600&fit=crop', 'Valle Encantado - Entorno rocoso', 37),
 (183, 'https://images.unsplash.com/photo-1662982692115-743f9e716b98?w=800&h=600&fit=crop', 'Valle Encantado - Fogón', 37),
 (184, 'https://images.unsplash.com/photo-1668480441891-3744c25337a3?w=800&h=600&fit=crop', 'Valle Encantado - Naturaleza', 37),
 (185, 'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&h=600&fit=crop', 'Valle Encantado - Vista río', 37),
--- Glamping Viñas del Sur (38) — cabaña set C shifted +2
+-- Glamping Viñas del Sur (38)
 (186, 'https://images.unsplash.com/photo-1662982692115-743f9e716b98?w=800&h=600&fit=crop', 'Viñas del Sur - Domo viñedo', 38),
 (187, 'https://images.unsplash.com/photo-1668480441891-3744c25337a3?w=800&h=600&fit=crop', 'Viñas del Sur - Entorno', 38),
 (188, 'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&h=600&fit=crop', 'Viñas del Sur - Vista Andes', 38),
 (189, 'https://images.unsplash.com/photo-1551927411-95e412943b58?w=800&h=600&fit=crop', 'Viñas del Sur - Interior', 38),
 (190, 'https://images.unsplash.com/photo-1671683886944-6478e6c84cbc?w=800&h=600&fit=crop', 'Viñas del Sur - Exterior', 38);
 
--- Features para alojamientos 31–38
-INSERT IGNORE INTO lodging_features (lodging_id, feature_id) VALUES
+-- Features for lodging IDs 31–38
+INSERT INTO lodging_features (lodging_id, feature_id) VALUES
 (31, 1), (31, 3), (31, 5), (31, 7), (31, 2),
 (32, 1), (32, 3), (32, 5), (32, 6), (32, 2),
 (33, 1), (33, 3), (33, 5), (33, 7), (33, 2),
@@ -412,8 +447,8 @@ INSERT IGNORE INTO lodging_features (lodging_id, feature_id) VALUES
 (37, 1), (37, 2), (37, 6),
 (38, 1), (38, 2), (38, 5);
 
--- Policies para alojamientos 31–38
-INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
+-- Policies for lodging IDs 31–38
+INSERT INTO lodging_policies (lodging_id, policy_id) VALUES
 (31, 1), (31, 2), (31, 3), (31, 4),
 (32, 1), (32, 2), (32, 3), (32, 4), (32, 6),
 (33, 1), (33, 2), (33, 3), (33, 4),
@@ -422,35 +457,3 @@ INSERT IGNORE INTO lodging_policies (lodging_id, policy_id) VALUES
 (36, 1), (36, 2), (36, 3), (36, 5),
 (37, 1), (37, 2), (37, 3), (37, 5),
 (38, 1), (38, 2), (38, 3), (38, 5);
-
--- ============================================================
--- Seed data extra — Sprint 4 (Usuarios comunes, reservas y ratings)
--- ============================================================
-
--- Usuarios clientes de prueba (contraseñas: maria123, juan123, user123)
-INSERT IGNORE INTO users (id, first_name, last_name, email, password, role) VALUES
-(2, 'Maria', 'Gomez', 'maria@tuhospedaje.com', '$2a$10$7QYt3aRgNNrFWVBKfuo0oe82ZummGy6LLEAljxRp9KqH6.IHcDX3W', 'USER'),
-(3, 'Juan', 'Perez', 'juan@tuhospedaje.com', '$2a$10$MFr0.A/bcyNv14oQqqRynuOqRhrTg/onZrw0Rls.7hRideSXB/try', 'USER'),
-(4, 'Usuario', 'Tester', 'user@tuhospedaje.com', '$2a$10$bEXnAoU.qy05Tq7jRqyjg.G3foN6XMRCXxsJcvCukmh/.7kj7ZRuC', 'USER');
-
--- Reservas de prueba
-INSERT IGNORE INTO reservations (id, lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version) VALUES
-(1, 1, 2, '2026-05-01', '2026-05-05', 'Maria Gomez', 'maria@tuhospedaje.com', '+5411223344', 600.00, 'CONFIRMED', 0),
-(2, 2, 3, '2026-05-10', '2026-05-15', 'Juan Perez', 'juan@tuhospedaje.com', '+5411998877', 1000.00, 'CONFIRMED', 0),
-(3, 3, 4, '2026-06-01', '2026-06-03', 'Usuario Tester', 'user@tuhospedaje.com', '+5411555555', 360.00, 'CONFIRMED', 0),
-(4, 31, 2, '2026-07-10', '2026-07-15', 'Maria Gomez', 'maria@tuhospedaje.com', '+5411223344', 2250.00, 'CONFIRMED', 0),
-(5, 35, 3, '2026-08-01', '2026-08-05', 'Juan Perez', 'juan@tuhospedaje.com', '+5411998877', 1120.00, 'CONFIRMED', 0),
-(6, 5, 4, '2026-05-20', '2026-05-22', 'Usuario Tester', 'user@tuhospedaje.com', '+5411555555', 500.00, 'CANCELLED', 0);
-
--- Reseñas / Calificaciones (Ratings)
-INSERT IGNORE INTO ratings (id, lodging_id, user_id, score, comment, created_at) VALUES
-(1, 1, 2, 5, 'Excelente ubicación y atención. El desayuno es completísimo y muy rico.', '2026-05-06 10:00:00'),
-(2, 1, 3, 4, 'Muy cómodo, limpio y céntrico. La vista del bar es hermosa.', '2026-05-07 14:30:00'),
-(3, 2, 3, 5, 'La cabaña es increíble, la vista al lago te deja sin palabras. Ideal para desconectarse.', '2026-05-16 11:15:00'),
-(4, 2, 4, 5, 'Un lugar de ensueño. La chimenea a leña y el jacuzzi exterior valen cada centavo.', '2026-05-18 18:20:00'),
-(5, 3, 4, 4, 'Lindo departamento, moderno y re bien ubicado en pleno Palermo Soho. Muy luminoso.', '2026-06-04 09:00:00'),
-(6, 3, 2, 3, 'Buena ubicación y diseño, pero se escucha el ruido de los bares los fines de semana.', '2026-06-05 12:45:00'),
-(7, 5, 2, 5, 'Hermosa cabaña. El muelle privado es un lujo y los kayaks incluidos te permiten pasear por el lago.', '2026-05-25 16:00:00'),
-(8, 5, 3, 4, 'La vista al lago es preciosa y el ambiente muy acogedor. Recomiendo para ir en pareja.', '2026-05-26 10:30:00'),
-(9, 31, 3, 5, 'Servicio de primer nivel en medio de la selva. La piscina desbordante y las instalaciones son espectaculares.', '2026-05-12 15:20:00'),
-(10, 35, 4, 5, 'Dormir en el domo mirando el cielo estrellado fue una experiencia mágica. Excelente desayuno artesanal.', '2026-05-30 20:10:00');

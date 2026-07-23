@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 24,
+  "name": "Cabaña Los Glaciares",
+  "category": "cabin",
+  "location": {
+    "city": "El Calafate",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña de lujo silenciosa y exclusiva para hasta cuatro personas, ubicada en El Calafate y orientada hacia el lago Argentino, la estepa patagónica y los Andes distantes. Debe sentirse técnicamente preparada para frío y viento; sin adquirir escala de mansión, ostentación, estética alpina ni mostrar vistas imposibles de glaciares.",
+    "architecture": "Cabaña baja de una sola planta. Implantación protegida mediante el terreno y muros cortaviento. Volúmenes horizontales de hormigón color arena. Basamento y muros principales de piedra carbón. Revestimientos puntuales de lenga. Cubierta de baja pendiente en grafito. Grandes ventanas orientadas hacia el lago Argentino. Aberturas protegidas mediante retranqueos y aleros. Patio exterior hundido para reducir la exposición al viento. Jacuzzi integrado dentro del patio protegido. Circulaciones interiores sin desniveles. Accesibilidad incorporada desde el acceso hasta dormitorio, baño y terraza. Instalaciones técnicas ocultas y preparadas para heladas. Sin varios pisos, ventanales expuestos sin protección, torres, techos alpinos ni referencias visuales a glaciares.",
+    "palette": [
+      "piedra carbón",
+      "hormigón arena",
+      "lenga natural",
+      "gris hielo",
+      "azul profundo",
+      "bronce oscuro",
+      "grafito como tono complementario"
+    ],
+    "floors": "Acceso, estar y cocina: piedra sinterizada gris cálido con calefacción radiante. Dormitorios: madera de ingeniería tono lenga con calefacción radiante. Baños: porcelanato carbón antideslizante. Ducha accesible: piedra texturada gris oscuro, sin resalto. Patio hundido: piedra oscura antideslizante. Entorno del jacuzzi: superficie mineral resistente a hielo. Sendero de acceso: losas firmes, continuas y antideslizantes. Sin desniveles innecesarios ni materiales pulidos.",
+    "wallsAndFinishes": "Estar: hormigón arena, piedra carbón y paneles de lenga. Dormitorios: revoque gris hielo y cabeceros de madera. Cocina: muebles de lenga y mesadas minerales oscuras. Baños: porcelanato carbón y microcemento gris cálido. Patio hundido: muros de piedra y hormigón que actúan como protección. Exterior: piedra carbón, hormigón arena y madera tratada. Terminaciones de alta aislación y bajo mantenimiento. Sin mármol brillante, dorados, pieles decorativas ni imágenes de glaciares.",
+    "joinery": "Ventanas de aluminio grafito con ruptura de puente térmico. Triple vidrio en las aberturas más expuestas. Paños panorámicos retranqueados y protegidos. Puerta principal ancha, aislada y sin umbral. Puertas interiores corredizas o de paso amplio. Placares integrados en lenga. Mampara accesible y transparente con perfilería bronce oscuro. Herrajes ergonómicos de acabado oscuro. Cortinas térmicas en gris hielo y azul profundo.",
+    "furniture": "Dormitorio principal con cama king orientada hacia el lago. Segundo dormitorio flexible para dos huéspedes. Cabeceros bajos de lenga con tapizado gris hielo. Mesas de luz suspendidas. Sofá bajo y profundo en gris cálido. Sillones compactos azul profundo. Mesa de comedor para cuatro personas. Cocina integrada con isla accesible. Mobiliario de circulación despejada y alturas utilizables. Piezas exteriores bajas y protegidas del viento. Sin muebles monumentales, cuero ostentoso ni decoración de chalet de lujo.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta integrada en cielorrasos y paneles. Apliques de bronce oscuro junto a las camas. Iluminación lineal bajo muebles de cocina. Luz frontal uniforme en espejos. Balizas bajas y continuas en circulaciones. Jacuzzi iluminado en blanco cálido. Iluminación exterior mínima para preservar el cielo patagónico. Sin luz azul decorativa, arañas ornamentales ni focos expuestos al viento.",
+    "continuityElements": [
+      "Volumen bajo y horizontal de una sola planta.",
+      "Piedra carbón en muros, baños y patio.",
+      "Hormigón arena en la envolvente.",
+      "Lenga natural en interiores y mobiliario.",
+      "Gris hielo y azul profundo en textiles.",
+      "Carpinterías y detalles de bronce oscuro o grafito.",
+      "Accesibilidad y calefacción radiante integradas.",
+      "Protección constante frente al viento con vistas creíbles al lago Argentino, la estepa y los Andes."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior bajo frente al lago Argentino",
+        "brief": "Mostrar piedra, hormigón y protección frente al viento."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar la ventana panorámica retranqueada y la vista al lago."
+      },
+      {
+        "order": 3,
+        "title": "Baño accesible",
+        "brief": "Mostrar piedra carbón, ausencia de desniveles y ducha amplia."
+      },
+      {
+        "order": 4,
+        "title": "Estar, comedor y cocina",
+        "brief": "Mostrar la calefacción radiante y el mobiliario bajo."
+      },
+      {
+        "order": 5,
+        "title": "Jacuzzi en el patio hundido",
+        "brief": "Mostrar la protección frente al viento y la orientación hacia el lago Argentino."
+      }
+    ]
+  }
+}

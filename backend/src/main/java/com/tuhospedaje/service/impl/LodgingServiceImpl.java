@@ -1,5 +1,6 @@
 package com.tuhospedaje.service.impl;
 
+import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.dto.reservation.OccupiedRange;
@@ -21,6 +22,7 @@ import com.tuhospedaje.service.LodgingService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,9 @@ public class LodgingServiceImpl implements LodgingService {
     private static final int RANDOM_POOL_SIZE = 100;
     private static final int RANDOM_RESULT_SIZE = 10;
     private static final int MAX_UNFILTERED_RESULTS = 100;
+    private static final Set<String> ADMIN_SORT_FIELDS = Set.of(
+            "id", "name", "description", "city", "country", "pricePerNight"
+    );
 
     private final LodgingRepository lodgingRepository;
     private final CategoryRepository categoryRepository;
@@ -215,6 +220,46 @@ public class LodgingServiceImpl implements LodgingService {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResponse<LodgingDTO> findAdminPage(int page, int size, String sort, String direction, String query) {
+        if (!ADMIN_SORT_FIELDS.contains(sort)) {
+            throw new IllegalArgumentException("Campo de ordenamiento inválido: " + sort);
+        }
+
+        Sort.Direction sortDirection = Sort.Direction.fromOptionalString(direction)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección de ordenamiento inválida: " + direction));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+        Specification<Lodging> spec = adminSearchSpec(query);
+        Page<Lodging> lodgingPage = lodgingRepository.findAll(spec, pageable);
+        List<LodgingDTO> dtos = lodgingPage.getContent().stream()
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+        List<LodgingDTO> lodgings = enrichWithRatings(dtos);
+
+        return new PageResponse<>(
+                lodgings,
+                lodgingPage.getNumber(),
+                lodgingPage.getTotalElements(),
+                lodgingPage.getTotalPages()
+        );
+    }
+
+    private Specification<Lodging> adminSearchSpec(String query) {
+        if (query == null || query.isBlank()) {
+            return (root, criteriaQuery, cb) -> cb.conjunction();
+        }
+
+        String pattern = "%" + query.trim().toLowerCase() + "%";
+        return (root, criteriaQuery, cb) -> cb.or(
+                cb.like(cb.lower(root.get("name")), pattern),
+                cb.like(cb.lower(root.get("city")), pattern),
+                cb.like(cb.lower(root.get("country")), pattern),
+                cb.like(cb.lower(root.get("email")), pattern),
+                cb.like(cb.lower(root.get("address")), pattern)
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<LodgingDTO> findAllRandom() {
         long total = lodgingRepository.count();
         if (total == 0) return List.of();
@@ -232,9 +277,10 @@ public class LodgingServiceImpl implements LodgingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LodgingDTO> search(String city, LocalDate checkIn, LocalDate checkOut,
-                                   Integer guests, Long category,
-                                   BigDecimal minPrice, BigDecimal maxPrice) {
+    public Map<String, Object> search(String city, LocalDate checkIn, LocalDate checkOut,
+                                      Integer guests, List<Long> categories,
+                                      BigDecimal minPrice, BigDecimal maxPrice,
+                                      int page, int size) {
         Specification<Lodging> spec = (root, query, cb) -> cb.conjunction();
 
         if (city != null && !city.isBlank()) {
@@ -245,9 +291,9 @@ public class LodgingServiceImpl implements LodgingService {
             spec = spec.and((root, query, cb) ->
                     cb.greaterThanOrEqualTo(root.get("maxGuests"), guests));
         }
-        if (category != null) {
+        if (categories != null && !categories.isEmpty()) {
             spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("category").get("id"), category));
+                    root.get("category").get("id").in(categories));
         }
         if (minPrice != null) {
             spec = spec.and((root, query, cb) ->
@@ -273,12 +319,20 @@ public class LodgingServiceImpl implements LodgingService {
             });
         }
 
-        List<Lodging> results = lodgingRepository.findAll(spec);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Lodging> resultsPage = lodgingRepository.findAll(spec, pageable);
 
-        List<LodgingDTO> dtos = results.stream()
+        List<LodgingDTO> dtos = resultsPage.getContent().stream()
                 .map(LodgingDTO::fromEntity)
                 .collect(Collectors.toList());
-        return enrichWithRatings(dtos);
+        List<LodgingDTO> lodgings = enrichWithRatings(dtos);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("lodgings", lodgings);
+        response.put("currentPage", resultsPage.getNumber());
+        response.put("totalItems", resultsPage.getTotalElements());
+        response.put("totalPages", resultsPage.getTotalPages());
+        return response;
     }
 
     @Override

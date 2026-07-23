@@ -1,20 +1,25 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import { AuthProvider } from "./AuthContext";
 import { useAuth } from "../hooks/useAuth";
-import { post } from "../services/api";
+import { get, post, bootstrapCsrf } from "../services/api";
 
-vi.mock("jwt-decode");
 vi.mock("../services/api");
 
 function AuthConsumer() {
-  const { user, token, login, logout } = useAuth();
+  const { user, loading, login, register, logout } = useAuth();
   return (
     <div>
+      <span data-testid="loading">{loading ? "loading" : "ready"}</span>
       <span data-testid="user">{user ? user.email : "no-user"}</span>
-      <span data-testid="token">{token ?? "no-token"}</span>
       <button onClick={() => login("test@example.com", "secret")}>login</button>
+      <button
+        onClick={() =>
+          register("Test", "User", "test@example.com", "secret")
+        }
+      >
+        register
+      </button>
       <button onClick={() => logout()}>logout</button>
     </div>
   );
@@ -45,27 +50,59 @@ function renderWithProvider({ initialEntries = ["/"] } = {}) {
   );
 }
 
-const decodedPayload = {
+const meUser = {
   firstName: "Test",
   lastName: "User",
-  sub: "test@example.com",
+  email: "test@example.com",
   role: "USER",
   imageUrl: null,
-  exp: Math.floor(Date.now() / 1000) + 3600,
 };
 
 beforeEach(() => {
-  localStorage.clear();
+  vi.clearAllMocks();
+  bootstrapCsrf.mockResolvedValue(undefined);
 });
 
-describe("AuthContext - login", () => {
-  it("updates token/user and persists the token to localStorage", async () => {
-    post.mockResolvedValue({ token: "fresh-jwt" });
-    jwtDecode.mockReturnValue(decodedPayload);
+describe("AuthContext - bootstrap on mount", () => {
+  it("calls GET /auth/me and sets the user when it resolves (200)", async () => {
+    get.mockResolvedValue(meUser);
 
     renderWithProvider();
 
+    expect(screen.getByTestId("loading")).toHaveTextContent("loading");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading")).toHaveTextContent("ready");
+    });
+
+    expect(get).toHaveBeenCalledWith("/auth/me");
+    expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
+  });
+
+  it("leaves the user unauthenticated without throwing when /auth/me rejects (401)", async () => {
+    get.mockRejectedValue(new Error("Sesión expirada"));
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading")).toHaveTextContent("ready");
+    });
+
     expect(screen.getByTestId("user")).toHaveTextContent("no-user");
+    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+  });
+});
+
+describe("AuthContext - login", () => {
+  it("sets the user directly from the response body, with no token decoding", async () => {
+    get.mockRejectedValue(new Error("Sesión expirada"));
+    post.mockResolvedValue(meUser);
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading")).toHaveTextContent("ready");
+    });
 
     await act(async () => {
       screen.getByText("login").click();
@@ -76,110 +113,84 @@ describe("AuthContext - login", () => {
       password: "secret",
     });
     expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
-    expect(screen.getByTestId("token")).toHaveTextContent("fresh-jwt");
-    expect(localStorage.getItem("token")).toBe("fresh-jwt");
+  });
+});
+
+describe("AuthContext - register", () => {
+  it("sets the user directly from the response body, with no token decoding", async () => {
+    get.mockRejectedValue(new Error("Sesión expirada"));
+    post.mockResolvedValue(meUser);
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading")).toHaveTextContent("ready");
+    });
+
+    await act(async () => {
+      screen.getByText("register").click();
+    });
+
+    expect(post).toHaveBeenCalledWith("/auth/register", {
+      firstName: "Test",
+      lastName: "User",
+      email: "test@example.com",
+      password: "secret",
+    });
+    expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
   });
 });
 
 describe("AuthContext - logout", () => {
-  it("clears token/user from state and removes the token from localStorage", async () => {
-    localStorage.setItem("token", "existing-jwt");
-    jwtDecode.mockReturnValue(decodedPayload);
+  it("calls POST /auth/logout and clears the in-memory user state without touching localStorage", async () => {
+    get.mockResolvedValue(meUser);
+    post.mockResolvedValue(null);
+    const removeItemSpy = vi.spyOn(Storage.prototype, "removeItem");
 
     renderWithProvider();
 
-    expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
+    });
 
     await act(async () => {
       screen.getByText("logout").click();
     });
 
+    expect(post).toHaveBeenCalledWith("/auth/logout");
     expect(screen.getByTestId("user")).toHaveTextContent("no-user");
-    expect(screen.getByTestId("token")).toHaveTextContent("no-token");
-    expect(localStorage.getItem("token")).toBeNull();
-  });
-});
+    expect(removeItemSpy).not.toHaveBeenCalled();
 
-describe("AuthContext - initial mount with a valid token", () => {
-  it("restores user/token from a non-expired token in localStorage", () => {
-    localStorage.setItem("token", "valid-jwt");
-    jwtDecode.mockReturnValue(decodedPayload);
-
-    renderWithProvider();
-
-    expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
-    expect(screen.getByTestId("token")).toHaveTextContent("valid-jwt");
-    expect(localStorage.getItem("token")).toBe("valid-jwt");
-  });
-});
-
-describe("AuthContext - initial mount with an expired token", () => {
-  it("discards the token and starts logged-out", () => {
-    localStorage.setItem("token", "expired-jwt");
-    jwtDecode.mockReturnValue({ ...decodedPayload, exp: Math.floor(Date.now() / 1000) - 10 });
-
-    renderWithProvider();
-
-    expect(screen.getByTestId("user")).toHaveTextContent("no-user");
-    expect(screen.getByTestId("token")).toHaveTextContent("no-token");
-    expect(localStorage.getItem("token")).toBeNull();
-  });
-});
-
-describe("AuthContext - initial mount with a malformed token", () => {
-  it("discards an unparseable token and starts logged-out", () => {
-    localStorage.setItem("token", "not-a-real-jwt");
-    jwtDecode.mockImplementation(() => {
-      throw new Error("invalid token");
-    });
-
-    renderWithProvider();
-
-    expect(screen.getByTestId("user")).toHaveTextContent("no-user");
-    expect(screen.getByTestId("token")).toHaveTextContent("no-token");
-    expect(localStorage.getItem("token")).toBeNull();
-  });
-
-  it("logs the decode error so the failure is visible for debugging", () => {
-    localStorage.setItem("token", "not-a-real-jwt");
-    const decodeError = new Error("invalid token");
-    jwtDecode.mockImplementation(() => {
-      throw decodeError;
-    });
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-
-    renderWithProvider();
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(decodeError);
-
-    consoleErrorSpy.mockRestore();
+    removeItemSpy.mockRestore();
   });
 });
 
 describe("AuthContext - auth:unauthorized event", () => {
   it("logs out and navigates to /login when the event fires", async () => {
-    localStorage.setItem("token", "valid-jwt");
-    jwtDecode.mockReturnValue(decodedPayload);
+    get.mockResolvedValue(meUser);
+    post.mockResolvedValue(null);
 
     renderWithProvider();
 
-    expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
+    });
 
     await act(async () => {
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));
     });
 
     expect(screen.getByTestId("login-sentinel")).toBeInTheDocument();
-    expect(localStorage.getItem("token")).toBeNull();
   });
 
   it("preserves the originating route as state.from so login can redirect back", async () => {
-    localStorage.setItem("token", "valid-jwt");
-    jwtDecode.mockReturnValue(decodedPayload);
+    get.mockResolvedValue(meUser);
 
     renderWithProvider({ initialEntries: ["/booking/42"] });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
+    });
 
     await act(async () => {
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));

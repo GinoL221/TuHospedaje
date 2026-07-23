@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 17,
+  "name": "Hotel del Glaciar",
+  "category": "hotel",
+  "location": {
+    "city": "Ushuaia",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hotel superior de montaña en una ladera de Ushuaia, orientado a parejas, familias y viajeros que buscan vistas al canal Beagle y protección frente al clima fueguino. Debe sentirse cálido, panorámico y preparado para condiciones adversas; sin parecer una cabaña rústica, un lodge de esquí temático ni un resort de lujo.",
+    "architecture": "Edificio escalonado de cinco pisos adaptado a la pendiente. Volúmenes bajos que acompañan la topografía. Basamento revestido en piedra oscura. Fachadas combinadas con madera de lenga y metal grafito. Cubiertas inclinadas de baja pendiente preparadas para nieve y viento. Grandes paños vidriados orientados hacia el canal Beagle. Aberturas laterales más controladas para reducir pérdidas térmicas. Acceso protegido mediante un volumen cortaviento. Terrazas panorámicas parcialmente reparadas. Circulaciones interiores compactas y climatizadas. Guardaesquíes y espacio para equipamiento integrados cerca del acceso. Instalaciones técnicas ocultas y protegidas. Sin troncos decorativos, piedra falsa, techos exagerados ni estética de chalet alpino.",
+    "palette": [
+      "grafito",
+      "gris piedra oscuro",
+      "lenga natural",
+      "beige lana",
+      "azul Beagle",
+      "cobre apagado",
+      "blanco nieve como tono complementario"
+    ],
+    "floors": "Acceso y lobby: piedra oscura antideslizante. Restaurante y lounge: madera de lenga tratada. Habitaciones: madera de ingeniería tono lenga. Circulaciones: alfombra modular grafito y gris. Baños: porcelanato gris cálido antideslizante. Duchas: piedra texturada grafito. Terrazas: deck técnico oscuro resistente a humedad y heladas. Guardaesquíes: pavimento de caucho técnico de alta resistencia.",
+    "wallsAndFinishes": "Lobby: piedra oscura, listones de lenga y revoque gris cálido. Habitaciones: paneles de lenga, pintura beige y textiles de lana. Baños: porcelanato gris y piedra grafito en duchas. Restaurante: madera, piedra y superficies acústicas en azul Beagle. Lounge: hogar de combustión cerrada integrado en un muro de piedra. Circulaciones: revoque gris claro y protección inferior de madera. Sin revestimientos brillantes, trofeos de caza, cuadros alpinos ni rusticidad escenográfica.",
+    "joinery": "Ventanas de aluminio grafito con ruptura de puente térmico. Doble o triple vidrio según exposición. Paños panorámicos con marcos reforzados para viento. Puertas exteriores con cámara cortaviento. Puertas interiores enchapadas en lenga. Placares integrados con espacio para ropa técnica. Mamparas transparentes con perfilería grafito. Herrajes de cobre oscuro o negro satinado. Cortinas dobles térmicas en beige y gris.",
+    "furniture": "Camas king o twin orientadas hacia las vistas. Cabeceros de lenga con paneles tapizados en beige lana. Mesas de luz suspendidas. Sillones compactos en azul Beagle. Bancos para equipaje y calzado técnico. Escritorios pequeños con bases grafito. Sofás profundos y contenidos en el lounge. Restaurante con mesas de lenga y sillas tapizadas. Mobiliario de terraza bajo y resistente al viento. Sin muebles de troncos, cuero rústico dominante ni decoración de refugio de montaña.",
+    "lighting": "Temperatura cálida de 2700 K. Iluminación indirecta sobre madera y piedra. Apliques de cobre apagado junto a las camas. Luz integrada en cabeceros y placares. Colgantes sobrios en restaurante. Lámparas de pie bajas en el lounge. Balizas protegidas en accesos y terrazas. Luz exterior contenida para evitar reflejos sobre los vidrios panorámicos. Sin iluminación azul decorativa, focos expuestos ni luz blanca fría.",
+    "continuityElements": [
+      "Volumetría escalonada adaptada a la ladera.",
+      "Piedra oscura en basamento, acceso y áreas húmedas.",
+      "Madera de lenga en fachadas e interiores.",
+      "Carpinterías grafito de alta aislación.",
+      "Beige lana en cabeceros, cortinas y tapizados.",
+      "Azul Beagle como acento controlado.",
+      "Cobre apagado en herrajes y luminarias.",
+      "Protección constante frente al viento, la nieve y la humedad sin perder las vistas."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior escalonado sobre la ladera",
+        "brief": "Mostrar piedra, lenga, cubiertas oscuras y clima fueguino."
+      },
+      {
+        "order": 2,
+        "title": "Habitación con vista al canal Beagle",
+        "brief": "Mostrar una gran ventana orientada al canal Beagle."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar porcelanato gris y ducha de piedra grafito."
+      },
+      {
+        "order": 4,
+        "title": "Restaurante fueguino contemporáneo",
+        "brief": "Mostrar lenga, piedra y textiles azul Beagle."
+      },
+      {
+        "order": 5,
+        "title": "Lounge panorámico",
+        "brief": "Mostrar el hogar cerrado, mobiliario cálido y vista al canal."
+      }
+    ]
+  }
+}

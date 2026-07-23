@@ -1,4 +1,4 @@
-import { get, post, put, del } from "./api";
+import { get, post, put, patch, del, getCsrfToken } from "./api";
 
 // NOTE: `api.js` reads `import.meta.env.VITE_API_URL` into a module-level
 // `const API_BASE` at import time. Most tests below assert only the
@@ -16,11 +16,14 @@ function mockFetchResolved({ ok = true, status = 200, json } = {}) {
 }
 
 beforeEach(() => {
-  localStorage.clear();
+  document.cookie =
+    "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  document.cookie =
+    "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 });
 
 describe("api service - successful requests", () => {
@@ -79,6 +82,25 @@ describe("api service - successful requests", () => {
     const [, config] = fetchMock.mock.calls[0];
     expect(config.method).toBe("DELETE");
     expect(config.body).toBeUndefined();
+  });
+
+  it("PATCH sends an unsafe request without a body", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+    const fetchMock = mockFetchResolved({ json: async () => ({ status: "CANCELLED" }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await patch("/reservations/1/cancel");
+
+    expect(result).toEqual({ status: "CANCELLED" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/reservations/1/cancel"),
+      expect.objectContaining({
+        method: "PATCH",
+        credentials: "include",
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-abc" }),
+      }),
+    );
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
   });
 });
 
@@ -183,9 +205,8 @@ describe("api service - non-OK HTTP errors", () => {
   });
 });
 
-describe("api service - Authorization header", () => {
-  it("attaches Authorization when a token is present in localStorage", async () => {
-    localStorage.setItem("token", "abc");
+describe("api service - credentials", () => {
+  it("sends credentials: 'include' on GET requests", async () => {
     const fetchMock = mockFetchResolved();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -193,26 +214,84 @@ describe("api service - Authorization header", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/lodgings"),
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: "Bearer abc" }),
-      })
+      expect.objectContaining({ credentials: "include" })
     );
   });
 
-  it("does not attach Authorization when there is no token", async () => {
+  it("sends credentials: 'include' on POST/PUT/DELETE requests", async () => {
+    const fetchMock = mockFetchResolved();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await post("/lodgings", { name: "Test" });
+    await put("/lodgings/1", { name: "Test" });
+    await del("/lodgings/1");
+
+    for (const [, config] of fetchMock.mock.calls) {
+      expect(config.credentials).toBe("include");
+    }
+  });
+});
+
+describe("api service - getCsrfToken", () => {
+  it("reads and URL-decodes the XSRF-TOKEN cookie value", () => {
+    document.cookie = "XSRF-TOKEN=abc%2Bdef%3Dghi; path=/";
+
+    expect(getCsrfToken()).toBe("abc+def=ghi");
+  });
+
+  it("returns null when the XSRF-TOKEN cookie is absent", () => {
+    expect(getCsrfToken()).toBeNull();
+  });
+
+  it("finds XSRF-TOKEN among multiple cookies", () => {
+    document.cookie = "other=value; path=/";
+    document.cookie = "XSRF-TOKEN=mytoken; path=/";
+
+    expect(getCsrfToken()).toBe("mytoken");
+  });
+});
+
+describe("api service - X-XSRF-TOKEN header", () => {
+  it("attaches X-XSRF-TOKEN on POST/PUT/DELETE from the XSRF-TOKEN cookie", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+    const fetchMock = mockFetchResolved();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await post("/lodgings", { name: "Test" });
+    await put("/lodgings/1", { name: "Test" });
+    await del("/lodgings/1");
+
+    for (const [, config] of fetchMock.mock.calls) {
+      expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-abc" });
+    }
+  });
+
+  it("does not attach X-XSRF-TOKEN on GET requests", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
     const fetchMock = mockFetchResolved();
     vi.stubGlobal("fetch", fetchMock);
 
     await get("/lodgings");
 
     const [, config] = fetchMock.mock.calls[0];
-    expect(config.headers).not.toHaveProperty("Authorization");
+    expect(config.headers).not.toHaveProperty("X-XSRF-TOKEN");
+  });
+
+  it("never sets an Authorization header", async () => {
+    const fetchMock = mockFetchResolved();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await get("/lodgings");
+    await post("/lodgings", { name: "Test" });
+
+    for (const [, config] of fetchMock.mock.calls) {
+      expect(config.headers).not.toHaveProperty("Authorization");
+    }
   });
 });
 
 describe("api service - 401 unauthorized", () => {
-  it("dispatches auth:unauthorized and rejects with 'Sesión expirada' when a token was sent", async () => {
-    localStorage.setItem("token", "abc");
+  it("dispatches auth:unauthorized once for a protected API 401", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -227,7 +306,24 @@ describe("api service - 401 unauthorized", () => {
     window.removeEventListener("auth:unauthorized", eventSpy);
   });
 
-  it("rejects with the real backend error message and does NOT dispatch auth:unauthorized when no token was sent (e.g. failed login)", async () => {
+  it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: "No autenticado" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const eventSpy = vi.fn();
+    window.addEventListener("auth:unauthorized", eventSpy);
+
+    await expect(get("/auth/me")).rejects.toThrow("No autenticado");
+    expect(eventSpy).not.toHaveBeenCalled();
+
+    window.removeEventListener("auth:unauthorized", eventSpy);
+  });
+
+  it("rejects with the real backend error message and does NOT dispatch auth:unauthorized for failed login", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 401,

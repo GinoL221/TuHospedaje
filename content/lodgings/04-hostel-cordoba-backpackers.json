@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 4,
+  "name": "Hostel Córdoba Backpackers",
+  "category": "hostel",
+  "location": {
+    "city": "Córdoba",
+    "country": "Argentina"
+  },
+  "capacity": 8,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hostel económico, limpio y social para viajeros jóvenes, grupos y mochileros, con capacidad para hasta ocho huéspedes por unidad representada. Debe sentirse accesible, cuidado y preparado para el uso intensivo; sin parecer un hotel boutique, un alojamiento precario ni un interior improvisado.",
+    "architecture": "Casa urbana reciclada de dos plantas. Fachada de revoque blanco cálido. Aberturas originales de madera restauradas en azul profundo. Acceso directo desde una calle urbana de Córdoba. Galería interior conectada con un patio. Dormitorios compartidos distribuidos en ambas plantas. Cocina y comedor comunitarios en planta baja. Baños compartidos agrupados para facilitar mantenimiento. Patio con parrilla y áreas de encuentro. Circulaciones claras y bien iluminadas. Guardado seguro para equipaje. Instalaciones visibles únicamente cuando faciliten mantenimiento y orden. Sin acabados de lujo, mobiliario descartable ni estética de vivienda ocupada improvisadamente.",
+    "palette": [
+      "blanco cálido",
+      "terracota",
+      "azul profundo",
+      "verde salvia",
+      "madera clara",
+      "negro mate",
+      "gris cemento como tono complementario"
+    ],
+    "floors": "Acceso y áreas comunes: mosaico granítico restaurado. Dormitorios: piso vinílico resistente tono madera clara. Cocina y comedor: porcelanato gris mate. Baños: porcelanato antideslizante gris claro. Duchas: cerámica blanca con detalles azul profundo. Patio y galería: baldosas terracota antideslizantes. Escalera: madera restaurada con bandas antideslizantes. Sin alfombras, pisos delicados ni superficies difíciles de limpiar.",
+    "wallsAndFinishes": "Muros generales en blanco cálido. Paños terracota y azul profundo para identificar sectores. Dormitorios con zócalos lavables. Cocina con frente de cerámica blanca y verde salvia. Baños revestidos hasta altura funcional. Patio con revoque exterior y ladrillo restaurado puntual. Gráfica informativa clara y contenida. Sin grafitis decorativos forzados, frases motivacionales, murales turísticos ni acabados deteriorados artificialmente.",
+    "joinery": "Ventanas originales de madera restauradas en azul profundo. Postigos y hojas operables para ventilación. Puertas interiores lisas de madera clara. Puertas de baños resistentes a humedad. Lockers individuales metálicos en negro mate. Muebles de cocina laminados en madera clara y salvia. Mamparas o divisores resistentes con perfilería negra. Herrajes negros satinados de uso intensivo. Cortinas simples y lavables.",
+    "furniture": "Cuchetas metálicas negras con estructura firme. Escaleras y barandas integradas. Cortinas individuales en cada cama. Luz, toma eléctrica y pequeño estante por huésped. Lockers individuales para ocho personas. Mesas comunitarias de madera clara. Sillas apilables resistentes. Cocina equipada con sectores de guardado identificados. Sofás modulares con fundas lavables. Bancos y mesas exteriores junto a la parrilla. Sin muebles de lujo, pallets improvisados ni colchones apoyados directamente sobre el piso.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz individual de lectura en cada cama. Iluminación general uniforme en dormitorios. Luz lineal bajo alacenas de cocina. Plafones resistentes a humedad en baños. Colgantes simples sobre mesas comunitarias. Balizas en escalera y circulaciones. Apliques cálidos en patio y galería. Sin tiras RGB, neón decorativo ni iluminación oscura de bar.",
+    "continuityElements": [
+      "Casa urbana reciclada de dos plantas.",
+      "Revoque blanco cálido.",
+      "Ventanas de madera azul profundo.",
+      "Terracota en pisos y sectores comunes.",
+      "Verde salvia en cocina y textiles.",
+      "Madera clara y metal negro en mobiliario.",
+      "Equipamiento durable, lavable y ordenado.",
+      "Relación continua entre dormitorios, cocina, galería, patio y parrilla."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada de la casa reciclada",
+        "brief": "Mostrar la fachada de la casa reciclada con ventanas azules."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio compartido",
+        "brief": "Mostrar el dormitorio compartido con cuchetas, cortinas y lockers para ocho personas."
+      },
+      {
+        "order": 3,
+        "title": "Baño compartido",
+        "brief": "Mostrar el baño compartido limpio, resistente y bien iluminado."
+      },
+      {
+        "order": 4,
+        "title": "Cocina y comedor comunitarios",
+        "brief": "Mostrar la cocina y el comedor comunitarios completamente equipados."
+      },
+      {
+        "order": 5,
+        "title": "Patio y galería",
+        "brief": "Mostrar el patio y la galería sin personas, con mesas y parrilla."
+      }
+    ]
+  }
+}

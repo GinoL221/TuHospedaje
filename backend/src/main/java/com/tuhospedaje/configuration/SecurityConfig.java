@@ -8,11 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -29,12 +32,36 @@ public class SecurityConfig {
     private final CorsProperties corsProperties;
 
     @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register")
+                        // Without this, CsrfConfigurer defaults to a CsrfAuthenticationStrategy that
+                        // clears and regenerates the XSRF-TOKEN cookie every time SessionManagementFilter
+                        // sees a newly-authenticated request. That guard exists to prevent session
+                        // fixation, but this app is stateless (SessionCreationPolicy.STATELESS) — there is
+                        // no HttpSession to remember "already handled", so SessionManagementFilter reruns
+                        // it on every single authenticated request, not just at login. That rotation races
+                        // against concurrent requests firing right after login (e.g. the SPA's parallel
+                        // categories/lodgings/favorites calls on the home page), so whichever rotation
+                        // lands last in the browser can leave the cookie out of sync with the
+                        // X-XSRF-TOKEN header the frontend already read, causing sporadic 403s on the next
+                        // unsafe request (logout). A null strategy is correct here: there is no session to
+                        // fixate against in a stateless app.
+                        .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy())
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/csrf").authenticated()
+                        .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/features/**").permitAll()
@@ -43,15 +70,24 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions
-                        // /api/reservations/** returns 401 for unauthenticated requests.
+                        // /api/reservations/** and /api/auth/me return 401 for unauthenticated
+                        // requests (Spec Requirement 7: /me must 401, not the generic 403).
                         // All other protected endpoints return 403 to match test expectations.
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
-                                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/reservations/**")
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/reservations/**")
+                        )
+                        .defaultAuthenticationEntryPointFor(
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/auth/me")
+                        )
+                        .defaultAuthenticationEntryPointFor(
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/auth/csrf")
                         )
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.FORBIDDEN),
-                                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/**")
+                                PathPatternRequestMatcher.withDefaults().matcher("/**")
                         )
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -64,7 +100,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(corsProperties.allowedOrigins());
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

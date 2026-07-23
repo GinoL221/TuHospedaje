@@ -14,12 +14,12 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -75,7 +75,7 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build();
         testUser = userRepository.save(testUser);
-        userAuthHeader = "Bearer " + jwtService.generateToken(testUser);
+        userAuthHeader = jwtService.generateToken(testUser);
 
         testLodging = new Lodging();
         testLodging.setName("Hostel Oasis");
@@ -110,8 +110,11 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
         request.setScore(5);
         request.setComment("Excelente lugar!");
 
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -130,8 +133,11 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
         firstRequest.setScore(4);
         firstRequest.setComment("Muy bueno");
 
+        Cookie firstCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(firstCsrfCookie)
+                        .header("X-XSRF-TOKEN", firstCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(firstRequest)))
                 .andExpect(status().isCreated());
@@ -142,8 +148,11 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
         secondRequest.setScore(2);
         secondRequest.setComment("Cambió el servicio, ahora es malo");
 
+        Cookie secondCsrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
-                        .header(HttpHeaders.AUTHORIZATION, userAuthHeader)
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(secondCsrfCookie)
+                        .header("X-XSRF-TOKEN", secondCsrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(secondRequest)))
                 .andExpect(status().isCreated());

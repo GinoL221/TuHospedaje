@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 28,
+  "name": "Hostel Patagónico",
+  "category": "hostel",
+  "location": {
+    "city": "Bariloche",
+    "country": "Argentina"
+  },
+  "capacity": 10,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Hostel técnico de aventura para senderistas, esquiadores y viajeros activos, con capacidad para hasta diez huéspedes por dormitorio representado. Debe sentirse cálido y preparado para equipamiento húmedo o voluminoso; sin parecer una cabaña turística, una tienda deportiva, una exhibición de marcas ni un depósito desordenado.",
+    "architecture": "Edificio urbano compacto de tres pisos. Basamento revestido en piedra gris. Pisos superiores combinando madera oscura y metal grafito. Cubierta inclinada preparada para nieve y lluvia. Acceso protegido mediante un vestíbulo cortaviento. Dormitorios compartidos distribuidos en niveles superiores. Cocina y comedor comunitarios en el nivel social. Baños agrupados para uso intensivo. Depósito técnico cercano al acceso. Sectores ventilados para secado de ropa y botas. Terraza exterior protegida. Circulaciones dimensionadas para mochilas y equipo. Instalaciones resistentes y fáciles de mantener. Sin logos deportivos, equipos usados como decoración ni estética de chalet.",
+    "palette": [
+      "grafito",
+      "gris piedra",
+      "lenga tostada",
+      "verde pino",
+      "naranja quemado",
+      "beige lana",
+      "negro mate como tono complementario"
+    ],
+    "floors": "Acceso y depósito técnico: caucho antideslizante. Áreas comunes: porcelanato gris piedra. Dormitorios: piso vinílico resistente tono lenga. Cocina y comedor: porcelanato grafito mate. Baños: porcelanato gris antideslizante. Duchas: piedra texturada oscura. Terraza: deck técnico resistente a humedad y heladas. Escaleras: superficie de alto tránsito con bandas antideslizantes.",
+    "wallsAndFinishes": "Basamento interior: piedra gris y revoque cálido. Dormitorios: muros gris claro con zócalos lavables. Paños de lenga tostada en áreas comunes. Cocina con frente verde pino. Baños con porcelanato gris y ducha oscura. Depósito con paneles técnicos perforados y numerados. Señalética naranja quemado utilizada con moderación. Sin mapas de pistas como murales, fotografías deportivas, marcas ni equipamiento colgado como escenografía.",
+    "joinery": "Ventanas de aluminio grafito con doble vidrio. Puerta exterior aislada y protegida. Puertas interiores resistentes a golpes y humedad. Lockers grandes de metal grafito. Módulos ventilados para botas y ropa técnica. Muebles de cocina en lenga y verde pino. Mamparas resistentes con perfilería negra. Herrajes negros satinados. Cortinas térmicas en gris y beige.",
+    "furniture": "Cuchetas metálicas grafito con estructura reforzada. Cortina, luz, toma y estante por cama. Lockers amplios para diez huéspedes. Bancos para colocarse botas. Mesas comunitarias de lenga tostada. Sillas resistentes y apilables. Cocina equipada para grupos. Sofás modulares con fundas lavables. Estanterías técnicas claramente organizadas. Mobiliario exterior bajo y resistente. Sin pallets, muebles de troncos ni acumulación visible de esquíes y mochilas.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz individual de lectura en cada cama. Iluminación uniforme en dormitorios. Luz técnica clara en depósito y secado. Iluminación lineal bajo alacenas. Plafones resistentes a humedad en baños. Colgantes sobrios sobre mesas comunitarias. Balizas en escaleras, acceso y terraza. Sin luces de colores, estética de tienda deportiva ni ambientes oscuros.",
+    "continuityElements": [
+      "Basamento de piedra gris.",
+      "Madera oscura y metal grafito en niveles superiores.",
+      "Cubierta preparada para nieve y lluvia.",
+      "Lenga tostada en mobiliario y áreas comunes.",
+      "Verde pino y naranja quemado como acentos.",
+      "Equipamiento durable para diez huéspedes.",
+      "Guardado técnico ventilado y ordenado.",
+      "Conexión funcional entre acceso, depósito, áreas comunes y terraza."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada urbana y acceso protegido",
+        "brief": "Mostrar la fachada urbana con acceso protegido, basamento de piedra y pisos superiores oscuros."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio compartido",
+        "brief": "Mostrar el dormitorio compartido con cuchetas y lockers grandes para diez huéspedes."
+      },
+      {
+        "order": 3,
+        "title": "Baño compartido",
+        "brief": "Mostrar el baño compartido preparado para uso intensivo."
+      },
+      {
+        "order": 4,
+        "title": "Cocina y comedor comunitarios",
+        "brief": "Mostrar la cocina y el comedor comunitarios con mobiliario de lenga."
+      },
+      {
+        "order": 5,
+        "title": "Depósito técnico y terraza",
+        "brief": "Mostrar el depósito de esquíes y equipamiento conectado con la terraza, limpio y ordenado."
+      }
+    ]
+  }
+}

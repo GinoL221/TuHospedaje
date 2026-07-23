@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 3,
+  "name": "Departamento Palermo Soho",
+  "category": "apartment",
+  "location": {
+    "city": "Buenos Aires",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Departamento urbano de categoría media-alta para hasta cuatro personas, ubicado en Palermo Soho. Debe sentirse contemporáneo, habitable y con personalidad barrial; sin parecer un showroom, un loft industrial exagerado ni una residencia de lujo artificial.",
+    "architecture": "Departamento dentro de un edificio residencial de seis pisos. Fachada contemporánea integrada a una calle arbolada. Balcones corridos con barandas metálicas negras. Grandes aberturas hacia living y dormitorio principal. Planta compacta con estar, comedor y cocina integrados. Dos dormitorios claramente separados del área social. Balcón equipado como expansión cotidiana. Hormigón visto utilizado únicamente en sectores controlados. Buena iluminación y ventilación natural. Equipos e instalaciones integrados sin protagonismo. Sin doble altura, estructura fabril, ladrillo expuesto dominante ni escala de penthouse.",
+    "palette": [
+      "blanco roto",
+      "gris hormigón",
+      "terracota",
+      "roble natural",
+      "verde oliva",
+      "negro mate",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Living, comedor y dormitorios: madera de ingeniería tono roble. Cocina: porcelanato gris cálido de gran formato. Baños: porcelanato beige antideslizante. Ducha: piezas terracota mate. Balcón: porcelanato exterior gris. Acceso: superficie mineral resistente al uso diario. Sin mármol brillante, cemento deteriorado ni pisos industriales oscuros.",
+    "wallsAndFinishes": "Muros generales en blanco roto. Paño puntual de hormigón visto en living. Cabeceros de roble en dormitorios. Cocina con frente de cerámica terracota. Baños con porcelanato beige y revestimiento terracota en ducha. Paneles o textiles verde oliva como acento. Terminaciones mate y fáciles de mantener. Sin grafitis, carteles luminosos, tuberías expuestas ni decoración industrial temática.",
+    "joinery": "Ventanas de aluminio negro con doble vidrio. Puertas corredizas hacia el balcón. Puertas interiores lisas en roble claro. Placares empotrados con frentes del mismo tono. Muebles de cocina integrados en roble y gris. Mamparas transparentes con perfilería negra. Herrajes negros satinados. Cortinas de lino beige y sistemas blackout en dormitorios.",
+    "furniture": "Dormitorio principal con cama queen. Segundo dormitorio flexible para dos huéspedes. Cabeceros bajos de roble. Mesas de luz suspendidas. Sofá compacto beige. Sillón individual verde oliva. Mesa de comedor para cuatro personas. Cocina integrada con barra o isla pequeña. Escritorio liviano incorporado sin convertir el espacio en oficina. Mobiliario de balcón para cuatro personas. Sin muebles industriales pesados, cuero negro dominante ni piezas decorativas sobredimensionadas.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz natural como protagonista durante el día. Iluminación indirecta en living y cabeceros. Apliques negros junto a las camas. Colgante sobrio sobre la mesa de comedor. Luz lineal bajo alacenas. Rieles negros utilizados con moderación. Balcón iluminado mediante apliques cálidos. Sin neón, lámparas de fábrica exageradas ni luz blanca fría dominante.",
+    "continuityElements": [
+      "Blanco roto en los muros principales.",
+      "Roble natural en pisos, puertas y mobiliario fijo.",
+      "Carpinterías y detalles negro mate.",
+      "Terracota en cocina, baño y objetos puntuales.",
+      "Verde oliva en textiles y vegetación.",
+      "Hormigón visto utilizado de manera controlada.",
+      "Mobiliario contemporáneo compacto para cuatro personas.",
+      "Relación constante entre living, cocina, balcón y calle arbolada."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Living conectado con el balcón",
+        "brief": "Mostrar roble, hormigón y textiles oliva."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal",
+        "brief": "Mostrar el cabecero de roble y la abertura urbana."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar la ducha revestida en terracota mate."
+      },
+      {
+        "order": 4,
+        "title": "Cocina y comedor integrados",
+        "brief": "Mostrar los espacios preparados para cuatro personas."
+      },
+      {
+        "order": 5,
+        "title": "Balcón equipado",
+        "brief": "Mostrar la vista hacia una calle arbolada de Palermo Soho."
+      }
+    ]
+  }
+}

@@ -169,9 +169,9 @@ El método público `aggregateByLodgingIds` incluye un guard para colecciones va
 
 Se eligió `@Lock(PESSIMISTIC_WRITE)` para el chequeo de solapamiento en lugar de confiar únicamente en `@Version` (optimistic locking). El campo `@Version` protege actualizaciones concurrentes sobre una misma fila existente, pero dos INSERTs de nuevas reservas nunca conflictúan en versión. Solo el lock pesimista serializa correctamente el check-then-insert.
 
-### ADR-2: Mantener OSIV Habilitado
+### ADR-2: OSIV Deshabilitado
 
-`spring.jpa.open-in-view=true` se declara explícitamente como decisión consciente. La alternativa (deshabilitar OSIV + auditar todos los paths de mapeo de DTOs para asegurar que las colecciones se cargan dentro de la transacción) representa un cambio de mayor alcance. Las fronteras `@Transactional(readOnly=true)` de PR-1 resuelven el problema operativamente. La desactivación de OSIV queda como refactor futuro.
+`spring.jpa.open-in-view=false`. El refactor futuro mencionado originalmente en este ADR ya se completó: una auditoría confirmó que todos los controllers devuelven DTOs (nunca entidades) y que todo el mapeo Entity→DTO ocurre dentro de fronteras `@Transactional`/`@Transactional(readOnly=true)`, antes de que la transacción cierre — incluyendo el acceso a colecciones lazy (`Lodging.features`, `Lodging.policies`, `User.favorites`, etc.), cubierto por `LazyFetchIntegrationTest`. Con esas garantías ya en código, mantener OSIV habilitado solo agregaba el costo conocido del anti-patrón (conexión de DB retenida durante toda la request, riesgo de N+1 silencioso) sin necesidad real.
 
 ### ADR-3: HTTP 404 en lugar de 403 para IDOR
 

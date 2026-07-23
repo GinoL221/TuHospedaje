@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 12,
+  "name": "Cabaña Los Cipreses",
+  "category": "cabin",
+  "location": {
+    "city": "Villa La Angostura",
+    "country": "Argentina"
+  },
+  "capacity": 6,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Cabaña patagónica superior para familias o grupos de hasta seis personas, ubicada en un bosque de Villa La Angostura, con relación parcial hacia el lago Correntoso. Debe sentirse luminosa, refinada y preparada para el clima húmedo; diferenciándose del carácter más tradicional de Los Arrayanes.",
+    "architecture": "Cabaña de una planta principal más altillo. Cubierta inclinada de pendiente pronunciada. Fachadas revestidas en ciprés tostado. Basamento y chimenea de piedra verde grisácea. Frente vidriado orientado hacia el bosque y parcialmente hacia el lago. Aleros profundos para lluvia y nieve. Terraza elevada para reducir la intervención sobre el terreno. Pasarela elevada conectando acceso y estacionamiento. Estar de doble altura bajo la cubierta. Altillo destinado a dormitorio secundario o espacio familiar. Jacuzzi exterior protegido entre los árboles. Guardado ventilado para esquíes, botas y ropa húmeda. Instalaciones técnicas ocultas. Sin troncos torneados, piedra artificial, balcones ornamentales ni lujo escenográfico.",
+    "palette": [
+      "ciprés tostado",
+      "piedra verde grisácea",
+      "grafito",
+      "beige lana",
+      "verde helecho",
+      "cobre apagado",
+      "gris niebla como tono complementario"
+    ],
+    "floors": "Acceso y guardado técnico: piedra verde grisácea antideslizante. Estar, cocina y dormitorios: madera natural sellada tono ciprés. Altillo: madera del mismo tono. Baños: porcelanato mineral gris cálido. Ducha: mosaico verde mineral mate. Terraza y pasarela: deck de madera tratada. Entorno del jacuzzi: piedra oscura antideslizante. Sin superficies pulidas que resulten peligrosas con lluvia o nieve.",
+    "wallsAndFinishes": "Interior: tablas de ciprés combinadas con revoque beige mate. Estar: chimenea revestida en piedra verde grisácea. Dormitorios: paneles bajos de madera y textiles de lana. Cocina: piedra sinterizada gris y muebles de madera. Baños: microcemento claro y mosaico verde mineral. Exterior: ciprés tratado, piedra regional y chapa grafito. Materiales preparados para humedad constante. Sin barnices brillantes, madera anaranjada ni decoración alpina.",
+    "joinery": "Ventanas de aluminio grafito con ruptura de puente térmico. Doble vidrio apto para humedad y bajas temperaturas. Gran frente vidriado en estar y dormitorio principal. Puerta de acceso revestida en ciprés. Puertas interiores lisas de madera. Placares ventilados con sectores para equipamiento invernal. Mamparas transparentes con perfilería grafito. Herrajes de cobre oscuro. Cortinas térmicas en beige lana y verde helecho.",
+    "furniture": "Dormitorio principal con cama king orientada hacia el bosque. Dormitorio secundario o altillo preparado para cuatro huéspedes. Cabeceros bajos de ciprés. Mesas de luz suspendidas. Sofá amplio en beige lana. Sillones compactos verde helecho. Mesa familiar para seis personas. Cocina integrada con isla compacta. Banco de acceso con guardado para calzado. Mobiliario exterior resistente al clima húmedo. Sin muebles de troncos, cuero rústico dominante ni piezas sobredimensionadas.",
+    "lighting": "Temperatura cálida de 2700 K. Luz natural aprovechada mediante el frente vidriado. Iluminación indirecta siguiendo la pendiente de la cubierta. Apliques de cobre apagado junto a las camas. Colgantes sobrios sobre mesa e isla. Luz integrada bajo alacenas y dentro de placares. Balizas bajas en pasarela y terraza. Jacuzzi iluminado en blanco cálido. Sin guirnaldas, luces de colores ni contaminación lumínica del bosque.",
+    "continuityElements": [
+      "Cubierta inclinada pronunciada y volumen con altillo.",
+      "Ciprés tostado en fachadas, pisos y mobiliario.",
+      "Piedra verde grisácea en basamento, chimenea y baño.",
+      "Chapa y carpinterías grafito.",
+      "Beige lana en cabeceros, cortinas y tapizados.",
+      "Verde helecho como acento.",
+      "Cobre apagado en herrajes y luminarias.",
+      "Terraza y pasarela elevadas conectando bosque, jacuzzi y vista parcial al lago."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Exterior entre cipreses",
+        "brief": "Mostrar la pasarela elevada, la terraza y la cubierta pronunciada."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio principal vidriado",
+        "brief": "Mostrar el dormitorio orientado hacia el bosque."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado",
+        "brief": "Mostrar la ducha de mosaico verde mineral."
+      },
+      {
+        "order": 4,
+        "title": "Estar y cocina",
+        "brief": "Mostrar los espacios bajo la cubierta inclinada, con chimenea de piedra."
+      },
+      {
+        "order": 5,
+        "title": "Jacuzzi exterior entre árboles",
+        "brief": "Mostrar la vista parcial hacia el lago Correntoso."
+      }
+    ]
+  }
+}

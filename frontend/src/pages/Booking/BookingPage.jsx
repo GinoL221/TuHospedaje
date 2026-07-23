@@ -34,8 +34,9 @@ export default function BookingPage() {
     get("/reservations/my")
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          const last = data[data.length - 1];
-          if (last.guestPhone) setGuestPhone(last.guestPhone);
+          // data is sorted checkIn DESC — first element is the most recent reservation
+          const latest = data[0];
+          if (latest.guestPhone) setGuestPhone(latest.guestPhone);
         }
       })
       .catch(() => {});

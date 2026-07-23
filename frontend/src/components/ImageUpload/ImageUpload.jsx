@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getCsrfToken } from "../../services/api";
 
 export default function ImageUpload({ urls, onUrlsChange }) {
   const [uploading, setUploading] = useState(false);
@@ -14,7 +15,8 @@ export default function ImageUpload({ urls, onUrlsChange }) {
       formData.append("file", file);
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include",
+        headers: { "X-XSRF-TOKEN": getCsrfToken() },
         body: formData,
       });
       if (!res.ok) {

@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 13,
+  "name": "Departamento Nueva Córdoba",
+  "category": "apartment",
+  "location": {
+    "city": "Córdoba",
+    "country": "Argentina"
+  },
+  "capacity": 3,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Departamento funcional de gama media para hasta tres personas, orientado a estudiantes, parejas y estadías prolongadas en Nueva Córdoba. Debe sentirse luminoso, actual y eficiente; sin acabados premium, caricatura juvenil ni apariencia de showroom.",
+    "architecture": "Unidad de un dormitorio dentro de un edificio contemporáneo de nueve pisos. Fachada residencial de revoque claro y balcones regulares. Carpinterías grafito. Planta compacta con cocina, comedor y living integrados. Dormitorio independiente. Sofá cama para el tercer huésped. Balcón urbano para dos personas. Ventilación e iluminación natural desde fachada y contrafrente. Guardado integrado para estadías prolongadas. Equipos e instalaciones resueltos de forma discreta. Sin doble altura, estética industrial, terraza de lujo ni recursos arquitectónicos innecesarios.",
+    "palette": [
+      "blanco cálido",
+      "gris claro",
+      "roble natural",
+      "azul grisáceo",
+      "mostaza apagado",
+      "grafito",
+      "beige como tono complementario"
+    ],
+    "floors": "Living, comedor y dormitorio: piso vinílico de buena calidad tono roble. Cocina: porcelanato gris claro. Baño: porcelanato gris antideslizante. Ducha: cerámica blanca mate. Balcón: porcelanato exterior gris. Acceso: superficie resistente al uso cotidiano. Sin mármol, madera premium ni cemento industrial sin terminar.",
+    "wallsAndFinishes": "Muros generales en blanco cálido. Paño gris claro detrás del sofá. Cabecero de roble en dormitorio. Cocina con frente de cerámica blanca o gris. Baño con cerámica blanca y sector gris en ducha. Azul grisáceo y mostaza utilizados solo en textiles y objetos. Terminaciones lavables y de mantenimiento simple. Sin murales juveniles, frases decorativas, grafitis ni revestimientos costosos.",
+    "joinery": "Ventanas de aluminio grafito con vidrio de buena aislación. Puerta corrediza hacia el balcón. Puertas interiores lisas en blanco o roble claro. Placard empotrado de piso a techo. Muebles de cocina laminados en blanco y roble. Mampara transparente con perfilería grafito. Herrajes negros satinados. Cortinas livianas beige y blackout en dormitorio.",
+    "furniture": "Dormitorio con cama queen. Cabecero de roble con mesas de luz compactas. Escritorio pequeño integrado para estudio o trabajo. Sofá cama para el tercer huésped. Mesa redonda extensible para tres personas. Sillas livianas y apilables. Cocina lineal completamente equipada. Mueble de televisión y guardado de líneas simples. Banco o perchero junto al acceso. Mobiliario de balcón para dos personas. Sin muebles premium, piezas de diseño ostentosas ni estética de dormitorio estudiantil improvisado.",
+    "lighting": "Temperatura cálida entre 2700 y 3000 K. Luz natural aprovechada durante el día. Plafones simples y uniformes. Apliques compactos junto a la cama. Colgante sobrio sobre la mesa. Iluminación lineal bajo alacenas. Lámpara de trabajo en el escritorio. Aplique cálido en el balcón. Sin neón, tiras RGB, lámparas industriales exageradas ni luz blanca fría dominante.",
+    "continuityElements": [
+      "Blanco cálido y gris claro como base.",
+      "Roble natural en pisos, cabecero y cocina.",
+      "Carpinterías y detalles grafito.",
+      "Azul grisáceo en textiles.",
+      "Mostaza apagado como acento puntual.",
+      "Mobiliario compacto y multifuncional.",
+      "Materiales durables de costo medio.",
+      "Relación cotidiana entre living, cocina, escritorio y balcón urbano."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Fachada residencial y balcón",
+        "brief": "Mostrar la fachada residencial y el balcón del edificio de nueve pisos."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio y escritorio",
+        "brief": "Mostrar la cama queen, el cabecero de roble y el escritorio pequeño."
+      },
+      {
+        "order": 3,
+        "title": "Baño funcional",
+        "brief": "Mostrar el baño funcional en blanco y gris."
+      },
+      {
+        "order": 4,
+        "title": "Living, comedor y cocina",
+        "brief": "Mostrar los espacios integrados y el sofá cama para el tercer huésped."
+      },
+      {
+        "order": 5,
+        "title": "Balcón urbano",
+        "brief": "Mostrar el mobiliario para dos personas y la vista hacia una calle arbolada de Nueva Córdoba."
+      }
+    ]
+  }
+}

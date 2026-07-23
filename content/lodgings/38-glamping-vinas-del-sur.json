@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 38,
+  "name": "Glamping Viñas del Sur",
+  "category": "glamping",
+  "location": {
+    "city": "Luján de Cuyo",
+    "country": "Argentina"
+  },
+  "capacity": 2,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Glamping de lujo para parejas, integrado en un viñedo orgánico productivo de Luján de Cuyo. Debe vincular alojamiento, gastronomía, paisaje y degustaciones privadas con una identidad mendocina refinada; sin parecer un hotel urbano, una bodega industrial ni un domo futurista. No debe utilizar barricas, uvas artificiales ni decoración vitivinícola literal.",
+    "architecture": "Domo geodésico individual para dos personas. Implantación entre hileras de viñedos productivos. Cubierta textil beige arena. Estructura de bronce oscuro o grafito cálido. Frente panorámico orientado hacia los Andes. Plataforma elevada de baja altura. Terraza privada conectada mediante deck. Baño privado integrado en un volumen compacto. Pérgola independiente para desayunos y degustaciones. Piscina compartida revestida en piedra. Senderos discretos entre domos, viñedos y áreas comunes. Protección solar mediante pérgolas y vegetación. Instalaciones técnicas ocultas. Sin formas espaciales, iluminación futurista, arquitectura fabril ni elementos decorativos hechos con barricas.",
+    "palette": [
+      "beige arena",
+      "terracota suave",
+      "nogal",
+      "verde vid",
+      "borgoña profundo",
+      "bronce envejecido",
+      "piedra caliza"
+    ],
+    "floors": "Interior del domo: madera natural tono nogal. Baño: microcemento arena antideslizante. Ducha: piedra caliza texturada. Terraza: deck de madera tratada. Pérgola: piedra clara y grava compactada. Piscina: piedra caliza atérmica. Senderos: suelo estabilizado y lajas. Sin superficies brillantes ni materiales industriales expuestos.",
+    "wallsAndFinishes": "Interior: cubierta textil beige arena con paneles bajos de nogal. Cabecero: listones de madera. Baño: microcemento claro y piedra caliza. Volumen sanitario exterior: madera oscura y revoque arena. Pérgola: estructura de madera con detalles de bronce. Sectores de guardado integrados. Sin etiquetas ampliadas, corchos, racimos, botellas o imágenes de viñedos usadas como decoración.",
+    "joinery": "Estructura geodésica en bronce oscuro. Frente panorámico con paños triangulares. Puerta de acceso de nogal y vidrio. Puerta del baño lisa. Muebles de guardado integrados. Mampara transparente con perfilería bronce. Herrajes de bronce envejecido. Cortinas de lino beige y verde vid.",
+    "furniture": "Cama king orientada hacia los Andes. Cabecero bajo de nogal. Mesas de luz suspendidas. Dos sillones compactos verde vid. Mesa pequeña para desayuno. Banco tapizado en borgoña profundo. Guardado cerrado para equipaje. Mobiliario exterior para dos personas. Mesa de degustación bajo la pérgola. Reposeras sobrias junto a la piscina. Sin muebles fabricados con barricas ni estética de wine bar.",
+    "lighting": "Temperatura cálida de 2700 K. Luz indirecta en la base del domo. Apliques de bronce junto a la cama. Colgante sobrio sobre la mesa. Iluminación baja en terraza y senderos. Pérgola iluminada de forma cálida y contenida. Piscina con luz blanca cálida. Atardecer y cielo nocturno como protagonistas. Sin lámparas hechas con botellas, luces borgoña, guirnaldas temáticas ni contaminación lumínica.",
+    "continuityElements": [
+      "Domo geodésico beige arena.",
+      "Estructura y detalles de bronce envejecido.",
+      "Nogal en pisos, cabecero y mobiliario.",
+      "Verde vid y borgoña profundo en textiles.",
+      "Piedra caliza en baño, pérgola y piscina.",
+      "Plataforma y terraza de madera.",
+      "Pérgola de degustación vinculada con el viñedo productivo.",
+      "Orientación constante hacia las hileras de vides y la cordillera de los Andes."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Domo entre viñedos",
+        "brief": "Mostrar el domo entre las hileras del viñedo orgánico."
+      },
+      {
+        "order": 2,
+        "title": "Cama king orientada hacia los Andes",
+        "brief": "Mostrar la cama king orientada hacia los Andes."
+      },
+      {
+        "order": 3,
+        "title": "Baño privado de piedra caliza",
+        "brief": "Mostrar el baño privado revestido en piedra caliza."
+      },
+      {
+        "order": 4,
+        "title": "Interior con desayuno y lounge",
+        "brief": "Mostrar el interior completo con rincón de desayuno y lounge."
+      },
+      {
+        "order": 5,
+        "title": "Pérgola de degustación y piscina",
+        "brief": "Mostrar la pérgola de degustación conectada visualmente con la piscina compartida."
+      }
+    ]
+  }
+}

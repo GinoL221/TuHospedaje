@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main, sprint-4]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: ./mvnw -B verify
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run coverage
+
+  e2e:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          # Named tuhospedaje_test (not just tuhospedaje) because the dev
+          # seed's chk_dev_seed_database_name guard requires a standalone
+          # "dev" or "test" segment in the database name.
+          MYSQL_DATABASE: tuhospedaje_test
+          MYSQL_USER: tuhospedaje
+          MYSQL_PASSWORD: tuhospedaje123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      # The seeded admin (db/dev/V1_9000__dev_demo_data.sql) requires its
+      # bcrypt hash as a Flyway placeholder — generated here so no secret
+      # needs to be stored for a fixed dev-only password.
+      - name: Generate dev admin bcrypt hash
+        id: admin-hash
+        run: |
+          python3 -m pip install --quiet bcrypt
+          echo "hash=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")" >> "$GITHUB_OUTPUT"
+
+      - name: Start backend (dev profile + demo seed)
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+          SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
+          DEV_ADMIN_PASSWORD_HASH: ${{ steps.admin-hash.outputs.hash }}
+          # application.properties hardcodes the DB name to "tuhospedaje";
+          # override it to match the service container's tuhospedaje_test.
+          SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/tuhospedaje_test
+        run: nohup ./mvnw -B spring-boot:run > ../backend.log 2>&1 &
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/api/lodgings > /dev/null && exit 0
+            sleep 3
+          done
+          echo "Backend never became ready:" >&2
+          tail -n 200 backend.log >&2
+          exit 1
+
+      - name: Install and start frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:8080/api
+        run: |
+          npm ci
+          nohup npm run dev -- --port 5173 --strictPort > ../frontend.log 2>&1 &
+
+      - name: Wait for frontend
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5173 > /dev/null && exit 0
+            sleep 2
+          done
+          echo "Frontend never became ready:" >&2
+          tail -n 200 frontend.log >&2
+          exit 1
+
+      # No regular user is seeded (only the admin) — auth.spec.js and
+      # reservations.spec.js need one to already exist via TEST_USER_EMAIL.
+      - name: Register e2e test user
+        id: test-user
+        run: |
+          EMAIL="e2e-ci-$(date +%s)@tuhospedaje.com"
+          curl -sf -X POST http://localhost:8080/api/auth/register \
+            -H "Content-Type: application/json" \
+            -d "{\"firstName\":\"E2E\",\"lastName\":\"Runner\",\"email\":\"$EMAIL\",\"password\":\"Test1234\"}" \
+            > /dev/null
+          echo "email=$EMAIL" >> "$GITHUB_OUTPUT"
+
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium firefox
+
+      - name: Run e2e tests
+        working-directory: e2e
+        env:
+          BASE_URL: http://localhost:5173
+          TEST_ADMIN_EMAIL: admin@tuhospedaje.com
+          TEST_ADMIN_PASSWORD: Admin1
+          TEST_USER_EMAIL: ${{ steps.test-user.outputs.email }}
+          TEST_USER_PASSWORD: Test1234
+          TEST_USER_NAME: E2E
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7

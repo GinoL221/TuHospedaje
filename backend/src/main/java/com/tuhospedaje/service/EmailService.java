@@ -8,4 +8,6 @@ public interface EmailService {
     void sendWelcomeEmail(RegisterRequest request);
 
     void sendReservationConfirmation(ReservationResponse reservation);
+
+    void sendReservationCancellation(ReservationResponse reservation);
 }

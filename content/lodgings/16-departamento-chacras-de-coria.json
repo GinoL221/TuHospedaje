@@ -1,0 +1,69 @@
+{
+  "$schema": "./lodging-identity.schema.json",
+  "lodgingId": 16,
+  "name": "Departamento Chacras de Coria",
+  "category": "apartment",
+  "location": {
+    "city": "Mendoza",
+    "country": "Argentina"
+  },
+  "capacity": 4,
+  "version": 1,
+  "status": "approved",
+  "source": "recovered-from-approved-context",
+  "identity": {
+    "positioning": "Apart-hotel superior para hasta cuatro personas, ubicado en un entorno residencial y arbolado de Chacras de Coria. Debe combinar independencia, servicio y diseño mendocino contemporáneo; sin parecer una bodega, una finca tematizada ni un resort.",
+    "architecture": "Complejo de baja altura compuesto por volúmenes de dos pisos. Implantación abierta hacia jardines interiores. Unidades con acceso independiente. Revoques color arena y basamentos de piedra caliza. Carpinterías de bronce oscuro. Terrazas privadas protegidas mediante pérgolas. Estar, comedor y cocina integrados en cada unidad. Dormitorios orientados hacia jardines o patios. Pabellón pequeño de recepción y servicios. Piscina compartida de escala contenida. Senderos peatonales y guardado discreto para bicicletas. Protección solar mediante aleros, pérgolas y vegetación. Instalaciones técnicas ocultas. Sin torre, arquitectura industrial de bodega, barricas decorativas ni infraestructura de resort.",
+    "palette": [
+      "arena",
+      "piedra caliza",
+      "roble tostado",
+      "verde oliva",
+      "terracota suave",
+      "bronce oscuro",
+      "beige lino como tono complementario"
+    ],
+    "floors": "Acceso y recepción: piedra caliza mate. Living, comedor y dormitorios: madera de ingeniería tono roble tostado. Cocina: porcelanato arena. Baños: porcelanato mineral claro antideslizante. Ducha: piezas terracota mate. Terrazas: piedra clara o porcelanato exterior antideslizante. Senderos: grava compactada y lajas. Piscina: piedra atérmica color arena.",
+    "wallsAndFinishes": "Interiores: revoque blanco cálido y arena. Living: panel puntual de roble. Dormitorios: cabeceros de madera y textiles oliva. Cocina: frente de cerámica terracota suave. Baños: porcelanato mineral y revestimiento terracota en ducha. Exterior: revoque arena, piedra caliza y madera tratada. Recepción: piedra, roble y superficies mate. Sin murales de viñedos, botellas, barricas ni decoración vitivinícola literal.",
+    "joinery": "Ventanas de aluminio bronce oscuro con doble vidrio. Puertas corredizas hacia terrazas privadas. Puertas de acceso enchapadas en roble tostado. Puertas interiores lisas del mismo tono. Placares integrados para estadías prolongadas. Muebles de cocina en roble y arena. Mamparas transparentes con perfilería bronce. Herrajes de bronce oscuro mate. Cortinas de lino beige y blackout oliva.",
+    "furniture": "Dormitorio principal con cama queen. Segundo dormitorio o configuración flexible para dos huéspedes. Cabeceros bajos de roble tostado. Mesas de luz suspendidas. Sofá cómodo en beige lino. Sillones compactos verde oliva. Mesa de comedor para cuatro personas. Cocina completa con barra pequeña. Mueble de guardado para estadías prolongadas. Mobiliario de terraza para cuatro. Reposeras sobrias junto a la piscina. Sin muebles rústicos de bodega, cuero pesado ni piezas de resort.",
+    "lighting": "Temperatura cálida de 2700 K. Luz natural controlada mediante pérgolas. Iluminación indirecta en living y cabeceros. Apliques de bronce junto a las camas. Colgantes sobrios sobre comedor y cocina. Luz lineal bajo alacenas. Balizas bajas en jardines y senderos. Piscina iluminada en blanco cálido. Sin faroles temáticos, guirnaldas permanentes ni iluminación de colores.",
+    "continuityElements": [
+      "Volúmenes bajos de dos pisos.",
+      "Revoque color arena y piedra caliza.",
+      "Roble tostado en pisos, puertas y mobiliario.",
+      "Carpinterías y herrajes de bronce oscuro.",
+      "Verde oliva en textiles y vegetación.",
+      "Terracota suave en cocina y baños.",
+      "Terrazas privadas protegidas mediante pérgolas.",
+      "Relación equilibrada entre unidades, jardines, recepción y piscina pequeña."
+    ],
+    "recommendedScenes": [
+      {
+        "order": 1,
+        "title": "Complejo bajo y jardines",
+        "brief": "Mostrar el complejo bajo, los jardines y el pabellón de recepción."
+      },
+      {
+        "order": 2,
+        "title": "Dormitorio y terraza privada",
+        "brief": "Mostrar el dormitorio conectado con una terraza privada bajo pérgola."
+      },
+      {
+        "order": 3,
+        "title": "Baño de acabado mineral",
+        "brief": "Mostrar el acabado mineral y la ducha revestida en terracota."
+      },
+      {
+        "order": 4,
+        "title": "Living, comedor y cocina",
+        "brief": "Mostrar los espacios integrados para cuatro huéspedes."
+      },
+      {
+        "order": 5,
+        "title": "Terraza y piscina compartida",
+        "brief": "Mostrar la terraza privada vinculada visualmente con la piscina compartida, con bicicletas en segundo plano."
+      }
+    ]
+  }
+}
