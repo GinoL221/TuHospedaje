@@ -12,6 +12,7 @@ const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
   "/auth/login",
   "/auth/register",
   "/auth/me",
+  "/auth/csrf",
 ]);
 
 // Reads the XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository
@@ -20,6 +21,13 @@ const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
 export function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+export async function bootstrapCsrf() {
+  await request("GET", "/auth/csrf");
+  if (!getCsrfToken()) {
+    throw new Error("CSRF token was not issued");
+  }
 }
 
 async function request(method, endpoint, data) {

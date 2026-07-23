@@ -12,9 +12,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,18 +32,35 @@ public class SecurityConfig {
     private final CorsProperties corsProperties;
 
     @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         http
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(requestHandler::handle)
+                        .csrfTokenRepository(csrfTokenRepository())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/register")
+                        // Without this, CsrfConfigurer defaults to a CsrfAuthenticationStrategy that
+                        // clears and regenerates the XSRF-TOKEN cookie every time SessionManagementFilter
+                        // sees a newly-authenticated request. That guard exists to prevent session
+                        // fixation, but this app is stateless (SessionCreationPolicy.STATELESS) — there is
+                        // no HttpSession to remember "already handled", so SessionManagementFilter reruns
+                        // it on every single authenticated request, not just at login. That rotation races
+                        // against concurrent requests firing right after login (e.g. the SPA's parallel
+                        // categories/lodgings/favorites calls on the home page), so whichever rotation
+                        // lands last in the browser can leave the cookie out of sync with the
+                        // X-XSRF-TOKEN header the frontend already read, causing sporadic 403s on the next
+                        // unsafe request (logout). A null strategy is correct here: there is no session to
+                        // fixate against in a stateless app.
+                        .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy())
                 )
-                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/csrf").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
@@ -63,6 +80,10 @@ public class SecurityConfig {
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/auth/me")
+                        )
+                        .defaultAuthenticationEntryPointFor(
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/auth/csrf")
                         )
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.FORBIDDEN),

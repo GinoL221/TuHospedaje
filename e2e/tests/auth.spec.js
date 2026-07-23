@@ -30,7 +30,11 @@ test.describe('Auth flow', () => {
     );
     await page.waitForURL('/');
 
+    const logoutResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/api/auth/logout')
+    );
     await page.locator('button.btn-logout').click();
+    expect((await logoutResponse).status()).toBe(204);
     const loginLink = page.getByRole('link', { name: 'Iniciar sesión' });
     await expect(loginLink).toBeVisible();
   });
@@ -62,14 +66,23 @@ test.describe('Auth flow', () => {
   test('register redirects to home on success', async ({ page, registerPage }) => {
     const uniqueEmail = `e2e_${Date.now()}@test.com`;
     await registerPage.open('/register');
+    const csrfResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/api/auth/csrf')
+    );
     await registerPage.register({
       firstName: 'Test',
       lastName: 'E2E',
       email: uniqueEmail,
       password: 'Test1234',
     });
+    expect((await csrfResponse).status()).toBe(204);
     await page.waitForURL('/');
-    const url = page.url();
-    expect(url).toContain('/');
+
+    const logoutResponse = page.waitForResponse((response) =>
+      response.url().endsWith('/api/auth/logout')
+    );
+    await page.locator('button.btn-logout').click();
+    expect((await logoutResponse).status()).toBe(204);
+    await expect(page.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible();
   });
 });
