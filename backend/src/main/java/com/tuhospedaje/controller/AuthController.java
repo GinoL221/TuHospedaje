@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -35,6 +37,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Auth", description = "Authentication, registration, and session identity")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
     private final AuthService authService;
     private final AuthCookieFactory authCookieFactory;
     private final CsrfTokenRepository csrfTokenRepository;
@@ -50,7 +54,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         AuthResult result = authService.register(request);
-        invalidateExistingCsrfToken(httpRequest, httpResponse);
+        rotateCsrfToken(httpRequest, httpResponse);
         return withAccessTokenCookie(HttpStatus.CREATED, result);
     }
 
@@ -65,7 +69,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         AuthResult result = authService.login(request);
-        invalidateExistingCsrfToken(httpRequest, httpResponse);
+        rotateCsrfToken(httpRequest, httpResponse);
         return withAccessTokenCookie(HttpStatus.OK, result);
     }
 
@@ -107,14 +111,23 @@ public class AuthController {
     // rotated the XSRF-TOKEN cookie on every authenticated request, not just login, which
     // raced against concurrent requests — see the comment there). But a token issued before
     // authentication must still not remain valid afterward, or an attacker able to plant a
-    // cookie value for this origin pre-login could replay it post-login. Clear any such
-    // token exactly once, here, at the moment a new identity is established; the frontend's
-    // explicit GET /api/auth/csrf bootstrap call right after this response materializes a
-    // fresh replacement.
-    private void invalidateExistingCsrfToken(HttpServletRequest request, HttpServletResponse response) {
-        if (csrfTokenRepository.loadToken(request) != null) {
-            csrfTokenRepository.saveToken(null, request, response);
+    // cookie value for this origin pre-login could replay it post-login.
+    //
+    // Generate-and-save a replacement in this one call (never just clear) so the response
+    // never leaves the client without a usable cookie: the frontend's GET /api/auth/csrf
+    // bootstrap that follows is a separate, un-retried request, and if it's interrupted
+    // (network blip, navigation), a client left with only a cleared cookie would be
+    // authenticated but unable to make any CSRF-protected request, including logout, until
+    // an unrelated page reload. (Clearing first via a second saveToken(null, ...) call would
+    // add a second Set-Cookie for the same name in this response — redundant, and some
+    // response-cookie readers only see the first one — so this only ever writes one.)
+    private void rotateCsrfToken(HttpServletRequest request, HttpServletResponse response) {
+        if (csrfTokenRepository.loadToken(request) == null) {
+            return;
         }
+        log.debug("Rotating CSRF token on authentication");
+        CsrfToken freshToken = csrfTokenRepository.generateToken(request);
+        csrfTokenRepository.saveToken(freshToken, request, response);
     }
 
     private ResponseEntity<AuthResponse> withAccessTokenCookie(HttpStatus status, AuthResult result) {

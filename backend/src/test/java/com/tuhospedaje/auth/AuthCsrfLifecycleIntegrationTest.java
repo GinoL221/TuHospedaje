@@ -78,7 +78,7 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void loginClearsAnyPreExistingCsrfCookie() throws Exception {
+    void loginRotatesAnyPreExistingCsrfCookieToAnImmediatelyUsableOne() throws Exception {
         Cookie preLoginToken = mockMvc.perform(get("/api/categories"))
                 .andReturn().getResponse().getCookie("XSRF-TOKEN");
         assertThat(preLoginToken).isNotNull();
@@ -95,14 +95,21 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
                         .cookie(preLoginToken))
                 .andExpect(status().isOk())
                 .andReturn();
+        Cookie accessToken = loginResult.getResponse().getCookie("ACCESS_TOKEN");
 
-        Cookie clearedToken = loginResult.getResponse().getCookie("XSRF-TOKEN");
-        assertThat(clearedToken).isNotNull();
-        assertThat(clearedToken.getMaxAge()).isZero();
+        // The response must never leave the client with only a cleared cookie: the fresh
+        // token has to be immediately usable, without depending on a separate bootstrap call.
+        Cookie rotatedToken = loginResult.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(rotatedToken).isNotNull();
+        assertThat(rotatedToken.getValue()).isNotEqualTo(preLoginToken.getValue());
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(accessToken, rotatedToken)
+                        .header("X-XSRF-TOKEN", rotatedToken.getValue()))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    void registerClearsAnyPreExistingCsrfCookie() throws Exception {
+    void registerRotatesAnyPreExistingCsrfCookieToAnImmediatelyUsableOne() throws Exception {
         Cookie preRegisterToken = mockMvc.perform(get("/api/categories"))
                 .andReturn().getResponse().getCookie("XSRF-TOKEN");
         assertThat(preRegisterToken).isNotNull();
@@ -114,10 +121,15 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
                         .cookie(preRegisterToken))
                 .andExpect(status().isCreated())
                 .andReturn();
+        Cookie accessToken = registerResult.getResponse().getCookie("ACCESS_TOKEN");
 
-        Cookie clearedToken = registerResult.getResponse().getCookie("XSRF-TOKEN");
-        assertThat(clearedToken).isNotNull();
-        assertThat(clearedToken.getMaxAge()).isZero();
+        Cookie rotatedToken = registerResult.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(rotatedToken).isNotNull();
+        assertThat(rotatedToken.getValue()).isNotEqualTo(preRegisterToken.getValue());
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(accessToken, rotatedToken)
+                        .header("X-XSRF-TOKEN", rotatedToken.getValue()))
+                .andExpect(status().isNoContent());
     }
 
     @Test
