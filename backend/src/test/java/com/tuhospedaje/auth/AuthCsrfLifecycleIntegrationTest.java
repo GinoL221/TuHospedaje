@@ -123,6 +123,8 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
                 .andReturn();
         Cookie accessToken = registerResult.getResponse().getCookie("ACCESS_TOKEN");
 
+        // The response must never leave the client with only a cleared cookie: the fresh
+        // token has to be immediately usable, without depending on a separate bootstrap call.
         Cookie rotatedToken = registerResult.getResponse().getCookie("XSRF-TOKEN");
         assertThat(rotatedToken).isNotNull();
         assertThat(rotatedToken.getValue()).isNotEqualTo(preRegisterToken.getValue());
