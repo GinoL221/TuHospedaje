@@ -122,6 +122,25 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResult(buildAuthResponse(user), token, session.refreshCredential());
     }
 
+    @Override
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("La contraseña actual es incorrecta");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Best-effort, ADR-0: RefreshSessionService has no bean when the flag is off, so
+        // this simply no-ops rather than fail the password change itself.
+        RefreshSessionService sessions = refreshSessions.getIfAvailable();
+        if (sessions != null) {
+            sessions.revokeAll(user.getId(), "PASSWORD_CHANGE");
+        }
+    }
+
     private AuthResult buildAuthResult(User user) {
         String token = jwtService.generateToken(claimsFor(user), user);
         String refreshCredential = issueRefreshCredential(user);

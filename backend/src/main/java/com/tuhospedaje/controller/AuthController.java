@@ -4,6 +4,7 @@ import com.tuhospedaje.configuration.AuthCookieFactory;
 import com.tuhospedaje.configuration.RefreshCookieFactory;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
+import com.tuhospedaje.dto.auth.PasswordChangeRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
@@ -134,6 +135,28 @@ public class AuthController {
         }
         AuthResult result = authService.refresh(refreshCredential);
         return withAccessTokenCookie(HttpStatus.OK, result);
+    }
+
+    @Operation(summary = "Change the authenticated user's password", description = "Verifies the "
+            + "current password, sets the new one, and revokes every refresh session for this "
+            + "user (Delta Spec: \"Password change logs out all devices with an audit trail\") — "
+            + "including the caller's own, whose ACCESS_TOKEN and REFRESH_TOKEN cookies are "
+            + "cleared in this response so re-authentication is required on every device.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Password changed; all sessions revoked and caller's cookies cleared", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Wrong current password, or the new password fails validation", content = @Content),
+            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content)
+    })
+    @PostMapping("/password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequest request,
+            Authentication authentication) {
+        authService.changePassword(authentication.getName(), request.getCurrentPassword(), request.getNewPassword());
+        ResponseCookie clearingAccessCookie = authCookieFactory.buildClearingCookie();
+        ResponseCookie clearingRefreshCookie = refreshCookieFactory.buildClearingRefreshCookie();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, clearingAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, clearingRefreshCookie.toString())
+                .build();
     }
 
     /**
