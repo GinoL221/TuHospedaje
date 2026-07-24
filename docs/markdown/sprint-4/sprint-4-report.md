@@ -1,6 +1,6 @@
 ---
 title: "Bitácora de Ejecución y Cierre — Sprint 4"
-subtitle: "TuHospedaje — Reservas, Historial, WhatsApp, Email, Panel de Administración y Refactor de Arquitectura"
+subtitle: "TuHospedaje — Reservas, Historial, WhatsApp, Email, Panel de Administración, Autenticación Segura y Cancelación de Reservas"
 author: "Equipo de Desarrollo"
 date: "Junio-Julio 2026"
 pdf_options:
@@ -30,10 +30,10 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 # BITÁCORA DE EJECUCIÓN Y CIERRE — SPRINT 4
 
-**Foco del Incremento:** Reservas, Historial y Comunicación (Incremento 1) · Tablas Uniformes y Dashboard de Reservas (Incremento 2) · Refactor de Arquitectura y Mejoras (Incremento 3)
+**Foco del Incremento:** Reservas, Historial y Comunicación (Incremento 1) · Tablas Uniformes y Dashboard de Reservas (Incremento 2) · Refactor de Arquitectura y Mejoras (Incremento 3) · Autenticación Segura, Cancelación de Reservas y Confiabilidad de Frontend (Incremento 4)
 **Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
 
-Este documento consolida los tres incrementos ejecutados sobre la rama `sprint-4` para la entrega final: el alcance original del sprint (reservas, WhatsApp, email), la consolidación posterior del panel de administración (previamente documentada como "Sprint 4.5"), y el refactor de arquitectura de cierre. Se presentan de forma unificada, no como reportes separados, para reflejar el estado final del incremento.
+Este documento consolida los cuatro incrementos ejecutados sobre la rama `sprint-4`: el alcance original del sprint (reservas, WhatsApp, email), la consolidación posterior del panel de administración (previamente documentada como "Sprint 4.5"), el refactor de arquitectura, y el endurecimiento de autenticación junto con la cancelación de reservas y mejoras de confiabilidad del frontend. Se presentan de forma unificada, no como reportes separados, para reflejar el estado final del incremento. El Sprint 4 quedó integrado a `main` mediante el merge commit `8a3fd43` (PR #36) el 23 de julio de 2026; la rama `sprint-4` queda congelada a partir de este punto.
 
 ## 1. Resumen del Incremento (Scope)
 
@@ -67,9 +67,33 @@ Cierre de deuda técnica identificada durante el desarrollo del panel de adminis
 
 **Nota sobre paginación:** el Incremento 2 había documentado como deuda técnica controlada "migrar [alojamientos] a paginación por base de datos únicamente si la volumetría de producción lo requiere". El Incremento 3 resuelve esto específicamente para `/api/lodgings/search` (endpoint público, donde el filtrado en memoria de categorías múltiples ya era una ineficiencia medible), **no** para las tablas del panel de administración (`AdminLodgings` y el resto), que permanecen con paginación client-side por decisión explícita del Incremento 2 — volúmenes de datos bajos/medios en un contexto exclusivamente administrativo.
 
-### 1.4. Actualización posterior al reporte original
+### 1.4. Incremento 4 — Autenticación Segura, Cancelación de Reservas y Confiabilidad de Frontend
 
-Después del cierre de los tres incrementos anteriores, la rama `sprint-4` incorporó los siguientes cambios. Esta sección actualiza el estado vigente sin alterar la narración histórica de los incrementos 1 a 3:
+Este incremento reemplazó el esquema de autenticación basado en JWT en el cuerpo de la respuesta (almacenado en `localStorage` por el cliente) por uno de cookie `HttpOnly` con protección CSRF, agregó la posibilidad de que un cliente cancele su propia reserva antes del check-in, y mejoró la resiliencia de la carga de rutas del frontend.
+
+#### 1.4.1. Autenticación basada en cookie `HttpOnly` y protección CSRF
+
+El JWT ya no viaja en el cuerpo de la respuesta ni se almacena en `localStorage`: `AuthController` lo entrega en una cookie `ACCESS_TOKEN` `HttpOnly` (`AuthCookieFactory`, nueva), inaccesible desde JavaScript — mitiga la exfiltración del token ante un XSS. Esto exige protección CSRF para las mutaciones, implementada con el patrón *double-submit cookie* recomendado por Spring Security para SPAs: `SpaCsrfTokenRequestHandler` (nuevo) combina resolución XOR y directa según si la request trae el header `X-XSRF-TOKEN`, y materializa el token de forma eager en cada respuesta salvo en el bootstrap anónimo de `GET /api/auth/csrf`.
+
+`JwtAuthenticationFilter` pasó a leer el JWT desde la cookie `ACCESS_TOKEN` en vez de un header `Authorization`, y degrada a no autenticado (sin propagar la excepción) ante un JWT inválido o un usuario borrado después de emitido — corrigiendo un 500 espurio a 401/403. Se agregaron los endpoints `GET /api/auth/me` (identidad de la sesión), `POST /api/auth/logout` (limpia la cookie, requiere CSRF válido) y `GET /api/auth/csrf` (bootstrap explícito del token). El frontend (`api.js`, `AuthContext.jsx`) migró a `credentials: "include"` + header `X-XSRF-TOKEN`, y secuencia login/registro para esperar el bootstrap de CSRF antes de publicar el estado autenticado — evita que la UI muestre "sesión iniciada" antes de que exista una cookie CSRF utilizable.
+
+Durante la verificación de este incremento se detectó y corrigió un defecto real: bajo `SessionCreationPolicy.STATELESS` (sin `HttpSession`), la estrategia por defecto de Spring Security (`CsrfAuthenticationStrategy`) rota la cookie CSRF en **cada** request autenticado, no solo en el login, porque no hay sesión donde recordar "ya procesado". Esa rotación competía con los requests paralelos que dispara la SPA después del login, causando cierres de sesión intermitentes con CSRF inválido. Se reemplazó por `NullAuthenticatedSessionStrategy` (correcto en una app sin sesión) y se agregó una rotación puntual y atómica del token exactamente en login/registro, para preservar la única propiedad de seguridad real que la estrategia por defecto aportaba (invalidar un token plantado antes del login).
+
+#### 1.4.2. Base de sesiones renovables (no integrada al flujo HTTP)
+
+Se implementó la infraestructura para sesiones renovables con rotación y detección de replay: entidades `RefreshToken`, `RefreshTokenFamily` y `SessionSecurityEvent`, servicio `RefreshSessionService`/`Impl` (emisión, rotación, revocación, bloqueo de familia, límite de tasa), `RefreshTokenHasher`, y la migración `V2__refresh_session_families.sql`. Esta base está completa y probada de forma aislada, pero **no está conectada a ningún endpoint real**: `AuthController` y `SecurityConfig` no la referencian, `app.session.refresh.enabled=false` por defecto, y el JWT de acceso vigente sigue gobernado exclusivamente por `app.jwt.expiration` (8 horas) vía `JwtService`, sin relación con `app.session.access-token-lifetime` (definido pero no usado). La aplicación, por lo tanto, todavía no ofrece sesiones renovables completas de punta a punta — ver Sección 8.
+
+#### 1.4.3. Cancelación self-service de reservas
+
+Se agregó `PATCH /api/reservations/{id}/cancel` (`@PreAuthorize("isAuthenticated()")`), que permite a un usuario cancelar su propia reserva mientras esté `CONFIRMED` y la fecha de check-in no haya llegado, evaluado con un `Clock` de negocio fijado a `America/Argentina/Buenos_Aires` (`TimeConfiguration.businessClock`) en vez del reloj del sistema — evita que el corte dependa de la zona horaria del servidor. El servicio usa un lock pesimista de escritura (`findByIdForUpdate`) para que cancelaciones concurrentes produzcan una única transición de estado y un único email; una reserva ya cancelada responde de forma idempotente (200, sin reenviar el email); una reserva ajena o inexistente responde con la misma excepción que `getReservationById` (mismo patrón anti-IDOR ya usado en el resto del proyecto); intentar cancelar en o después de la fecha de check-in devuelve 400 sin modificar el estado. El email de cancelación se envía tras el commit de la transacción (`TransactionSynchronization.afterCommit()`); un fallo de envío se loguea pero no deshace la cancelación. En el frontend, `MyReservationsPage.jsx` ofrece el botón solo para reservas `CONFIRMED` con check-in futuro, pide confirmación nativa (`window.confirm`), bloquea envíos duplicados por fila mientras la solicitud está en curso, y reemplaza únicamente la fila afectada en el estado local al finalizar.
+
+Como parte de este trabajo se corrigió además un test backend intermitente en CI (`f606201`): construía su fixture con `LocalDate.now()` del sistema en vez del reloj de negocio, por lo que cerca de la medianoche en Buenos Aires (UTC-3) ambos relojes podían discrepar de fecha calendario y volver falso el supuesto "el check-in es hoy" del test. Se corrigió inyectando el mismo `Clock` de negocio que usa la aplicación.
+
+#### 1.4.4. Carga diferida de rutas y metadata en español
+
+Las 11 páginas de rutas de la aplicación (`Home`, `Login`, `Register`, `ProductDetail`, `Admin`, `SearchResults`, `Favorites`, `Booking`, `BookingConfirmation`, `MyReservations`, `Unauthorized`) pasaron a cargarse con `React.lazy()`, reduciendo el bundle inicial. La resiliencia agregada no es la sola división en chunks, sino dos componentes nuevos: `RouteChunkErrorBoundary` (límite de error de clase, con `getDerivedStateFromError`) captura fallos de carga de chunk — típicos tras un despliegue con chunks obsoletos en caché del navegador — y ofrece una recarga manual completa en vez de fallar en blanco, reseteándose automáticamente al cambiar de ruta; `RouteLoadingFallback` muestra un spinner accesible (`role="status"`) con un retraso de 150 ms antes de aparecer, para no parpadear en navegaciones rápidas, y respeta `prefers-reduced-motion`. La "metadata en español" es más acotada de lo que sugiere el nombre: `index.html` declara `lang="es"` y un `<title>` fijo; se descartó deliberadamente introducir títulos dinámicos por ruta o una dependencia como `react-helmet` para este alcance, documentado explícitamente en el test correspondiente.
+
+### 1.5. Actualización posterior al reporte original
 
 * `AdminLodgings` volvió a paginación, ordenamiento y búsqueda dirigidos por el servidor. Las tablas administrativas de Categorías, Características, Políticas y Usuarios conservan el esquema client-side.
 * `AdminReservations` incorporó consulta, filtrado, ordenamiento y paginación desde el servidor. La gestión de reservas continúa sin acciones administrativas de cancelación o reprogramación.
@@ -105,6 +129,9 @@ Controller → Service (Interface + Impl) → Repository → Entity / DTO
 | **Alojamientos — DTOs tipados (Inc. 3)** | `LodgingDTO` (features/policies tipados), `FeatureSummaryDTO`, `PolicySummaryDTO` (nuevos) | `LodgingServiceImpl`: mapeo manual actualizado | — |
 | **Alojamientos — Búsqueda (Inc. 3)** | — | `LodgingServiceImpl.search()`: `Specification` con `IN` sobre categorías, `Pageable`, retorna `Map` paginado | `LodgingController`: `/search` acepta `categories`, `page`, `size` validados (`@Validated` + `@Min`) |
 | **Excepciones — i18n (Inc. 3)** | `ResourceNotFoundException` (+`errorCode`, +`args`, retrocompatible) | — | `GlobalExceptionHandler`: 4 de 9 handlers localizados vía `MessageSource`/`Locale` |
+| **Autenticación — cookie + CSRF (Inc. 4)** | — (sin cambios de entidad) | `AuthCookieFactory` (nueva), `JwtAuthenticationFilter` lee la cookie `ACCESS_TOKEN`, `SpaCsrfTokenRequestHandler` (nuevo), `CsrfTokenRepository` como bean compartido | `AuthController`: nuevos `GET /me`, `POST /logout`, `GET /csrf`; `SecurityConfig`: CSRF habilitado, `NullAuthenticatedSessionStrategy` |
+| **Sesiones renovables — base (Inc. 4)** | `RefreshToken`, `RefreshTokenFamily`, `SessionSecurityEvent` (nuevas, migración `V2`) | `RefreshSessionService`/`Impl`, `RefreshTokenHasher` | — (sin endpoint conectado; `app.session.refresh.enabled=false`) |
+| **Reservas — cancelación (Inc. 4)** | `Reservation` (`CANCELLED` ahora alcanzable) | `ReservationServiceImpl.cancelReservation()`, lock pesimista (`findByIdForUpdate`), `TimeConfiguration.businessClock` (nuevo) | `ReservationController`: `PATCH /{id}/cancel` |
 
 * **SmtpEmailServiceImpl con `@Primary`:** se optó por `@Primary` en lugar de `@ConditionalOnMissingBean` porque esta última anotación solo evalúa confiablemente en clases `@Configuration`. `@Primary` resuelve la ambigüedad de forma explícita y determinista.
 * **Endpoint de disponibilidad corregido:** `GET /api/lodgings/{id}/availability` acepta `checkIn`/`checkOut` opcionales. Sin parámetros, devuelve todos los rangos CONFIRMED (`occupiedRanges`) para bloqueo visual del calendario.
@@ -114,6 +141,13 @@ Controller → Service (Interface + Impl) → Repository → Entity / DTO
 * **Validación de `page`/`size` con Bean Validation, no con excepciones ad-hoc (Inc. 3):** se evaluó usar el mensaje de la excepción como clave de traducción (`IllegalArgumentException`), pero se descartó porque ningún punto real del código (13 sitios existentes) usa ese patrón — todos lanzan texto plano en español. Se optó por `@Validated` + `@Min(message="{clave}")` en `LodgingController`, el mecanismo idiomático de Spring para localizar validaciones de parámetros. Es el primer controller del proyecto en usar `@Validated` a nivel de clase (el resto de las validaciones existentes son `@Valid` sobre `@RequestBody`, que no lo requiere).
 * **Corrección de un bug de entorno real (Inc. 3):** `spring.messages.fallback-to-system-locale` (default `true` en Spring Boot) hacía que, en un host con locale del sistema operativo en español, pedir `Accept-Language: en` devolviera igualmente el mensaje en español — comportamiento no determinístico según el entorno de ejecución. Se deshabilitó explícitamente en `application.properties` (main y test).
 * **Alcance acotado de la i18n (Inc. 3):** de los 9 exception handlers de `GlobalExceptionHandler`, solo 4 fueron localizados (`ResourceNotFoundException`, `IllegalArgumentException`, `ConstraintViolationException`, `HandlerMethodValidationException`). Los otros 5 (`AuthenticationException`, `MethodArgumentNotValidException`, `ObjectOptimisticLockingFailureException`, `PessimisticLockingFailureException`, `UploadException`, `DataIntegrityViolationException` y el catch-all genérico) mantienen sus mensajes en español hardcodeado — decisión explícita para no inflar el alcance del cambio (ver Sección 8).
+* **Cookie `HttpOnly` sobre `localStorage` para el JWT (Inc. 4):** el token queda inaccesible desde JavaScript, mitigando su exfiltración ante un XSS; a cambio, exige protección CSRF explícita para las mutaciones (documentado como "Design Decision 1" en `AuthCookieFactory`).
+* **Double-submit cookie con XOR + resolución directa (Inc. 4):** `SpaCsrfTokenRequestHandler` sigue el patrón oficial recomendado por Spring Security para SPAs, en vez de la variante de sesión clásica.
+* **`NullAuthenticatedSessionStrategy` en vez del default `CsrfAuthenticationStrategy` (Inc. 4):** el default rota la cookie CSRF en cada request autenticado bajo `STATELESS`, no solo en el login, porque no hay `HttpSession` para recordar "ya procesado" — causaba cierres de sesión intermitentes. La estrategia de sesión correcta reemplazó el override en `SecurityConfig`, no en `SessionManagementConfigurer` (este último solo agrega a la misma lista compuesta que ya contiene `CsrfAuthenticationStrategy`, no la reemplaza).
+* **Rotación de CSRF acotada a login/registro, atómica (Inc. 4):** para no perder la invalidación de un token plantado antes del login, se rota el token una sola vez ahí (`generateToken()` + `saveToken()` en una sola escritura). Una primera versión que limpiaba y regeneraba en dos pasos separados escribía dos encabezados `Set-Cookie` para el mismo nombre en una respuesta; el consumidor leía el primero (vacío), rompiendo el siguiente logout — corregido con una única escritura.
+* **Lock pesimista para cancelación concurrente (Inc. 4):** `findByIdForUpdate` asegura que cancelaciones concurrentes de la misma reserva produzcan una única transición de estado y un único email, en vez de una condición de carrera.
+* **`Clock` de negocio separado del reloj de expiración de sesión (Inc. 4):** se detectó una colisión real de bean `Clock` entre el reloj de negocio de reservas (`America/Argentina/Buenos_Aires`, para el corte de cancelación) y un `Clock` relacionado a sesiones; resuelta con un `Supplier<Clock>` para no pisar el bean existente.
+* **Cancelación como transición de estado, no soft-delete (Inc. 4):** `CANCELLED` ya existía en el enum `ReservationStatus`; la reserva se conserva completa (auditoría, historial), simplemente deja de ser accionable.
 * **Nuevas queries en repositorios:**
   - `ReservationRepository.findByUserIdOrderByCheckInDesc(Long userId)`
   - `ReservationRepository.existsByUserIdAndLodgingIdAndStatus(...)`
@@ -129,16 +163,20 @@ src/
 │   ├── RequireAdmin.jsx             (Inc. 3 — reescrito como layout <Outlet/>, redirect a /unauthorized)
 │   ├── SortableTh/SortableTh.jsx    (Inc. 2 — encabezado de columna ordenable)
 │   ├── Pagination/Pagination.jsx    (Inc. 2 — control de paginación reutilizable)
-│   └── WhatsAppButton/WhatsAppButton.jsx (Inc. 1 — botón flotante fijo bottom-right)
+│   ├── WhatsAppButton/WhatsAppButton.jsx (Inc. 1 — botón flotante fijo bottom-right)
+│   ├── RouteChunkErrorBoundary.jsx  (Inc. 4 — nuevo, recuperación manual ante fallo de carga de chunk)
+│   └── RouteLoadingFallback.jsx     (Inc. 4 — nuevo, spinner accesible con retraso de 150ms)
 ├── hooks/
 │   └── useTableData.js              (Inc. 2 — ordenamiento y paginación cliente)
 ├── services/
 │   ├── lodgingService.js            (Inc. 3 — nuevo)
 │   ├── categoryService.js           (Inc. 3 — nuevo)
 │   └── favoriteService.js           (Inc. 3 — nuevo)
+├── context/
+│   └── AuthContext.jsx              (Inc. 4 — bootstrap desde /me, secuencia login/registro con bootstrapCsrf antes de publicar estado)
 ├── pages/
 │   ├── Booking/BookingPage.jsx, BookingConfirmation.jsx (Inc. 1)
-│   ├── MyReservations/MyReservationsPage.jsx (Inc. 1)
+│   ├── MyReservations/MyReservationsPage.jsx (Inc. 1 — historial; Inc. 4 — cancelación self-service)
 │   ├── Unauthorized/Unauthorized.jsx (Inc. 3 — nuevo)
 │   ├── SearchResults/SearchResults.jsx (Inc. 2 — Pagination unificada; Inc. 3 — reescrito server-driven)
 │   └── Admin/
@@ -155,6 +193,11 @@ src/
 * **Capa de servicios por dominio (Inc. 3):** `lodgingService.searchLodgings(params)`, `categoryService.getCategories()`, `favoriteService.getFavorites()/addFavorite()/removeFavorite()` — desacoplan las llamadas HTTP directas de la UI. El alcance de esta primera capa se limitó a `SearchResults.jsx` como slice experimental (no se tocaron `FavoritesPage.jsx`/`ProductCard.jsx`, que siguen llamando `api.js` directo).
 * **`SearchResults.jsx` server-driven (Inc. 3):** se eliminó la paginación local (`page`/`PAGE_SIZE=9` + slicing) y el filtrado en memoria de múltiples categorías (`runCategorySearch`); ahora un único `runSearch()` siempre envía las categorías seleccionadas al backend y la paginación se dirige por `currentPage`/`totalPages` de la respuesta. Los clics de paginación disparan un refetch real (vía `lastSearchRef`, que preserva los filtros aplicados), no un slice local.
 * **`RequireAdmin` como layout (Inc. 3):** retorna `<Outlet/>` en vez de envolver `children`, igual que `RequireAuth`. El redirect para usuario autenticado sin rol ADMIN cambia de `/` a `/unauthorized` (página nueva, mínima, reutiliza estilos existentes de `App.css`).
+* **11 páginas de rutas cargadas con `React.lazy()` (Inc. 4):** reduce el bundle inicial descargado por el cliente.
+* **`RouteChunkErrorBoundary` (Inc. 4):** ante un fallo de carga de chunk (típico tras un deploy con caché de chunks obsoleta), ofrece recarga manual completa en vez de una pantalla en blanco; se resetea automáticamente al cambiar de ruta (navegar fuera y volver reintenta sin recargar toda la página).
+* **`RouteLoadingFallback` con retraso de 150ms (Inc. 4):** evita el parpadeo del spinner en navegaciones que resuelven casi instantáneamente; respeta `prefers-reduced-motion`.
+* **Metadata en español acotada a lo estático (Inc. 4):** se evaluó agregar títulos dinámicos por ruta (`react-helmet` u otra dependencia), pero se descartó por sobredimensionar la solución para el alcance real — `index.html` con `lang="es"` y `<title>` fijo cubre el requisito.
+* **Cancelación desde `MyReservationsPage.jsx` (Inc. 4):** botón visible solo para reservas `CONFIRMED` con check-in futuro (misma regla que valida el backend); confirmación nativa (`window.confirm`), bloqueo de doble envío por fila mientras la solicitud está en curso, y reemplazo solo de la fila afectada al finalizar (sin refetch completo).
 
 ## 3. Trazabilidad de Historias de Usuario (User Stories)
 
@@ -171,6 +214,9 @@ src/
 | **US #38** | Buscar alojamientos filtrando por múltiples categorías, con resultados paginados desde el servidor. | `SearchResults.jsx` | `GET /api/lodgings/search` | Selección de 2+ categorías filtra en base de datos (no en memoria). Paginación dirigida por `currentPage`/`totalPages` del servidor. |
 | **US #39** | Recibir mensajes de error en español o inglés según el idioma del navegador. | N/A (Backend, transversal) | Cualquier endpoint que dispare `ResourceNotFoundException`, `IllegalArgumentException`, o validación de `page`/`size` en `/search` | Header `Accept-Language: es` → mensaje en español; `en` o ausente → inglés. Logs siempre en inglés. |
 | **US #40** | Acceso uniforme a rutas administrativas con redirección clara cuando falta permiso. | `RequireAdmin.jsx`, `Unauthorized.jsx` | N/A (Frontend) | Usuario autenticado sin rol ADMIN es redirigido a `/unauthorized` (antes: `/`, sin explicación). |
+| **US #41** | Iniciar sesión sin exponer el JWT a JavaScript, protegido contra CSRF. | `AuthContext.jsx`, `api.js` | `POST /api/auth/login`, `GET /api/auth/csrf`, `GET /api/auth/me` | `ACCESS_TOKEN` en cookie `HttpOnly`; UI no publica sesión autenticada hasta que el bootstrap de CSRF resuelve. |
+| **US #42** | Cancelar una reserva propia antes de la fecha de check-in. | `MyReservationsPage.jsx` | `PATCH /api/reservations/{id}/cancel` | Botón visible solo si `CONFIRMED` + check-in futuro; confirmación previa; reserva ajena o ya iniciada rechazada. |
+| **US #43** | Que un fallo de carga de una página no deje la aplicación en blanco. | `RouteChunkErrorBoundary.jsx`, `RouteLoadingFallback.jsx` | N/A (Frontend) | Fallo de chunk muestra mensaje y opción de recarga; navegación normal muestra spinner solo si tarda más de 150ms. |
 
 ## 4. Catálogo de Endpoints Nuevos / Modificados
 
@@ -182,6 +228,7 @@ src/
 | GET | `/api/reservations/my` | Autenticado | Historial del usuario autenticado, ordenado por `checkIn DESC` |
 | GET | `/api/reservations` | ADMIN | Todas las reservas del sistema, ordenadas por `id DESC` (Inc. 2) |
 | GET | `/api/lodgings/{id}/availability` | Público | Disponibilidad. Sin params: `occupiedRanges`. Con `checkIn`/`checkOut`: además `available`. |
+| PATCH | `/api/reservations/{id}/cancel` | Autenticado | **(Inc. 4, nuevo)** Cancela una reserva propia `CONFIRMED` antes del check-in (evaluado con reloj de negocio). Idempotente si ya está `CANCELLED`; 400 si el check-in ya llegó; 404 si es ajena o no existe. |
 
 ### 4.2. Alojamientos
 
@@ -190,6 +237,16 @@ src/
 | PUT | `/api/lodgings/{id}` | ADMIN | Usado desde `LodgingFormModal` en modo edición. |
 | GET | `/api/lodgings/{id}` | Público | `LodgingDTO` incluye `averageRating`, `ratingCount`, y (Inc. 3) `features`/`policies` tipados. |
 | GET | `/api/lodgings/search` | Público | **(Inc. 3, breaking change de contrato)** Acepta `categories` (múltiple), `page`, `size` (validados). Retorna `{lodgings, currentPage, totalItems, totalPages}` en vez del array plano anterior. |
+
+### 4.3. Autenticación (Inc. 4)
+
+| Método | Endpoint | Acceso (RBAC) | Descripción |
+|--------|----------|---------------|-------------|
+| POST | `/api/auth/register` | Público, CSRF exento | Crea el usuario y entrega `ACCESS_TOKEN` en cookie `HttpOnly`; rota el token CSRF si había uno previo. |
+| POST | `/api/auth/login` | Público, CSRF exento | Autentica y entrega `ACCESS_TOKEN` en cookie `HttpOnly`; el cuerpo no expone el JWT. |
+| POST | `/api/auth/logout` | Público (requiere CSRF válido) | Limpia `ACCESS_TOKEN`. 204 idempotente; 403 si el CSRF es inválido o falta. |
+| GET | `/api/auth/me` | Autenticado (401 si no) | Identidad de la sesión vigente. |
+| GET | `/api/auth/csrf` | Autenticado (401 si no) | Bootstrap explícito del token CSRF; 204, sin body. |
 
 <div style="page-break-before: always;"></div>
 
@@ -225,6 +282,8 @@ src/
 * **`FeatureSummaryDTO` / `PolicySummaryDTO` (Inc. 3, nuevos):** `{id, name, icon}` y `{id, name, description, icon}` respectivamente. Reemplazan los `Map<String, Object>` genéricos, con mapeo manual (`fromEntity`) — se descartó MapStruct por directiva del proyecto.
 * **`ResourceNotFoundException` (Inc. 3):** se agregaron campos opcionales `errorCode`/`args` (retrocompatibles) para soportar localización por clave en el futuro; el único sitio real que la lanza hoy (`ReservationServiceImpl`) sigue usando el constructor de mensaje plano.
 * **Bundles de mensajes (Inc. 3, nuevos):** `messages.properties`/`messages_es.properties` con únicamente las claves que dispara código real: `error.page.negative`, `error.size.negative`, `error.resource.not_found`.
+* **`Reservation.status = CANCELLED` (Inc. 4):** el valor ya existía en el enum desde el sprint original, pero ningún flujo de usuario lo alcanzaba; la cancelación self-service lo hace accionable por primera vez. No hay borrado físico ni columna nueva.
+* **`RefreshToken` / `RefreshTokenFamily` / `SessionSecurityEvent` (Inc. 4, nuevas, migración `V2__refresh_session_families.sql`):** hashing de tokens (`RefreshTokenHasher`), agrupación por familia para detectar reuso/replay, y bitácora de eventos de seguridad de sesión. Entidades completas y probadas de forma aislada, pero **sin ningún endpoint que las use** — ver Sección 8.
 
 ### Nuevas Queries en Repositorios
 
@@ -249,26 +308,39 @@ src/
 * **`@Validated` + `@Min(message="{clave}")` en vez de excepción-con-mensaje-como-clave (Inc. 3):** el patrón de localización originalmente propuesto para `IllegalArgumentException` (tratar `ex.getMessage()` como clave de traducción) no es compatible con ningún punto real del código existente. Se usó Bean Validation, el mecanismo nativo de Spring para esto.
 * **Alcance acotado de la i18n a 4 de 9 exception handlers (Inc. 3):** decisión explícita para no inflar el diff tocando código no relacionado con la búsqueda/paginación; documentado como deuda técnica controlada (Sección 8).
 * **`RequireAdmin` como layout `<Outlet/>` (Inc. 3):** alinea con el patrón ya usado por `RequireAuth`, en vez de mantener dos convenciones distintas de route guard.
+* **Cookie `HttpOnly` + CSRF sobre JWT en `localStorage` (Inc. 4):** el JWT queda inaccesible desde JavaScript, mitigando exfiltración por XSS, a cambio de requerir protección CSRF explícita en las mutaciones (detalle en 1.4.1 y 2.1).
+* **`NullAuthenticatedSessionStrategy` en vez del `CsrfAuthenticationStrategy` default (Inc. 4):** el default rota el CSRF en cada request autenticado bajo `STATELESS` (no solo login), causando cierres de sesión intermitentes; corregido con una rotación acotada y atómica en login/registro (detalle en 1.4.1).
+* **Sesiones renovables entregadas como base aislada, no integrada (Inc. 4):** se priorizó una base de persistencia/rotación/replay-detection completa y probada por sobre una integración parcial al flujo HTTP real; la conexión queda para un incremento futuro (ver Sección 8).
+* **Lock pesimista para cancelación de reservas (Inc. 4):** `findByIdForUpdate` evita que cancelaciones concurrentes de la misma reserva produzcan más de una transición de estado o más de un email.
+* **`Clock` de negocio en vez del reloj del sistema (Inc. 4):** el corte de cancelación se evalúa contra `America/Argentina/Buenos_Aires`, no la zona horaria del servidor — corrige además un test intermitente en CI que usaba el reloj del sistema.
+* **Confirmación nativa (`window.confirm`) para cancelar, no un modal custom (Inc. 4):** acción destructiva poco frecuente, sin justificación para un componente dedicado en este alcance.
+* **`RouteChunkErrorBoundary` con recarga completa, no reintento silencioso (Inc. 4):** un fallo de chunk suele deberse a una versión de build obsoleta en caché; recargar la página entera garantiza obtener los chunks vigentes, a diferencia de un reintento in-place que podría repetir el mismo fallo.
+* **Sin `react-helmet` para metadata (Inc. 4):** el alcance real (un `<title>` estático en español) no justificaba una dependencia adicional para títulos dinámicos por ruta.
 
 ## 7. Testing
 
 ### 7.1. Cobertura Automatizada
 
-* **Backend — 284 tests en el cierre original; 325/325 en la verificación local posterior** (JUnit 5 + Mockito, integración con MockMvc + Testcontainers/MariaDB 10.11). Incluye, entre otros:
+* **Backend — 284 tests en el cierre original; 381/381 verificados en CI sobre el commit de integración a `main`** (JUnit 5 + Mockito, integración con MockMvc + Testcontainers/MariaDB 10.11). Incluye, entre otros:
   - Incremento 1: `ReservationServiceImplTest`, `ReservationControllerIntegrationTest`, `ReservationOwnershipIntegrationTest` (5 escenarios IDOR), `ReservationConcurrencyTest`.
   - Incremento 2: `ReservationControllerIntegrationTest` — RBAC de `GET /api/reservations` (401/403/200) y ordenamiento `id DESC`.
   - Incremento 3: `LodgingDTOTest` (mapeo a DTOs tipados), `LodgingServiceImplTest`/`LodgingControllerIntegrationTest` (paginación, filtro multi-categoría, validación de `page`/`size`), `GlobalExceptionHandlerTest` (localización de los 4 handlers en scope), `ReservationControllerIntegrationTest` (localización del caso real de `ResourceNotFoundException`).
-* **Frontend — 276 tests, todos en verde en el cierre original** (Vitest + React Testing Library, 38 archivos). No se registra aquí un total posterior porque no existe evidencia exacta equivalente en esta actualización. Incluye, entre otros:
+  - Incremento 4: `AuthCsrfLifecycleIntegrationTest` (7 tests — materialización del token, rotación atómica en login/registro, rechazo de token faltante/mismatcheado), `AuthControllerIntegrationTest`, `AuthCookieFactoryTest`, `JwtAuthenticationFilterIntegrationTest`, `RefreshSessionConfigurationTest`/`RefreshSessionFoundationIntegrationTest`/`RefreshSessionServiceTest`/`RefreshTokenHasherTest` (base de sesiones renovables, aislada), `ReservationCancellationServiceTest`, `ReservationCancellationConcurrencyTest`, 6 casos nuevos en `ReservationControllerIntegrationTest` para cancelación.
+* **Frontend — 276 tests en el cierre original; 326/326 en 46 archivos verificados en CI sobre el commit de integración a `main`** (Vitest + React Testing Library). Incluye, entre otros:
   - Incremento 1: `RequireAuth.test.jsx`, `BookingPage.test.jsx`, `BookingConfirmation.test.jsx`, `MyReservationsPage.test.jsx`, `Header.test.jsx`, `WhatsAppButton.test.jsx`.
   - Incremento 2: `useTableData.test.js`, `Pagination.test.jsx`, `AdminCategories/Features/Policies/Users/Lodgings.test.jsx`, `AdminDashboard.test.jsx`, `AdminReservations.test.jsx`.
   - Incremento 3: `lodgingService.test.js`, `categoryService.test.js`, `favoriteService.test.js` (31 tests nuevos), `SearchResults.test.jsx` (reescrito — filtrado server-side, respuesta paginada), `RequireAdmin.test.jsx` (redirect a `/unauthorized`), `Unauthorized.test.jsx` (nuevo).
-* **Suite E2E con Playwright (Incremento 1, complementario):** 17 escenarios × 2 navegadores (Chromium + Firefox) = 34 ejecuciones, todas en verde al momento de su incorporación. No se re-ejecutó como parte del Incremento 3 (sin cambios en los flujos que cubre).
+  - Incremento 4: `AuthContext.test.jsx` (reescrito), `AuthContextCsrfRace.test.jsx` (nuevo — secuenciación y condiciones de carrera del bootstrap CSRF), `HeaderCsrf.test.jsx`, `api.csrf.test.js`, `RouteChunkErrorBoundary.test.jsx` (3 casos), `RouteLoadingFallback.test.jsx` (4 casos, fake timers), `documentMetadata.test.jsx`, 4 casos nuevos en `MyReservationsPage.test.jsx` para cancelación.
+* **Suite E2E con Playwright (Chromium + Firefox):** creció de 17 a 45 escenarios a lo largo de los cuatro incrementos (13 specs, incluyendo cobertura de administración de categorías/características/políticas/usuarios/alojamientos/reservas agregada progresivamente y no documentada individualmente hasta este reporte, más `verify-cookie-auth.spec.js`, nuevo en el Incremento 4). Verificado en CI sobre el commit de integración a `main`: 44 ejecuciones aprobadas y 46 omitidas por falta de credenciales de usuario de prueba en el entorno de CI — la omisión es una condición de entorno (`e2e/.env` sin `TEST_USER_EMAIL`/`TEST_USER_PASSWORD`), no un fallo.
 
-### 7.2. Hallazgos Durante el Incremento 3 (verificación empírica antes de asumir)
+### 7.2. Hallazgos Durante los Incrementos 3 y 4 (verificación empírica antes de asumir)
 
 * El handler de `HandlerMethodValidationException` se mantiene registrado en `GlobalExceptionHandler` de forma defensiva, pero ningún endpoint real del proyecto lo dispara hoy — la validación de `page`/`size` vía `@Validated` a nivel de clase produce `ConstraintViolationException` (verificado empíricamente), no `HandlerMethodValidationException`.
 * Sin un handler para esas excepciones, la validación regresaba HTTP 500 en vez de 400 (el catch-all `Exception.class` preexistente intercepta antes que la resolución nativa de Spring) — corregido con un handler dedicado.
 * `spring.messages.fallback-to-system-locale=true` (default) producía resolución de idioma no determinística según el locale del sistema operativo del host — corregido explícitamente.
+* La estrategia por defecto de Spring Security (`CsrfAuthenticationStrategy`) rota la cookie CSRF en cada request autenticado bajo `STATELESS`, no solo en el login — verificado leyendo el código fuente de Spring Security 6.5 y reproducido con `curl` antes de asumir la causa raíz de un flake intermitente de logout en Firefox. Una primera corrección (limpiar y regenerar el token en dos pasos) escribía dos encabezados `Set-Cookie` para el mismo nombre y rompía el siguiente logout — detectado con un test real que falló, no con inspección de código.
+* Colisión de bean `Clock` entre el reloj de negocio de reservas y un `Clock` relacionado a sesiones — resuelta con un `Supplier<Clock>` dedicado para no pisar el bean existente.
+* Un test de cancelación construía su fixture con `LocalDate.now()` del sistema en vez del reloj de negocio; cerca de la medianoche en Buenos Aires (UTC-3) ambos relojes podían discrepar de fecha calendario, produciendo un fallo intermitente en CI — corregido inyectando el mismo `Clock` que usa la aplicación.
 
 ## 8. Limitaciones Conocidas y Deuda Técnica Controlada
 
@@ -278,10 +350,13 @@ src/
 2. **WhatsApp Business API:** el enlace `wa.me` no provee confirmación de envío ni manejo de errores desde la aplicación.
 3. **Email SMTP desactivado por defecto:** requiere `MAIL_SMTP_ENABLED=true` y credenciales del proveedor SMTP.
 4. **Precios por temporada:** el total de reserva es `días × pricePerNight`, sin tarifas variables por temporada o fin de semana.
-5. **Refresh tokens:** el JWT expira a las 8 horas sin renovación automática.
-6. **Gestión de reservas en admin:** las consultas administrativas son server-driven, pero no existen acciones para cancelar o reprogramar reservas de usuarios.
+5. **Refresh tokens:** el JWT expira a las 8 horas sin renovación automática. La base de persistencia, rotación y detección de replay para sesiones renovables existe completa y probada (Sección 1.4.2), pero no está conectada a ningún endpoint — `app.session.refresh.enabled=false`. No hay todavía sesiones renovables de punta a punta.
+6. **Gestión de reservas en admin:** las consultas administrativas son server-driven, y desde el Incremento 4 el propio cliente puede cancelar su reserva `CONFIRMED` antes del check-in. Siguen sin existir acciones administrativas de cancelación/reprogramación, ni reprogramación de fechas para el cliente.
 7. **`HandlerMethodValidationException` sin cobertura por request real:** el handler existe de forma defensiva, pero ningún endpoint actual lo dispara (ver 7.2); está cubierto solo por test unitario directo.
 8. **Producción visual pendiente:** las 38 identidades están aprobadas, pero faltan generar, revisar, publicar e integrar sus cinco escenas canónicas por alojamiento, para un total de 190 imágenes.
+9. **Cancelación sin lógica de reembolso:** la reserva pasa a `CANCELLED`, pero no hay integración de pagos ni reembolso — el proyecto no procesa pagos reales en ningún flujo.
+10. **Metadata de documento estática:** `index.html` define `lang="es"` y un `<title>` fijo; no hay títulos ni meta-descripciones dinámicas por ruta (decisión explícita, no una limitación técnica — ver 1.4.4).
+11. **Cobertura E2E creció sin registro incremental:** la suite pasó de 5 a 13 specs (17 a 45 escenarios) a lo largo de los incrementos 2 a 4 sin que cada adición quedara documentada en su momento en este reporte; este documento la consolida por primera vez (Sección 7.1).
 
 ### 8.2. Deuda registrada originalmente y resuelta después
 
@@ -293,3 +368,5 @@ src/
 | CI sin disparadores para `sprint-4` | Resuelto en configuración; no se infiere un resultado remoto | `.github/workflows/ci.yml` |
 | Globals de tests ausentes en ESLint y deuda de lint | Resuelto | `frontend/eslint.config.js` y correcciones posteriores de lint |
 | Esquema administrado por Hibernate y datos demo acoplados | Resuelto; Flyway administra el esquema y el seed de desarrollo requiere opt-in | `db/migration/V1__baseline_schema.sql`, `db/dev/V1_9000__dev_demo_data.sql`, `DevSeedFlywayGuard` |
+| Gestión de reservas en admin sin acciones de cancelación de usuarios | Resuelto para cancelación self-service del cliente; cancelación/reprogramación admin y reprogramación de cliente siguen pendientes (ver 8.1.6) | `ReservationController`, `ReservationServiceImpl.cancelReservation()`, `MyReservationsPage.jsx` |
+| JWT en `localStorage`, sin protección CSRF | Resuelto; cookie `HttpOnly` + CSRF double-submit | `AuthCookieFactory`, `SpaCsrfTokenRequestHandler`, `SecurityConfig` |

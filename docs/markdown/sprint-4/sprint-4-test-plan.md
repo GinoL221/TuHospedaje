@@ -1,6 +1,6 @@
 ---
 title: "Plan y Reporte de Pruebas de Software — Sprint 4"
-subtitle: "TuHospedaje — Reservas, Historial, WhatsApp, Email, Panel de Administración y Refactor de Arquitectura"
+subtitle: "TuHospedaje — Reservas, Historial, WhatsApp, Email, Panel de Administración, Autenticación Segura y Cancelación de Reservas"
 author: "Equipo de Desarrollo"
 date: "Junio-Julio 2026"
 pdf_options:
@@ -30,8 +30,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 # PLAN Y REPORTE DE PRUEBAS DE SOFTWARE — SPRINT 4
 
-**Foco del Incremento:** Flujo completo de reservas, historial personal, WhatsApp y email (Inc. 1) · Tablas uniformes y dashboard administrativo (Inc. 2) · Refactor de arquitectura — búsqueda paginada, i18n y route guards (Inc. 3)
-**Enfoque de Testing:** Tests unitarios (JUnit 5 + Mockito / Vitest + React Testing Library), Tests de integración (MockMvc + Testcontainers), Verificación de UI Manual, Suite E2E con Playwright (agregado complementario). El Incremento 3 se desarrolló bajo TDD estricto en el backend (test en rojo antes que la implementación en cada tarea).
+**Foco del Incremento:** Flujo completo de reservas, historial personal, WhatsApp y email (Inc. 1) · Tablas uniformes y dashboard administrativo (Inc. 2) · Refactor de arquitectura — búsqueda paginada, i18n y route guards (Inc. 3) · Autenticación segura, cancelación de reservas y confiabilidad de frontend (Inc. 4)
+**Enfoque de Testing:** Tests unitarios (JUnit 5 + Mockito / Vitest + React Testing Library), Tests de integración (MockMvc + Testcontainers), Verificación de UI Manual, Suite E2E con Playwright. Los Incrementos 3 y 4 se desarrollaron bajo TDD estricto en el backend (test en rojo antes que la implementación en cada tarea).
 
 ## 1. Matriz Detallada de Casos de Prueba (Test Cases)
 
@@ -163,21 +163,29 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **7** | Modificar un campo y click en "Cancelar" | `ConfirmDialog` aparece preguntando si descartar cambios | ✔ Pasa |
 | **8** | Confirmar descarte en `ConfirmDialog` | Modal cierra. Alojamiento no modificado en BD | ✔ Pasa |
 
-### TC-37: Suite E2E con Playwright (Agregado complementario)
+### TC-37: Suite E2E con Playwright
 
-* **Historias de Usuario Asociadas:** Transversal — cobertura end-to-end de los flujos críticos de la aplicación, incorporada por iniciativa del equipo fuera del alcance original del sprint
+* **Historias de Usuario Asociadas:** Transversal — cobertura end-to-end de los flujos críticos de la aplicación, incorporada por iniciativa del equipo fuera del alcance original del sprint y ampliada progresivamente en los Incrementos 2 a 4
 * **Precondiciones:** Backend activo en `:8080` y frontend en `:5173`. Credenciales de usuario de prueba configuradas en `e2e/.env`.
 * **Tipos de Verificación:** Test E2E Automatizado (Playwright, Chromium + Firefox), con Page Object Model y fixtures de autenticación.
 
 | Spec | Escenarios | Cobertura | Estado |
 |------|-----------|-----------|--------|
 | `smoke.spec.js` | 3 | Carga de home con formulario de búsqueda, página de login y página de registro | ✔ Pasa |
-| `auth.spec.js` | 4 | Login válido (nombre en header), login con contraseña incorrecta (error visible), logout con redirección a home, registro exitoso | ✔ Pasa |
+| `auth.spec.js` | 5 | Login válido (nombre en header), login con contraseña incorrecta (error visible), logout con redirección a home, token expirado en endpoint protegido, registro exitoso (Inc. 4 — actualizado para el flujo cookie + CSRF) | ✔ Pasa |
 | `search.spec.js` | 2 | Búsqueda por ciudad navega a `/search`, página de resultados renderiza encabezado | ✔ Pasa |
 | `reservations.spec.js` | 2 | Historial de reservas carga para usuario autenticado, usuario anónimo es redirigido por `RequireAuth` | ✔ Pasa |
 | `visual.spec.js` | 6 | Regresión visual contra capturas de referencia: home, login, registro, resultados de búsqueda, detalle de alojamiento y mis reservas | ✔ Pasa |
+| `admin-smoke.spec.js` | 2 | Login ADMIN carga `/admin` con todas las pestañas de navegación visibles; cada pestaña de entidad es alcanzable | ✔ Pasa |
+| `admin-categories.spec.js` | 4 | CRUD de categorías desde el panel: alta, edición, baja vía `ConfirmDialog`, validación de nombre vacío | ✔ Pasa |
+| `admin-features.spec.js` | 4 | CRUD de características: alta, edición, baja vía `window.confirm`, validación de nombre vacío | ✔ Pasa |
+| `admin-policies.spec.js` | 4 | CRUD de políticas: alta, edición, baja vía `window.confirm`, validación de nombre vacío | ✔ Pasa |
+| `admin-lodgings.spec.js` | 5 | CRUD de alojamientos (sin imagen): alta, edición, baja vía `ConfirmDialog`, validación de campos requeridos y de formato de email | ✔ Pasa |
+| `admin-reservations.spec.js` | 2 | Sección de reservas del panel carga sin error; tabla visible cuando hay datos | ✔ Pasa |
+| `admin-users.spec.js` | 2 | Tabla de usuarios carga con al menos una fila | ✔ Pasa |
+| `verify-cookie-auth.spec.js` | 4 | **(Inc. 4, nuevo)** Login setea `ACCESS_TOKEN` sin exponer el token en el cuerpo; la sesión sobrevive a un reload vía `/me`; logout limpia la cookie; una mutación sin header CSRF es rechazada con 403 | ✔ Pasa |
 
-Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores = **34 ejecuciones, todas en verde**.
+Cada escenario se ejecuta en Chromium y Firefox: 45 escenarios × 2 navegadores = **90 ejecuciones** — 44 aprobadas y 46 omitidas en CI por falta de credenciales de usuario de prueba en ese entorno (condición de entorno, no fallo; ver Sección 2).
 
 <div style="page-break-before: always;"></div>
 
@@ -265,16 +273,80 @@ Cada escenario se ejecuta en Chromium y Firefox: 17 escenarios × 2 navegadores 
 
 **Cobertura automatizada:** `RequireAdmin.test.jsx` (3 escenarios de guard), `Unauthorized.test.jsx`.
 
+<div style="page-break-before: always;"></div>
+
+### TC-43: Autenticación por Cookie HttpOnly con Protección CSRF (US #41, Incremento 4)
+
+* **Historias de Usuario Asociadas:** US #41 (Iniciar sesión sin exponer el JWT a JavaScript, protegido contra CSRF)
+* **Precondiciones:** Servidor backend activo. Usuario registrado.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend, MockMvc con la cadena real de Spring Security), Test Unitario de Componente (frontend), Verificación manual con `curl`.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | `POST /api/auth/login` con credenciales válidas | HTTP 200. `Set-Cookie: ACCESS_TOKEN` `HttpOnly`. Cuerpo sin el JWT | ✔ Pasa |
+| **2** | `GET /api/auth/csrf` sin cookie de sesión | HTTP 401. Sin `Set-Cookie: XSRF-TOKEN` | ✔ Pasa |
+| **3** | `GET /api/auth/csrf` con `ACCESS_TOKEN` válida | HTTP 204. `Set-Cookie: XSRF-TOKEN` legible por JavaScript (no `HttpOnly`) | ✔ Pasa |
+| **4** | `POST /api/auth/logout` con cookie CSRF y header `X-XSRF-TOKEN` coincidentes | HTTP 204. `ACCESS_TOKEN` limpiada | ✔ Pasa |
+| **5** | `POST /api/auth/logout` sin header `X-XSRF-TOKEN`, o con un valor no coincidente | HTTP 403. Sesión no afectada | ✔ Pasa |
+| **6** | Login exitoso repetido en distintos requests con una cookia CSRF preexistente | La cookie CSRF nunca rota en requests posteriores no relacionados con login/registro (verificado con `curl`, 6/6 reusos estables) | ✔ Pasa |
+| **7** | Login/registro con una cookie CSRF preexistente (posible fixation) | La respuesta de login/registro rota el token a uno nuevo, inmediatamente usable para un logout en la misma verificación | ✔ Pasa |
+
+**Cobertura automatizada (backend):** `AuthCsrfLifecycleIntegrationTest` (7 tests — bootstrap, rotación atómica en login/registro, no-rotación en requests no relacionados, rechazo de token faltante/mismatcheado), `AuthControllerIntegrationTest`, `AuthCookieFactoryTest`, `JwtAuthenticationFilterIntegrationTest`.
+**Cobertura automatizada (frontend):** `AuthContext.test.jsx`, `AuthContextCsrfRace.test.jsx` (secuenciación bootstrap-antes-de-publicar-estado, condiciones de carrera), `HeaderCsrf.test.jsx`, `api.csrf.test.js`.
+**Cobertura E2E:** `auth.spec.js` (actualizado), `verify-cookie-auth.spec.js` (nuevo).
+
+**Nota — sesiones renovables (base, no expuesta a UI):** la infraestructura de persistencia/rotación/detección de replay (`RefreshSessionService`, entidades `RefreshToken`/`RefreshTokenFamily`/`SessionSecurityEvent`) está cubierta por `RefreshSessionConfigurationTest`, `RefreshSessionFoundationIntegrationTest`, `RefreshSessionServiceTest` y `RefreshTokenHasherTest`, pero no tiene un TC de UI/API propio en este plan porque no está conectada a ningún endpoint (`app.session.refresh.enabled=false`) — no hay flujo de usuario que ejercitarla todavía.
+
+### TC-44: Cancelación de Reserva Propia (US #42, Incremento 4)
+
+* **Historias de Usuario Asociadas:** US #42 (Cancelar una reserva propia antes del check-in)
+* **Precondiciones:** Usuario autenticado con al menos una reserva `CONFIRMED` propia, con check-in futuro.
+* **Tipos de Verificación:** API Rest, Test de Integración Automatizado (backend, MockMvc con CSRF real), Test Unitario (backend, concurrencia), Test Unitario de Componente (frontend), UI Manual.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | `PATCH /api/reservations/{id}/cancel` sobre una reserva propia `CONFIRMED` con check-in futuro, con CSRF válido | HTTP 200. `status: CANCELLED` en la respuesta | ✔ Pasa |
+| **2** | Repetir la misma cancelación sobre la reserva ya `CANCELLED` | HTTP 200 idempotente. No se reenvía el email de cancelación | ✔ Pasa |
+| **3** | `PATCH .../cancel` sobre una reserva ajena, o un `id` inexistente | HTTP 404 (idéntico en ambos casos — sin filtrar existencia a un no-propietario) | ✔ Pasa |
+| **4** | `PATCH .../cancel` sobre una reserva con check-in igual o anterior a la fecha de negocio actual | HTTP 400. Estado no modificado | ✔ Pasa |
+| **5** | `PATCH .../cancel` sin CSRF válido | HTTP 403 | ✔ Pasa |
+| **6** | Dos requests de cancelación concurrentes sobre la misma reserva | Una única transición de estado y un único email enviado (lock pesimista) | ✔ Pasa |
+| **7** | Botón "Cancelar" en `MyReservationsPage` para una reserva `CONFIRMED` con check-in futuro | Botón visible; requiere confirmación antes de enviar | ✔ Pasa |
+| **8** | Botón "Cancelar" para una reserva ya `CANCELLED`, o con check-in pasado | Botón no ofrecido | ✔ Pasa |
+| **9** | Doble click rápido en "Cancelar" | Solo se envía una solicitud; botón deshabilitado mientras está en curso ("Cancelando...") | ✔ Pasa |
+| **10** | Cancelación falla en el servidor (ej. red caída) | Error visible en la fila afectada; la fila permanece usable, sin bloquear el resto de la lista | ✔ Pasa |
+
+**Cobertura automatizada (backend):** `ReservationCancellationServiceTest` (límite de corte al segundo exacto de la fecha de negocio, no-propietario/inexistente, idempotencia, fallo de email no revierte la cancelación), `ReservationCancellationConcurrencyTest`, 6 casos nuevos en `ReservationControllerIntegrationTest`.
+**Cobertura automatizada (frontend):** 4 casos nuevos en `MyReservationsPage.test.jsx`.
+
+### TC-45: Carga Diferida de Rutas y Metadata en Español (US #43, Incremento 4)
+
+* **Historias de Usuario Asociadas:** US #43 (Que un fallo de carga de una página no deje la aplicación en blanco)
+* **Precondiciones:** Aplicación frontend construida y servida (build de producción o dev server).
+* **Tipos de Verificación:** Test Unitario de Componente (frontend, con fake timers), UI Manual.
+
+| Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|------|----------------------------|---------------------------------------------|--------|
+| **1** | Navegar a cualquier ruta en una conexión rápida | No se muestra spinner de carga (resuelve antes de 150ms) | ✔ Pasa |
+| **2** | Simular una carga de chunk que tarda más de 150ms | Spinner accesible (`role="status"`) visible con el texto correcto | ✔ Pasa |
+| **3** | Simular un fallo de carga de chunk (ej. deploy con caché de chunks obsoleta) | Mensaje "No pudimos cargar esta página" y botón "Recargar página", en vez de una pantalla en blanco | ✔ Pasa |
+| **4** | Click en "Recargar página" | Exactamente una recarga completa del navegador por click | ✔ Pasa |
+| **5** | Navegar fuera de una ruta que falló y volver a ella | El estado de error se limpia automáticamente al cambiar de ruta (`resetKey`), sin recargar toda la página | ✔ Pasa |
+| **6** | Verificar `<html lang>` y `<title>` del documento | `lang="es"`, título fijo "TuHospedaje" | ✔ Pasa |
+| **7** | Usuario con `prefers-reduced-motion` activado | La animación del spinner se desactiva | ✔ Pasa |
+
+**Cobertura automatizada:** `RouteChunkErrorBoundary.test.jsx` (3 casos), `RouteLoadingFallback.test.jsx` (4 casos, fake timers), `documentMetadata.test.jsx`.
+
 ## 2. Resumen de Ejecución
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 284 tests | ✔ Todos pasan |
-| Tests Automatizados Frontend (Vitest + React Testing Library) | 276 tests (38 archivos) | ✔ Todos pasan |
-| Tests E2E Playwright — agregado complementario (Chromium + Firefox) | 17 escenarios × 2 navegadores (34 ejecuciones) | ✔ Todos pasan (Incremento 1, sin cambios) |
-| Casos de Prueba Funcionales (Plan) | 95 escenarios | ✔ 95/95 verificados |
+| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 381 tests | ✔ Todos pasan |
+| Tests Automatizados Frontend (Vitest + React Testing Library) | 326 tests (46 archivos) | ✔ Todos pasan |
+| Tests E2E Playwright (Chromium + Firefox) | 45 escenarios × 2 navegadores (90 ejecuciones) | ✔ 44 aprobadas y 46 omitidas por falta de credenciales de prueba en CI — condición de entorno, no fallo |
+| Casos de Prueba Funcionales (Plan) | 119 escenarios | ✔ 119/119 verificados |
 
-Totales verificados de punta a punta sobre `sprint-4` con las 6 PRs del Incremento 3 ya mergeadas (`./mvnw test` en backend, `npm test` en frontend).
+Totales verificados de punta a punta sobre el commit de integración a `main` (merge commit `8a3fd43`, PR #36) — `./mvnw -B verify` en backend, `npm test` en frontend, CI de GitHub Actions para el conteo E2E.
 
 ## 3. Cobertura por Historia de Usuario
 
@@ -293,6 +365,9 @@ Totales verificados de punta a punta sobre `sprint-4` con las 6 PRs del Incremen
 | US #38 — Búsqueda multi-categoría paginada (Inc. 3) | 7 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
 | US #39 — Mensajes de error localizados (Inc. 3) | 5 TC | Automatizado (backend) | ✔ Completo |
 | US #40 — Ruta admin con `/unauthorized` (Inc. 3) | 4 TC | Automatizado (frontend) + Manual | ✔ Completo |
+| US #41 — Autenticación por cookie HttpOnly + CSRF (Inc. 4) | 7 TC | Automatizado (backend + frontend) + Manual (`curl`) | ✔ Completo |
+| US #42 — Cancelación de reserva propia (Inc. 4) | 10 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
+| US #43 — Carga diferida resiliente de rutas (Inc. 4) | 7 TC | Automatizado (frontend) + Manual | ✔ Completo |
 
 ## 4. Herramientas Utilizadas
 
@@ -300,7 +375,7 @@ Totales verificados de punta a punta sobre `sprint-4` con las 6 PRs del Incremen
 |------------|-----------|
 | JUnit 5 + Mockito | Tests unitarios de servicios |
 | MockMvc + Testcontainers | Tests de integración con MariaDB efímera |
-| Playwright | Tests E2E y regresión visual en Chromium y Firefox (agregado complementario) |
+| Playwright | Tests E2E y regresión visual en Chromium y Firefox |
 | Postman | Pruebas manuales de API |
 | Mailtrap (SMTP sandbox) | Verificación de emails de confirmación |
 | Navegador (Chrome) | Verificación de UI |
@@ -313,3 +388,5 @@ Totales verificados de punta a punta sobre `sprint-4` con las 6 PRs del Incremen
 | BUG-01 | `BookingPage.jsx` prefillaba el teléfono desde `data[data.length - 1]` (la reserva más antigua), cuando la API retorna por `checkIn DESC` y la reserva más reciente es `data[0]`. El test lo describía como "latest prior reservation" pero verificaba el último elemento — inconsistencia entre semántica del test y comportamiento real. | Baja (UX) | ✔ Corregido — `data[0]`; test actualizado para reflejar el orden DESC real de la API. |
 | BUG-02 (Inc. 3) | Al validar `page`/`size` con `@Validated` + `@Min` en `LodgingController`, Spring lanza `ConstraintViolationException` — sin un handler dedicado, el catch-all `Exception.class` preexistente la interceptaba antes que la resolución nativa de Spring, devolviendo HTTP 500 en vez de 400. Detectado empíricamente durante el desarrollo (no se asumió el comportamiento, se verificó con tests), antes de mergear. | Media (contrato de API) | ✔ Corregido — handler dedicado agregado en el mismo cambio; tests de regresión (`shouldReturnBadRequestWhenSearchPageIsNegative`, `...SizeIsNotPositive`) verifican 400. |
 | BUG-03 (Inc. 3) | `spring.messages.fallback-to-system-locale=true` (default de Spring Boot) hacía que, en un host con locale del sistema operativo en español, pedir `Accept-Language: en` (o no enviar el header) devolviera igualmente el mensaje en español — comportamiento no determinístico según el entorno de ejecución, no reproducible de la misma forma en todos los hosts/CI. | Media (i18n no determinístico) | ✔ Corregido — `spring.messages.fallback-to-system-locale=false` explícito en `application.properties` (main y test). |
+| BUG-04 (Inc. 4) | La estrategia por defecto de Spring Security (`CsrfAuthenticationStrategy`) rotaba la cookie CSRF en cada request autenticado bajo `SessionCreationPolicy.STATELESS`, no solo en el login — sin `HttpSession`, no hay dónde recordar "ya procesado". Esa rotación competía con los requests paralelos que dispara la SPA tras el login, dejando la cookie del navegador desincronizada del header leído por el frontend — causa raíz de cierres de sesión intermitentes con CSRF inválido, detectados primero de forma esporádica en Firefox. | Alta (autenticación/sesión) | ✔ Corregido — root-caused leyendo el código fuente de Spring Security 6.5 y reproducido de forma determinística con `curl` antes de implementar el fix; reemplazado por `NullAuthenticatedSessionStrategy` con rotación puntual y atómica en login/registro. Una implementación intermedia (limpiar y regenerar en dos pasos) introdujo un segundo defecto relacionado (dos `Set-Cookie` para el mismo nombre, rompiendo el siguiente logout) — detectado con un test real que falló, corregido con una única escritura. |
+| BUG-05 (Inc. 4) | Un test de integración de cancelación de reservas construía su fixture con `LocalDate.now()` del reloj del sistema en vez del reloj de negocio (`America/Argentina/Buenos_Aires`); cerca de la medianoche en Buenos Aires (UTC-3) ambos relojes podían discrepar de fecha calendario, haciendo intermitente en CI el supuesto "el check-in es hoy". | Baja (test únicamente, sin código de producción afectado) | ✔ Corregido — test inyecta el mismo `Clock` de negocio que usa la aplicación. |

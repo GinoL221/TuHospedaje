@@ -158,8 +158,13 @@ npm run dev
 
 | Método | Endpoint              | Descripción               | Auth       |
 |--------|-----------------------|---------------------------|------------|
-| POST   | /api/auth/register    | Registro de usuario       | ❌ Público |
-| POST   | /api/auth/login       | Login — devuelve JWT      | ❌ Público |
+| POST   | /api/auth/register    | Registro — JWT entregado en cookie `ACCESS_TOKEN` HttpOnly | ❌ Público |
+| POST   | /api/auth/login       | Login — JWT entregado en cookie `ACCESS_TOKEN` HttpOnly (no expuesto en el body) | ❌ Público |
+| POST   | /api/auth/logout      | Limpia la cookie de sesión (requiere CSRF válido) | ❌ Público |
+| GET    | /api/auth/me          | Identidad de la sesión autenticada | ✅ Autenticado |
+| GET    | /api/auth/csrf        | Bootstrap explícito del token CSRF | ✅ Autenticado |
+
+Las mutaciones usan protección CSRF vía cookie `XSRF-TOKEN` + header `X-XSRF-TOKEN`. Existe una base de persistencia, rotación y detección de replay para sesiones de refresh, pero está deshabilitada por defecto (`app.session.refresh.enabled=false`) y no integrada al flujo HTTP de login/renovación/logout.
 
 ### Alojamientos
 
@@ -221,6 +226,7 @@ npm run dev
 | GET    | /api/reservations/{id}    | Detalle de reserva                 | ✅ Autenticado |
 | GET    | /api/reservations/my      | Mis reservas                       | ✅ Autenticado |
 | GET    | /api/reservations         | Todas las reservas                 | ✅ ADMIN       |
+| PATCH  | /api/reservations/{id}/cancel | Cancelar reserva propia (antes del check-in) | ✅ Autenticado |
 
 ### Calificaciones
 
@@ -281,7 +287,7 @@ Reportes generados en `e2e/playwright-report/`.
 | Sprint 1 | ✅ Completado   | Base del sistema, catálogo de alojamientos, panel de administración            |
 | Sprint 2 | ✅ Completado   | Autenticación JWT, roles, categorías, Cloudinary                               |
 | Sprint 3 | ✅ Completado   | Búsqueda, favoritos, galería con modal viewer, CRUD policies, íconos Lucide    |
-| Sprint 4 | ✅ Completado   | Motor de reservas, historial, WhatsApp, email de confirmación, suite E2E       |
+| Sprint 4 | ✅ Completado   | Motor de reservas, historial, WhatsApp, email de confirmación, autenticación segura, cancelación de reservas, suite E2E |
 
 ## Ramas
 
@@ -289,7 +295,7 @@ Reportes generados en `e2e/playwright-report/`.
 - `sprint-1` — base del sistema (congelada)
 - `sprint-2` — auth + categorías (congelada)
 - `sprint-3` — búsqueda + favoritos (congelada)
-- `sprint-4` — reservas + E2E (congelada)
+- `sprint-4` — reservas, autenticación segura, cancelación de reservas y E2E (congelada; integrada a `main` mediante el merge commit `8a3fd43`, PR #36)
 
 ---
 
