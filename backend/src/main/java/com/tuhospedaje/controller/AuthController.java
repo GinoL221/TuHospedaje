@@ -85,17 +85,22 @@ public class AuthController {
         return withAccessTokenCookie(HttpStatus.OK, result);
     }
 
-    @Operation(summary = "Log out", description = "Clears the ACCESS_TOKEN session cookie. Idempotent: "
-            + "succeeds even without a prior session, so it can always be called safely.")
+    @Operation(summary = "Log out", description = "Clears the ACCESS_TOKEN and REFRESH_TOKEN session "
+            + "cookies and revokes ONLY the calling device's refresh family (Design PR3/WU4) — other "
+            + "devices' sessions remain valid. Idempotent: succeeds even without a prior session, so "
+            + "it can always be called safely.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "ACCESS_TOKEN cookie cleared (no-op if there was no session)", content = @Content),
+            @ApiResponse(responseCode = "204", description = "Cookies cleared and the calling device's refresh family revoked (no-op if there was no session)", content = @Content),
             @ApiResponse(responseCode = "403", description = "Missing/invalid CSRF token", content = @Content)
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
-        ResponseCookie clearingCookie = authCookieFactory.buildClearingCookie();
+    public ResponseEntity<Void> logout(HttpServletRequest httpRequest) {
+        authService.logout(resolveRefreshToken(httpRequest));
+        ResponseCookie clearingAccessCookie = authCookieFactory.buildClearingCookie();
+        ResponseCookie clearingRefreshCookie = refreshCookieFactory.buildClearingRefreshCookie();
         return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, clearingCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, clearingAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, clearingRefreshCookie.toString())
                 .build();
     }
 
