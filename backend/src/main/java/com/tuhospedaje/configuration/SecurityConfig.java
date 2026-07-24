@@ -70,6 +70,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
+                        // Unlike /api/auth/refresh, this call has an established session and stays
+                        // CSRF-protected — it is NOT in the ignoringRequestMatchers list above.
+                        .requestMatchers("/api/auth/password").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/features/**").permitAll()
