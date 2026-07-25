@@ -131,6 +131,32 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         int revokedFamilies = families.revokeActiveFamiliesForUser(userId, now, reason);
         log.info("event=refresh_session.mass_revoked user_id={} reason={} active_tokens_revoked={} active_families_revoked={}",
                 userId, safeReason(reason), revokedTokens, revokedFamilies);
+        // ADR-7 (Design, issue #55): revokeAll's bulk @Modifying queries bypass revokeFamily's
+        // per-family REUSE event path entirely, so admin-disable/password-change gain their
+        // own single, user-scoped event here (family=null — the FK is nullable) instead of one
+        // per family. entityManager.getReference avoids an extra SELECT for the non-null FK.
+        // Only event-worthy reasons persist one; the REUSE path in revokeFamily is untouched.
+        if (revokedFamilies > 0) {
+            SessionSecurityEvent.Type eventType = massRevocationEventType(reason);
+            if (eventType != null) {
+                SessionSecurityEvent event = new SessionSecurityEvent();
+                event.setUser(entityManager.getReference(User.class, userId));
+                event.setFamily(null);
+                event.setEventType(eventType);
+                event.setOccurredAt(now);
+                event.setDeliveryState(SessionSecurityEvent.DeliveryState.PENDING);
+                events.save(event);
+            }
+        }
+    }
+
+    private SessionSecurityEvent.Type massRevocationEventType(String reason) {
+        if (reason == null) return null;
+        return switch (reason) {
+            case "ADMIN" -> SessionSecurityEvent.Type.ADMIN_DISABLE;
+            case "PASSWORD_CHANGE" -> SessionSecurityEvent.Type.PASSWORD_CHANGE;
+            default -> null;
+        };
     }
 
     private RefreshToken lockedToken(String refreshCredential) {
@@ -216,7 +242,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     private String safeReason(String reason) {
         if (reason == null) return "OTHER";
         return switch (reason) {
-            case "LOGOUT", "LOGOUT_ALL", "ADMIN", "REUSE" -> reason;
+            case "LOGOUT", "LOGOUT_ALL", "ADMIN", "REUSE", "PASSWORD_CHANGE" -> reason;
             default -> "OTHER";
         };
     }

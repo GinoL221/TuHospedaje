@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.dto.auth.RoleRequest;
+import com.tuhospedaje.dto.auth.UserStatusRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
@@ -16,7 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -166,5 +169,28 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
+    }
+
+    // ADR-0 (conditional-bean kill-switch): this test class runs with the DEFAULT test
+    // properties, where app.session.refresh.enabled=false, so no RefreshSessionService bean
+    // exists. If UserServiceImpl depended on it as a hard constructor dependency instead of
+    // ObjectProvider<RefreshSessionService>, the whole Spring context above would fail to
+    // start and EVERY test in this class would fail before this assertion ever ran. The
+    // context starting AND the disable call succeeding together prove the kill-switch:
+    // admin-disable still flips the enabled flag and no-ops the (absent) revokeAll call.
+    @Test
+    void shouldDisableUserSuccessfullyEvenWithRefreshSessionsDisabled() throws Exception {
+        UserStatusRequest request = new UserStatusRequest(false);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(patch("/api/users/{id}/enabled", regularUserId)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        assertThat(userRepository.findById(regularUserId).orElseThrow().isEnabled()).isFalse();
     }
 }

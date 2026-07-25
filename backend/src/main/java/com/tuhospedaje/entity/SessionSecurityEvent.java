@@ -57,7 +57,10 @@ public class SessionSecurityEvent {
     private String lastErrorCode;
 
     public enum Type {
-        REFRESH_REUSE
+        REFRESH_REUSE,
+        ADMIN_DISABLE,
+        PASSWORD_CHANGE,
+        LOGOUT_ALL
     }
 
     public enum DeliveryState {

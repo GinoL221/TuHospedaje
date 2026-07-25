@@ -51,7 +51,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
-                if(jwtService.isTokenValid(jwt, userDetails)) {
+                // ADR-6 (Design, issue #55): admin-disable / password-change must cut off a
+                // still-valid, unexpired JWT on the very next request. userDetails is already
+                // loaded above to validate the JWT subject, so this reuses it with zero extra
+                // DB round-trip instead of a separate enabled lookup.
+                if(jwtService.isTokenValid(jwt, userDetails) && userDetails.isEnabled()) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());

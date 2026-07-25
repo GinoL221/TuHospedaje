@@ -12,6 +12,8 @@ public interface UserService {
 
     UserDTO updateRole(Long id, String newRole) throws ResourceNotFoundException;
 
+    UserDTO setEnabled(Long id, boolean enabled) throws ResourceNotFoundException;
+
     void addFavorite(Long userId, Long lodgingId);
 
     void removeFavorite(Long userId, Long lodgingId);
