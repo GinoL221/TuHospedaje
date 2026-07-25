@@ -1,3 +1,9 @@
+// Circular by design: refreshCoordinator.js imports `post` from this module
+// to call POST /auth/refresh. Both sides only reference the import inside
+// function bodies (never at module-evaluation time), so ESM's hoisted
+// function-declaration bindings resolve this safely.
+import { ensureRefreshed } from "./refreshCoordinator";
+
 // Evaluated once at module import time (top-level), so vi.stubEnv calls
 // made after this module is first imported (e.g. in beforeEach) will not
 // change API_BASE; use vi.resetModules() + a dynamic import() to re-evaluate it.
@@ -6,13 +12,16 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const UNSAFE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
 
 // Endpoints that legitimately return 401 for reasons unrelated to an
-// expired/missing session cookie (e.g. wrong credentials on login). These
-// must not trigger the global auth:unauthorized redirect.
+// expired/missing session cookie (e.g. wrong credentials on login), plus
+// /auth/refresh itself (its own 401 is terminal and must not recurse back
+// into the refresh coordinator). These must not trigger the global
+// auth:unauthorized redirect from this same branch.
 const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
   "/auth/login",
   "/auth/register",
   "/auth/me",
   "/auth/csrf",
+  "/auth/refresh",
 ]);
 
 // Reads the XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository
@@ -30,7 +39,7 @@ export async function bootstrapCsrf() {
   }
 }
 
-async function request(method, endpoint, data) {
+async function request(method, endpoint, data, alreadyRetried = false) {
   const headers = { "Content-Type": "application/json" };
   if (UNSAFE_METHODS.has(method)) {
     const csrfToken = getCsrfToken();
@@ -47,6 +56,15 @@ async function request(method, endpoint, data) {
   const res = await fetch(`${API_BASE}${endpoint}`, config);
 
   if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
+    if (!alreadyRetried) {
+      // Coalesce this 401 with any other concurrent one behind a single
+      // in-flight /auth/refresh call, then retry the original request ONCE.
+      // `ensureRefreshed` itself dispatches auth:unauthorized (exactly once,
+      // shared across every waiting caller) if the refresh fails, so we
+      // simply propagate that rejection here without dispatching again.
+      await ensureRefreshed();
+      return request(method, endpoint, data, true);
+    }
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
     throw new Error("Sesión expirada");
   }

@@ -291,8 +291,18 @@ describe("api service - X-XSRF-TOKEN header", () => {
 });
 
 describe("api service - 401 unauthorized", () => {
-  it("dispatches auth:unauthorized once for a protected API 401", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
+  it("dispatches auth:unauthorized once for a protected API 401 that still 401s after the refresh-and-retry attempt", async () => {
+    // Since PR4/WU5, a protected 401 first attempts a single refresh-and-retry
+    // (see the "refresh coordination" describe block below) before giving up.
+    // /auth/refresh itself succeeds here, but the retried request still 401s
+    // (e.g. some other reason invalidated the session) — the `alreadyRetried`
+    // guard must then dispatch auth:unauthorized exactly once, with no loop.
+    const fetchMock = vi.fn((url) => {
+      if (url.includes("/auth/refresh")) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+      }
+      return Promise.resolve({ ok: false, status: 401, json: async () => ({}) });
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const eventSpy = vi.fn();
@@ -302,6 +312,8 @@ describe("api service - 401 unauthorized", () => {
     expect(eventSpy).toHaveBeenCalledTimes(1);
     expect(eventSpy.mock.calls[0][0]).toBeInstanceOf(CustomEvent);
     expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
+    const lodgingsCalls = fetchMock.mock.calls.filter(([url]) => url.includes("/lodgings"));
+    expect(lodgingsCalls).toHaveLength(2); // original + single retry, no loop
 
     window.removeEventListener("auth:unauthorized", eventSpy);
   });
@@ -340,6 +352,40 @@ describe("api service - 401 unauthorized", () => {
     expect(eventSpy).not.toHaveBeenCalled();
 
     window.removeEventListener("auth:unauthorized", eventSpy);
+  });
+});
+
+describe("api service - refresh-and-retry does not rotate CSRF", () => {
+  it("reuses the existing X-XSRF-TOKEN on the retried request instead of fetching a new one", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-original; path=/";
+
+    const hitCounts = {};
+    const fetchMock = vi.fn((url) => {
+      if (url.includes("/auth/refresh")) {
+        // Refresh rotates the session cookies server-side but does NOT
+        // rotate the CSRF cookie (design ADR: "refresh does not rotate CSRF").
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+      }
+      hitCounts[url] = (hitCounts[url] || 0) + 1;
+      if (hitCounts[url] === 1) {
+        return Promise.resolve({ ok: false, status: 401, json: async () => ({}) });
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({ status: "CANCELLED" }) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await patch("/reservations/1/cancel");
+
+    expect(result).toEqual({ status: "CANCELLED" });
+
+    const csrfBootstrapCalls = fetchMock.mock.calls.filter(([url]) => url.includes("/auth/csrf"));
+    expect(csrfBootstrapCalls).toHaveLength(0);
+
+    const cancelCalls = fetchMock.mock.calls.filter(([url]) => url.includes("/reservations/1/cancel"));
+    expect(cancelCalls).toHaveLength(2);
+    for (const [, config] of cancelCalls) {
+      expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-original" });
+    }
   });
 });
 
