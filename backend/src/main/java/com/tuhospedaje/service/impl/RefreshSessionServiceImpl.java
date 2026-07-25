@@ -47,7 +47,26 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     }
 
     @Override
-    @Transactional
+    // noRollbackFor: issue() is called from inside AuthServiceImpl.login()/register()'s own
+    // transaction (default REQUIRED propagation) as a best-effort enhancement — the caller
+    // (issueRefreshCredential()) fully catches any failure and never lets it propagate further.
+    // Without this rule, issue()'s own advice would still mark the SHARED transaction
+    // rollback-only on any RuntimeException before the caller's catch ever runs, so
+    // login()/register() would still fail with UnexpectedRollbackException at commit despite
+    // catching nothing itself. (Propagation.NESTED/REQUIRES_NEW were considered and rejected:
+    // NESTED needs JDBC savepoint support HibernateJpaDialect doesn't provide, and REQUIRES_NEW
+    // would open a second physical transaction that can't see register()'s not-yet-committed
+    // User row, breaking the family->user FK.
+    //
+    // Trade-off: both RefreshTokenFamily/RefreshToken use GenerationType.IDENTITY, so
+    // families.save(family) below is an immediate physical INSERT, not deferred to flush.
+    // hasher.generate() runs BEFORE that insert specifically so its realistic failure modes
+    // (unknown/misconfigured active key id, Mac/JCE failure) can't leave an orphaned family
+    // row — a failure there now persists nothing at all. tokens.save() immediately following
+    // families.save() on the same connection/transaction remains a narrow residual risk (an
+    // orphaned family row with no token if that specific insert fails), accepted as a rare
+    // DB-level failure rather than a realistic app-level one.
+    @Transactional(noRollbackFor = RuntimeException.class)
     public Session issue(User user) {
         Instant now = now();
         RefreshTokenFamily family = new RefreshTokenFamily();
@@ -56,10 +75,10 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         family.setCurrentGeneration(0);
         family.setIssuedAt(now);
         family.setAbsoluteExpiresAt(now.plus(properties.refresh().absoluteLifetime()));
-        families.save(family);
         RefreshTokenHasher.GeneratedCredential credential = hasher.generate();
+        families.save(family);
         tokens.save(token(family, 0, credential, null, now));
-        return new Session(family.getId(), credential.presentedValue(), family.getAbsoluteExpiresAt());
+        return new Session(family.getId(), credential.presentedValue(), family.getAbsoluteExpiresAt(), user.getId());
     }
 
     @Override
@@ -73,7 +92,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
             if (isEligibleRetry(token, successor, family, now)) {
                 RefreshTokenHasher.GeneratedCredential credential = hasher.deriveSuccessor(
                         refreshCredential, family.getFamilyUuid(), successor.getGeneration(), successor.getHmacKeyId());
-                return new Session(family.getId(), credential.presentedValue(), family.getAbsoluteExpiresAt());
+                return new Session(family.getId(), credential.presentedValue(), family.getAbsoluteExpiresAt(), family.getUser().getId());
             }
             revokeFamily(family, now, FamilyRevocation.REUSE);
             throw new Rejected();
@@ -90,7 +109,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         family.setCurrentGeneration(generation);
         family.setLastRotatedAt(now);
         family.setLastSeenAt(now);
-        return new Session(family.getId(), successor.presentedValue(), family.getAbsoluteExpiresAt());
+        return new Session(family.getId(), successor.presentedValue(), family.getAbsoluteExpiresAt(), family.getUser().getId());
     }
 
     @Override
@@ -112,6 +131,32 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         int revokedFamilies = families.revokeActiveFamiliesForUser(userId, now, reason);
         log.info("event=refresh_session.mass_revoked user_id={} reason={} active_tokens_revoked={} active_families_revoked={}",
                 userId, safeReason(reason), revokedTokens, revokedFamilies);
+        // ADR-7 (Design, issue #55): revokeAll's bulk @Modifying queries bypass revokeFamily's
+        // per-family REUSE event path entirely, so admin-disable/password-change gain their
+        // own single, user-scoped event here (family=null — the FK is nullable) instead of one
+        // per family. entityManager.getReference avoids an extra SELECT for the non-null FK.
+        // Only event-worthy reasons persist one; the REUSE path in revokeFamily is untouched.
+        if (revokedFamilies > 0) {
+            SessionSecurityEvent.Type eventType = massRevocationEventType(reason);
+            if (eventType != null) {
+                SessionSecurityEvent event = new SessionSecurityEvent();
+                event.setUser(entityManager.getReference(User.class, userId));
+                event.setFamily(null);
+                event.setEventType(eventType);
+                event.setOccurredAt(now);
+                event.setDeliveryState(SessionSecurityEvent.DeliveryState.PENDING);
+                events.save(event);
+            }
+        }
+    }
+
+    private SessionSecurityEvent.Type massRevocationEventType(String reason) {
+        if (reason == null) return null;
+        return switch (reason) {
+            case "ADMIN" -> SessionSecurityEvent.Type.ADMIN_DISABLE;
+            case "PASSWORD_CHANGE" -> SessionSecurityEvent.Type.PASSWORD_CHANGE;
+            default -> null;
+        };
     }
 
     private RefreshToken lockedToken(String refreshCredential) {
@@ -197,7 +242,7 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     private String safeReason(String reason) {
         if (reason == null) return "OTHER";
         return switch (reason) {
-            case "LOGOUT", "LOGOUT_ALL", "ADMIN", "REUSE" -> reason;
+            case "LOGOUT", "LOGOUT_ALL", "ADMIN", "REUSE", "PASSWORD_CHANGE" -> reason;
             default -> "OTHER";
         };
     }

@@ -8,7 +8,9 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.RefreshSessionService;
 import com.tuhospedaje.service.UserService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +21,17 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final LodgingRepository lodgingRepository;
+    // ObjectProvider, NOT a hard constructor dependency (Design ADR-0): RefreshSessionService
+    // has no bean at all when app.session.refresh.enabled=false (RefreshSessionConfiguration
+    // is @ConditionalOnProperty). A hard dependency here would break ApplicationContext
+    // startup with the flag off, defeating the documented rollback/kill-switch.
+    private final ObjectProvider<RefreshSessionService> refreshSessions;
 
-    public UserServiceImpl(UserRepository userRepository, LodgingRepository lodgingRepository) {
+    public UserServiceImpl(UserRepository userRepository, LodgingRepository lodgingRepository,
+            ObjectProvider<RefreshSessionService> refreshSessions) {
         this.userRepository = userRepository;
         this.lodgingRepository = lodgingRepository;
+        this.refreshSessions = refreshSessions;
     }
 
     @Override
@@ -40,6 +49,22 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
         user.setRole(RoleEnum.valueOf(newRole));
         User updated = userRepository.save(user);
+        return UserDTO.fromEntity(updated);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO setEnabled(Long id, boolean enabled) throws ResourceNotFoundException {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
+        user.setEnabled(enabled);
+        User updated = userRepository.save(user);
+        if (!enabled) {
+            RefreshSessionService sessions = refreshSessions.getIfAvailable();
+            if (sessions != null) {
+                sessions.revokeAll(id, "ADMIN");
+            }
+        }
         return UserDTO.fromEntity(updated);
     }
 

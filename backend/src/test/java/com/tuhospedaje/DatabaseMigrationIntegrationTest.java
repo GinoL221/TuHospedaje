@@ -410,7 +410,14 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .initializers(applicationContext -> applicationContext.getEnvironment().getPropertySources().addFirst(
                             new MapPropertySource("actual-profile-testcontainer", Map.of(
                                     "app.jwt.secret", "dGVzdHNlY3JldDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTA=",
-                                    "app.cors.allowed-origins", "http://localhost:5173"
+                                    "app.cors.allowed-origins", "http://localhost:5173",
+                                    // PR1/WU2 flips app.session.refresh.enabled=true in application.properties,
+                                    // so the actual default/prod profile now needs an environment-backed key
+                                    // ring too (mirrors SESSION_ACTIVE_KEY_ID/SESSION_REFRESH_KEY, which have no
+                                    // fallback in production — see .env.example), exactly like app.jwt.secret above.
+                                    "app.session.key-ring.active-key-id", "test-actual-profile-rt1",
+                                    "app.session.key-ring.key-entries[0].id", "test-actual-profile-rt1",
+                                    "app.session.key-ring.key-entries[0].secret", "test-actual-profile-refresh-key-not-for-production"
                             ))))
                     .run(
                             "--spring.datasource.url=" + profileContainer.getJdbcUrl(),

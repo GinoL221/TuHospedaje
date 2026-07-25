@@ -74,6 +74,27 @@ class RefreshSessionServiceTest {
         serviceLogs.stop();
     }
 
+    // Session.userId() (Design ADR-2, PR1/WU2): rotate()/revokeAll() need the owning
+    // user's id to mint a new access JWT without an extra lookup by familyId. Additive
+    // 4th Session component — asserted across issue, ordinary rotate, AND the retry
+    // branch (the three call sites in RefreshSessionServiceImpl), since each constructs
+    // its own Session instance.
+    @Test
+    void issueRotateAndRetryAllExposeTheOwningUserId() {
+        setClock(ISSUED_AT);
+        User owner = user("owner-id@example.test");
+        var issued = sessions.issue(owner);
+        assertThat(issued.userId()).isEqualTo(owner.getId());
+
+        setClock(ISSUED_AT.plusSeconds(10));
+        var rotated = sessions.rotate(issued.refreshCredential());
+        assertThat(rotated.userId()).isEqualTo(owner.getId());
+
+        setClock(ISSUED_AT.plusSeconds(11));
+        var retried = sessions.rotate(issued.refreshCredential());
+        assertThat(retried.userId()).isEqualTo(owner.getId());
+    }
+
     @Test
     void issuesForExactlyThirtyDaysAndRotatesAtTheOriginalAbsoluteBoundary() {
         setClock(ISSUED_AT);
@@ -338,6 +359,58 @@ class RefreshSessionServiceTest {
             assertThat(event.getFormattedMessage())
                     .doesNotContain("admin-secret@example.test", "mass-log-secret@example.test", "secret");
         });
+    }
+
+    // ADR-7 (Design, issue #55): revokeAll bypasses revokeFamily's per-family REUSE event
+    // path entirely (bulk @Modifying queries), so admin-disable/password-change must gain
+    // their own event emission — one user-scoped event (family=null), not one per family.
+    @Test
+    void revokeAllForAdminReasonPersistsExactlyOneSessionSecurityEvent() {
+        setClock(ISSUED_AT);
+        User user = user("admin-disable-event@example.test");
+        sessions.issue(user);
+        sessions.issue(user);
+
+        sessions.revokeAll(user.getId(), "ADMIN");
+
+        List<com.tuhospedaje.entity.SessionSecurityEvent> userEvents = events.findAll().stream()
+                .filter(event -> event.getUser().getId().equals(user.getId()))
+                .toList();
+        assertThat(userEvents).singleElement().satisfies(event -> {
+            assertThat(event.getFamily()).isNull();
+            assertThat(event.getEventType()).isEqualTo(com.tuhospedaje.entity.SessionSecurityEvent.Type.ADMIN_DISABLE);
+            assertThat(event.getDeliveryState()).isEqualTo(com.tuhospedaje.entity.SessionSecurityEvent.DeliveryState.PENDING);
+            assertThat(event.getOccurredAt()).isEqualTo(ISSUED_AT);
+        });
+    }
+
+    @Test
+    void revokeAllForPasswordChangeReasonPersistsExactlyOneSessionSecurityEvent() {
+        setClock(ISSUED_AT);
+        User user = user("password-change-event@example.test");
+        sessions.issue(user);
+        sessions.issue(user);
+
+        sessions.revokeAll(user.getId(), "PASSWORD_CHANGE");
+
+        List<com.tuhospedaje.entity.SessionSecurityEvent> userEvents = events.findAll().stream()
+                .filter(event -> event.getUser().getId().equals(user.getId()))
+                .toList();
+        assertThat(userEvents).singleElement().satisfies(event -> {
+            assertThat(event.getFamily()).isNull();
+            assertThat(event.getEventType()).isEqualTo(com.tuhospedaje.entity.SessionSecurityEvent.Type.PASSWORD_CHANGE);
+            assertThat(event.getDeliveryState()).isEqualTo(com.tuhospedaje.entity.SessionSecurityEvent.DeliveryState.PENDING);
+        });
+    }
+
+    @Test
+    void revokeAllDoesNotPersistAnEventWhenNoActiveFamilyWasRevoked() {
+        setClock(ISSUED_AT);
+        User user = user("no-active-family@example.test");
+
+        sessions.revokeAll(user.getId(), "ADMIN");
+
+        assertThat(events.findAll().stream().filter(event -> event.getUser().getId().equals(user.getId()))).isEmpty();
     }
 
     @Test
