@@ -70,4 +70,19 @@ class AuthServiceImplTest {
         assertThrows(IllegalArgumentException.class,
                 () -> authService.currentUser("noexiste@test.com"));
     }
+
+    // ADR-0 (conditional-bean kill-switch): this test class runs with the DEFAULT test
+    // properties, where app.session.refresh.enabled=false, so no RefreshSessionService
+    // bean exists. If AuthServiceImpl depended on it as a hard constructor dependency
+    // instead of ObjectProvider<RefreshSessionService>, the whole Spring context above
+    // would fail to start and EVERY test in this class (and BackendApplicationTests,
+    // AuthControllerIntegrationTest, etc.) would fail before this assertion ever ran.
+    // The context starting AND refreshCredential() being null together prove the
+    // kill-switch: register/login degrade gracefully with refresh sessions disabled.
+    @Test
+    void refreshCredentialIsNullWhenRefreshSessionsAreDisabled() {
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-refresh-off@test.com", "123456");
+        AuthResult result = authService.register(request);
+        assertThat(result.refreshCredential()).isNull();
+    }
 }

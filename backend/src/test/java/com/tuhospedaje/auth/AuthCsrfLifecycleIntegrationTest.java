@@ -146,6 +146,50 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
         assertThat(result.getResponse().getCookie("XSRF-TOKEN")).isNull();
     }
 
+    // --- PR1/WU2 regression guard: adding /api/auth/refresh to the CSRF ignore-list and
+    // permitAll matchers must not reopen the PR #60 NullAuthenticatedSessionStrategy race
+    // (Delta Spec Scenario "CSRF exemption does not reopen the PR #60 race"). ---
+
+    @Test
+    void refreshEndpointStaysCsrfExemptWithoutRequiringAToken() throws Exception {
+        // No REFRESH_TOKEN cookie, no X-XSRF-TOKEN header at all. If /api/auth/refresh
+        // were NOT on the CSRF ignore-list, this would be rejected with 403 before ever
+        // reaching the controller. It must instead reach AuthController and fail for the
+        // real reason (no refresh credential presented) — a generic 401, never 403.
+        mockMvc.perform(post("/api/auth/refresh"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void concurrentAuthenticatedRequestsAfterAddingRefreshMatcherStillDoNotChurnCsrfCookieOr403() throws Exception {
+        // Mirrors unrelatedAuthenticatedRequestDoesNotRotateCsrfCookie, but fires several
+        // authenticated requests concurrently — the exact shape of the original PR #60
+        // bug (parallel home-page calls right after login racing a per-request CSRF
+        // rotation). Adding a new ignoringRequestMatchers()/permitAll() entry for
+        // /api/auth/refresh must not resurrect that race for ordinary authenticated
+        // traffic elsewhere in the app.
+        Cookie accessToken = login("csrf-concurrent@test.com");
+        Cookie csrfToken = csrfToken(accessToken);
+
+        int concurrentRequests = 5;
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(concurrentRequests);
+        try {
+            var futures = java.util.stream.IntStream.range(0, concurrentRequests)
+                    .mapToObj(i -> executor.submit(() -> mockMvc.perform(
+                                    get("/api/categories").cookie(accessToken, csrfToken))
+                            .andReturn()))
+                    .toList();
+
+            for (var future : futures) {
+                MvcResult result = future.get(5, java.util.concurrent.TimeUnit.SECONDS);
+                assertThat(result.getResponse().getStatus()).isEqualTo(200);
+                assertThat(result.getResponse().getCookie("XSRF-TOKEN")).isNull();
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
     private Cookie login(String email) throws Exception {
         RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
         mockMvc.perform(post("/api/auth/register")

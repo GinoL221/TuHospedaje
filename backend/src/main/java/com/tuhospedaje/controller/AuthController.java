@@ -1,17 +1,21 @@
 package com.tuhospedaje.controller;
 
 import com.tuhospedaje.configuration.AuthCookieFactory;
+import com.tuhospedaje.configuration.RefreshCookieFactory;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
+import com.tuhospedaje.service.RefreshSessionService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -19,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,6 +36,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.Locale;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -38,10 +46,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+    private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
 
     private final AuthService authService;
     private final AuthCookieFactory authCookieFactory;
+    private final RefreshCookieFactory refreshCookieFactory;
     private final CsrfTokenRepository csrfTokenRepository;
+    private final MessageSource messageSource;
 
     @Operation(summary = "Register a new user", description = "Creates a new user account and sets the ACCESS_TOKEN session cookie")
     @ApiResponses({
@@ -107,6 +118,51 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Rotate the refresh session", description = "Exchanges the REFRESH_TOKEN cookie "
+            + "for a new ACCESS_TOKEN and a rotated REFRESH_TOKEN. CSRF-exempt: the httpOnly refresh "
+            + "cookie itself is the credential, and it is never readable cross-origin.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Refresh succeeded; both cookies rotated",
+                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Missing, invalid, expired, or reused refresh credential", content = @Content)
+    })
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(HttpServletRequest httpRequest) {
+        String refreshCredential = resolveRefreshToken(httpRequest);
+        if (refreshCredential == null) {
+            throw new RefreshSessionService.Rejected();
+        }
+        AuthResult result = authService.refresh(refreshCredential);
+        return withAccessTokenCookie(HttpStatus.OK, result);
+    }
+
+    /**
+     * Non-disclosing (Delta Spec: "Invalid/missing/reused refresh token rejected
+     * generically") — every rejection reason (missing cookie, malformed, expired,
+     * revoked, reused, unknown user, refresh sessions disabled) maps to this SAME 401
+     * body and clears the now-useless REFRESH_TOKEN cookie so a dead credential doesn't
+     * linger in the browser.
+     */
+    @ExceptionHandler(RefreshSessionService.Rejected.class)
+    public ResponseEntity<Map<String, Object>> handleRefreshRejected(Locale locale) {
+        ResponseCookie clearingRefreshCookie = refreshCookieFactory.buildClearingRefreshCookie();
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.SET_COOKIE, clearingRefreshCookie.toString())
+                .body(Map.of("error", messageSource.getMessage("error.session.refresh_invalid", null, locale), "status", 401));
+    }
+
+    private String resolveRefreshToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (REFRESH_TOKEN_COOKIE.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
     // SecurityConfig disables Spring's default per-request CsrfAuthenticationStrategy (it
     // rotated the XSRF-TOKEN cookie on every authenticated request, not just login, which
     // raced against concurrent requests — see the comment there). But a token issued before
@@ -132,8 +188,14 @@ public class AuthController {
 
     private ResponseEntity<AuthResponse> withAccessTokenCookie(HttpStatus status, AuthResult result) {
         ResponseCookie accessTokenCookie = authCookieFactory.buildAccessTokenCookie(result.token());
-        return ResponseEntity.status(status)
-                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
-                .body(result.body());
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(status)
+                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
+        // refreshCredential is null when refresh sessions are disabled (Design ADR-0
+        // kill-switch) — login/register/refresh all degrade to ACCESS_TOKEN-only.
+        if (result.refreshCredential() != null) {
+            ResponseCookie refreshTokenCookie = refreshCookieFactory.buildRefreshCookie(result.refreshCredential());
+            response.header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+        }
+        return response.body(result.body());
     }
 }

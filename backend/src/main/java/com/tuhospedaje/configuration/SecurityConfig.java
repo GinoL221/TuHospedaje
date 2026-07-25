@@ -42,7 +42,15 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfTokenRepository())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
-                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register")
+                        // /api/auth/refresh is CSRF-exempt for the same reason login/register are:
+                        // it is an unauthenticated-context entry point (a valid session may have
+                        // just expired) whose real credential is the httpOnly REFRESH_TOKEN cookie
+                        // itself, not the CSRF-protected session. A cross-site request cannot read
+                        // that httpOnly cookie to forge a call, and the credential only ever
+                        // advances one generation per legitimate use — so exempting it does NOT
+                        // reopen the PR #60 NullAuthenticatedSessionStrategy rotation race below;
+                        // see AuthCsrfLifecycleIntegrationTest's regression coverage.
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh")
                         // Without this, CsrfConfigurer defaults to a CsrfAuthenticationStrategy that
                         // clears and regenerates the XSRF-TOKEN cookie every time SessionManagementFilter
                         // sees a newly-authenticated request. That guard exists to prevent session
@@ -59,7 +67,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()

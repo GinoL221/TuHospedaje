@@ -74,6 +74,27 @@ class RefreshSessionServiceTest {
         serviceLogs.stop();
     }
 
+    // Session.userId() (Design ADR-2, PR1/WU2): rotate()/revokeAll() need the owning
+    // user's id to mint a new access JWT without an extra lookup by familyId. Additive
+    // 4th Session component — asserted across issue, ordinary rotate, AND the retry
+    // branch (the three call sites in RefreshSessionServiceImpl), since each constructs
+    // its own Session instance.
+    @Test
+    void issueRotateAndRetryAllExposeTheOwningUserId() {
+        setClock(ISSUED_AT);
+        User owner = user("owner-id@example.test");
+        var issued = sessions.issue(owner);
+        assertThat(issued.userId()).isEqualTo(owner.getId());
+
+        setClock(ISSUED_AT.plusSeconds(10));
+        var rotated = sessions.rotate(issued.refreshCredential());
+        assertThat(rotated.userId()).isEqualTo(owner.getId());
+
+        setClock(ISSUED_AT.plusSeconds(11));
+        var retried = sessions.rotate(issued.refreshCredential());
+        assertThat(retried.userId()).isEqualTo(owner.getId());
+    }
+
     @Test
     void issuesForExactlyThirtyDaysAndRotatesAtTheOriginalAbsoluteBoundary() {
         setClock(ISSUED_AT);
