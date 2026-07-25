@@ -141,6 +141,25 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    @Override
+    @Transactional
+    public void logout(String refreshCredential) {
+        if (refreshCredential == null) {
+            return;
+        }
+        RefreshSessionService sessions = refreshSessions.getIfAvailable();
+        if (sessions == null) {
+            return;
+        }
+        try {
+            sessions.revokeCurrent(refreshCredential);
+        } catch (RefreshSessionService.Rejected ex) {
+            // Already-consumed/unknown/reused credential — logout stays idempotent/204
+            // regardless (Design PR3/WU4), so this is deliberately swallowed rather than
+            // propagated.
+        }
+    }
+
     private AuthResult buildAuthResult(User user) {
         String token = jwtService.generateToken(claimsFor(user), user);
         String refreshCredential = issueRefreshCredential(user);

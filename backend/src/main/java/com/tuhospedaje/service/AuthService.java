@@ -46,4 +46,16 @@ public interface AuthService {
      * match — no session is revoked and no event is persisted in that case.
      */
     void changePassword(String email, String currentPassword, String newPassword);
+
+    /**
+     * Revokes ONLY the calling device's refresh family (Design PR3/WU4,
+     * {@code revokeCurrent} — never {@code revokeAll}): other devices' sessions stay
+     * valid (Delta Spec: "Only the calling device is logged out"). Best-effort via
+     * {@link RefreshSessionService} ADR-0's {@code ObjectProvider} — a no-op when
+     * refresh sessions are disabled or {@code refreshCredential} is {@code null} (no
+     * REFRESH_TOKEN cookie was ever presented). {@link RefreshSessionService.Rejected}
+     * (already-consumed/unknown/reused credential) is deliberately swallowed here so
+     * logout stays idempotent/204 regardless of the credential's state.
+     */
+    void logout(String refreshCredential);
 }
