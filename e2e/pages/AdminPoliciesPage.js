@@ -7,7 +7,9 @@ const AdminBasePage = require('./AdminBasePage');
  * Entity key : "policies"
  * Form fields : name (text input), icon (IconPicker — NOT fillField)
  *               description (textarea, optional)
- * Delete mode : "dialog" (native window.confirm — CONFIRMED in PR-A source review)
+ * Delete mode : "component" (ConfirmDialog — confirm-delete-yes; verified against
+ *               frontend/src/pages/Admin/AdminPolicies.jsx, which renders
+ *               ConfirmDialog testId="confirm-delete", not window.confirm)
  *
  * Note: name and icon are required; description is optional.
  * The unsaved-changes ConfirmDialog uses testId="confirm-cancel" (NOT confirm-delete).
@@ -17,7 +19,7 @@ class AdminPoliciesPage extends AdminBasePage {
   constructor(page) {
     super(page);
     this.entityKey = 'policies';
-    this.deleteMode = 'dialog';
+    this.deleteMode = 'component';
   }
 
   /**
@@ -29,9 +31,11 @@ class AdminPoliciesPage extends AdminBasePage {
 
   /**
    * Open the add form, fill name (required), pick an icon (required),
-   * optionally fill description, then save.
+   * optionally fill description, then save. Returns the create POST response
+   * so callers can track the real id instead of re-deriving it from a
+   * possibly-paginated row.
    * @param {string} name
-   * @param {string} iconKey  — e.g. "fa-solid fa-shield"
+   * @param {string} iconKey  — e.g. "ban" (see frontend/src/utils/iconMap.js)
    * @param {{ description?: string }} [opts]
    */
   async createPolicy(name, iconKey, opts = {}) {
@@ -41,7 +45,13 @@ class AdminPoliciesPage extends AdminBasePage {
       await this.fillField('description', opts.description);
     }
     await this.pickIcon(iconKey);
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().endsWith('/api/policies') && response.request().method() === 'POST',
+    );
     await this.save();
+    const response = await responsePromise;
+    await this.page.locator('[data-testid="admin-modal"]').waitFor({ state: 'hidden' });
+    return response;
   }
 
   /**
@@ -56,7 +66,7 @@ class AdminPoliciesPage extends AdminBasePage {
   }
 
   /**
-   * Delete the row identified by id using native window.confirm.
+   * Delete the row identified by id using the ConfirmDialog component.
    * @param {number|string} id
    */
   async deletePolicy(id) {

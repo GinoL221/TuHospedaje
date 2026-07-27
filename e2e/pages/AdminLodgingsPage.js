@@ -63,33 +63,11 @@ class AdminLodgingsPage extends AdminBasePage {
   }
 
   /**
-   * Find a newly created lodging by id, navigating to the last page when needed.
-   * The admin table is sorted by id ascending by default.
-   * @param {number|string} id
-   */
-  async findCreatedRow(id) {
-    const row = this.findRow(id);
-    if (await row.isVisible()) return row;
-
-    const lastPageButton = this.page.getByRole('button', { name: 'Última', exact: true });
-    if (await lastPageButton.isVisible() && await lastPageButton.isEnabled()) {
-      await lastPageButton.click();
-    }
-
-    await row.waitFor({ state: 'visible' });
-    return row;
-  }
-
-  /**
    * Delete tracked lodgings through the admin UI. Cleanup failures fail the test.
    * @param {Array<number|string>} ids
    */
   async cleanupCreatedLodgings(ids) {
-    for (const id of ids) {
-      const row = await this.findCreatedRow(id);
-      await this.deleteLodging(id);
-      await row.waitFor({ state: 'detached' });
-    }
+    return this.cleanupCreatedRows(ids, this.deleteMode);
   }
 
   /**

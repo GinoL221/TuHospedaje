@@ -5,119 +5,94 @@
  * Scenarios:
  *   1. Create happy path — fill name + pick icon → row appears in table
  *   2. Edit happy path   — open edit, change name → updated name in table
- *   3. Delete happy path — delete (window.confirm) → row gone from table
+ *   3. Delete happy path — delete (ConfirmDialog) → row gone from table
  *   4. Validation        — submit empty form → error-name visible
  *
- * Skips cleanly when the admin shell is not reachable (stack down).
+ * Fails with the current URL when the admin shell is not reachable.
  * Uses unique timestamped names so concurrent/repeated runs never collide.
- * afterEach safety-net removes any leftover rows whose text starts with the prefix.
+ * Tracks created rows by id (from the create API response) so cleanup and
+ * row lookup work regardless of which table page a row ends up on.
  */
 
 const { test, expect } = require('../fixtures/fixtures');
 const AdminFeaturesPage = require('../pages/AdminFeaturesPage');
 
-// A simple icon that is reliably present in the IconPicker.
-const TEST_ICON = 'fa-solid fa-star';
+// IconPicker keys come from ICON_MAP (frontend/src/utils/iconMap.js) — lucide-react
+// icon names such as "wifi", not Font Awesome classes. "wifi" is reliably present.
+const TEST_ICON = 'wifi';
 
 test.describe('Admin › Features CRUD', () => {
   /** @type {AdminFeaturesPage} */
   let featuresPage;
+  /** @type {Set<number|string>} */
+  let createdIds;
+
+  /** @param {string} suffix */
+  async function createTrackedFeature(suffix) {
+    const name = `e2e-feat-${Date.now()}-${suffix}`;
+    const response = await featuresPage.createFeature(name, TEST_ICON);
+    expect(response.ok(), `Create feature failed with HTTP ${response.status()}`).toBe(true);
+    const created = await response.json();
+    expect(created.id, 'Create feature response must include an id').toBeDefined();
+    createdIds.add(created.id);
+    return { created, name };
+  }
 
   test.beforeEach(async ({ adminUser }) => {
     const { page } = adminUser;
-
-    const shellPresent = await page
-      .locator('[data-testid="admin-nav-features"]')
-      .isVisible()
-      .catch(() => false);
-
-    if (!shellPresent) {
-      test.skip(true, 'Admin shell not accessible — stack may be down');
-      return;
-    }
+    const currentUrl = new URL(page.url());
+    await expect(
+      page.locator('[data-testid="admin-nav-features"]'),
+      `[admin-features] stage=admin-nav-features currentUrl=${currentUrl.origin}${currentUrl.pathname}`,
+    ).toBeVisible();
 
     featuresPage = new AdminFeaturesPage(page);
+    createdIds = new Set();
     await featuresPage.goto();
   });
 
   test.afterEach(async ({ adminUser }) => {
-    if (!featuresPage) return;
-    await featuresPage.afterEachCleanup('e2e-feat-', 'dialog');
+    if (!featuresPage || !createdIds) return;
+    await featuresPage.cleanupCreatedRows([...createdIds], featuresPage.deleteMode);
   });
 
   test('creates a feature and the row appears in the table', async ({ adminUser }) => {
-    const ts = Date.now();
-    const name = `e2e-feat-${ts}`;
+    const { created, name } = await createTrackedFeature('create');
 
-    await featuresPage.openAddForm();
-    await featuresPage.fillField('name', name);
-    await featuresPage.pickIcon(TEST_ICON);
-    await featuresPage.save();
-
-    // The modal closes and the new row is visible in the table.
+    const row = await featuresPage.findCreatedRow(created.id);
     await expect(
-      featuresPage.findRowByText(name),
-      `Expected row with name "${name}" to appear in the features table`,
+      row,
+      `Expected row-${created.id} to appear in the features table`,
     ).toBeVisible();
+    await expect(row).toContainText(name);
   });
 
   test('edits a feature name and the table reflects the change', async ({ adminUser }) => {
-    const ts = Date.now();
-    const originalName = `e2e-feat-${ts}`;
-    const updatedName = `e2e-feat-${ts}-edited`;
+    const { created, name } = await createTrackedFeature('edit');
+    // Derived from name so it can never contain the original as a substring
+    // (a suffixed variant would make not.toContainText() false-fail).
+    const updatedName = name.replace('e2e-feat-', 'e2e-feat-edited-');
+    const row = await featuresPage.findCreatedRow(created.id);
 
-    // Create the record first.
-    await featuresPage.openAddForm();
-    await featuresPage.fillField('name', originalName);
-    await featuresPage.pickIcon(TEST_ICON);
-    await featuresPage.save();
-
-    // Locate the newly created row and get its id from data-testid.
-    const row = featuresPage.findRowByText(originalName);
-    await expect(row).toBeVisible();
-    const testid = await row.getAttribute('data-testid');
-    const id = testid ? testid.replace('row-', '') : null;
-    if (!id) throw new Error('Could not determine row id after create');
-
-    // Open edit, change name, save.
-    await featuresPage.editRow(id);
+    await featuresPage.editRow(created.id);
     await featuresPage.fillField('name', updatedName);
     await featuresPage.save();
 
-    // Updated name is now visible; original is gone.
-    await expect(
-      featuresPage.findRowByText(updatedName),
-      `Expected updated name "${updatedName}" to appear in the table`,
-    ).toBeVisible();
-    await expect(
-      featuresPage.findRowByText(originalName),
-    ).not.toBeVisible();
+    await expect(row, `Expected row-${created.id} to show its updated name`).toContainText(updatedName);
+    await expect(row).not.toContainText(name);
   });
 
-  test('deletes a feature via window.confirm and the row is removed from the table', async ({ adminUser }) => {
-    const ts = Date.now();
-    const name = `e2e-feat-${ts}`;
+  test('deletes a feature via ConfirmDialog and the row is removed from the table', async ({ adminUser }) => {
+    const { created } = await createTrackedFeature('delete');
+    const row = await featuresPage.findCreatedRow(created.id);
 
-    // Create.
-    await featuresPage.openAddForm();
-    await featuresPage.fillField('name', name);
-    await featuresPage.pickIcon(TEST_ICON);
-    await featuresPage.save();
+    await featuresPage.deleteRow(created.id, featuresPage.deleteMode);
 
-    const row = featuresPage.findRowByText(name);
-    await expect(row).toBeVisible();
-    const testid = await row.getAttribute('data-testid');
-    const id = testid ? testid.replace('row-', '') : null;
-    if (!id) throw new Error('Could not determine row id after create');
-
-    // Delete — window.confirm is accepted inside deleteRow("dialog").
-    await featuresPage.deleteRow(id, 'dialog');
-
-    // Row must be gone.
     await expect(
-      featuresPage.findRowByText(name),
-      `Expected row with name "${name}" to be removed after deletion`,
+      row,
+      `Expected row-${created.id} to be removed after deletion`,
     ).not.toBeVisible();
+    createdIds.delete(created.id);
   });
 
   test('shows name validation error when saving an empty form', async ({ adminUser }) => {

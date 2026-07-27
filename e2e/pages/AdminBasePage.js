@@ -99,6 +99,40 @@ class AdminBasePage extends BasePage {
   }
 
   /**
+   * Find a row by id, navigating to the last table page if it isn't on the
+   * current page. Tables paginate ascending by id, so a freshly created row
+   * is not necessarily on page 1 once earlier rows (seed data or leftover
+   * test rows) fill it up.
+   * @param {number|string} id
+   */
+  async findCreatedRow(id) {
+    const row = this.findRow(id);
+    if (await row.isVisible()) return row;
+
+    const lastPageButton = this.page.getByRole('button', { name: 'Última', exact: true });
+    if (await lastPageButton.isVisible() && await lastPageButton.isEnabled()) {
+      await lastPageButton.click();
+    }
+
+    await row.waitFor({ state: 'visible' });
+    return row;
+  }
+
+  /**
+   * Delete tracked rows through the admin UI by id. Cleanup failures fail the
+   * test instead of being swallowed, so a broken delete flow is never hidden.
+   * @param {Array<number|string>} ids
+   * @param {'dialog'|'component'} mode
+   */
+  async cleanupCreatedRows(ids, mode) {
+    for (const id of ids) {
+      const row = await this.findCreatedRow(id);
+      await this.deleteRow(id, mode);
+      await row.waitFor({ state: 'detached' });
+    }
+  }
+
+  /**
    * Click the edit button in the row identified by id.
    * @param {number|string} id
    */
@@ -148,38 +182,6 @@ class AdminBasePage extends BasePage {
    */
   async expectFieldError(field) {
     await this.page.locator(`[data-testid="error-${field}"]`).waitFor({ state: 'visible' });
-  }
-
-  // ---------------------------------------------------------------------------
-  // afterEach safety-net
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Safety-net: look for any row whose visible text includes namePrefix and
-   * delete it. Swallows errors so a passing test is never broken by cleanup.
-   * @param {string} namePrefix  — e.g. "e2e-feat-"
-   * @param {'dialog'|'component'} deleteMode
-   */
-  async afterEachCleanup(namePrefix, deleteMode) {
-    try {
-      const orphanRows = this.page.locator('tbody tr').filter({ hasText: namePrefix });
-      const count = await orphanRows.count();
-      for (let i = 0; i < count; i++) {
-        // Re-query every iteration since the DOM changes after each delete.
-        const row = this.page.locator('tbody tr').filter({ hasText: namePrefix }).first();
-        const deleteBtn = row.locator('[data-testid="row-delete-btn"]');
-        if (deleteMode === 'dialog') {
-          this.page.once('dialog', (d) => d.accept());
-          await deleteBtn.click();
-        } else {
-          await deleteBtn.click();
-          await this.confirmDelete();
-        }
-        await this.page.waitForTimeout(400);
-      }
-    } catch {
-      // Swallow — safety-net must not fail the test.
-    }
   }
 }
 

@@ -29,7 +29,8 @@ class AdminCategoriesPage extends AdminBasePage {
 
   /**
    * Open the add form, fill name (required), optionally fill description and
-   * pick an icon, then save.
+   * pick an icon, then save. Returns the create POST response so callers can
+   * track the real id instead of re-deriving it from a possibly-paginated row.
    * @param {string} name
    * @param {{ description?: string; iconKey?: string }} [opts]
    */
@@ -42,7 +43,13 @@ class AdminCategoriesPage extends AdminBasePage {
     if (opts.iconKey) {
       await this.pickIcon(opts.iconKey);
     }
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().endsWith('/api/categories') && response.request().method() === 'POST',
+    );
     await this.save();
+    const response = await responsePromise;
+    await this.page.locator('[data-testid="admin-modal"]').waitFor({ state: 'hidden' });
+    return response;
   }
 
   /**

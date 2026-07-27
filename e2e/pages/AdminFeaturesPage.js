@@ -6,14 +6,16 @@ const AdminBasePage = require('./AdminBasePage');
  *
  * Entity key : "features"
  * Form fields : name (text input), icon (IconPicker — NOT fillField)
- * Delete mode : "dialog" (native window.confirm)
+ * Delete mode : "component" (ConfirmDialog — confirm-delete-yes; verified against
+ *               frontend/src/pages/Admin/AdminFeatures.jsx, which renders
+ *               ConfirmDialog testId="confirm-delete", not window.confirm)
  */
 class AdminFeaturesPage extends AdminBasePage {
   /** @param {import('@playwright/test').Page} page */
   constructor(page) {
     super(page);
     this.entityKey = 'features';
-    this.deleteMode = 'dialog';
+    this.deleteMode = 'component';
   }
 
   /**
@@ -24,15 +26,23 @@ class AdminFeaturesPage extends AdminBasePage {
   }
 
   /**
-   * Open the add form, fill name and pick an icon, then save.
+   * Open the add form, fill name and pick an icon, then save. Returns the
+   * create POST response so callers can track the real id instead of
+   * re-deriving it from a possibly-paginated row.
    * @param {string} name
-   * @param {string} iconKey  — e.g. "fa-solid fa-wifi"
+   * @param {string} iconKey  — e.g. "wifi" (see frontend/src/utils/iconMap.js)
    */
   async createFeature(name, iconKey) {
     await this.openAddForm();
     await this.fillField('name', name);
     await this.pickIcon(iconKey);
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().endsWith('/api/features') && response.request().method() === 'POST',
+    );
     await this.save();
+    const response = await responsePromise;
+    await this.page.locator('[data-testid="admin-modal"]').waitFor({ state: 'hidden' });
+    return response;
   }
 
   /**
@@ -47,7 +57,7 @@ class AdminFeaturesPage extends AdminBasePage {
   }
 
   /**
-   * Delete the row identified by id using native window.confirm.
+   * Delete the row identified by id using the ConfirmDialog component.
    * @param {number|string} id
    */
   async deleteFeature(id) {

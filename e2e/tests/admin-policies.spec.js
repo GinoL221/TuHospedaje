@@ -5,119 +5,94 @@
  * Scenarios:
  *   1. Create happy path — fill name + pick icon → row appears in table
  *   2. Edit happy path   — open edit, change name → updated name in table
- *   3. Delete happy path — delete (window.confirm) → row gone from table
+ *   3. Delete happy path — delete (ConfirmDialog) → row gone from table
  *   4. Validation        — submit empty form → error-name visible
  *
- * Skips cleanly when the admin shell is not reachable (stack down).
+ * Fails with the current URL when the admin shell is not reachable.
  * Uses unique timestamped names so concurrent/repeated runs never collide.
- * afterEach safety-net removes any leftover rows whose text starts with the prefix.
+ * Tracks created rows by id (from the create API response) so cleanup and
+ * row lookup work regardless of which table page a row ends up on.
  */
 
 const { test, expect } = require('../fixtures/fixtures');
 const AdminPoliciesPage = require('../pages/AdminPoliciesPage');
 
-// A simple icon that is reliably present in the IconPicker.
-const TEST_ICON = 'fa-solid fa-shield';
+// IconPicker keys come from ICON_MAP (frontend/src/utils/iconMap.js) — lucide-react
+// icon names such as "ban", not Font Awesome classes. "ban" is reliably present.
+const TEST_ICON = 'ban';
 
 test.describe('Admin › Policies CRUD', () => {
   /** @type {AdminPoliciesPage} */
   let policiesPage;
+  /** @type {Set<number|string>} */
+  let createdIds;
+
+  /** @param {string} suffix */
+  async function createTrackedPolicy(suffix) {
+    const name = `e2e-pol-${Date.now()}-${suffix}`;
+    const response = await policiesPage.createPolicy(name, TEST_ICON);
+    expect(response.ok(), `Create policy failed with HTTP ${response.status()}`).toBe(true);
+    const created = await response.json();
+    expect(created.id, 'Create policy response must include an id').toBeDefined();
+    createdIds.add(created.id);
+    return { created, name };
+  }
 
   test.beforeEach(async ({ adminUser }) => {
     const { page } = adminUser;
-
-    const shellPresent = await page
-      .locator('[data-testid="admin-nav-policies"]')
-      .isVisible()
-      .catch(() => false);
-
-    if (!shellPresent) {
-      test.skip(true, 'Admin shell not accessible — stack may be down');
-      return;
-    }
+    const currentUrl = new URL(page.url());
+    await expect(
+      page.locator('[data-testid="admin-nav-policies"]'),
+      `[admin-policies] stage=admin-nav-policies currentUrl=${currentUrl.origin}${currentUrl.pathname}`,
+    ).toBeVisible();
 
     policiesPage = new AdminPoliciesPage(page);
+    createdIds = new Set();
     await policiesPage.goto();
   });
 
   test.afterEach(async ({ adminUser }) => {
-    if (!policiesPage) return;
-    await policiesPage.afterEachCleanup('e2e-pol-', 'dialog');
+    if (!policiesPage || !createdIds) return;
+    await policiesPage.cleanupCreatedRows([...createdIds], policiesPage.deleteMode);
   });
 
   test('creates a policy and the row appears in the table', async ({ adminUser }) => {
-    const ts = Date.now();
-    const name = `e2e-pol-${ts}`;
+    const { created, name } = await createTrackedPolicy('create');
 
-    await policiesPage.openAddForm();
-    await policiesPage.fillField('name', name);
-    await policiesPage.pickIcon(TEST_ICON);
-    await policiesPage.save();
-
-    // The modal closes and the new row is visible in the table.
+    const row = await policiesPage.findCreatedRow(created.id);
     await expect(
-      policiesPage.findRowByText(name),
-      `Expected row with name "${name}" to appear in the policies table`,
+      row,
+      `Expected row-${created.id} to appear in the policies table`,
     ).toBeVisible();
+    await expect(row).toContainText(name);
   });
 
   test('edits a policy name and the table reflects the change', async ({ adminUser }) => {
-    const ts = Date.now();
-    const originalName = `e2e-pol-${ts}`;
-    const updatedName = `e2e-pol-${ts}-edited`;
+    const { created, name } = await createTrackedPolicy('edit');
+    // Derived from name so it can never contain the original as a substring
+    // (a suffixed variant would make not.toContainText() false-fail).
+    const updatedName = name.replace('e2e-pol-', 'e2e-pol-edited-');
+    const row = await policiesPage.findCreatedRow(created.id);
 
-    // Create the record first.
-    await policiesPage.openAddForm();
-    await policiesPage.fillField('name', originalName);
-    await policiesPage.pickIcon(TEST_ICON);
-    await policiesPage.save();
-
-    // Locate the newly created row and get its id from data-testid.
-    const row = policiesPage.findRowByText(originalName);
-    await expect(row).toBeVisible();
-    const testid = await row.getAttribute('data-testid');
-    const id = testid ? testid.replace('row-', '') : null;
-    if (!id) throw new Error('Could not determine row id after create');
-
-    // Open edit, change name, save.
-    await policiesPage.editRow(id);
+    await policiesPage.editRow(created.id);
     await policiesPage.fillField('name', updatedName);
     await policiesPage.save();
 
-    // Updated name is now visible; original is gone.
-    await expect(
-      policiesPage.findRowByText(updatedName),
-      `Expected updated name "${updatedName}" to appear in the table`,
-    ).toBeVisible();
-    await expect(
-      policiesPage.findRowByText(originalName),
-    ).not.toBeVisible();
+    await expect(row, `Expected row-${created.id} to show its updated name`).toContainText(updatedName);
+    await expect(row).not.toContainText(name);
   });
 
-  test('deletes a policy via window.confirm and the row is removed from the table', async ({ adminUser }) => {
-    const ts = Date.now();
-    const name = `e2e-pol-${ts}`;
+  test('deletes a policy via ConfirmDialog and the row is removed from the table', async ({ adminUser }) => {
+    const { created } = await createTrackedPolicy('delete');
+    const row = await policiesPage.findCreatedRow(created.id);
 
-    // Create.
-    await policiesPage.openAddForm();
-    await policiesPage.fillField('name', name);
-    await policiesPage.pickIcon(TEST_ICON);
-    await policiesPage.save();
+    await policiesPage.deleteRow(created.id, policiesPage.deleteMode);
 
-    const row = policiesPage.findRowByText(name);
-    await expect(row).toBeVisible();
-    const testid = await row.getAttribute('data-testid');
-    const id = testid ? testid.replace('row-', '') : null;
-    if (!id) throw new Error('Could not determine row id after create');
-
-    // Delete — window.confirm is accepted inside deleteRow("dialog").
-    await policiesPage.deleteRow(id, 'dialog');
-
-    // Row must be gone.
     await expect(
-      policiesPage.findRowByText(name),
-      `Expected row with name "${name}" to be removed after deletion`,
+      row,
+      `Expected row-${created.id} to be removed after deletion`,
     ).not.toBeVisible();
+    createdIds.delete(created.id);
   });
 
   test('shows name validation error when saving an empty form', async ({ adminUser }) => {

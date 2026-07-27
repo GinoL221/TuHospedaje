@@ -8,9 +8,10 @@
  *   3. Delete happy path — delete (ConfirmDialog) → row gone from table
  *   4. Validation        — submit empty form → error-name visible
  *
- * Skips cleanly when the admin shell is not reachable (stack down).
+ * Fails with the current URL when the admin shell is not reachable.
  * Uses unique timestamped names so concurrent/repeated runs never collide.
- * afterEach safety-net removes any leftover rows whose text starts with the prefix.
+ * Tracks created rows by id (from the create API response) so cleanup and
+ * row lookup work regardless of which table page a row ends up on.
  */
 
 const { test, expect } = require('../fixtures/fixtures');
@@ -19,99 +20,77 @@ const AdminCategoriesPage = require('../pages/AdminCategoriesPage');
 test.describe('Admin › Categories CRUD', () => {
   /** @type {AdminCategoriesPage} */
   let categoriesPage;
+  /** @type {Set<number|string>} */
+  let createdIds;
+
+  /** @param {string} suffix */
+  async function createTrackedCategory(suffix) {
+    const name = `e2e-cat-${Date.now()}-${suffix}`;
+    const response = await categoriesPage.createCategory(name);
+    expect(response.ok(), `Create category failed with HTTP ${response.status()}`).toBe(true);
+    const created = await response.json();
+    expect(created.id, 'Create category response must include an id').toBeDefined();
+    createdIds.add(created.id);
+    return { created, name };
+  }
 
   test.beforeEach(async ({ adminUser }) => {
     const { page } = adminUser;
-
-    const shellPresent = await page
-      .locator('[data-testid="admin-nav-categories"]')
-      .isVisible()
-      .catch(() => false);
-
-    if (!shellPresent) {
-      test.skip(true, 'Admin shell not accessible — stack may be down');
-      return;
-    }
+    const currentUrl = new URL(page.url());
+    await expect(
+      page.locator('[data-testid="admin-nav-categories"]'),
+      `[admin-categories] stage=admin-nav-categories currentUrl=${currentUrl.origin}${currentUrl.pathname}`,
+    ).toBeVisible();
 
     categoriesPage = new AdminCategoriesPage(page);
+    createdIds = new Set();
     await categoriesPage.goto();
   });
 
   test.afterEach(async ({ adminUser }) => {
-    if (!categoriesPage) return;
-    await categoriesPage.afterEachCleanup('e2e-cat-', 'component');
+    if (!categoriesPage || !createdIds) return;
+    await categoriesPage.cleanupCreatedRows([...createdIds], categoriesPage.deleteMode);
   });
 
   test('creates a category with name only and the row appears in the table', async ({ adminUser }) => {
-    const ts = Date.now();
-    const name = `e2e-cat-${ts}`;
+    const { created, name } = await createTrackedCategory('create');
 
-    await categoriesPage.openAddForm();
-    await categoriesPage.fillField('name', name);
-    await categoriesPage.save();
-
-    // The modal closes and the new row is visible in the table.
+    const row = await categoriesPage.findCreatedRow(created.id);
     await expect(
-      categoriesPage.findRowByText(name),
-      `Expected row with name "${name}" to appear in the categories table`,
+      row,
+      `Expected row-${created.id} to appear in the categories table`,
     ).toBeVisible();
+    await expect(row).toContainText(name);
   });
 
   test('edits a category name and the table reflects the change', async ({ adminUser }) => {
-    const ts = Date.now();
-    const originalName = `e2e-cat-${ts}`;
-    const updatedName = `e2e-cat-${ts}-edited`;
+    const { created, name } = await createTrackedCategory('edit');
+    // Derived from name (not a suffixed variant of it) so it can never
+    // contain the original as a substring — a suffix like `${name}-edited`
+    // would make the not.toContainText() assertion below false-fail, since
+    // the row's text would still contain the original name.
+    const updatedName = name.replace('e2e-cat-', 'e2e-cat-edited-');
+    const row = await categoriesPage.findCreatedRow(created.id);
 
-    // Create the record first.
-    await categoriesPage.openAddForm();
-    await categoriesPage.fillField('name', originalName);
-    await categoriesPage.save();
-
-    // Locate the newly created row and get its id from data-testid.
-    const row = categoriesPage.findRowByText(originalName);
-    await expect(row).toBeVisible();
-    const testid = await row.getAttribute('data-testid');
-    const id = testid ? testid.replace('row-', '') : null;
-    if (!id) throw new Error('Could not determine row id after create');
-
-    // Open edit, change name, save.
-    await categoriesPage.editRow(id);
+    await categoriesPage.editRow(created.id);
     await categoriesPage.fillField('name', updatedName);
     await categoriesPage.save();
 
-    // Updated name is now visible; original is gone.
-    await expect(
-      categoriesPage.findRowByText(updatedName),
-      `Expected updated name "${updatedName}" to appear in the table`,
-    ).toBeVisible();
-    await expect(
-      categoriesPage.findRowByText(originalName),
-    ).not.toBeVisible();
+    await expect(row, `Expected row-${created.id} to show its updated name`).toContainText(updatedName);
+    await expect(row).not.toContainText(name);
   });
 
   test('deletes a category via ConfirmDialog and the row is removed from the table', async ({ adminUser }) => {
-    const ts = Date.now();
-    const name = `e2e-cat-${ts}`;
+    const { created } = await createTrackedCategory('delete');
+    const row = await categoriesPage.findCreatedRow(created.id);
 
-    // Create.
-    await categoriesPage.openAddForm();
-    await categoriesPage.fillField('name', name);
-    await categoriesPage.save();
+    await categoriesPage.deleteRow(created.id, categoriesPage.deleteMode);
 
-    const row = categoriesPage.findRowByText(name);
-    await expect(row).toBeVisible();
-    const testid = await row.getAttribute('data-testid');
-    const id = testid ? testid.replace('row-', '') : null;
-    if (!id) throw new Error('Could not determine row id after create');
-
-    // Delete — ConfirmDialog "confirm-delete-yes" is clicked inside deleteRow("component").
-    await categoriesPage.deleteRow(id, 'component');
-
-    // Row must be gone.
     await expect(
-      categoriesPage.findRowByText(name),
-      `Expected row with name "${name}" to be removed after deletion`,
+      row,
+      `Expected row-${created.id} to be removed after deletion`,
     ).not.toBeVisible();
+    createdIds.delete(created.id);
   });
 
   test('shows name validation error when saving an empty form', async ({ adminUser }) => {
