@@ -67,9 +67,10 @@ public class Lodging {
     @OneToMany(mappedBy = "lodging", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LodgingImage> images;
 
-    @Column(precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerNight;
 
+    @Column(nullable = false)
     private Integer maxGuests;
 
     @Version

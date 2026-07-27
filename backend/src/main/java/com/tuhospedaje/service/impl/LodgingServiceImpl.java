@@ -147,6 +147,8 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setCountry(dto.getCountry());
         lodging.setPhoneNumber(dto.getPhoneNumber());
         lodging.setEmail(dto.getEmail());
+        lodging.setPricePerNight(dto.getPricePerNight());
+        lodging.setMaxGuests(dto.getMaxGuests());
         lodging.setCategory(resolveCategory(dto.getCategoryId()));
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));

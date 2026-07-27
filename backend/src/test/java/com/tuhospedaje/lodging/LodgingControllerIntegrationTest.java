@@ -102,7 +102,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "city", "Ciudad",
                 "country", "País",
                 "phoneNumber", "123456789",
-                "email", "hotel-test@tuhospedaje.com"
+                "email", "hotel-test@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("35000.75"),
+                "maxGuests", 5
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
@@ -114,7 +116,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.name").value("Hotel Test"));
+                .andExpect(jsonPath("$.name").value("Hotel Test"))
+                .andExpect(jsonPath("$.pricePerNight").value(35000.75))
+                .andExpect(jsonPath("$.maxGuests").value(5));
     }
 
     @Test
@@ -136,6 +140,29 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnValidationFieldsWhenPriceAndCapacityAreMissing() throws Exception {
+        Map<String, Object> request = Map.of(
+                "name", "Hotel sin tarifa",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "missing-price@test.com"
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.pricePerNight").exists())
+                .andExpect(jsonPath("$.fields.maxGuests").exists());
     }
 
     @Test
@@ -188,7 +215,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "city", "Ciudad",
                 "country", "País",
                 "phoneNumber", "123456789",
-                "email", "userrole@test.com"
+                "email", "userrole@test.com",
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
@@ -416,7 +445,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "city", "Nueva ciudad",
                 "country", "Nuevo país",
                 "phoneNumber", "999999",
-                "email", "update@test.com"
+                "email", "update@test.com",
+                "pricePerNight", new BigDecimal("42000.50"),
+                "maxGuests", 8
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
@@ -428,7 +459,13 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Actualizado"))
-                .andExpect(jsonPath("$.description").value("Nueva descripción"));
+                .andExpect(jsonPath("$.description").value("Nueva descripción"))
+                .andExpect(jsonPath("$.pricePerNight").value(42000.50))
+                .andExpect(jsonPath("$.maxGuests").value(8));
+
+        Lodging updated = lodgingRepository.findById(id).orElseThrow();
+        assertThat(updated.getPricePerNight()).isEqualByComparingTo("42000.50");
+        assertThat(updated.getMaxGuests()).isEqualTo(8);
     }
 
     @Test
@@ -476,7 +513,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "city", "Ciudad",
                 "country", "País",
                 "phoneNumber", "123456789",
-                "email", email
+                "email", email,
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
@@ -511,6 +550,8 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
         request.put("phoneNumber", "123456789");
         request.put("email", email);
         request.put("categoryId", categoryId);
+        request.put("pricePerNight", new BigDecimal("30000.00"));
+        request.put("maxGuests", 4);
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         String response = mockMvc.perform(post("/api/lodgings")
@@ -554,7 +595,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "city", city,
                 "country", "País",
                 "phoneNumber", "123456789",
-                "email", email
+                "email", email,
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);

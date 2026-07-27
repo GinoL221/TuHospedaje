@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Positive;
 
@@ -69,10 +70,12 @@ public class LodgingDTO {
     @Schema(description = "Full feature objects (id, name, icon) associated with this lodging")
     private List<FeatureSummaryDTO> features;
 
+    @NotNull(message = "El precio por noche es obligatorio")
     @Positive(message = "El precio por noche debe ser positivo")
-    @Schema(description = "Price per night in USD", example = "120.00")
+    @Schema(description = "Price per night in ARS", example = "120000.00")
     private BigDecimal pricePerNight;
 
+    @NotNull(message = "La cantidad máxima de huéspedes es obligatoria")
     @Positive(message = "La cantidad máxima de huéspedes debe ser positiva")
     @Schema(description = "Maximum number of guests allowed", example = "4")
     private Integer maxGuests;

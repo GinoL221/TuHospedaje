@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -206,6 +207,8 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
         request.put("phoneNumber", "123456789");
         request.put("email", email);
         request.put("categoryId", categoryId);
+        request.put("pricePerNight", new BigDecimal("30000.00"));
+        request.put("maxGuests", 4);
         return request;
     }
 }

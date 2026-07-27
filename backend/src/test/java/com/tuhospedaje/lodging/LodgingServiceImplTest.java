@@ -253,6 +253,8 @@ class LodgingServiceImplTest {
         input.setCountry("País");
         input.setPhoneNumber("999");
         input.setEmail("hotel@test.com");
+        input.setPricePerNight(new BigDecimal("27500.50"));
+        input.setMaxGuests(7);
 
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(lodgingRepository.save(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -262,6 +264,8 @@ class LodgingServiceImplTest {
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getName()).isEqualTo("Hotel Boutique");
         assertThat(response.getAddress()).isEqualTo("Av. Nueva 456");
+        assertThat(response.getPricePerNight()).isEqualByComparingTo("27500.50");
+        assertThat(response.getMaxGuests()).isEqualTo(7);
     }
 
     @Test

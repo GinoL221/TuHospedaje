@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -110,7 +111,9 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
                 "city", "TestCity",
                 "country", "TestCountry",
                 "phoneNumber", "555000111",
-                "email", "http-sem@test.com"
+                "email", "http-sem@test.com",
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);

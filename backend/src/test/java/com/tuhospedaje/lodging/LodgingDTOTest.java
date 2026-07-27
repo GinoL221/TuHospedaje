@@ -115,6 +115,16 @@ class LodgingDTOTest {
     }
 
     @Test
+    void shouldFailValidationWhenPricePerNightIsNull() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setPricePerNight(null);
+
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+
+        assertThat(violations).anyMatch(violation -> violation.getPropertyPath().toString().equals("pricePerNight"));
+    }
+
+    @Test
     void shouldFailValidationWhenMaxGuestsIsNegativeOrZero() {
         LodgingDTO dto = createValidLodgingDTO();
         dto.setMaxGuests(0);
@@ -124,6 +134,16 @@ class LodgingDTOTest {
         dto.setMaxGuests(-5);
         violations = validator.validate(dto);
         assertThat(violations).isNotEmpty();
+    }
+
+    @Test
+    void shouldFailValidationWhenMaxGuestsIsNull() {
+        LodgingDTO dto = createValidLodgingDTO();
+        dto.setMaxGuests(null);
+
+        Set<ConstraintViolation<LodgingDTO>> violations = validator.validate(dto);
+
+        assertThat(violations).anyMatch(violation -> violation.getPropertyPath().toString().equals("maxGuests"));
     }
 
     @Test

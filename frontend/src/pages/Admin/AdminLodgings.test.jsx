@@ -18,6 +18,8 @@ const lodgingFixture = (overrides = {}) => ({
 	country: "Argentina",
 	phoneNumber: "1122334455",
 	email: "contacto@cabana.com",
+	pricePerNight: 30000,
+	maxGuests: 4,
 	categoryId: 1,
 	features: [],
 	policies: [],
@@ -312,6 +314,8 @@ describe("AdminLodgings - create", () => {
 		await user.type(screen.getByTestId("field-city"), "Bariloche");
 		await user.type(screen.getByTestId("field-country"), "Argentina");
 		await user.type(screen.getByTestId("field-phoneNumber"), "1122334455");
+		await user.type(screen.getByTestId("field-pricePerNight"), "30000");
+		await user.type(screen.getByTestId("field-maxGuests"), "4");
 
 		get.mockImplementation((endpoint) => {
 			if (endpoint.startsWith("/lodgings/admin"))

@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -267,6 +268,8 @@ class PolicyControllerIntegrationTest {
         lodging.setCountry("Argentina");
         lodging.setPhoneNumber("123456789");
         lodging.setEmail("policy-reference-lodging@tuhospedaje.test");
+        lodging.setPricePerNight(new BigDecimal("30000.00"));
+        lodging.setMaxGuests(4);
         lodging.setPolicies(Set.of(savedPolicy));
         policyFixtureLodgingId = lodgingRepository.saveAndFlush(lodging).getId();
 

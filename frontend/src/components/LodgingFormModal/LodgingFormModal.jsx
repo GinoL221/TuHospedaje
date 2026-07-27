@@ -23,6 +23,8 @@ export default function LodgingFormModal({
     country: lodging?.country ?? "",
     phoneNumber: lodging?.phoneNumber ?? "",
     email: lodging?.email ?? "",
+    pricePerNight: lodging?.pricePerNight ?? "",
+    maxGuests: lodging?.maxGuests ?? "",
     categoryId: lodging?.categoryId ?? "",
     featureIds: lodging?.features?.map((f) => f.id) ?? [],
     policyIds: lodging?.policies?.map((p) => p.id) ?? [],
@@ -39,6 +41,8 @@ export default function LodgingFormModal({
       form.country !== (lodging.country ?? "") ||
       form.phoneNumber !== (lodging.phoneNumber ?? "") ||
       form.email !== (lodging.email ?? "") ||
+      String(form.pricePerNight) !== String(lodging.pricePerNight ?? "") ||
+      String(form.maxGuests) !== String(lodging.maxGuests ?? "") ||
       String(form.categoryId) !== String(lodging.categoryId ?? "")
     : Boolean(
         form.name ||
@@ -48,6 +52,8 @@ export default function LodgingFormModal({
         form.country ||
         form.phoneNumber ||
         form.email ||
+        form.pricePerNight ||
+        form.maxGuests ||
         form.categoryId ||
         form.featureIds.length > 0 ||
         form.policyIds.length > 0 ||
@@ -72,6 +78,16 @@ export default function LodgingFormModal({
     if (!form.email?.trim()) errs.email = "El email es obligatorio";
     else if (!/\S+@\S+\.\S+/.test(form.email))
       errs.email = "El email no es válido";
+    if (form.pricePerNight === "")
+      errs.pricePerNight = "El precio por noche es obligatorio";
+    else if (Number(form.pricePerNight) <= 0)
+      errs.pricePerNight = "El precio por noche debe ser mayor a cero";
+    if (form.maxGuests === "")
+      errs.maxGuests = "La capacidad máxima es obligatoria";
+    else if (!Number.isInteger(Number(form.maxGuests)))
+      errs.maxGuests = "La capacidad máxima debe ser un número entero";
+    else if (Number(form.maxGuests) <= 0)
+      errs.maxGuests = "La capacidad máxima debe ser mayor a cero";
     return errs;
   };
 
@@ -92,6 +108,8 @@ export default function LodgingFormModal({
       country: form.country,
       phoneNumber: form.phoneNumber,
       email: form.email,
+      pricePerNight: Number(form.pricePerNight),
+      maxGuests: Number(form.maxGuests),
       categoryId: form.categoryId || null,
       featureIds: form.featureIds,
       imageUrls: form.imageUrls || [],
@@ -110,7 +128,7 @@ export default function LodgingFormModal({
       .catch((err) => setError(err.message));
   };
 
-  function inputField(name, label, type, field) {
+  function inputField(name, label, type, field, inputProps = {}) {
     const value = form[name];
     const error = fieldErrors[name];
     return (
@@ -121,6 +139,7 @@ export default function LodgingFormModal({
           value={value}
           data-testid={`field-${name}`}
           className={error ? "input-error" : ""}
+          {...inputProps}
           onChange={(e) => {
             setForm({ ...form, [name]: e.target.value });
             if (error) setFieldErrors({ ...fieldErrors, [name]: "" });
@@ -160,6 +179,14 @@ export default function LodgingFormModal({
               {inputField("city", true, "text", "Ciudad")}
               {inputField("country", true, "text", "País")}
               {inputField("phoneNumber", true, "tel", "Teléfono")}
+              {inputField("pricePerNight", true, "number", "Precio por noche (ARS)", {
+                min: "0.01",
+                step: "0.01",
+              })}
+              {inputField("maxGuests", true, "number", "Capacidad máxima de huéspedes", {
+                min: "1",
+                step: "1",
+              })}
               <label>
                 Categoría
                 <select

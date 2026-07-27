@@ -10,12 +10,14 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.testcontainers.containers.MariaDBContainer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,7 +103,7 @@ class DatabaseMigrationIntegrationTest {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
 assertThat(probeJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(3);
+                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(4);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories", Integer.class)).isEqualTo(6);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM features", Integer.class)).isEqualTo(8);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM policies", Integer.class)).isEqualTo(6);
@@ -221,7 +223,7 @@ assertThat(probeJdbcTemplate.queryForObject(
     }
 
     @Test
-    void migratesAndValidatesTheV1ToV2ChainInAnIndependentSecondMariaDbContainer() {
+    void migratesAndValidatesTheProductionChainInAnIndependentSecondMariaDbContainer() {
         try (MariaDBContainer<?> independentContainer = new MariaDBContainer<>("mariadb:10.11")
                 .withDatabaseName("independent_v1_probe")
                 .withUsername("test")
@@ -236,7 +238,21 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .locations("classpath:db/migration")
                     .load();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(3);
+
+            JdbcTemplate independentJdbcTemplate = new JdbcTemplate(
+                    new org.springframework.jdbc.datasource.DriverManagerDataSource(
+                            independentContainer.getJdbcUrl(),
+                            independentContainer.getUsername(),
+                            independentContainer.getPassword()));
+            assertThat(independentJdbcTemplate.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
+                    WHERE table_schema = DATABASE()
+                      AND table_name = 'lodgings'
+                      AND column_name IN ('price_per_night', 'max_guests')
+                      AND is_nullable = 'NO'
+                    """, Integer.class)).isEqualTo(2);
 
             try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
                     .properties("spring.main.web-application-type=none")
@@ -250,6 +266,75 @@ assertThat(probeJdbcTemplate.queryForObject(
                 assertThat(context.isActive()).isTrue();
             }
         }
+    }
+
+    @Test
+    void backfillsMissingPriceAndCapacityBeforeRequiringBothColumns() {
+        ProbeDatabase probe = createProbeDatabase("lodging_required_fields_probe");
+        try {
+            Flyway.configure()
+                    .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
+                    .locations("classpath:db/migration")
+                    .target("2")
+                    .load()
+                    .migrate();
+            JdbcTemplate template = jdbcTemplateFor(probe);
+            template.update("""
+                    INSERT INTO lodgings
+                        (name, address, city, country, phone_number, email, price_per_night, max_guests)
+                    VALUES
+                        ('Both missing', 'Address 1', 'City', 'Argentina', '+54000000001',
+                         'both-missing@example.com', NULL, NULL),
+                        ('Capacity missing', 'Address 2', 'City', 'Argentina', '+54000000002',
+                         'capacity-missing@example.com', 250.75, NULL),
+                        ('Price missing', 'Address 3', 'City', 'Argentina', '+54000000003',
+                         'price-missing@example.com', NULL, 6),
+                        ('Both valid', 'Address 4', 'City', 'Argentina', '+54000000004',
+                         'both-valid@example.com', 45000.50, 5)
+                    """);
+
+            assertThat(Flyway.configure()
+                    .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate().migrationsExecuted).isEqualTo(1);
+
+            assertLodgingPriceAndCapacity(template, "both-missing@example.com", "190.00", 4);
+            assertLodgingPriceAndCapacity(template, "capacity-missing@example.com", "250.75", 4);
+            assertLodgingPriceAndCapacity(template, "price-missing@example.com", "190.00", 6);
+            assertLodgingPriceAndCapacity(template, "both-valid@example.com", "45000.50", 5);
+            assertThat(template.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
+                    WHERE table_schema = DATABASE()
+                      AND table_name = 'lodgings'
+                      AND column_name IN ('price_per_night', 'max_guests')
+                      AND is_nullable = 'NO'
+                      AND column_default IS NULL
+                    """, Integer.class)).isEqualTo(2);
+
+            assertThatThrownBy(() -> template.update("""
+                    INSERT INTO lodgings
+                        (name, address, city, country, phone_number, email, price_per_night, max_guests)
+                    VALUES ('Null price', 'Address 5', 'City', 'Argentina', '+54000000005',
+                            'null-price@example.com', NULL, 4)
+                    """)).isInstanceOf(DataIntegrityViolationException.class);
+            assertThatThrownBy(() -> template.update("""
+                    INSERT INTO lodgings
+                        (name, address, city, country, phone_number, email, price_per_night, max_guests)
+                    VALUES ('Null capacity', 'Address 6', 'City', 'Argentina', '+54000000006',
+                            'null-capacity@example.com', 190.00, NULL)
+                    """)).isInstanceOf(DataIntegrityViolationException.class);
+        } finally {
+            dropProbeDatabase(probe);
+        }
+    }
+
+    private void assertLodgingPriceAndCapacity(JdbcTemplate template, String email, String price, int maxGuests) {
+        Map<String, Object> row = template.queryForMap(
+                "SELECT price_per_night, max_guests FROM lodgings WHERE email = ?", email);
+        assertThat((BigDecimal) row.get("price_per_night")).isEqualByComparingTo(price);
+        assertThat(((Number) row.get("max_guests")).intValue()).isEqualTo(maxGuests);
     }
 
     @Test
@@ -268,6 +353,7 @@ assertThat(probeJdbcTemplate.queryForObject(
             int migrationsExecuted = Flyway.configure()
                     .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                     .locations("classpath:db/migration")
+                    .target("2")
                     .load()
                     .migrate().migrationsExecuted;
 
@@ -312,6 +398,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                 int migrationsExecuted = Flyway.configure()
                         .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                         .locations("classpath:db/migration")
+                        .target("2")
                         .load()
                         .migrate().migrationsExecuted;
 
