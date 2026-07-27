@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -98,7 +99,11 @@ public class SmtpEmailServiceImpl implements EmailService {
             helper.setText(htmlBody, true);
             mailSender.send(message);
             log.info("Email sent to {}: {}", to, subject);
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
+            // MessagingException covers message construction (checked); MailException
+            // (unchecked) is what JavaMailSender#send actually throws on real SMTP failures
+            // (e.g. MailSendException) — without this branch, an SMTP outage propagated as
+            // a RuntimeException straight out of an @Transactional caller.
             log.error("Failed to send email to {}: {}", to, e.getMessage());
         }
     }

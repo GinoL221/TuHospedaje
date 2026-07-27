@@ -12,11 +12,13 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.EmailService;
 import com.tuhospedaje.service.impl.ReservationServiceImpl;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,6 +46,13 @@ class ReservationServiceImplTest {
 
     @InjectMocks
     private ReservationServiceImpl reservationService;
+
+    @AfterEach
+    void clearSynchronization() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
 
     // --- createReservation ---
 
@@ -105,6 +114,11 @@ class ReservationServiceImplTest {
         saved.setTotalPrice(new BigDecimal("300.00"));
         saved.setStatus(ReservationStatus.CONFIRMED);
         when(reservationRepository.save(any(Reservation.class))).thenReturn(saved);
+
+        // The confirmation email now fires from a TransactionSynchronization#afterCommit
+        // callback (transaction-safety fix), so a real transaction interceptor's absence
+        // in this plain Mockito test must be simulated, same as ReservationCancellationServiceTest.
+        TransactionSynchronizationManager.initSynchronization();
 
         var response = reservationService.createReservation(user, request);
 

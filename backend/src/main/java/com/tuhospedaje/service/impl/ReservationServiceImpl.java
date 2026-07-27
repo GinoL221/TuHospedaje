@@ -127,7 +127,16 @@ public class ReservationServiceImpl implements ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
         ReservationResponse response = ReservationResponse.fromEntity(saved);
-        emailService.sendReservationConfirmation(response);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    emailService.sendReservationConfirmation(response);
+                } catch (RuntimeException ex) {
+                    log.warn("reservation.create.email_failed reservationId={}", saved.getId());
+                }
+            }
+        });
         return response;
     }
 

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -93,10 +94,21 @@ class AuthServiceImplTest {
         assertThat(result.refreshCredential()).isNull();
     }
 
+    // The welcome email now fires from a TransactionSynchronization#afterCommit callback
+    // (transaction-safety fix: an SMTP failure must never roll back the registration), so
+    // the class-level @Transactional rollback-at-teardown would silently mask it — same
+    // reasoning as AuthServiceRefreshIntegrationTest's TestTransaction usage. A real commit
+    // boundary is required to observe it.
     @Test
     void shouldSendWelcomeEmailOnRegister() {
         RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-welcome@test.com", "123456");
         authService.register(request);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
         verify(emailService).sendWelcomeEmail(eq(request));
+
+        TestTransaction.start();
     }
 }

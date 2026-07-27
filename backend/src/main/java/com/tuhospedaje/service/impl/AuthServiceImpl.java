@@ -18,6 +18,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +69,16 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        emailService.sendWelcomeEmail(request);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    emailService.sendWelcomeEmail(request);
+                } catch (RuntimeException ex) {
+                    log.warn("auth.register.welcome_email_failed email={}", request.getEmail());
+                }
+            }
+        });
 
         return buildAuthResult(user);
     }
