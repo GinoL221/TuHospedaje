@@ -37,7 +37,7 @@ public class CategoryController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a category", description = "Creates a new lodging category. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Category created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -72,7 +72,7 @@ public class CategoryController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a category", description = "Updates an existing category by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Category updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -88,7 +88,7 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a category", description = "Permanently deletes a category by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Category deleted successfully", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),

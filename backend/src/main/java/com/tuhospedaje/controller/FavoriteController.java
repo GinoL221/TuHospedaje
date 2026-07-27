@@ -39,7 +39,7 @@ public class FavoriteController {
             summary = "Add a lodging to favorites",
             description = "Marks the specified lodging as a favorite for the authenticated user."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lodging added to favorites", content = @Content),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
@@ -56,7 +56,7 @@ public class FavoriteController {
             summary = "Remove a lodging from favorites",
             description = "Removes the specified lodging from the authenticated user's favorites list."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Lodging removed from favorites", content = @Content),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
@@ -73,7 +73,7 @@ public class FavoriteController {
             summary = "List favorite lodgings",
             description = "Returns the full list of lodgings the authenticated user has marked as favorites."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Favorite lodgings retrieved successfully"),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),

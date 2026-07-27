@@ -48,7 +48,7 @@ public class ReservationController {
                           "dates overlap with an existing confirmed reservation. Returns 409 if a " +
                           "concurrent update conflict is detected (optimistic or pessimistic lock failure)."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Reservation created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input or date conflict with an existing reservation", content = @Content),
@@ -70,7 +70,7 @@ public class ReservationController {
             description = "Returns a reservation by its ID. To prevent IDOR, non-owner users " +
                           "receive a 404 instead of 403 — the resource existence is not disclosed."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservation found"),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
@@ -85,7 +85,7 @@ public class ReservationController {
     @PatchMapping("/{id}/cancel")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel an owned reservation")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservation cancelled or already cancelled"),
             @ApiResponse(responseCode = "400", description = "Cancellation deadline passed", content = @Content),
@@ -105,7 +105,7 @@ public class ReservationController {
             summary = "List my reservations",
             description = "Returns all reservations belonging to the authenticated user, ordered by check-in date descending."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservations retrieved successfully"),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
@@ -121,7 +121,7 @@ public class ReservationController {
             summary = "List all reservations",
             description = "Returns all reservations across all users, ordered by ID descending. Requires ADMIN role."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "All reservations retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
@@ -136,7 +136,7 @@ public class ReservationController {
             summary = "List reservations for Admin",
             description = "Returns server-paginated reservation rows for the Admin table."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin reservation page returned"),
             @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),

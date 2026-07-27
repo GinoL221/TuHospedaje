@@ -37,7 +37,7 @@ public class FeatureController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a feature", description = "Creates a new amenity feature. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Feature created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -72,7 +72,7 @@ public class FeatureController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a feature", description = "Updates an existing amenity feature by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Feature updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -88,7 +88,7 @@ public class FeatureController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a feature", description = "Permanently deletes an amenity feature by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Feature deleted successfully", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),

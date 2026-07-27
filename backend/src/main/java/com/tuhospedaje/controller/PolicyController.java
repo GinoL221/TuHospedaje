@@ -58,7 +58,7 @@ public class PolicyController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a policy", description = "Creates a new house rule or policy. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Policy created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -72,7 +72,7 @@ public class PolicyController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a policy", description = "Updates an existing policy by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Policy updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -88,7 +88,7 @@ public class PolicyController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a policy", description = "Permanently deletes a policy by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Policy deleted successfully", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),

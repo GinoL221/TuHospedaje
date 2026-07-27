@@ -43,7 +43,7 @@ public class RatingController {
                           "has already rated it. Only users with a confirmed reservation for the target " +
                           "lodging are allowed to submit a rating. Score must be between 1 and 5."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Rating submitted successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input or user has no confirmed reservation for this lodging", content = @Content),

@@ -35,7 +35,7 @@ public class UploadController {
             description = "Uploads an image file to Cloudinary and returns the public URL and asset ID. " +
                           "Accepts multipart/form-data with a 'file' part. Requires ADMIN role."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Image uploaded successfully — returns Cloudinary URL and public ID"),
             @ApiResponse(responseCode = "400", description = "Missing or invalid file", content = @Content),

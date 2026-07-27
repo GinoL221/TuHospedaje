@@ -48,7 +48,7 @@ public class LodgingController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a lodging", description = "Creates a new lodging listing. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lodging created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -62,7 +62,7 @@ public class LodgingController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a lodging", description = "Updates an existing lodging by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lodging updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
@@ -105,7 +105,7 @@ public class LodgingController {
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List lodgings for Admin", description = "Returns server-paginated lodging rows for the Admin table.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin lodging page returned"),
             @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
@@ -135,7 +135,7 @@ public class LodgingController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a lodging", description = "Permanently deletes a lodging by ID. Requires ADMIN role.")
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Lodging deleted successfully", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),

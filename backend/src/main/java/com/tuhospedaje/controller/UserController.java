@@ -29,7 +29,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "User management — requires ADMIN role")
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = "csrfToken")
 public class UserController {
 
     private final UserService userService;
