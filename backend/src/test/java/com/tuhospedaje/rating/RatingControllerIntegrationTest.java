@@ -28,7 +28,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -162,5 +164,50 @@ public class RatingControllerIntegrationTest extends AbstractIntegrationTest {
         assertThat(ratings).hasSize(1);
         assertThat(ratings.get(0).getScore()).isEqualTo(2);
         assertThat(ratings.get(0).getComment()).isEqualTo("Cambió el servicio, ahora es malo");
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenCreatingRatingWithoutToken() throws Exception {
+        RatingRequest request = new RatingRequest();
+        request.setLodgingId(testLodging.getId());
+        request.setScore(5);
+        request.setComment("Sin autenticación");
+
+        // Keep CSRF valid even without auth, so the 403 is attributable to the missing
+        // token, not to a missing CSRF header (same pattern as FeatureControllerIntegrationTest).
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/ratings")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturnRatingsForLodgingWithoutAuthentication() throws Exception {
+        RatingRequest request = new RatingRequest();
+        request.setLodgingId(testLodging.getId());
+        request.setScore(4);
+        request.setComment("Buena estadía");
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/ratings")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        // No auth cookie, no CSRF cookie: this is the actual public-visitor shape
+        // (ReviewsSection.jsx fetches this on the lodging detail page for anonymous
+        // users). Regression coverage for the missing GET /api/ratings/** permitAll
+        // rule in SecurityConfig — without it, this 200 silently became a 403 that
+        // the frontend's `.catch(() => {})` swallowed into an empty reviews list.
+        mockMvc.perform(get("/api/ratings/lodging/{lodgingId}", testLodging.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count").value(1))
+                .andExpect(jsonPath("$.average").value(4.0));
     }
 }
