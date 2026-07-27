@@ -138,6 +138,9 @@ cp frontend/.env.example frontend/.env
 **Archivo `.env` (frontend):**
 ```dotenv
 VITE_API_URL=http://localhost:8080/api
+
+# Opcional — si no se define, el botón flotante de WhatsApp no se muestra.
+VITE_WHATSAPP_NUMBER=5491112345678
 ```
 
 #### Correr el frontend
@@ -163,8 +166,10 @@ npm run dev
 | POST   | /api/auth/logout      | Limpia la cookie de sesión (requiere CSRF válido) | ❌ Público |
 | GET    | /api/auth/me          | Identidad de la sesión autenticada | ✅ Autenticado |
 | GET    | /api/auth/csrf        | Bootstrap explícito del token CSRF | ✅ Autenticado |
+| POST   | /api/auth/refresh     | Rota `REFRESH_TOKEN` por un nuevo `ACCESS_TOKEN` (CSRF-exempt: cookie httpOnly) | ❌ Público |
+| POST   | /api/auth/password    | Cambia la contraseña y revoca todas las sesiones de refresh propias | ✅ Autenticado |
 
-Las mutaciones usan protección CSRF vía cookie `XSRF-TOKEN` + header `X-XSRF-TOKEN`. Existe una base de persistencia, rotación y detección de replay para sesiones de refresh, pero está deshabilitada por defecto (`app.session.refresh.enabled=false`) y no integrada al flujo HTTP de login/renovación/logout.
+Las mutaciones usan protección CSRF vía cookie `XSRF-TOKEN` + header `X-XSRF-TOKEN`. Las sesiones de refresh (persistencia, rotación y detección de replay) están **activas por defecto** (`app.session.refresh.enabled=true`) e integradas al flujo HTTP completo: login/registro emiten una cookie `REFRESH_TOKEN` httpOnly además del `ACCESS_TOKEN`, `POST /api/auth/refresh` la intercambia por un nuevo `ACCESS_TOKEN` y rota el refresh token, y logout/cambio de contraseña revocan la sesión (o familia de sesiones) correspondiente.
 
 ### Alojamientos
 
@@ -276,7 +281,6 @@ Reportes generados en `e2e/playwright-report/`.
 - `docs/markdown/sprint-{1..4}/` — reporte y test plan de cada sprint
 - `docs/markdown/sprint-2/` — incluye el modelo de datos (`.mmd` / `.svg`)
 - `docs/entregables/` — PDFs de la definición del proyecto, reports y test plans
-- `TuHospedaje.postman_collection.json` — colección Postman lista para importar
 
 ---
 
