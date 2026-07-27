@@ -345,12 +345,12 @@ Cada escenario se ejecuta en Chromium y Firefox: 45 escenarios × 2 navegadores 
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 381 tests | ✔ Todos pasan |
-| Tests Automatizados Frontend (Vitest + React Testing Library) | 326 tests (46 archivos) | ✔ Todos pasan |
+| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 381 tests en el cierre de Sprint 4; 422 tests verificados en la auditoría posterior de este documento | ✔ Todos pasan |
+| Tests Automatizados Frontend (Vitest + React Testing Library) | 326 tests (46 archivos) en el cierre de Sprint 4; 347 tests (48 archivos) verificados en la auditoría posterior | ✔ Todos pasan |
 | Tests E2E Playwright (Chromium + Firefox) | 45 escenarios × 2 navegadores (90 ejecuciones) | ✔ 44 aprobadas y 46 omitidas por falta de credenciales de prueba en CI — condición de entorno, no fallo |
-| Casos de Prueba Funcionales (Plan) | 119 escenarios | ✔ 119/119 verificados |
+| Casos de Prueba Funcionales (Plan) | 147 escenarios | ✔ 147/147 verificados |
 
-Totales verificados de punta a punta sobre el commit de integración a `main` (merge commit `8a3fd43`, PR #36) — `./mvnw -B verify` en backend, `npm test` en frontend, CI de GitHub Actions para el conteo E2E.
+Totales del cierre de Sprint 4 verificados de punta a punta sobre el commit de integración a `main` (merge commit `8a3fd43`, PR #36) — `./mvnw -B verify` en backend, `npm test` en frontend, CI de GitHub Actions para el conteo E2E. Los totales de "auditoría posterior" (422 backend / 347 frontend) corresponden al re-chequeo completo hecho en una sesión posterior (commits `2bced9d`, `091df56`, `30caab9`, `1e11b5e`), no a un nuevo cierre de sprint.
 
 ## 3. Cobertura por Historia de Usuario
 
@@ -363,7 +363,7 @@ Totales verificados de punta a punta sobre el commit de integración a `main` (m
 | US #34 — WhatsApp | 5 TC | Automatizado (frontend) + Manual | ✔ Completo |
 | US #35 — Email de confirmación | 5 TC | Automatizado (backend) + Manual | ✔ Completo |
 | TC-36 — Edición admin (complementaria, Inc. 1) | 8 TC | Automatizado + Manual | ✔ Completo |
-| TC-37 — Suite E2E Playwright (agregado, Inc. 1) | 17 TC | Automatizado E2E | ✔ Completo |
+| TC-37 — Suite E2E Playwright (agregado, Inc. 1) | 45 TC | Automatizado E2E | ✔ Completo |
 | US #36 — Tablas administrativas uniformes (Inc. 2) | 5 TC | Automatizado (frontend) + Manual | ✔ Completo |
 | US #37 — Dashboard, reservas recientes (Inc. 2) | 5 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |
 | US #38 — Búsqueda multi-categoría paginada (Inc. 3) | 7 TC | Automatizado (backend + frontend) + Manual | ✔ Completo |

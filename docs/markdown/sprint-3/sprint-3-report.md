@@ -208,7 +208,7 @@ src/
 * **Policy:** Similar al patrón de Feature (catálogo reutilizable). Relación M:N con Lodging vía `lodging_policies`.
 * **Rating:** Almacena reseñas con puntuación de 1 a 5. Relacionada con Lodging y User.
 * **User:** Se agregó relación `@ManyToMany` con Lodging para favoritos vía `user_favorites`.
-* **Lodging:** Se agregaron `pricePerNight`, `maxGuests`, y `@Version`. Nueva relación M:N con Policy.
+* **Lodging:** Se agregaron `pricePerNight`, `maxGuests`, y `@Version`. Nueva relación M:N con Policy. Nota: estos dos campos se agregaron como opcionales en Sprint 3; se volvieron obligatorios (con backfill) en un cambio posterior fuera de esta numeración de sprints, etiquetado "US #3" en el commit `d2b44f7` — no confundir con el US #3 de Sprint 1 (registro básico de alojamiento, ver `sprint-1-test-plan.md`).
 
 ## 6. Decisiones Técnicas Clave
 

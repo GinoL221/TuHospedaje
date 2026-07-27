@@ -80,6 +80,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 ## TC-03: Registro de alojamiento — POST (US #3)
 
+**Nota — numeración "US #3" ambigua entre documentos:** este US #3 es el registro básico de alojamiento (sin precio ni capacidad, ver body de referencia más abajo). Una etiqueta distinta, también "US #3", se usó en el commit `d2b44f7` ("feat(lodging): require price per night and max guests") para un cambio posterior fuera de la numeración de esta serie de sprints — no confundir con este US #3 ni con Sprint 3, que documenta `pricePerNight`/`maxGuests` como campos agregados a `Lodging` en esa etapa (ver `sprint-3-report.md`, sección de modelo de datos).
+
 | Campo | Detalle |
 |-------|---------|
 | **Precondición** | Backend corriendo |

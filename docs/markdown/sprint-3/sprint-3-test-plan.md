@@ -224,7 +224,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
 | Tests Automatizados Backend (JUnit 5 + MockMvc) | 139 tests | ✔ Todos pasan |
-| Casos de Prueba Funcionales (Plan) | 56 escenarios | ✔ 56/56 verificados |
+| Casos de Prueba Funcionales (Plan) | 62 escenarios | ✔ 62/62 verificados |
 
 ## 3. Cobertura por Historia de Usuario
 
