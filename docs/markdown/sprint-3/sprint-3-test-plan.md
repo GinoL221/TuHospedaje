@@ -104,6 +104,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **3** | `POST /api/policies` sin token ADMIN | HTTP 403 Forbidden | ✔ Pasa |
 | **4** | Sección de políticas en ProductDetail | Título subrayado, columnas con ícono + título + descripción | ✔ Pasa |
 
+**Cobertura automatizada (frontend) — agregada en auditoría posterior:** el paso 4 no tenía assertion automatizada hasta entonces (solo verificación manual). `ProductDetail.test.jsx` — `describe('ProductDetail - Policies detail', ...)` ahora verifica que las políticas reales del alojamiento se rendericen por nombre y descripción (commit `2bced9d`).
+
 ### TC-27: Módulo de Compartir (US #27)
 
 * **Historias de Usuario Asociadas:** US #27 (Compartir en redes sociales)
@@ -116,6 +118,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **2** | Pop-up muestra imagen + descripción + enlace | Contenido visible y correcto | ✔ Pasa |
 | **3** | Click en red social | Abre nueva pestaña con URL de compartir | ✔ Pasa |
 
+**Cobertura automatizada (frontend) — agregada en auditoría posterior:** los pasos 1-2 se verificaban antes solo comprobando que el modal abría, sin verificar su contenido real (test con `vi.mock` que stubeaba `ShareModal`). `ProductDetail.test.jsx` — `describe('ProductDetail - ShareModal', ...)` ahora verifica la URL y descripción realmente renderizadas contra el componente real (commit `2bced9d`).
+
 ### TC-28: Módulo de Reseñas (US #28)
 
 * **Historias de Usuario Asociadas:** US #28 (Puntuar producto)
@@ -125,11 +129,15 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
 |------|----------------------------|---------------------------------------------|--------|
 | **1** | `POST /api/ratings` con token y datos válidos | HTTP 201. Reseña creada | ✔ Pasa |
-| **2** | `POST /api/ratings` sin token | HTTP 401/403 | ✔ Pasa |
-| **3** | `GET /api/ratings/lodging/{id}` (público) | HTTP 200. Lista de reseñas con promedio | ✔ Pasa |
+| **2** | `POST /api/ratings` sin token | HTTP 401/403 | ✔ Pasa — corregido, ver nota |
+| **3** | `GET /api/ratings/lodging/{id}` (público) | HTTP 200. Lista de reseñas con promedio | ✔ Pasa — corregido, ver nota |
 | **4** | Formulario de reseña visible solo para autenticados | Selector de estrellas + textarea | ✔ Pasa |
 | **5** | Promedio de estrellas se actualiza al agregar reseña | Cálculo dinámico correcto | ✔ Pasa |
 | **6** | Lista de reseñas muestra nombre, fecha, estrellas, comentario | Datos visibles y formateados | ✔ Pasa |
+
+**Corrección — auditoría posterior encontró un defecto real, no solo un gap de test:** los pasos 2 y 3 estaban marcados "✔ Pasa" sin ningún test a nivel HTTP que los probara — solo existían tests de `RatingServiceImplTest` con el repositorio mockeado, que no pasan por la cadena de filtros de Spring Security. Al agregar la cobertura HTTP real (`RatingControllerIntegrationTest`), el paso 3 **falló**: `SecurityConfig.java` nunca tuvo la regla `permitAll()` para `GET /api/ratings/**` (a diferencia de `/api/categories`, `/api/features`, `/api/policies` y `/api/lodgings`, que sí la tienen), así que el endpoint documentado como público en `RatingController` en realidad exigía autenticación. Impacto real: cualquier visitante anónimo en la ficha de un alojamiento recibía un 403 silencioso — `ReviewsSection.jsx` lo atrapa con `.catch(() => {})` y renderiza "0.0 ★ (0 reseñas)" sin ningún error visible, indistinguible de "sin reseñas todavía". Nunca se detectó en QA manual por eso mismo.
+
+**Fix:** agregada `.requestMatchers(HttpMethod.GET, "/api/ratings/**").permitAll()` en `SecurityConfig.java`. Tests nuevos en `RatingControllerIntegrationTest`: `shouldReturnForbiddenWhenCreatingRatingWithoutToken` (paso 2, POST sin token → 403) y `shouldReturnRatingsForLodgingWithoutAuthentication` (paso 3, GET sin ninguna cookie → 200 con el payload real). Commit `30caab9`.
 
 <div style="page-break-before: always;"></div>
 
@@ -249,4 +257,5 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 | ID | Descripción | Severidad | Estado |
 |----|------------|-----------|--------|
-| — | Ningún defecto crítico encontrado en Sprint 3 | — | — |
+| — | Ningún defecto crítico encontrado durante el Sprint 3 original | — | — |
+| BUG-06 (encontrado en auditoría posterior) | `GET /api/ratings/lodging/{id}` (US #28) estaba documentado como público pero `SecurityConfig` nunca tuvo la regla `permitAll()` correspondiente, exigiendo autenticación en la práctica. Visitantes anónimos recibían un 403 silenciado por `ReviewsSection.jsx` (`.catch(() => {})`), viendo "0.0 ★ (0 reseñas)" sin error visible. No detectado en el sprint original por falta de test a nivel HTTP (ver TC-28). | Media (visibilidad de contenido público) | ✔ Corregido — commit `30caab9` |

@@ -54,7 +54,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 * **Historias de Usuario Asociadas:** US #31 (Visualizar detalles del alojamiento al reservar)
 * **Precondiciones:** Usuario autenticado con JWT válido. Alojamiento existente con imagen, descripción y features.
-* **Tipos de Verificación:** UI Manual.
+* **Tipos de Verificación:** UI Manual, Test Unitario de Componente (frontend).
 
 | Paso | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
 |------|----------------------------|---------------------------------------------|--------|
@@ -67,6 +67,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **7** | Campo teléfono en formulario | Input activo y editable | ✔ Pasa |
 | **8** | DatePickers con fechas pre-cargadas desde `ProductDetail` | Fechas seleccionadas previamente visibles en los pickers | ✔ Pasa |
 | **9** | Cambiar fechas en el formulario | Total estimado se recalcula dinámicamente (`días × pricePerNight`) | ✔ Pasa |
+
+**Cobertura automatizada (frontend):** `BookingPage.test.jsx` — pasos 3 y 5 (imagen y features del alojamiento en el resumen) no tenían assertion automatizada hasta este pase de auditoría; ahora cubiertos con casos que verifican `src`/`alt` de la imagen real y los nombres de las features reales, además del caso "sin imagen/features" (commit `2bced9d`).
 
 <div style="page-break-before: always;"></div>
 
@@ -143,6 +145,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **3** | `POST /api/reservations` con `MAIL_SMTP_ENABLED=true` y credenciales Mailtrap | Email recibido en inbox de Mailtrap | ✔ Pasa |
 | **4** | Verificar contenido del email recibido en Mailtrap | Contiene: nombre del alojamiento, checkIn, checkOut, nombre del huésped, total, estado CONFIRMED | ✔ Pasa |
 | **5** | Verificar destinatario del email | Email enviado a la dirección `guestEmail` de la reserva | ✔ Pasa |
+
+**Cobertura automatizada (backend) — corrección de esta auditoría:** hasta este pase, `ReservationServiceImpl.createReservation()` y `AuthServiceImpl.register()` invocaban el envío de email dentro de la misma transacción `@Transactional` que persiste la reserva/el usuario, y `SmtpEmailServiceImpl.send()` solo capturaba `MessagingException` — una falla real de SMTP (`MailException`, no checked) podía revertir una reserva o un registro exitosos. Corregido: ambos métodos ahora difieren el envío a `TransactionSynchronization#afterCommit` (mismo patrón que ya usaba `cancelReservation()`), con la excepción atrapada y logueada, nunca propagada; `send()` ahora también atrapa `MailException`. Test: `AuthServiceImplTest.shouldSendWelcomeEmailOnRegister` (mismo patrón aplicado a US #19, email de bienvenida). Commits `2bced9d` y `091df56`.
 
 <div style="page-break-before: always;"></div>
 

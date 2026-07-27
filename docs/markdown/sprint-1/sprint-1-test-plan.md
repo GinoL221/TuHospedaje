@@ -161,6 +161,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | 5 | Clic en "Ver menos" | Se ocultan las imágenes adicionales |
 | 6 | Cargar alojamiento con 0 imágenes | Galería no se renderiza (no rompe la UI) |
 
+**Nota — cobertura automatizada agregada posteriormente:** `frontend/src/pages/ProductDetail/ProductDetail.test.jsx` — `describe('ProductDetail - GalleryModal', ...)` cubre ahora la apertura del modal con la imagen real (`src`/`alt`) y la navegación entre miniaturas, complementando esta verificación manual (commit `2bced9d`).
+
 
 
 ## TC-07: Footer (US #7)
@@ -176,6 +178,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | 3 | Verificar copyright | Texto "© 2026 TuHospedaje. Todos los derechos reservados." |
 | 4 | Verificar enlaces de redes | Íconos de Facebook e Instagram visibles |
 | 5 | Reducir ventana a 480px | Footer se adapta sin desbordamientos |
+
+**Nota — cobertura automatizada agregada posteriormente:** `frontend/src/components/Footer/Footer.test.jsx` (archivo nuevo) verifica el alt del logo, el texto de copyright y los hrefs de los enlaces a Facebook/Instagram, complementando esta verificación manual (commit `2bced9d`).
 
 
 ## TC-08: Paginación del catálogo (US #8)

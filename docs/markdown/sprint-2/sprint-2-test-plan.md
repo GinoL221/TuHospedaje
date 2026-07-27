@@ -157,6 +157,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **3** | UI: Correspondencia ícono + nombre | Cada feature expone su icono y etiqueta | ✔ Verificado |
 | **4** | UI: Reducir ventana del navegador | Grilla se reordena por Media Query | ✔ Verificado |
 
+**Cobertura automatizada (frontend) — agregada en auditoría posterior:** los pasos 2 y 3 no tenían assertion automatizada hasta entonces (solo verificación manual). `ProductDetail.test.jsx` — `describe('ProductDetail - Features detail', ...)` ahora verifica que las features reales del alojamiento se rendericen por nombre e ícono, y que la sección no aparezca cuando no hay features (commit `2bced9d`).
+
 
 
 ### TC-19: Motor de Notificaciones Asíncronas por Correo Electrónico
@@ -170,6 +172,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | **1** | Registrar usuario desde la UI | Log: "Email de bienvenida enviado a..." | ✔ Verificado |
 | **2** | Inspeccionar Mailtrap inbox | Correo recibido con nombre, email y link de login | ✔ Verificado |
 | **3** | Simular fallo SMTP | Backend captura error en logs; registro en UI finaliza con éxito | ✔ Verificado |
+
+**Cobertura automatizada (backend) — corrección de auditoría posterior:** el paso 3 no estaba realmente garantizado hasta la corrección de transaccionalidad de este pase: `AuthServiceImpl.register()` invocaba el envío del email dentro de la misma transacción que persiste el usuario, y `SmtpEmailServiceImpl.send()` no atrapaba `MailException` (la excepción real que lanza un fallo de SMTP) — un fallo SMTP real podía revertir el registro. Corregido: el envío ahora se difiere a `TransactionSynchronization#afterCommit`, con la excepción atrapada y logueada, nunca propagada. Test: `AuthServiceImplTest.shouldSendWelcomeEmailOnRegister` verifica que el email se dispara al registrar. Commits `2bced9d` y `091df56`.
 
 
 
