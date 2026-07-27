@@ -7,7 +7,6 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.CategoryRepository;
-import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,9 +38,6 @@ class LodgingCategoryIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
-
-    @Autowired
-    private LodgingRepository lodgingRepository;
 
     @Autowired
     private UserRepository userRepository;

@@ -1,6 +1,5 @@
 package com.tuhospedaje.user;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.entity.Lodging;
@@ -35,9 +34,6 @@ class FavoriteHttpSemanticsTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private UserRepository userRepository;

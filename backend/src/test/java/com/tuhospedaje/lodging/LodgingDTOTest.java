@@ -8,7 +8,6 @@ import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.entity.Policy;
-import com.tuhospedaje.repository.CategoryRepository;
 import org.junit.jupiter.api.Test;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;

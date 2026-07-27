@@ -31,7 +31,6 @@ class CloudinaryServiceImplTest {
     private CloudinaryServiceImpl cloudinaryService;
 
     @Test
-    @SuppressWarnings("unchecked")
     void uploadImage_whenCloudinarySucceeds_returnsUploadResult() throws Exception {
         MultipartFile file = mock(MultipartFile.class);
         Uploader uploader = mock(Uploader.class);

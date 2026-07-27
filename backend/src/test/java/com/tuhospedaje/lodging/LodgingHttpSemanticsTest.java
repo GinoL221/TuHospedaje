@@ -5,7 +5,6 @@ import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
-import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,9 +38,6 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Autowired
-    private LodgingRepository lodgingRepository;
 
     @Autowired
     private UserRepository userRepository;

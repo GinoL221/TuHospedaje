@@ -1,6 +1,5 @@
 package com.tuhospedaje.lodging;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.entity.Feature;
@@ -18,15 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,9 +38,6 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Autowired
     private LodgingRepository lodgingRepository;
@@ -68,7 +61,6 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
     private JwtService jwtService;
 
     private Long lodgingId;
-    private String adminToken;
     private String userToken;
     private User regularUser;
 
@@ -82,14 +74,13 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
         lodgingRepository.deleteAll();
         userRepository.deleteAll();
 
-        User admin = userRepository.save(User.builder()
+        userRepository.save(User.builder()
                 .firstName("Admin")
                 .lastName("Lazy")
                 .email("admin-lazy@test.com")
                 .password("hash")
                 .role(RoleEnum.ADMIN)
                 .build());
-        adminToken = jwtService.generateToken(admin);
 
         regularUser = userRepository.save(User.builder()
                 .firstName("User")

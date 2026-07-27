@@ -13,10 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 
 /**
  * SC-5.4: app.jwt.expiration drives token TTL (not a hardcoded constant).
@@ -56,6 +54,14 @@ class JwtExpirationPropertyTest extends AbstractIntegrationTest {
         long issuedAt = claims.getIssuedAt().getTime();
         long expiration = claims.getExpiration().getTime();
         long actualTtl = expiration - issuedAt;
+
+        // JWT's NumericDate (RFC 7519) truncates iat/exp to whole seconds, so issuedAt can
+        // legitimately land up to 999ms before beforeIssue — floor beforeIssue to the second
+        // it belongs to rather than comparing millisecond-for-millisecond.
+        long beforeIssueSecond = (beforeIssue / 1000) * 1000;
+        assertThat(issuedAt)
+                .as("Token iat must reflect real generation time, not a frozen/hardcoded value")
+                .isBetween(beforeIssueSecond, afterIssue);
 
         assertThat(actualTtl)
                 .as("Token TTL must equal app.jwt.expiration (%d ms)", expirationMillis)

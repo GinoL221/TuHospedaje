@@ -15,7 +15,6 @@ public class UploadResult {
     @Schema(description = "Cloudinary asset identifier used for future management operations", example = "hoteleria/lodgings/sample")
     private final String publicId;
 
-    @SuppressWarnings("unchecked")
     public UploadResult(Map<?, ?> raw) {
         this.url = (String) raw.get("url");
         this.publicId = (String) raw.get("public_id");

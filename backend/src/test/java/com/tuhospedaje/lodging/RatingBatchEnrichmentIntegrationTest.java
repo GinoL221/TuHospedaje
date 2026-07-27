@@ -1,7 +1,6 @@
 package com.tuhospedaje.lodging;
 
 import com.tuhospedaje.AbstractIntegrationTest;
-import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.User;
@@ -47,9 +46,6 @@ class RatingBatchEnrichmentIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private JwtService jwtService;
 
     private Lodging ratedLodging;
     private Lodging unratedLodging;

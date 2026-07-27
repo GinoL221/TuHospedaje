@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -58,7 +58,7 @@ class RefreshSessionServiceTest {
     @Autowired private EntityManagerFactory entityManagerFactory;
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private JdbcTemplate jdbc;
-    @MockBean(name = "utcClockSupplier") private Supplier<Clock> clock;
+    @MockitoBean(name = "utcClockSupplier") private Supplier<Clock> clock;
     private ListAppender<ILoggingEvent> serviceLogs;
 
     @BeforeEach

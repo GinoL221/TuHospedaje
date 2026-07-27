@@ -1,7 +1,6 @@
 package com.tuhospedaje.user;
 
 import com.tuhospedaje.dto.user.UserDTO;
-import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
@@ -14,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;

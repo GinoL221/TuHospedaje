@@ -4,7 +4,6 @@ import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
-import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
 import com.tuhospedaje.service.EmailService;
@@ -29,9 +28,6 @@ class AuthServiceImplTest {
 
     @Autowired
     private AuthService authService;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @MockitoBean
     private EmailService emailService;
