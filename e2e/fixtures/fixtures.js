@@ -5,6 +5,26 @@ const LoginPage = require('../pages/LoginPage');
 const RegisterPage = require('../pages/RegisterPage');
 
 /**
+ * @param {import('@playwright/test').Page} page
+ * @param {string} stage
+ * @param {() => Promise<void>} action
+ */
+async function runAdminStage(page, stage, action) {
+  try {
+    await action();
+  } catch {
+    const currentUrl = new URL(page.url());
+    currentUrl.username = '';
+    currentUrl.password = '';
+    currentUrl.search = '';
+    currentUrl.hash = '';
+    throw new Error(
+      `[adminUser] stage=${stage} currentUrl=${currentUrl.toString()}`,
+    );
+  }
+}
+
+/**
  * @typedef {object} CustomFixtures
  * @property {HomePage} homePage
  * @property {LoginPage} loginPage
@@ -40,27 +60,17 @@ const test = base.extend(/** @type {CustomFixtures} */({
     const password = process.env.TEST_ADMIN_PASSWORD || 'Admin1';
 
     const loginPage = new LoginPage(page);
-    await loginPage.open('/login');
-    await loginPage.login(email, password);
-
-    // If the login does not land on /admin or the stack is down, skip.
-    try {
+    await runAdminStage(page, 'login', async () => {
+      await loginPage.open('/login');
+      await loginPage.login(email, password);
+    });
+    await runAdminStage(page, 'login-redirect', async () => {
       await page.waitForURL('/', { timeout: 5000 });
-    } catch {
-      // Not redirected to home — stack may be down or credentials wrong.
-      await use({ page, email, password });
-      return;
-    }
-
-    await page.goto('/admin');
-
-    const navDashboard = page.locator('[data-testid="admin-nav-dashboard"]');
-    const visible = await navDashboard.isVisible().catch(() => false);
-    if (!visible) {
-      // Admin shell not accessible — skip consuming test.
-      await use({ page, email, password });
-      return;
-    }
+    });
+    await runAdminStage(page, 'admin-shell', async () => {
+      await page.goto('/admin');
+      await expect(page.locator('[data-testid="admin-nav-dashboard"]')).toBeVisible();
+    });
 
     await use({ page, email, password });
   },
