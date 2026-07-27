@@ -7,15 +7,19 @@ import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
+import com.tuhospedaje.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -27,6 +31,9 @@ class AuthServiceImplTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @MockitoBean
+    private EmailService emailService;
 
     @BeforeEach
     void setUp() {
@@ -84,5 +91,12 @@ class AuthServiceImplTest {
         RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-refresh-off@test.com", "123456");
         AuthResult result = authService.register(request);
         assertThat(result.refreshCredential()).isNull();
+    }
+
+    @Test
+    void shouldSendWelcomeEmailOnRegister() {
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-welcome@test.com", "123456");
+        authService.register(request);
+        verify(emailService).sendWelcomeEmail(eq(request));
     }
 }

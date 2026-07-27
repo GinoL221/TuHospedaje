@@ -77,6 +77,32 @@ describe("BookingPage - loading and summary", () => {
 			screen.getByText("Una cabaña con vista al lago."),
 		).toBeInTheDocument();
 	});
+
+	it("renders the lodging's image and features in the summary", async () => {
+		mockGetDefaults();
+		renderBookingPage();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const image = screen.getByRole("img", { name: "Cabaña del Lago" });
+		expect(image).toHaveAttribute("src", "https://example.com/img.jpg");
+
+		expect(screen.getByText("WiFi")).toBeInTheDocument();
+	});
+
+	it("omits the image and features blocks when the lodging has none", async () => {
+		mockGetDefaults({
+			lodging: { ...lodgingFixture, imageUrls: [], features: [] },
+		});
+		renderBookingPage();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(
+			screen.queryByRole("img", { name: "Cabaña del Lago" }),
+		).not.toBeInTheDocument();
+		expect(screen.queryByText("WiFi")).not.toBeInTheDocument();
+	});
 });
 
 describe("BookingPage - guest phone prefill", () => {

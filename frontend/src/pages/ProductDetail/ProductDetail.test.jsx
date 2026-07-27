@@ -14,18 +14,6 @@ import {
 
 vi.mock("../../services/api");
 
-vi.mock("../../components/ShareModal/ShareModal", () => ({
-	default: ({ onClose }) => (
-		<div data-testid="share-modal">
-			<button onClick={onClose}>Close</button>
-		</div>
-	),
-}));
-
-vi.mock("../../components/GalleryModal/GalleryModal", () => ({
-	default: () => <div data-testid="gallery-modal" />,
-}));
-
 function BookingSentinel() {
 	return <div data-testid="booking-sentinel">booking page</div>;
 }
@@ -211,21 +199,30 @@ describe("ProductDetail - navigation to booking", () => {
 });
 
 describe("ProductDetail - ShareModal", () => {
-	it("opens ShareModal when the Compartir button is clicked", async () => {
+	it("opens ShareModal with the current lodging's data and the real page URL", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();
 		renderProductDetail();
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.queryByTestId("share-modal")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "Compartir" }),
+		).not.toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: "Compartir" }));
 
-		expect(screen.getByTestId("share-modal")).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Compartir" }),
+		).toBeInTheDocument();
+		// Not a hardcoded placeholder: proves the modal is wired to this lodging.
+		expect(
+			screen.getByText("Cabaña del Lago - Bariloche"),
+		).toBeInTheDocument();
+		expect(screen.getByText(window.location.href)).toBeInTheDocument();
 	});
 
-	it("closes ShareModal when onClose is called", async () => {
+	it("closes ShareModal when its close button is clicked", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();
 		renderProductDetail();
@@ -233,26 +230,123 @@ describe("ProductDetail - ShareModal", () => {
 		await screen.findByText("Cabaña del Lago");
 
 		await user.click(screen.getByRole("button", { name: "Compartir" }));
-		expect(screen.getByTestId("share-modal")).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Compartir" }),
+		).toBeInTheDocument();
 
-		await user.click(screen.getByRole("button", { name: "Close" }));
-		expect(screen.queryByTestId("share-modal")).not.toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "×" }));
+		expect(
+			screen.queryByRole("heading", { name: "Compartir" }),
+		).not.toBeInTheDocument();
 	});
 });
 
 describe("ProductDetail - GalleryModal", () => {
-	it("opens GalleryModal when the main gallery image trigger is clicked", async () => {
+	it("opens GalleryModal showing the real image from the lodging's data", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();
 		renderProductDetail();
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.queryByTestId("gallery-modal")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("dialog", { name: "Galería de imágenes" }),
+		).not.toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: "Abrir galería" }));
 
-		expect(screen.getByTestId("gallery-modal")).toBeInTheDocument();
+		const dialog = screen.getByRole("dialog", { name: "Galería de imágenes" });
+		expect(dialog).toBeInTheDocument();
+		expect(screen.getByRole("img", { name: "1 de 1" })).toHaveAttribute(
+			"src",
+			"https://example.com/img.jpg",
+		);
+	});
+
+	it("navigates to the clicked thumbnail's real image when multiple images exist", async () => {
+		const multiImageLodging = {
+			...lodgingFixture,
+			imageUrls: [
+				"https://example.com/img.jpg",
+				"https://example.com/img2.jpg",
+			],
+		};
+		mockGetDefaults({ lodging: multiImageLodging });
+		const user = userEvent.setup();
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		await user.click(screen.getByRole("button", { name: "Ver imagen 2" }));
+
+		expect(screen.getByRole("img", { name: "2 de 2" })).toHaveAttribute(
+			"src",
+			"https://example.com/img2.jpg",
+		);
+	});
+});
+
+describe("ProductDetail - Features detail", () => {
+	it("renders the lodging's features by name and icon", async () => {
+		mockGetDefaults({
+			lodging: {
+				...lodgingFixture,
+				features: [{ id: 1, icon: "wifi", name: "WiFi" }],
+			},
+		});
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByText("Qué ofrece este lugar?")).toBeInTheDocument();
+		expect(screen.getByText("WiFi")).toBeInTheDocument();
+	});
+
+	it("does not render the features section when the lodging has none", async () => {
+		mockGetDefaults({ lodging: { ...lodgingFixture, features: [] } });
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(
+			screen.queryByText("Qué ofrece este lugar?"),
+		).not.toBeInTheDocument();
+	});
+});
+
+describe("ProductDetail - Policies detail", () => {
+	it("renders the lodging's policies by name and description", async () => {
+		mockGetDefaults({
+			lodging: {
+				...lodgingFixture,
+				policies: [
+					{
+						id: 1,
+						icon: "ban",
+						name: "No fumar",
+						description: "Prohibido fumar dentro del alojamiento.",
+					},
+				],
+			},
+		});
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByText("Políticas")).toBeInTheDocument();
+		expect(screen.getByText("No fumar")).toBeInTheDocument();
+		expect(
+			screen.getByText("Prohibido fumar dentro del alojamiento."),
+		).toBeInTheDocument();
+	});
+
+	it("does not render the policies section when the lodging has none", async () => {
+		mockGetDefaults({ lodging: { ...lodgingFixture, policies: [] } });
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.queryByText("Políticas")).not.toBeInTheDocument();
 	});
 });
 
