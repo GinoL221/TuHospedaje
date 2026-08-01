@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { getCsrfToken } from "../../services/api";
 
-export default function ImageUpload({ urls, onUrlsChange }) {
+export default function ImageUpload({
+  urls,
+  onUrlsChange,
+  disabled = false,
+  onUploadingChange,
+}) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -9,6 +14,7 @@ export default function ImageUpload({ urls, onUrlsChange }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    onUploadingChange?.(true);
     setError(null);
     try {
       const formData = new FormData();
@@ -29,6 +35,7 @@ export default function ImageUpload({ urls, onUrlsChange }) {
       setError("No se pudo subir la imagen. Intentá de nuevo.");
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
       e.target.value = "";
     }
   }
@@ -43,13 +50,14 @@ export default function ImageUpload({ urls, onUrlsChange }) {
           id="imageUpload"
           style={{ display: "none" }}
           onChange={handleUpload}
-          disabled={uploading}
+          disabled={disabled || uploading}
+          tabIndex={-1}
         />
         <button
           type="button"
           className="btn-upload"
           onClick={() => document.getElementById("imageUpload").click()}
-          disabled={uploading}
+          disabled={disabled || uploading}
         >
           {uploading ? "Subiendo..." : "Subir imagen"}
         </button>
@@ -64,6 +72,7 @@ export default function ImageUpload({ urls, onUrlsChange }) {
                 type="button"
                 className="image-remove"
                 onClick={() => onUrlsChange(urls.filter((_, j) => j !== i))}
+                disabled={disabled || uploading}
               >
                 ×
               </button>

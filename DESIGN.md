@@ -145,7 +145,7 @@ Mobile/touch Admin is **not supported**. Touch-capable devices at `<=1024px` rec
 | **Implemented** | ConfirmDialog has dialog semantics, instance-safe naming, safe initial focus, enabled-control focus containment, return focus, pending-safe Escape and overlay behavior, and duplicate-confirm protection. Its focused tests, Admin regressions, lint, and build were previously recorded as passing. |
 | **Implemented** | ShareModal accessibility is verified: dialog semantics, instance-safe name and description, initial Close focus, return focus, keyboard containment including share links, Escape and overlay dismissal, interior-click protection, a named `44px` close target, visible focus, and reduced-motion handling. Social actions preserve external identity through tinted borders and backgrounds while petroleum foregrounds provide at least `6.05:1` contrast across verified light-theme states. URLs, copy, image behavior, `target`, and `rel` are preserved. |
 | **Implemented** | ShareModal desktop refinement and mobile presentation at `480x897px` are visually validated. The dialog remains inside the viewport, uses internal scrolling, preserves hierarchy and touch targets, and avoids horizontal overflow. |
-| **Partially implemented** | LodgingFormModal lacks complete dialog semantics and labelling, initial and return focus, focus containment, Escape dismissal, and a fully defined unsaved-change interaction with ConfirmDialog. |
+| **Implemented** | LodgingFormModal has instance-safe dialog naming and description, deterministic initial focus, enabled-control focus containment, opener-focus restoration after actual close, and safe Escape, overlay, and interior-click behavior. Meaningful scalar, category, feature, policy, and image changes route close requests through ConfirmDialog; cancel restores form focus and confirmed discard closes. The underlying form becomes inert while ConfirmDialog is active, and submit/upload pending guards prevent duplicate submit and unsafe close or discard. Focused component, ImageUpload, ConfirmDialog, and AdminLodgings regressions pass alongside frontend lint and build. |
 | **Implemented** | ProductCard uses a declared `400x300` (`4:3`) image and native lazy loading. |
 | **Implemented** | Route chunk failures provide a manual page-reload recovery action. |
 
@@ -160,7 +160,7 @@ These implementation requirements complement, but do not originate from, the bra
 - Announce introduced errors and status updates when needed.
 - Respect `prefers-reduced-motion`; current product-wide coverage is partial.
 
-SearchResults, ConfirmDialog, and ShareModal have the local accessibility coverage recorded above. Product-wide focus, touch-target, error-association, and reduced-motion coverage remains partial.
+SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local accessibility coverage recorded above. Product-wide focus, touch-target, error-association, and reduced-motion coverage remains partial.
 
 ## Known brand deviations
 
@@ -184,7 +184,7 @@ SearchResults, ConfirmDialog, and ShareModal have the local accessibility covera
 - [x] Preserve ShareModal accessibility behavior.
 - [x] Preserve the verified identity work unit: local Inter Variable loading and official Header/Footer isologotype usage. Its focused 25 tests, lint, and build passed.
 - [x] Preserve the visually validated ShareModal desktop and `480x897px` mobile presentation.
-- [ ] Address LodgingFormModal accessibility next. This work has not started.
+- [x] Preserve LodgingFormModal accessibility and unsaved-change coordination with ConfirmDialog.
 - [ ] Apply the manual typography scale consistently across existing screens.
 - [ ] Correct primary CTA contrast through separately approved implementation work.
 - [ ] Consolidate semantic tokens and component states incrementally; do not introduce another palette or infer brand rules from existing exceptions.

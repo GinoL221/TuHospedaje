@@ -1,9 +1,24 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { post, put } from "../../services/api";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import ImageUpload from "../../components/ImageUpload/ImageUpload";
 import Icon from "../Icons/Icon";
+
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "[href]",
+  'input:not([disabled]):not([type="hidden"]):not([tabindex="-1"])',
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+function haveSameIds(current, initial) {
+  if (current.length !== initial.length) return false;
+  const initialIds = new Set(initial.map(String));
+  return current.every((id) => initialIds.has(String(id)));
+}
 
 export default function LodgingFormModal({
   lodging,
@@ -14,6 +29,13 @@ export default function LodgingFormModal({
   onClose,
 }) {
   const isEdit = Boolean(lodging?.id);
+  const dialogRef = useRef(null);
+  const initialFocusRef = useRef(null);
+  const previousFocusRef = useRef(document.activeElement);
+  const submittingRef = useRef(false);
+  const uploadingRef = useRef(false);
+  const titleId = useId();
+  const descriptionId = useId();
 
   const [form, setForm] = useState({
     name: lodging?.name ?? "",
@@ -32,6 +54,22 @@ export default function LodgingFormModal({
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    const previousFocus = previousFocusRef.current;
+    initialFocusRef.current?.focus();
+
+    return () => {
+      if (
+        previousFocus?.isConnected &&
+        previousFocus.matches(FOCUSABLE_SELECTOR)
+      ) {
+        previousFocus.focus();
+      }
+    };
+  }, []);
 
   const hasChanges = isEdit
     ? form.name !== (lodging.name ?? "") ||
@@ -43,7 +81,11 @@ export default function LodgingFormModal({
       form.email !== (lodging.email ?? "") ||
       String(form.pricePerNight) !== String(lodging.pricePerNight ?? "") ||
       String(form.maxGuests) !== String(lodging.maxGuests ?? "") ||
-      String(form.categoryId) !== String(lodging.categoryId ?? "")
+      String(form.categoryId) !== String(lodging.categoryId ?? "") ||
+      !haveSameIds(form.featureIds, lodging.features?.map((f) => f.id) ?? []) ||
+      !haveSameIds(form.policyIds, lodging.policies?.map((p) => p.id) ?? []) ||
+      form.imageUrls.length !== (lodging.imageUrls ?? []).length ||
+      form.imageUrls.some((url, index) => url !== lodging.imageUrls[index])
     : Boolean(
         form.name ||
         form.description ||
@@ -64,6 +106,43 @@ export default function LodgingFormModal({
     setFieldErrors({});
     onClose();
   });
+
+  const isPending = submitting || uploading;
+
+  const requestClose = () => {
+    if (submittingRef.current || uploadingRef.current) return;
+    cancel.handleCancel();
+  };
+
+  const handleKeyDown = (event) => {
+    if (cancel.showConfirm) return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      requestClose();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const focusableElements = Array.from(
+      dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [],
+    );
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements.at(-1);
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
 
   const validate = () => {
     const errs = {};
@@ -91,8 +170,9 @@ export default function LodgingFormModal({
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current || uploadingRef.current) return;
     setError("");
     const errs = validate();
     setFieldErrors(errs);
@@ -116,16 +196,20 @@ export default function LodgingFormModal({
       policyIds: form.policyIds || [],
     };
 
-    const request = isEdit
-      ? put(`/lodgings/${lodging.id}`, payload)
-      : post("/lodgings", payload);
-
-    request
-      .then(() => {
-        onSaved();
-        onClose();
-      })
-      .catch((err) => setError(err.message));
+    submittingRef.current = true;
+    setSubmitting(true);
+    try {
+      await (isEdit
+        ? put(`/lodgings/${lodging.id}`, payload)
+        : post("/lodgings", payload));
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
   };
 
   function inputField(name, label, type, field, inputProps = {}) {
@@ -139,22 +223,43 @@ export default function LodgingFormModal({
           value={value}
           data-testid={`field-${name}`}
           className={error ? "input-error" : ""}
+          aria-invalid={error ? "true" : undefined}
+          aria-describedby={error ? `${descriptionId}-${name}-error` : undefined}
+          disabled={isPending}
+          ref={name === "name" ? initialFocusRef : undefined}
           {...inputProps}
           onChange={(e) => {
             setForm({ ...form, [name]: e.target.value });
             if (error) setFieldErrors({ ...fieldErrors, [name]: "" });
           }}
         />
-        {error && <span className="field-error" data-testid={`error-${name}`}>{error}</span>}
+        {error && <span id={`${descriptionId}-${name}-error`} className="field-error" data-testid={`error-${name}`}>{error}</span>}
       </label>
     );
   }
 
   return (
     <>
-      <div className="modal-overlay" onClick={cancel.handleCancel}>
-        <div className="modal modal-lg" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
-          <h2>{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}</h2>
+      <div
+        className="modal-overlay"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) requestClose();
+        }}
+        onKeyDown={handleKeyDown}
+        aria-hidden={cancel.showConfirm ? "true" : undefined}
+        inert={cancel.showConfirm ? true : undefined}
+      >
+        <div
+          ref={dialogRef}
+          className="modal modal-lg"
+          data-testid="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 id={titleId}>{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}</h2>
           <form onSubmit={handleSubmit} noValidate>
             <div className="modal-form-grid">
               {inputField("name", true, "text", "Nombre del alojamiento")}
@@ -165,6 +270,9 @@ export default function LodgingFormModal({
                   data-testid="field-description"
                   value={form.description}
                   className={fieldErrors.description ? "input-error" : ""}
+                  aria-invalid={fieldErrors.description ? "true" : undefined}
+                  aria-describedby={fieldErrors.description ? `${descriptionId}-description-error` : undefined}
+                  disabled={isPending}
                   onChange={(e) => {
                     setForm({ ...form, description: e.target.value });
                     if (fieldErrors.description)
@@ -172,7 +280,7 @@ export default function LodgingFormModal({
                   }}
                 />
                 {fieldErrors.description && (
-                  <span className="field-error" data-testid="error-description">{fieldErrors.description}</span>
+                  <span id={`${descriptionId}-description-error`} className="field-error" data-testid="error-description">{fieldErrors.description}</span>
                 )}
               </label>
               {inputField("address", true, "text", "Dirección")}
@@ -191,6 +299,7 @@ export default function LodgingFormModal({
                 Categoría
                 <select
                   value={form.categoryId || ""}
+                  disabled={isPending}
                   onChange={(e) =>
                     setForm({ ...form, categoryId: e.target.value })
                   }
@@ -212,6 +321,7 @@ export default function LodgingFormModal({
                         type="checkbox"
                         value={f.id}
                         checked={form.featureIds.includes(f.id)}
+                        disabled={isPending}
                         onChange={(e) => {
                           const id = Number(e.target.value);
                           setForm({
@@ -236,6 +346,7 @@ export default function LodgingFormModal({
                         type="checkbox"
                         value={p.id}
                         checked={form.policyIds?.includes(p.id)}
+                        disabled={isPending}
                         onChange={(e) => {
                           const id = Number(e.target.value);
                           setForm({
@@ -256,18 +367,24 @@ export default function LodgingFormModal({
               <ImageUpload
                 urls={form.imageUrls}
                 onUrlsChange={(urls) => setForm({ ...form, imageUrls: urls })}
+                disabled={submitting}
+                onUploadingChange={(nextUploading) => {
+                  uploadingRef.current = nextUploading;
+                  setUploading(nextUploading);
+                }}
               />
               {error && <p className="form-error full-width">{error}</p>}
-              <p className="required-note full-width">* Campos obligatorios</p>
+              <p id={descriptionId} className="required-note full-width">* Campos obligatorios</p>
               <div className="modal-actions full-width">
-                <button type="submit" className="btn-save" data-testid="admin-save-btn">
+                <button type="submit" className="btn-save" data-testid="admin-save-btn" disabled={isPending}>
                   {isEdit ? "Guardar cambios" : "Guardar"}
                 </button>
                 <button
                   type="button"
                   className="btn-cancel"
                   data-testid="admin-cancel-btn"
-                  onClick={cancel.handleCancel}
+                  onClick={requestClose}
+                  disabled={isPending}
                 >
                   Cancelar
                 </button>
