@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -25,6 +25,8 @@ export default function ProductDetail() {
 	const [checkOut, setCheckOut] = useState(null);
 	const [occupiedDates, setOccupiedDates] = useState([]);
 	const [showShare, setShowShare] = useState(false);
+	const thumbnailStripRef = useRef(null);
+	const thumbnailRefs = useRef([]);
 
 	function formatDate(date) {
 		return date.toISOString().split("T")[0];
@@ -56,6 +58,34 @@ export default function ProductDetail() {
 			})
 			.catch(() => {});
 	}, [id, checkIn, checkOut]);
+
+	useEffect(() => {
+		if (
+			typeof window === "undefined" ||
+			typeof window.matchMedia !== "function" ||
+			!window.matchMedia("(max-width: 768px)").matches
+		) {
+			return;
+		}
+
+		const selectedThumbnail = thumbnailRefs.current[galleryIndex];
+		if (
+			!selectedThumbnail ||
+			!thumbnailStripRef.current?.contains(selectedThumbnail) ||
+			typeof selectedThumbnail.scrollIntoView !== "function"
+		) {
+			return;
+		}
+
+		const reduceMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+		selectedThumbnail.scrollIntoView({
+			inline: "center",
+			block: "nearest",
+			behavior: reduceMotion ? "auto" : "smooth",
+		});
+	}, [galleryIndex]);
 
 	function isDateOccupied(date) {
 		return occupiedDates.some(
@@ -118,29 +148,59 @@ export default function ProductDetail() {
 								}}
 							/>
 						</button>
-					</div>
-					{images.length > 1 && (
-						<div className="gallery-thumbs-col">
+							{images.length > 1 && (
+								<div className="gallery-mobile-controls">
+									<button
+										className="gallery-mobile-arrow gallery-mobile-arrow--prev"
+										onClick={() =>
+											setGalleryIndex((prev) => Math.max(0, prev - 1))
+										}
+										disabled={galleryIndex === 0}
+										aria-label="Imagen anterior en galería"
+									>
+										<ChevronLeft aria-hidden="true" />
+									</button>
+									<button
+										className="gallery-mobile-arrow gallery-mobile-arrow--next"
+										onClick={() =>
+											setGalleryIndex((prev) =>
+												Math.min(images.length - 1, prev + 1),
+											)
+										}
+										disabled={galleryIndex === images.length - 1}
+										aria-label="Imagen siguiente en galería"
+									>
+										<ChevronRight aria-hidden="true" />
+									</button>
+								</div>
+							)}
+						</div>
+						{images.length > 1 && (
+							<div className="gallery-thumbs-col">
 							<button
-								className="gallery-thumbs-arrow"
+								className="gallery-thumbs-arrow gallery-desktop-arrow"
 								onClick={() => setGalleryIndex((prev) => Math.max(0, prev - 1))}
 								disabled={galleryIndex === 0}
 								aria-label="Imagen anterior"
 							>
 								▲
 							</button>
-							<div className="gallery-thumbs">
-								{images.map((url, i) => (
-									<button
-										key={i}
-										className={`gallery-thumb ${galleryIndex === i ? "gallery-thumb--active" : ""}`}
-										onClick={() => {
-											setGalleryIndex(i);
-											setShowGallery(true);
-										}}
-										aria-label={`Ver imagen ${i + 1}`}
-									>
-										<img
+								<div className="gallery-thumbs" ref={thumbnailStripRef}>
+									{images.map((url, i) => (
+										<button
+											key={i}
+											ref={(node) => {
+												thumbnailRefs.current[i] = node;
+											}}
+											className={`gallery-thumb ${galleryIndex === i ? "gallery-thumb--active" : ""}`}
+											onClick={() => {
+												setGalleryIndex(i);
+												setShowGallery(true);
+											}}
+											aria-label={`Ver imagen ${i + 1}`}
+											aria-current={galleryIndex === i ? "true" : undefined}
+										>
+											<img
 											src={url}
 											alt={`${lodging.name} - ${i + 1}`}
 											loading="lazy"
@@ -148,12 +208,12 @@ export default function ProductDetail() {
 												e.target.src =
 													"https://placehold.co/400x300?text=Sin+imagen";
 											}}
-										/>
-									</button>
-								))}
-							</div>
+											/>
+										</button>
+									))}
+								</div>
 							<button
-								className="gallery-thumbs-arrow"
+								className="gallery-thumbs-arrow gallery-desktop-arrow"
 								onClick={() =>
 									setGalleryIndex((prev) =>
 										Math.min(images.length - 1, prev + 1),

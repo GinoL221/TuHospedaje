@@ -22,12 +22,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  min-width: 0;
   min-height: 100px;
   background-color: var(--primary);
   border-radius: 8px;
   color: var(--bg);
 }
 .search-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   padding: 20px 30px;
   text-align: center;
   max-width: 900px;
@@ -39,13 +43,14 @@
 }
 .search-card form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, auto);
   gap: 15px;
   align-items: stretch;
 }
 .search-card form > div {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .search-card input {
   min-height: 48px;
@@ -64,6 +69,9 @@
   height: 100%;
 }
 .btn-search {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 48px;
   background-color: var(--accent);
   color: var(--bg);
   border: none;
@@ -152,6 +160,8 @@
 
 /* CATEGORÍAS */
 .categories {
+  box-sizing: border-box;
+  min-width: 0;
   background-color: var(--bg);
   border-radius: 8px;
   padding: 30px;
@@ -159,10 +169,13 @@
 }
 .category-list {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
 }
 .category-tag {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   background: var(--bg);
   color: var(--text);
   padding: 16px 20px;
@@ -195,11 +208,13 @@
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .category-tag.active .category-name {
   color: #fff;
 }
 .category-description {
+  max-width: 100%;
   font-size: 0.8rem;
   font-weight: 400;
   color: var(--text);
@@ -217,6 +232,8 @@
 
 /* RECOMENDACIONES */
 .recommendations {
+  box-sizing: border-box;
+  min-width: 0;
   background-color: var(--bg);
   border-radius: 8px;
   padding: 30px;
@@ -231,6 +248,7 @@
 /* PAGINATION */
 .home-pagination {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 10px;
@@ -260,6 +278,10 @@
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {
+  .category-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .hotel-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -271,19 +293,42 @@
   }
 
   .search-card form {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .btn-search {
     width: 100%;
   }
 
+  .categories,
   .recommendations {
     padding: 20px;
+  }
+
+  .category-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hotel-list {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-card,
+  .categories,
+  .recommendations {
+    padding: 16px;
+  }
+
+  .home-pagination button {
+    padding-inline: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .category-list {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

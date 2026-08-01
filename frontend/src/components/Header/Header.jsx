@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -7,19 +7,14 @@ import logo from "../../assets/images/TuHospedaje_Isologotipo.png";
 
 export default function Header() {
 	  const { user, logout, logoutError } = useAuth();
-  const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const goToAdmin = () => {
-    if (user?.role === "ADMIN") navigate("/admin");
-  };
+	const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header>
+    <header className="site-header">
       <nav className="page-container">
         <div className="logo-container">
-          <Link to="/">
-            <img src={logo} alt="TuHospedaje" className="logo" />
+          <Link to="/" className="brand-link">
+            <img src={logo} alt="TuHospedaje — Inicio" className="logo" />
           </Link>
           <p className="tagline">Encuentra tu lugar ideal al mejor precio</p>
         </div>
@@ -39,31 +34,24 @@ export default function Header() {
                   user.imageUrl ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`
                 }
-                alt={user.firstName}
-                className="avatar"
-                onClick={goToAdmin}
-                style={{
-                  cursor: user?.role === "ADMIN" ? "pointer" : "default",
-                }}
-                title={
-                  user?.role === "ADMIN" ? "Ir al panel de administración" : ""
-                }
-                onError={(e) => {
+					alt={user.firstName}
+					className="avatar"
+					onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`;
                 }}
               />
-              <span
-                onClick={goToAdmin}
-                style={{
-                  cursor: user?.role === "ADMIN" ? "pointer" : "default",
-                }}
-                title={
-                  user?.role === "ADMIN" ? "Ir al panel de administración" : ""
-                }
-              >
-                {user.firstName}
-              </span>
+				{user.role === "ADMIN" ? (
+					<Link
+						to="/admin"
+						className="nav-link nav-username"
+						onClick={() => setMenuOpen(false)}
+					>
+						{user.firstName}
+					</Link>
+				) : (
+					<span className="nav-username">{user.firstName}</span>
+				)}
               <Link
                 to="/favorites"
                 className="nav-link"

@@ -213,15 +213,14 @@ export default function SearchResults() {
 
 	return (
 		<main className="search-results page-container">
-			<aside
-				className={`search-filters${hasChips ? " search-filters--hidden" : ""}`}
-			>
-				<h3>Filtros</h3>
+			<aside className="search-filters" aria-labelledby="search-filters-title">
+				<h3 id="search-filters-title">Filtros</h3>
 
 				<div className="filter-section">
 					<p className="filter-section-title">Fechas</p>
-					<label>Check-in</label>
+					<label htmlFor="filter-check-in">Check-in</label>
 					<DatePicker
+						id="filter-check-in"
 						selected={sidebarCheckIn}
 						onChange={(date) => setSidebarCheckIn(date)}
 						selectsStart
@@ -231,8 +230,9 @@ export default function SearchResults() {
 						placeholderText="Seleccioná fecha"
 						dateFormat="dd/MM/yyyy"
 					/>
-					<label>Check-out</label>
+					<label htmlFor="filter-check-out">Check-out</label>
 					<DatePicker
+						id="filter-check-out"
 						selected={sidebarCheckOut}
 						onChange={(date) => setSidebarCheckOut(date)}
 						selectsEnd
@@ -269,15 +269,17 @@ export default function SearchResults() {
 
 				<div className="filter-section">
 					<p className="filter-section-title">Precio por noche</p>
-					<label>Mínimo</label>
+					<label htmlFor="filter-min-price">Mínimo</label>
 					<input
+						id="filter-min-price"
 						type="number"
 						value={pendingMinPrice}
 						onChange={(e) => setPendingMinPrice(e.target.value)}
 						placeholder="$"
 					/>
-					<label>Máximo</label>
+					<label htmlFor="filter-max-price">Máximo</label>
 					<input
+						id="filter-max-price"
 						type="number"
 						value={pendingMaxPrice}
 						onChange={(e) => setPendingMaxPrice(e.target.value)}

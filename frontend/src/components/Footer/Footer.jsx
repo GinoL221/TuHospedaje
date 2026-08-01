@@ -1,11 +1,14 @@
-import logo from "../../assets/images/TuHospedaje_Logotipo.png";
+import logo from "../../assets/images/TuHospedaje_Isologotipo.png";
+import WhatsAppButton from "../WhatsAppButton/WhatsAppButton";
 
 export default function Footer() {
   return (
     <footer>
       <div className="page-container">
         <section className="footer-left">
-          <img src={logo} alt="TuHospedaje" className="footer-logo" />
+          <span className="footer-brand">
+            <img src={logo} alt="TuHospedaje" className="footer-logo" />
+          </span>
           <p>© 2026 TuHospedaje. Todos los derechos reservados.</p>
         </section>
         <section className="footer-right">
@@ -16,6 +19,7 @@ export default function Footer() {
             <img src="https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png" alt="Instagram" />
           </a>
         </section>
+        <WhatsAppButton />
       </div>
     </footer>
   );

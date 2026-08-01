@@ -1,7 +1,29 @@
-import { customRender, screen } from "../../test/test-utils";
+import {
+	customRender,
+	makeAuthValue,
+	mockAdmin,
+	screen,
+	userEvent,
+} from "../../test/test-utils";
 import Header from "./Header";
 
 describe("Header - authenticated user", () => {
+	it("uses the official isologotype as the accessible home link", () => {
+		customRender(<Header />);
+
+		const homeLink = screen.getByRole("link", { name: "TuHospedaje — Inicio" });
+		const logo = screen.getByRole("img", { name: "TuHospedaje — Inicio" });
+		const header = screen.getByRole("banner");
+
+		expect(header).toHaveClass("site-header");
+		expect(homeLink).toHaveAttribute("href", "/");
+		expect(homeLink).toContainElement(logo);
+		expect(logo).toHaveAttribute(
+			"src",
+			expect.stringContaining("TuHospedaje_Isologotipo.png"),
+		);
+	});
+
 	it("shows 'Mis reservas' link pointing to /my-reservations", () => {
 		customRender(<Header />);
 
@@ -11,10 +33,35 @@ describe("Header - authenticated user", () => {
 		);
 	});
 
-	it("shows the user's first name", () => {
+	it("renders an admin name as navigation with the shared link classes", () => {
+		customRender(<Header />, {
+			authValue: makeAuthValue({ user: mockAdmin }),
+		});
+
+		const adminLink = screen.getByRole("link", { name: "Test" });
+
+		expect(adminLink).toHaveAttribute("href", "/admin");
+		expect(adminLink).toHaveClass("nav-link", "nav-username");
+	});
+
+	it("renders a non-admin name as non-interactive text", () => {
 		customRender(<Header />);
 
-		expect(screen.getByText("Test")).toBeInTheDocument();
+		const username = screen.getByText("Test");
+
+		expect(username).toHaveClass("nav-username");
+		expect(username).not.toHaveClass("nav-link");
+		expect(screen.queryByRole("link", { name: "Test" })).not.toBeInTheDocument();
+	});
+
+	it("exposes the authenticated header styling hooks without loading an auth page", () => {
+		customRender(<Header />);
+
+		expect(screen.getByRole("img", { name: "Test" })).toHaveClass("avatar");
+		expect(screen.getByText("Test")).toHaveClass("nav-username");
+		expect(screen.getByRole("button", { name: "Cerrar sesión" })).toHaveClass(
+			"btn-logout",
+		);
 	});
 
 	it("shows the logout button and hides login/register links", () => {
@@ -33,6 +80,33 @@ describe("Header - authenticated user", () => {
 });
 
 describe("Header - unauthenticated user", () => {
+	it("opens and closes the mobile menu from the hamburger button", async () => {
+		const user = userEvent.setup();
+		customRender(<Header />, { authValue: null });
+
+		const menuButton = screen.getByRole("button", { name: "Abrir menú" });
+		const menu = screen.getByRole("link", { name: "Iniciar sesión" }).parentElement;
+
+		expect(menu).not.toHaveClass("nav-links--open");
+		await user.click(menuButton);
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toBeInTheDocument();
+		expect(menu).toHaveClass("nav-links--open");
+
+		await user.click(screen.getByRole("button", { name: "Cerrar menú" }));
+		expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
+		expect(menu).not.toHaveClass("nav-links--open");
+	});
+
+	it("closes the mobile menu after navigation", async () => {
+		const user = userEvent.setup();
+		customRender(<Header />, { authValue: null });
+
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		await user.click(screen.getByRole("link", { name: "Iniciar sesión" }));
+
+		expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
+	});
+
 	it("does not show 'Mis reservas' link", () => {
 		customRender(<Header />, { authValue: null });
 

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Routes, Route, useLocation } from "react-router-dom";
 import {
 	customRender,
@@ -216,10 +218,10 @@ describe("ProductDetail - ShareModal", () => {
 			screen.getByRole("heading", { name: "Compartir" }),
 		).toBeInTheDocument();
 		// Not a hardcoded placeholder: proves the modal is wired to this lodging.
+		expect(screen.getByText("Bariloche")).toBeInTheDocument();
 		expect(
-			screen.getByText("Cabaña del Lago - Bariloche"),
+			screen.getByRole("button", { name: "Copiar enlace" }),
 		).toBeInTheDocument();
-		expect(screen.getByText(window.location.href)).toBeInTheDocument();
 	});
 
 	it("closes ShareModal when its close button is clicked", async () => {
@@ -234,7 +236,7 @@ describe("ProductDetail - ShareModal", () => {
 			screen.getByRole("heading", { name: "Compartir" }),
 		).toBeInTheDocument();
 
-		await user.click(screen.getByRole("button", { name: "×" }));
+		await user.click(screen.getByRole("button", { name: "Cerrar" }));
 		expect(
 			screen.queryByRole("heading", { name: "Compartir" }),
 		).not.toBeInTheDocument();
@@ -283,6 +285,122 @@ describe("ProductDetail - GalleryModal", () => {
 			"src",
 			"https://example.com/img2.jpg",
 		);
+	});
+
+	it("changes the main image with bounded arrows without opening the modal", async () => {
+		const multiImageLodging = {
+			...lodgingFixture,
+			imageUrls: [
+				"https://example.com/img.jpg",
+				"https://example.com/img2.jpg",
+			],
+		};
+		mockGetDefaults({ lodging: multiImageLodging });
+		const user = userEvent.setup();
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+		const previous = screen.getByRole("button", { name: "Imagen anterior" });
+		const next = screen.getByRole("button", { name: "Imagen siguiente" });
+
+		expect(previous).toBeDisabled();
+		expect(next).not.toBeDisabled();
+		await user.click(next);
+
+		expect(
+			screen
+				.getByRole("button", { name: "Abrir galería" })
+				.querySelector("img"),
+		).toHaveAttribute("src", "https://example.com/img2.jpg");
+		expect(next).toBeDisabled();
+		expect(previous).not.toBeDisabled();
+		expect(
+			screen.queryByRole("dialog", { name: "Galería de imágenes" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("centers the selected mobile thumbnail and disables motion when requested", async () => {
+		const scrollIntoView = vi.fn();
+		const originalScrollIntoView = Element.prototype.scrollIntoView;
+		const originalMatchMedia = window.matchMedia;
+		Element.prototype.scrollIntoView = scrollIntoView;
+		window.matchMedia = vi.fn((query) => ({
+			matches:
+				query === "(max-width: 768px)" ||
+				query === "(prefers-reduced-motion: reduce)",
+		}));
+
+		try {
+			mockGetDefaults({
+				lodging: {
+					...lodgingFixture,
+					imageUrls: [
+						"https://example.com/img.jpg",
+						"https://example.com/img2.jpg",
+					],
+				},
+			});
+			const user = userEvent.setup();
+			renderProductDetail();
+
+			await screen.findByText("Cabaña del Lago");
+			await user.click(
+				screen.getByRole("button", { name: "Imagen siguiente en galería" }),
+			);
+
+			expect(scrollIntoView).toHaveBeenLastCalledWith({
+				inline: "center",
+				block: "nearest",
+				behavior: "auto",
+			});
+			expect(screen.getByRole("button", { name: "Ver imagen 2" })).toHaveAttribute(
+				"aria-current",
+				"true",
+			);
+		} finally {
+			Element.prototype.scrollIntoView = originalScrollIntoView;
+			window.matchMedia = originalMatchMedia;
+		}
+	});
+
+	it("exposes separate desktop and mobile navigation class contracts", async () => {
+		mockGetDefaults({
+			lodging: {
+				...lodgingFixture,
+				imageUrls: [
+					"https://example.com/img.jpg",
+					"https://example.com/img2.jpg",
+				],
+			},
+		});
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByRole("button", { name: "Imagen anterior" })).toHaveClass(
+			"gallery-desktop-arrow",
+		);
+		expect(
+			screen.getByRole("button", { name: "Imagen anterior en galería" }),
+		).toHaveClass("gallery-mobile-arrow");
+		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(2);
+	});
+});
+
+describe("ProductDetail - mobile gallery CSS contract", () => {
+	it("keeps gallery overflow inside the thumbnail strip", () => {
+		const css = readFileSync(
+			resolve(process.cwd(), "src/pages/ProductDetail/ProductDetail.css"),
+			"utf8",
+		);
+		expect(css).toMatch(
+			/@media \(max-width: 768px\)[\s\S]*?\.gallery-mobile-arrow\s*{[^}]*flex:\s*0 0 44px;[^}]*width:\s*44px;[^}]*height:\s*44px;/,
+		);
+		expect(css).toMatch(
+			/@media \(max-width: 768px\)[\s\S]*?\.gallery-thumbs\s*{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;[^}]*scroll-snap-type:\s*x proximity;/,
+		);
+		expect(css).toMatch(/\.gallery-desktop-arrow\s*{[^}]*display:\s*none;/);
+		expect(css).not.toMatch(/overflow-x:\s*hidden/);
 	});
 });
 

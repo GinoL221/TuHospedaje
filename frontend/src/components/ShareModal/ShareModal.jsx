@@ -1,8 +1,93 @@
+import { useEffect, useId, useRef, useState } from "react";
+import { Copy, X } from "lucide-react";
 import "./ShareModal.css";
 
+const FOCUSABLE_SELECTOR = [
+	"button:not([disabled])",
+	"[href]",
+	"input:not([disabled])",
+	"select:not([disabled])",
+	"textarea:not([disabled])",
+	'[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 export default function ShareModal({ lodging, onClose }) {
-  const url = window.location.href;
-  const text = `Mirá este alojamiento en TuHospedaje: ${lodging.name}`;
+	const dialogRef = useRef(null);
+	const closeButtonRef = useRef(null);
+	const previousFocusRef = useRef(null);
+	const titleId = useId();
+	const descriptionId = useId();
+	const [copyStatus, setCopyStatus] = useState("");
+	const url = window.location.href;
+	const text = `Mirá este alojamiento en TuHospedaje: ${lodging.name}`;
+
+	useEffect(() => {
+		previousFocusRef.current = document.activeElement;
+		closeButtonRef.current?.focus();
+
+		return () => {
+			const previousFocus = previousFocusRef.current;
+			if (
+				previousFocus?.isConnected &&
+				previousFocus.matches(FOCUSABLE_SELECTOR)
+			) {
+				previousFocus.focus();
+			}
+		};
+	}, []);
+
+	const handleKeyDown = (event) => {
+		if (event.key === "Escape") {
+			event.preventDefault();
+			onClose();
+			return;
+		}
+
+		if (event.key !== "Tab") return;
+
+		const focusableElements = Array.from(
+			dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [],
+		);
+		if (focusableElements.length === 0) {
+			event.preventDefault();
+			return;
+		}
+
+		const firstElement = focusableElements[0];
+		const lastElement = focusableElements.at(-1);
+		if (event.shiftKey && document.activeElement === firstElement) {
+			event.preventDefault();
+			lastElement.focus();
+		} else if (!event.shiftKey && document.activeElement === lastElement) {
+			event.preventDefault();
+			firstElement.focus();
+		}
+	};
+
+	const handleCopy = async () => {
+		try {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(url);
+			} else {
+				const textarea = document.createElement("textarea");
+				textarea.value = url;
+				textarea.setAttribute("readonly", "");
+				textarea.className = "share-copy-fallback";
+				document.body.appendChild(textarea);
+				let copied = false;
+				try {
+					textarea.select();
+					copied = document.execCommand?.("copy") ?? false;
+				} finally {
+					textarea.remove();
+				}
+				if (!copied) throw new Error("Copy command unavailable");
+			}
+			setCopyStatus("Enlace copiado");
+		} catch {
+			setCopyStatus("No se pudo copiar el enlace");
+		}
+	};
 
   const shareLinks = [
     {
@@ -50,29 +135,70 @@ export default function ShareModal({ lodging, onClose }) {
   ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content share-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2>Compartir</h2>
-        <button className="modal-close" onClick={onClose}>
-          ×
-        </button>
+			<div
+					className="share-modal-overlay"
+				onClick={onClose}
+				onKeyDown={handleKeyDown}
+			>
+			<div
+				ref={dialogRef}
+				className="modal-content share-modal"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby={titleId}
+				aria-describedby={descriptionId}
+				onClick={(e) => e.stopPropagation()}
+			>
+						<header className="share-header">
+							<div>
+								<h2 id={titleId}>Compartir</h2>
+								<p id={descriptionId} className="share-sr-only">
+									Elegí cómo enviar este alojamiento.
+								</p>
+							</div>
+							<button
+								ref={closeButtonRef}
+								type="button"
+								className="modal-close"
+							onClick={onClose}
+							aria-label="Cerrar"
+						>
+							<X size={20} aria-hidden="true" />
+						</button>
+					</header>
 
-        {lodging.imageUrls?.[0] && (
-          <img
-            src={lodging.imageUrls[0]}
-            alt={lodging.name}
-            className="share-image"
-          />
-        )}
-        <p className="share-description">
-          {lodging.name} - {lodging.city}
-        </p>
-        <p className="share-link">{url}</p>
+					<div className="share-lodging">
+						{lodging.imageUrls?.[0] && (
+							<img
+								src={lodging.imageUrls[0]}
+								alt={lodging.name}
+								className="share-image"
+							/>
+						)}
+							<p className="share-accessible-description">
+							{lodging.name} - {lodging.city}
+						</p>
+						<div className="share-description" aria-hidden="true">
+							<strong>{lodging.name}</strong>
+							<span>{lodging.city}</span>
+						</div>
+					</div>
 
-        <div className="share-options">
+					<div className="share-link-row">
+						<div className="share-link-summary" aria-hidden="true">
+							<span>Enlace del alojamiento</span>
+							<strong>{window.location.host}</strong>
+						</div>
+						<button type="button" className="share-copy-btn" onClick={handleCopy}>
+							<Copy size={18} aria-hidden="true" />
+							Copiar enlace
+						</button>
+					</div>
+					<p className="share-copy-status" aria-live="polite" aria-atomic="true">
+						{copyStatus}
+					</p>
+
+					<div className="share-options" aria-label="Redes sociales">
           {shareLinks.map((s) => (
             <a
               key={s.name}
@@ -80,7 +206,7 @@ export default function ShareModal({ lodging, onClose }) {
               target="_blank"
               rel="noopener noreferrer"
               className="share-btn"
-              style={{ background: s.bg }}
+								style={{ "--share-brand": s.bg }}
               onClick={onClose}
             >
               {s.icon} {s.name}

@@ -133,8 +133,9 @@ describe("SearchResults - categories are always filtered server-side", () => {
     getFavorites.mockResolvedValue([]);
     searchLodgings
       .mockResolvedValueOnce(searchResponse({ lodgings: [cabin] })) // initial load
-      .mockResolvedValueOnce(searchResponse({ lodgings: [cabin, hotel] })) // apply both categories
-      .mockResolvedValueOnce(searchResponse({ lodgings: [hotel] })); // remove "Cabaña" chip
+      .mockResolvedValueOnce(searchResponse({ lodgings: [cabin, hotel], totalPages: 2 })) // apply both categories
+      .mockResolvedValueOnce(searchResponse({ lodgings: [hotel], totalPages: 2 })) // remove "Cabaña" chip
+      .mockResolvedValueOnce(searchResponse({ lodgings: [hotel], currentPage: 1, totalPages: 2 })); // paginate
 
     const user = userEvent.setup();
     renderSearchResults();
@@ -156,10 +157,27 @@ describe("SearchResults - categories are always filtered server-side", () => {
       expect(screen.queryByRole("button", { name: "Quitar Cabaña" })).not.toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Quitar Hotel" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Filtros" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Cabaña" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Hotel" })).toBeChecked();
 
     expect(searchLodgings).toHaveBeenCalledTimes(1);
-    const [params] = searchLodgings.mock.calls[0];
+    let [params] = searchLodgings.mock.calls[0];
     expect(params.getAll("categories")).toEqual(["2"]);
+
+    await user.click(screen.getByRole("checkbox", { name: "Cabaña" }));
+    expect(screen.getByRole("checkbox", { name: "Cabaña" })).toBeChecked();
+
+    searchLodgings.mockClear();
+    await user.click(screen.getByRole("button", { name: "Siguiente" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+    });
+    expect(searchLodgings).toHaveBeenCalledTimes(1);
+    [params] = searchLodgings.mock.calls[0];
+    expect(params.getAll("categories")).toEqual(["2"]);
+    expect(params.get("page")).toBe("1");
   });
 
   it("includes the categories param when exactly one category is selected", async () => {
@@ -176,6 +194,9 @@ describe("SearchResults - categories are always filtered server-side", () => {
     await waitFor(() => {
       expect(searchLodgings).toHaveBeenCalledTimes(1);
     });
+
+    expect(screen.getByRole("complementary", { name: "Filtros" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Hotel" })).toBeInTheDocument();
 
     const [params] = searchLodgings.mock.calls[0];
     expect(params.getAll("categories")).toEqual(["1"]);

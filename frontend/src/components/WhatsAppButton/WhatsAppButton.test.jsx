@@ -35,11 +35,12 @@ describe("WhatsAppButton - env is set", () => {
     expect(link).toHaveAttribute("rel", "noreferrer");
   });
 
-  it("is positioned fixed at bottom-right with correct z-index", () => {
+  it("uses the responsive desktop-floating and mobile-in-flow style contract", () => {
     render(<WhatsAppButton />);
 
     const link = screen.getByRole("link", { name: "Contactar por WhatsApp" });
-    expect(link).toHaveStyle({ position: "fixed", right: "24px", bottom: "24px" });
+    expect(link).toHaveClass("whatsapp-button");
+    expect(link).not.toHaveAttribute("style");
   });
 
   it("does not require authentication to render", () => {

@@ -12,9 +12,6 @@ vi.mock("./context/AuthContext", () => {
 });
 vi.mock("./components/Header/Header", () => ({ default: () => <header>Header shell</header> }));
 vi.mock("./components/Footer/Footer", () => ({ default: () => <footer>Footer shell</footer> }));
-vi.mock("./components/WhatsAppButton/WhatsAppButton", () => ({
-  default: () => <div>WhatsApp shell</div>,
-}));
 vi.mock("./components/RequireAuth", () => vi.importActual("./components/RequireAuth"));
 vi.mock("./components/RequireAdmin", () => vi.importActual("./components/RequireAdmin"));
 vi.mock("./pages/LoginPage", () => ({ default: () => null }));
@@ -131,7 +128,6 @@ describe("App SearchResults route delivery", () => {
 
     expect(screen.getByText("Header shell")).toBeInTheDocument();
     expect(screen.getByText("Footer shell")).toBeInTheDocument();
-    expect(screen.getByText("WhatsApp shell")).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     act(() => vi.advanceTimersByTime(150));
@@ -230,7 +226,6 @@ describe("App admin route authorization", () => {
 
     expect(screen.queryByText("Header shell")).not.toBeInTheDocument();
     expect(screen.queryByText("Footer shell")).not.toBeInTheDocument();
-    expect(screen.queryByText("WhatsApp shell")).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     act(() => vi.advanceTimersByTime(150));

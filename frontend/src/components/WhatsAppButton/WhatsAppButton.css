@@ -1,0 +1,23 @@
+.whatsapp-button {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 1000;
+  display: flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #25d366;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
+}
+
+@media (max-width: 768px) {
+  .whatsapp-button {
+    position: static;
+    width: 48px;
+    height: 48px;
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}

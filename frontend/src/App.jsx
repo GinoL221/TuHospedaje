@@ -8,7 +8,6 @@ import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import RouteChunkErrorBoundary from "./components/RouteChunkErrorBoundary";
 import RouteLoadingFallback from "./components/RouteLoadingFallback";
-import WhatsAppButton from "./components/WhatsAppButton/WhatsAppButton";
 
 const Home = lazy(() => import("./pages/Home/Home"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -29,7 +28,6 @@ function AppLayout() {
   return (
     <>
       {!isAdmin && <Header />}
-      {!isAdmin && <WhatsAppButton />}
       <RouteChunkErrorBoundary resetKey={pathname}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>

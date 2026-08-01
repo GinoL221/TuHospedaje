@@ -15,6 +15,105 @@ describe("ConfirmDialog - visibility", () => {
 
     expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
   });
+
+  it("exposes a named modal dialog and initially focuses cancel", () => {
+    render(
+      <ConfirmDialog
+        show={true}
+        message="¿Eliminar alojamiento?"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "¿Eliminar alojamiento?" })
+    ).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByTestId("confirm-delete-no")).toHaveFocus();
+  });
+});
+
+describe("ConfirmDialog - keyboard and focus", () => {
+  it("wraps Tab and Shift+Tab within enabled dialog controls", async () => {
+    const user = userEvent.setup();
+    render(
+      <ConfirmDialog
+        show={true}
+        message="¿Confirmar?"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    const confirmButton = screen.getByTestId("confirm-delete-yes");
+    const cancelButton = screen.getByTestId("confirm-delete-no");
+
+    expect(cancelButton).toHaveFocus();
+    await user.tab();
+    expect(confirmButton).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(cancelButton).toHaveFocus();
+  });
+
+  it("cancels on Escape", async () => {
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ConfirmDialog
+        show={true}
+        message="¿Confirmar?"
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />
+    );
+
+    await user.keyboard("{Escape}");
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores focus to the trigger when it closes", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <>
+        <button>Eliminar</button>
+        <ConfirmDialog
+          show={false}
+          message="¿Confirmar?"
+          onConfirm={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </>
+    );
+    const trigger = screen.getByRole("button", { name: "Eliminar" });
+    await user.click(trigger);
+
+    rerender(
+      <>
+        <button>Eliminar</button>
+        <ConfirmDialog
+          show={true}
+          message="¿Confirmar?"
+          onConfirm={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </>
+    );
+    expect(screen.getByTestId("confirm-delete-no")).toHaveFocus();
+
+    rerender(
+      <>
+        <button>Eliminar</button>
+        <ConfirmDialog
+          show={false}
+          message="¿Confirmar?"
+          onConfirm={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </>
+    );
+    expect(trigger).toHaveFocus();
+  });
 });
 
 describe("ConfirmDialog - overlay and propagation", () => {
@@ -194,6 +293,38 @@ describe("ConfirmDialog - double-click guard while onConfirm is in flight", () =
     await user.click(screen.getByTestId("confirm-delete-yes"));
     await user.click(screen.getByTestId("confirm-delete-no"));
 
+    expect(onCancel).not.toHaveBeenCalled();
+
+    resolveConfirm();
+    await waitFor(() =>
+      expect(screen.getByTestId("confirm-delete-no")).not.toBeDisabled()
+    );
+  });
+
+  it("ignores Escape and overlay cancellation while onConfirm is pending", async () => {
+    let resolveConfirm;
+    const onConfirm = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveConfirm = resolve;
+        })
+    );
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ConfirmDialog
+        show={true}
+        message="¿Confirmar?"
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
+    );
+
+    await user.click(screen.getByTestId("confirm-delete-yes"));
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByTestId("confirm-delete"));
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onCancel).not.toHaveBeenCalled();
 
     resolveConfirm();
