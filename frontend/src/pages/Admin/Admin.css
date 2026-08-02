@@ -213,12 +213,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
+  box-shadow: var(--shadow-lg), inset 0 -3px var(--action-primary-accent);
   padding: 14px 22px;
   border-radius: 50px;
-  box-shadow: var(--shadow-lg);
   cursor: pointer;
   font-weight: 700;
   font-size: 0.95rem;
@@ -226,8 +226,15 @@
   transition: all 150ms ease;
 }
 .btn-fab:hover {
-  background: var(--primary);
+  background: var(--action-primary-hover-bg);
   transform: translateY(-2px);
+}
+.btn-fab:active {
+  box-shadow: var(--shadow-lg), inset 0 -4px var(--action-primary-accent);
+}
+.btn-fab:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 
 /* ── DASHBOARD RECENT ────────────────────────────────────────── */
@@ -256,9 +263,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
   padding: 9px 18px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -268,7 +276,14 @@
   transition: background 150ms ease;
 }
 .btn-add:hover {
-  background: var(--primary);
+  background: var(--action-primary-hover-bg);
+}
+.btn-add:active {
+  box-shadow: inset 0 -4px var(--action-primary-accent);
+}
+.btn-add:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 .btn-delete {
   background: transparent;
@@ -300,8 +315,9 @@
   transition: all 150ms ease;
 }
 .btn-edit:hover {
-  background: var(--primary);
-  color: #fff;
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--bg);
 }
 .btn-promote {
   background: transparent;
@@ -462,7 +478,7 @@ th.sortable[aria-sort="descending"] .sort-icon {
   cursor: not-allowed;
 }
 .pagination button.btn-extremo {
-  background: var(--primary);
+  background: var(--secondary);
 }
 
 /* ── EMPTY STATE ─────────────────────────────────────────────── */
@@ -550,9 +566,10 @@ th.sortable[aria-sort="descending"] .sort-icon {
   margin-top: 20px;
 }
 .btn-save {
-  background: var(--accent);
-  color: #fff;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
   padding: 10px 25px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -561,7 +578,21 @@ th.sortable[aria-sort="descending"] .sort-icon {
   transition: background 150ms ease;
 }
 .btn-save:hover {
-  background: var(--primary);
+  background: var(--action-primary-hover-bg);
+}
+.btn-save:active:not(:disabled) {
+  box-shadow: inset 0 -4px var(--action-primary-accent);
+}
+.btn-save:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
+}
+.btn-save:disabled {
+  background: var(--action-primary-disabled-bg);
+  color: var(--action-primary-disabled-fg);
+  border: 1px solid var(--action-primary-disabled-fg);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 .btn-cancel {
   background: rgba(0, 0, 0, 0.08);

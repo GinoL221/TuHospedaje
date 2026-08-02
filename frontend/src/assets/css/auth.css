@@ -2,9 +2,9 @@
 .login-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
-  padding: 110px 20px 40px;
+  padding: calc(var(--site-header-height) + 48px) 20px 56px;
   box-sizing: border-box;
   background-color: var(--bg);
 }
@@ -129,28 +129,43 @@
 
 .login-box button,
 .register-box button {
-  background-color: var(--primary);
-  color: var(--bg);
+  background-color: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   padding: 12px;
   border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 1rem;
   font-family: inherit;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: opacity var(--transition);
+  transition: background-color var(--transition);
   margin-top: 4px;
 }
 
 .login-box button:hover:not(:disabled),
 .register-box button:hover:not(:disabled) {
-  opacity: 0.85;
+  background-color: var(--action-primary-hover-bg);
+}
+
+.login-box button:active:not(:disabled),
+.register-box button:active:not(:disabled) {
+  box-shadow: inset 0 -4px var(--action-primary-accent);
+}
+
+.login-box button:focus-visible,
+.register-box button:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 
 .login-box button:disabled,
 .register-box button:disabled {
-  opacity: 0.6;
+  background-color: var(--action-primary-disabled-bg);
+  color: var(--action-primary-disabled-fg);
+  border: 1px solid var(--action-primary-disabled-fg);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -223,6 +238,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .login-container {
+    padding: calc(var(--site-header-height) + 48px) 16px 48px;
+  }
+
   .login-box {
     width: 100%;
     max-width: 360px;

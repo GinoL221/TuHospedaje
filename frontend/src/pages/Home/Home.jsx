@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import DatePicker from "react-datepicker";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { es } from "date-fns/locale/es";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
 import "./Home.css";
+
+registerLocale("es", es);
 
 export default function Home() {
 	const navigate = useNavigate();
@@ -19,6 +22,7 @@ export default function Home() {
 	const [checkOut, setCheckOut] = useState(null);
 	const [suggestions, setSuggestions] = useState([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 	const [loadingCities, setLoadingCities] = useState(false);
 	const [searchError, setSearchError] = useState("");
 	const [page, setPage] = useState(0);
@@ -73,10 +77,12 @@ export default function Home() {
 			get(`/lodgings/cities?q=${encodeURIComponent(city)}`)
 				.then((data) => {
 					setSuggestions(Array.isArray(data) ? data : []);
+					setActiveSuggestionIndex(-1);
 					setLoadingCities(false);
 				})
 				.catch(() => {
 					setSuggestions([]);
+					setActiveSuggestionIndex(-1);
 					setLoadingCities(false);
 				});
 		}, 200);
@@ -116,10 +122,46 @@ export default function Home() {
 
 	function handleCityChange(value) {
 		setCity(value);
+		setActiveSuggestionIndex(-1);
 		if (value.length < 2) {
 			setSuggestions([]);
 			setShowSuggestions(false);
 			setLoadingCities(false);
+		}
+	}
+
+	function selectCity(value) {
+		setCity(value);
+		setShowSuggestions(false);
+		setActiveSuggestionIndex(-1);
+	}
+
+	function handleCityKeyDown(event) {
+		if (event.key === "Escape") {
+			setShowSuggestions(false);
+			setActiveSuggestionIndex(-1);
+			return;
+		}
+
+		if (suggestions.length === 0) return;
+
+		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+			event.preventDefault();
+			setShowSuggestions(true);
+			setActiveSuggestionIndex((current) => {
+				if (event.key === "ArrowDown") return (current + 1) % suggestions.length;
+				return current <= 0 ? suggestions.length - 1 : current - 1;
+			});
+			return;
+		}
+
+		if (
+			event.key === "Enter" &&
+			showSuggestions &&
+			activeSuggestionIndex >= 0
+		) {
+			event.preventDefault();
+			selectCity(suggestions[activeSuggestionIndex]);
 		}
 	}
 
@@ -133,25 +175,48 @@ export default function Home() {
 							<input
 								type="text"
 								placeholder="Ciudad"
-								value={city}
-								onChange={(e) => handleCityChange(e.target.value)}
-								onFocus={() => setShowSuggestions(true)}
-								onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
-							/>
-							{showSuggestions && (
-								<ul className="city-suggestions">
-									{loadingCities ? (
-										<li className="city-suggestions-loading">Buscando...</li>
-									) : suggestions.length === 0 ? (
-										<li className="city-suggestions-empty">Sin resultados</li>
-									) : (
-										suggestions.map((c) => (
-											<li
-												key={c}
-												onMouseDown={() => {
-													setCity(c);
-													setShowSuggestions(false);
-												}}
+									value={city}
+									onChange={(e) => handleCityChange(e.target.value)}
+									onFocus={() => setShowSuggestions(city.length >= 2)}
+									onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
+									onKeyDown={handleCityKeyDown}
+									role="combobox"
+									aria-autocomplete="list"
+									aria-expanded={showSuggestions}
+									aria-controls="city-suggestions-listbox"
+									aria-activedescendant={
+										activeSuggestionIndex >= 0
+											? `city-suggestion-${activeSuggestionIndex}`
+											: undefined
+									}
+								/>
+								{showSuggestions && (
+									<ul
+										id="city-suggestions-listbox"
+										className="city-suggestions"
+										role="listbox"
+										aria-label="Sugerencias de ciudades"
+									>
+										{loadingCities ? (
+											<li className="city-suggestions-loading" role="status">
+												Buscando...
+											</li>
+										) : suggestions.length === 0 ? (
+											<li className="city-suggestions-empty" role="status">
+												Sin resultados
+											</li>
+										) : (
+											suggestions.map((c, index) => (
+												<li
+													key={c}
+													id={`city-suggestion-${index}`}
+													role="option"
+													aria-selected={activeSuggestionIndex === index}
+													className={
+														activeSuggestionIndex === index ? "is-active" : undefined
+													}
+													onMouseEnter={() => setActiveSuggestionIndex(index)}
+													onMouseDown={() => selectCity(c)}
 											>
 												{c}
 											</li>
@@ -165,11 +230,13 @@ export default function Home() {
 								selected={checkIn}
 								onChange={(date) => setCheckIn(date)}
 								selectsStart
-								startDate={checkIn}
-								endDate={checkOut}
-								minDate={new Date()}
+									startDate={checkIn}
+									endDate={checkOut}
+									minDate={new Date()}
 								placeholderText="Check-in"
 								dateFormat="dd/MM/yyyy"
+								locale="es"
+								popperClassName="home-datepicker-popper"
 							/>
 						</div>
 						<div>
@@ -177,11 +244,13 @@ export default function Home() {
 								selected={checkOut}
 								onChange={(date) => setCheckOut(date)}
 								selectsEnd
-								startDate={checkIn}
-								endDate={checkOut}
-								minDate={checkIn || new Date()}
+									startDate={checkIn}
+									endDate={checkOut}
+									minDate={checkIn || new Date()}
 								placeholderText="Check-out"
 								dateFormat="dd/MM/yyyy"
+								locale="es"
+								popperClassName="home-datepicker-popper"
 							/>
 						</div>
 						<button type="submit" className="btn-search">

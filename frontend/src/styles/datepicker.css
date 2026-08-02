@@ -67,7 +67,7 @@
   .react-datepicker__current-month {
     font-size: 0.95rem;
   }
-  .react-datepicker-popper {
+  .react-datepicker-popper:not(.home-datepicker-popper) {
     left: 0 !important;
     transform: none !important;
   }

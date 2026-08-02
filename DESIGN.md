@@ -148,6 +148,8 @@ Mobile/touch Admin is **not supported**. Touch-capable devices at `<=1024px` rec
 | **Implemented** | LodgingFormModal has instance-safe dialog naming and description, deterministic initial focus, enabled-control focus containment, opener-focus restoration after actual close, and safe Escape, overlay, and interior-click behavior. Meaningful scalar, category, feature, policy, and image changes route close requests through ConfirmDialog; cancel restores form focus and confirmed discard closes. The underlying form becomes inert while ConfirmDialog is active, and submit/upload pending guards prevent duplicate submit and unsafe close or discard. Focused component, ImageUpload, ConfirmDialog, and AdminLodgings regressions pass alongside frontend lint and build. |
 | **Implemented** | ProductCard uses a declared `400x300` (`4:3`) image and native lazy loading. |
 | **Implemented** | Route chunk failures provide a manual page-reload recovery action. |
+| **Implemented** | Primary CTAs use petroleum `#264653` with light `#F4F4F9` text (`9.19:1`), dark `#333333` hover/active surfaces with light text (`11.52:1`), and an outlined disabled state (`9.19:1`). Orange remains an inset action accent. The `3px` water-green focus indicator has `3.03:1` contrast against both the default CTA and adjacent light surface, and `3.80:1` against hover/active. Shared, authentication, booking, search, reservation, review, and Admin selectors use the semantic contract; focused contract and behavior tests, full frontend lint, and the production build pass. |
+| **Implemented** | Home search uses an accessible petroleum/light action pair, Spanish-localized date pickers, and a Home-scoped calendar surface with keyboard-visible states and practical day/navigation targets. Login and registration reserve the fixed Header plus stable top and bottom spacing, use natural vertical flow, and keep the Footer after content on short viewports. |
 
 ## Technical accessibility contract
 
@@ -165,7 +167,6 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 ## Known brand deviations
 
 - [ ] **Mixed legacy iconography:** Lucide coexists with inline SVG, Icons8 images, text glyphs, stars, and legacy mechanisms.
-- [ ] **Primary button contrast:** verified CSS uses white normal text on primary orange backgrounds in multiple CTA styles. This `2.59:1` pair contradicts Identity Manual v2.0 and must not be treated as an approved brand combination.
 
 ## Other technical debt
 
@@ -185,6 +186,6 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 - [x] Preserve the verified identity work unit: local Inter Variable loading and official Header/Footer isologotype usage. Its focused 25 tests, lint, and build passed.
 - [x] Preserve the visually validated ShareModal desktop and `480x897px` mobile presentation.
 - [x] Preserve LodgingFormModal accessibility and unsaved-change coordination with ConfirmDialog.
+- [x] Apply the accessible primary CTA contract while preserving orange as the action accent.
 - [ ] Apply the manual typography scale consistently across existing screens.
-- [ ] Correct primary CTA contrast through separately approved implementation work.
 - [ ] Consolidate semantic tokens and component states incrementally; do not introduce another palette or infer brand rules from existing exceptions.

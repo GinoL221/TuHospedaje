@@ -400,7 +400,21 @@ describe("ProductDetail - mobile gallery CSS contract", () => {
 			/@media \(max-width: 768px\)[\s\S]*?\.gallery-thumbs\s*{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;[^}]*scroll-snap-type:\s*x proximity;/,
 		);
 		expect(css).toMatch(/\.gallery-desktop-arrow\s*{[^}]*display:\s*none;/);
+		expect(css).toMatch(
+			/\.gallery-thumbs::before,\s*\.gallery-thumbs::after\s*{[^}]*flex:\s*0 0 max\(2px, calc\(50% - 40px\)\);/,
+		);
 		expect(css).not.toMatch(/overflow-x:\s*hidden/);
+	});
+
+	it("keeps detail actions touch-sized with explicit keyboard focus", () => {
+		const css = readFileSync(
+			resolve(process.cwd(), "src/pages/ProductDetail/ProductDetail.css"),
+			"utf8",
+		);
+
+		expect(css).toMatch(/\.back-arrow\s*{[^}]*width:\s*44px;[^}]*height:\s*44px;/);
+		expect(css).toMatch(/\.btn-share\s*{[\s\S]*?min-height:\s*44px;/);
+		expect(css).toMatch(/\.btn-reserve:focus-visible\s*{[^}]*outline:\s*3px solid var\(--action-primary-focus\);/);
 	});
 });
 

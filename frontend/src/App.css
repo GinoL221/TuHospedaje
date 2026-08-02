@@ -5,6 +5,14 @@
   --secondary: #264653;
   --accent: #2a9d8f;
 
+  --action-primary-bg: var(--secondary);
+  --action-primary-fg: var(--bg);
+  --action-primary-hover-bg: var(--text);
+  --action-primary-disabled-bg: var(--bg);
+  --action-primary-disabled-fg: var(--secondary);
+  --action-primary-focus: var(--accent);
+  --action-primary-accent: var(--primary);
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;

@@ -16,15 +16,23 @@
   border: none;
   cursor: pointer;
   color: var(--primary);
-  padding: 4px 6px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: opacity var(--transition);
 }
 
 .back-arrow:hover {
   opacity: 0.75;
+}
+
+.back-arrow:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .detail-title-group {
@@ -270,6 +278,12 @@
     scrollbar-width: thin;
   }
 
+  .gallery-thumbs::before,
+  .gallery-thumbs::after {
+    content: "";
+    flex: 0 0 max(2px, calc(50% - 40px));
+  }
+
   .gallery-thumb {
     width: 80px;
     height: 56px;
@@ -393,9 +407,10 @@
   font-size: 1.1rem;
 }
 .btn-reserve {
-  background-color: var(--primary);
-  color: var(--bg);
+  background-color: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
   padding: 14px 30px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -404,14 +419,29 @@
   font-size: 1.1rem;
   letter-spacing: 0.01em;
   width: 100%;
-  transition: opacity var(--transition);
+  transition: background-color var(--transition);
 }
 .btn-reserve:hover:not(:disabled) {
-  opacity: 0.85;
+  background-color: var(--action-primary-hover-bg);
+}
+
+.btn-reserve:active:not(:disabled) {
+  box-shadow: inset 0 -4px var(--action-primary-accent);
+}
+
+.btn-reserve:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 3px;
+  box-shadow:
+    inset 0 -3px var(--action-primary-accent),
+    0 0 0 2px var(--bg);
 }
 
 .btn-reserve:disabled {
-  opacity: 0.5;
+  background-color: var(--action-primary-disabled-bg);
+  color: var(--action-primary-disabled-fg);
+  border: 1px solid var(--action-primary-disabled-fg);
+  box-shadow: none;
   cursor: not-allowed;
 }
 .policies-section {
@@ -473,17 +503,25 @@
   opacity: 0.8;
 }
 .btn-share {
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
+  min-height: 44px;
+  background: var(--bg);
+  color: var(--secondary);
+  border: 2px solid var(--accent);
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
   margin-right: 10px;
-  transition: opacity var(--transition);
+  transition:
+    background-color var(--transition),
+    color var(--transition);
 }
 .btn-share:hover {
-  opacity: 0.85;
+  background: var(--secondary);
+  color: var(--bg);
+}
+.btn-share:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
 }

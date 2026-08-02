@@ -37,7 +37,8 @@
 }
 
 .btn-remove-fav:hover {
-  background: var(--primary);
+  background: var(--secondary);
+  border-color: var(--secondary);
   color: var(--bg);
 }
 

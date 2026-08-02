@@ -7,11 +7,18 @@ import { get } from "../../services/api";
 
 vi.mock("../../services/api");
 
+const { registerLocaleMock } = vi.hoisted(() => ({
+	registerLocaleMock: vi.fn(),
+}));
+
 vi.mock("react-datepicker", () => ({
-	default: ({ placeholderText, onChange }) => (
+	registerLocale: registerLocaleMock,
+	default: ({ placeholderText, onChange, locale, popperClassName }) => (
 		<input
 			aria-label={placeholderText}
 			data-testid={`datepicker-${placeholderText}`}
+			data-locale={locale}
+			data-popper-class={popperClassName}
 			onChange={(e) =>
 				onChange(e.target.value ? new Date(e.target.value) : null)
 			}
@@ -127,6 +134,85 @@ describe("Home - category filter", () => {
 });
 
 describe("Home - search form", () => {
+	it("supports mouse and keyboard selection with listbox semantics", async () => {
+		mockGetDefaults();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/cities"))
+				return Promise.resolve(["Bariloche", "Buenos Aires"]);
+			if (endpoint.startsWith("/lodgings?page="))
+				return Promise.resolve({ lodgings: [lodgingFixture], totalPages: 1 });
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+		const input = screen.getByRole("combobox", { name: "" });
+
+		await user.type(input, "Ba");
+		const listbox = await screen.findByRole("listbox", {
+			name: "Sugerencias de ciudades",
+		});
+		expect(input).toHaveAttribute("aria-expanded", "true");
+		expect(input).toHaveAttribute("aria-controls", listbox.id);
+
+		await user.keyboard("{ArrowDown}");
+		const activeOption = screen.getByRole("option", { name: "Bariloche" });
+		expect(activeOption).toHaveClass("is-active");
+		expect(activeOption).toHaveAttribute("aria-selected", "true");
+		expect(input).toHaveAttribute("aria-activedescendant", activeOption.id);
+
+		await user.keyboard("{ArrowDown}{ArrowUp}{Enter}");
+		expect(input).toHaveValue("Bariloche");
+		expect(input).toHaveAttribute("aria-expanded", "false");
+
+		await user.clear(input);
+		await user.type(input, "Bu");
+		await screen.findByRole("option", { name: "Buenos Aires" });
+		fireEvent.mouseDown(screen.getByRole("option", { name: "Buenos Aires" }));
+		expect(input).toHaveValue("Buenos Aires");
+	});
+
+	it("closes city suggestions with Escape", async () => {
+		mockGetDefaults();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/cities")) return Promise.resolve(["Mendoza"]);
+			if (endpoint.startsWith("/lodgings?page="))
+				return Promise.resolve({ lodgings: [lodgingFixture], totalPages: 1 });
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+		const input = screen.getByRole("combobox");
+
+		await user.type(input, "Me");
+		await screen.findByRole("option", { name: "Mendoza" });
+		await user.keyboard("{Escape}");
+
+		expect(input).toHaveAttribute("aria-expanded", "false");
+		expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+	});
+
+	it("registers and applies the Spanish locale to both date pickers", async () => {
+		mockGetDefaults();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByTestId("datepicker-Check-in")).toHaveAttribute(
+			"data-locale",
+			"es",
+		);
+		expect(screen.getByTestId("datepicker-Check-out")).toHaveAttribute(
+			"data-locale",
+			"es",
+		);
+		expect(screen.getByTestId("datepicker-Check-in")).toHaveAttribute(
+			"data-popper-class",
+			"home-datepicker-popper",
+		);
+	});
+
 	it("navigates to /search with the city query param when submitted", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();

@@ -112,20 +112,25 @@
 
 .btn-filter {
   width: 100%;
-  background-color: var(--primary);
-  color: #fff;
+  background-color: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
   padding: 10px 20px;
   min-height: 44px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 700;
   font-family: inherit;
-  transition: opacity var(--transition);
+  transition: background-color var(--transition);
 }
 
 .btn-filter:hover {
-  opacity: 0.85;
+  background-color: var(--action-primary-hover-bg);
+}
+
+.btn-filter:active {
+  box-shadow: inset 0 -4px var(--action-primary-accent);
 }
 
 .btn-clear {
@@ -204,7 +209,7 @@
 .btn-clear:focus-visible,
 .chip-remove:focus-visible,
 .filter-checkbox-label input:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--action-primary-focus);
   outline-offset: 2px;
 }
 
@@ -272,7 +277,7 @@
 }
 
 .search-pagination button.btn-extremo {
-  background: var(--primary);
+  background: var(--secondary);
 }
 
 .pagination-info {

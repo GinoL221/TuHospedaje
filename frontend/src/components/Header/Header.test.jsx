@@ -121,9 +121,9 @@ describe("Header - unauthenticated user", () => {
 		expect(
 			screen.getByRole("link", { name: "Iniciar sesión" }),
 		).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: "Crear cuenta" }),
-		).toBeInTheDocument();
+		const registerLink = screen.getByRole("link", { name: "Crear cuenta" });
+		expect(registerLink).toHaveAttribute("href", "/register");
+		expect(registerLink).toHaveClass("btn-secondary", "header-register-cta");
 	});
 
 	it("does not show the logout button", () => {

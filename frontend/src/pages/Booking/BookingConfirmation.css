@@ -121,9 +121,10 @@
 .confirmation-actions .btn-primary {
   flex: 1;
   padding: 12px;
-  background: var(--primary);
-  color: #fff;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
   font-weight: 700;
@@ -131,11 +132,20 @@
   cursor: pointer;
   text-align: center;
   text-decoration: none;
-  transition: opacity var(--transition);
+  transition: background-color var(--transition);
 }
 
 .confirmation-actions .btn-primary:hover {
-  opacity: 0.88;
+  background: var(--action-primary-hover-bg);
+}
+
+.confirmation-actions .btn-primary:active {
+  box-shadow: inset 0 -4px var(--action-primary-accent);
+}
+
+.confirmation-actions .btn-primary:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 
 .confirmation-actions .btn-ghost {

@@ -83,7 +83,7 @@ export default function Header() {
               </Link>
               <Link
                 to="/register"
-                className="btn-secondary"
+                className="btn-secondary header-register-cta"
                 onClick={() => setMenuOpen(false)}
               >
                 Crear cuenta
