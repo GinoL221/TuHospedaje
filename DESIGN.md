@@ -92,7 +92,7 @@ Inter is the approved brand and product typeface. Authorized routine weights are
 | Label | `14px` | `500` | `1.40` |
 | Caption | `12px` | `400` | `1.40` |
 
-**Implemented:** `@fontsource-variable/inter` `5.3.0` supplies the product-managed variable font through the single `@fontsource-variable/inter/wght.css` import in `main.jsx`. CSS declares `"Inter Variable"`, `"Inter"`, and system fallbacks. There is no remote Google Fonts dependency, and Fontsource supplies `font-display: swap`. The manual scale is still not consistently applied across existing screens.
+**Partially implemented:** `@fontsource-variable/inter` `5.3.0` supplies the product-managed variable font through the single `@fontsource-variable/inter/wght.css` import in `main.jsx`. CSS declares `"Inter Variable"`, `"Inter"`, and system fallbacks. There is no remote Google Fonts dependency, and Fontsource supplies `font-display: swap`. Global semantic tokens now define H1, H2, Body, Label, and Caption, with an explicit `16px`/`400`/`1.50` Body baseline. ProductDetail, BookingConfirmation, MyReservations, Favorites, Login, and Register use the approved page-title roles. Compact and legacy headings, labels, captions, cards, tables, filters, modals, and Admin remain intentionally outside this verified slice and still need consistency work.
 
 ### Photography
 
@@ -187,5 +187,6 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 - [x] Preserve the visually validated ShareModal desktop and `480x897px` mobile presentation.
 - [x] Preserve LodgingFormModal accessibility and unsaved-change coordination with ConfirmDialog.
 - [x] Apply the accessible primary CTA contract while preserving orange as the action accent.
-- [ ] Apply the manual typography scale consistently across existing screens.
+- [x] Establish semantic H1, H2, Body, Label, and Caption tokens; apply the Body baseline and verified page-title slice without changing compact UI typography.
+- [ ] Apply the manual typography scale consistently across compact and legacy headings, labels, captions, cards, tables, filters, modals, and Admin.
 - [ ] Consolidate semantic tokens and component states incrementally; do not introduce another palette or infer brand rules from existing exceptions.

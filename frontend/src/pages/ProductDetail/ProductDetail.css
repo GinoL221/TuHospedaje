@@ -46,7 +46,9 @@
 .detail-title-group h1 {
   margin: 0;
   color: #fff;
-  font-size: 1.6rem;
+  font-size: var(--type-h1-size);
+  font-weight: var(--type-h1-weight);
+  line-height: var(--type-h1-line-height);
 }
 
 .detail-location {

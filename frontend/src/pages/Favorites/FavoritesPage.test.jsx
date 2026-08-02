@@ -22,6 +22,7 @@ describe("FavoritesPage - favorites list", () => {
 
     expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
     expect(get).toHaveBeenCalledWith("/favorites");
+    expect(screen.getByRole("heading", { name: "Mis favoritos", level: 1 })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Quitar de favoritos" })).toBeInTheDocument();
   });
 });

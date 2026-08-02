@@ -33,7 +33,9 @@
   text-align: center;
   margin: 0 0 25px;
   color: var(--secondary);
-  font-size: 1.5rem;
+  font-size: var(--type-h2-size);
+  font-weight: var(--type-h2-weight);
+  line-height: var(--type-h2-line-height);
 }
 
 .login-box form,
@@ -249,9 +251,5 @@
   .register-box {
     width: 100%;
     max-width: 400px;
-  }
-  .login-box h2,
-  .register-box h2 {
-    font-size: 1.3rem;
   }
 }

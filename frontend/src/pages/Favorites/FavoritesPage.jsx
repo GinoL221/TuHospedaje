@@ -39,7 +39,7 @@ export default function FavoritesPage() {
 
   return (
     <main className="page-container favorites-page">
-      <h2 className="favorites-title">Mis favoritos</h2>
+      <h1 className="favorites-title">Mis favoritos</h1>
       {error ? (
         <p className="empty-state error">{error}</p>
       ) : favorites.length === 0 ? (

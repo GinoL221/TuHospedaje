@@ -7,8 +7,9 @@
 .favorites-title {
   margin: 0;
   color: var(--secondary);
-  font-size: 1.6rem;
-  font-weight: 700;
+  font-size: var(--type-h1-size);
+  font-weight: var(--type-h1-weight);
+  line-height: var(--type-h1-line-height);
 }
 
 .favorites-grid {
