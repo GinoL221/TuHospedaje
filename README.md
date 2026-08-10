@@ -24,7 +24,7 @@ Proyecto final integrador — Digital House.
 - jwt-decode
 
 ### E2E
-- Playwright (Chromium + Firefox)
+- Playwright (Chromium + Firefox + mobile Chromium)
 
 ---
 
@@ -272,6 +272,8 @@ npx playwright test
 
 Reportes generados en `e2e/playwright-report/`.
 
+El workflow de CI ejecuta los proyectos `chromium`, `firefox` y `mobile-chromium`. En Sprint 4, `mobile-chromium` cubre el shell responsive y el flujo de reservas en viewport móvil.
+
 ---
 
 ## Documentación
@@ -291,7 +293,7 @@ Reportes generados en `e2e/playwright-report/`.
 | Sprint 1 | ✅ Completado   | Base del sistema, catálogo de alojamientos, panel de administración            |
 | Sprint 2 | ✅ Completado   | Autenticación JWT, roles, categorías, Cloudinary                               |
 | Sprint 3 | ✅ Completado   | Búsqueda, favoritos, galería con modal viewer, CRUD policies, íconos Lucide    |
-| Sprint 4 | ✅ Completado   | Motor de reservas, historial, WhatsApp, email de confirmación, autenticación segura, cancelación de reservas, suite E2E |
+| Sprint 4 | ✅ Completado   | Motor de reservas, historial, WhatsApp, email de confirmación, autenticación segura, cancelación de reservas, suite E2E y cobertura responsive/móvil de reservas |
 
 ## Ramas
 

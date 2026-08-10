@@ -341,20 +341,45 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 **Cobertura automatizada:** `RouteChunkErrorBoundary.test.jsx` (3 casos), `RouteLoadingFallback.test.jsx` (4 casos, fake timers), `documentMetadata.test.jsx`.
 
+### TC-46: Shell Responsive Móvil (PR #73)
+
+* **Historias de Usuario Asociadas:** Transversal — navegación y shell responsive móvil
+* **Precondiciones:** Frontend activo. Playwright ejecutado con el proyecto `mobile-chromium`.
+* **Tipos de Verificación:** Test E2E Automatizado (Playwright, Chromium móvil).
+
+| Viewport | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|----------|-----------------------------|---------------------------------------------|--------|
+| `390x844` y `320x844` | Cargar una ruta pública y recorrer header, contenido y footer | No existe overflow horizontal; los textos y enlaces envuelven sin solapamientos ni cortes | ✔ Pasa |
+| `390x844` y `320x844` | Inspeccionar botón de menú y enlaces táctiles del shell | Los objetivos táctiles tienen tamaño y separación utilizables | ✔ Pasa |
+| `390x844` y `320x844` | Activar, cerrar y usar el menú móvil | El menú es accesible, muestra estado abierto/cerrado, permite navegar y no deja bloqueado el contenido | ✔ Pasa |
+
+### TC-47: Reservas Responsive y Cancelación Móvil (PR #75)
+
+* **Historias de Usuario Asociadas:** US #33 (Historial de reservas) y US #42 (Cancelar una reserva propia)
+* **Precondiciones:** Usuario autenticado con una reserva `CONFIRMED` propia y check-in futuro. Playwright ejecutado con `mobile-chromium`.
+* **Tipos de Verificación:** Test E2E Automatizado (Playwright, Chromium móvil).
+
+| Viewport | Acción / Estímulo de Prueba | Resultado Esperado (Criterio de Aceptación) | Estado |
+|----------|-----------------------------|---------------------------------------------|--------|
+| `390x844` y `320x844` | Cargar `/my-reservations` con una reserva | La tarjeta muestra datos, acciones y wrapping sin overflow; los controles tienen touch targets utilizables | ✔ Pasa |
+| `390x844` y `320x844` | Activar "Cancelar" y confirmar la interacción | Se solicita confirmación; al aceptar, la fila actualiza su estado a `CANCELLED` y no se ofrece una acción inválida después | ✔ Pasa |
+
 ## 2. Resumen de Ejecución
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests automatizados de backend (JUnit 5 + MockMvc + Testcontainers) | Histórico: 381 tests en el cierre de Sprint 4; 422 tests verificados en la auditoría posterior | ✔ Todos pasaron en sus respectivos cortes |
-| Tests automatizados de frontend (Vitest + React Testing Library) | Histórico: 326 tests (46 archivos) en el cierre de Sprint 4; 347 tests (48 archivos) verificados en la auditoría posterior | ✔ Todos pasaron en sus respectivos cortes |
-| Tests E2E de Playwright (Chromium + Firefox) | Histórico: 45 escenarios × 2 navegadores (90 ejecuciones) | ✔ Histórico: 44 aprobadas y 46 omitidas porque CI no tenía credenciales de prueba; una condición del entorno, no un fallo |
-| Casos de Prueba Funcionales (Plan) | 147 escenarios | ✔ 147/147 verificados |
+| Tests automatizados de backend (JUnit 5 + MockMvc + Testcontainers) | Histórico: 381 tests en el cierre de Sprint 4; actual: 422 tests | ✔ 422/422 pasaron en CI |
+| Tests automatizados de frontend (Vitest + React Testing Library) | Histórico: 326 tests en 46 archivos; actual: 416 tests en 53 archivos | ✔ 416/416 pasaron en CI |
+| Tests E2E desktop de Playwright | Histórico: 45 escenarios × 2 navegadores; actual: Chromium 44 pasaron/1 omitido y Firefox 44 pasaron/1 omitido | ✔ CI actual pasó ambos jobs desktop; cada navegador registró 1 skip |
+| Tests E2E mobile de Playwright (`mobile-chromium`) | 5 escenarios actuales: 3 shell + 2 reservas | ✔ 5/5 pasaron en CI |
+| Jobs de CI actuales | 5: backend, frontend, desktop Chromium, desktop Firefox, mobile Chromium | ✔ 5/5 pasaron en `31435735979` sobre `cd2bdee` |
+| Casos de Prueba Funcionales (Plan) | 152 escenarios | ✔ 152/152 verificados |
 
-Los totales anteriores son históricos: los del cierre de Sprint 4 corresponden al merge commit `8a3fd43`, y los de la auditoría posterior corresponden a los commits `2bced9d`, `091df56`, `30caab9` y `1e11b5e`. No deben confundirse con la evidencia actual de `main`.
+Los totales marcados como históricos corresponden al merge commit `8a3fd43` y a la auditoría posterior (`2bced9d`, `091df56`, `30caab9` y `1e11b5e`). La evidencia vigente de `main` es la ejecución `31435735979` sobre `cd2bdee`; los E2E desktop y mobile se informan por separado.
 
 ### 2.1. Estado actual de verificación
 
-En `main` en `8da44c5`, la ejecución de CI `31397438849` pasó los cuatro jobs publicados: backend, frontend, Chromium E2E y Firefox E2E. Esta evidencia actual reemplaza la interpretación de los skips históricos como una descripción del estado vigente.
+En `main` en `cd2bdee76b4a6031f1ebf0cdf3539d4e30245e89`, la ejecución de CI `31435735979` pasó los cinco jobs publicados: backend, frontend, desktop Chromium E2E, desktop Firefox E2E y mobile Chromium E2E. Los jobs desktop tuvieron 44 aprobados y 1 omitido por navegador; mobile tuvo 5 aprobados en total (3 shell y 2 reservas).
 
 La cobertura actual de sesiones renovables incluye `POST /api/auth/refresh`, `POST /api/auth/logout` y `POST /api/auth/password`, además de la emisión de refresh cookies durante login y registro. La rotación, revocación y detección de replay se ejercitan mediante cobertura de servicio e integración; no se indica aquí un nuevo total de tests porque este addendum fija el estado actual y la evidencia de CI en lugar de reescribir los conteos históricos.
 
