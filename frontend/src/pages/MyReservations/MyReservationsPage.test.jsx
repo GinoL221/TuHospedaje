@@ -51,6 +51,37 @@ describe("MyReservationsPage - reservation list", () => {
     expect(screen.getByText("1 noche")).toBeInTheDocument();
   });
 
+  it("keeps long reservation content visible and addressable", async () => {
+    const longReservation = {
+      ...reservationFixture,
+      lodgingName: "Alojamiento con un nombre excepcionalmente largo para pantallas pequeñas",
+      guestEmail: "persona.con.un.correo.muy.largo@subdominio.example.com",
+      guestPhone: "+54 9 11 5555 1234 9876",
+      checkIn: "2026-07-01",
+      checkOut: "2026-07-31",
+      totalPrice: 1234567,
+    };
+    get.mockResolvedValue([longReservation]);
+    customRender(<MyReservationsPage />);
+
+    expect(await screen.findByText(longReservation.lodgingName)).toBeInTheDocument();
+    expect(screen.getByText(longReservation.guestEmail)).toBeInTheDocument();
+    expect(screen.getByText(longReservation.guestPhone)).toBeInTheDocument();
+    expect(screen.getByText("01/07/2026 → 31/07/2026")).toBeInTheDocument();
+    expect(screen.getByText("30 noches")).toBeInTheDocument();
+    expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
+    expect(
+      screen.getByText(/^\$\d{1,3}(?:[,.]\d{3})+$/, {
+        selector: ".reservation-total strong",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ver alojamiento/ })).toHaveAttribute(
+      "href",
+      "/lodgings/10",
+    );
+    expect(screen.getByRole("button", { name: "Cancelar reserva" })).toBeInTheDocument();
+  });
+
   it("offers cancellation only for confirmed reservations before check-in", async () => {
     get.mockResolvedValue([
       reservationFixture,
