@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  z-index: 2000;
   cursor: zoom-out;
 }
 
@@ -16,7 +16,6 @@
   background: rgba(255, 255, 255, 0.15);
   border: none;
   color: #fff;
-  font-size: 2rem;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -26,7 +25,6 @@
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
-  line-height: 1;
 }
 
 .gallery-modal-close:hover {
@@ -40,7 +38,6 @@
   background: rgba(255, 255, 255, 0.15);
   border: none;
   color: #fff;
-  font-size: 2.5rem;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -50,7 +47,12 @@
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
-  line-height: 1;
+}
+
+.gallery-modal-close svg,
+.gallery-nav svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .gallery-nav:hover {
@@ -102,13 +104,11 @@
     right: 12px;
     width: 40px;
     height: 40px;
-    font-size: 1.6rem;
   }
 
   .gallery-nav {
     width: 44px;
     height: 44px;
-    font-size: 2rem;
   }
 
   .gallery-nav--prev {

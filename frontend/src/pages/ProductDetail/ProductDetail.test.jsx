@@ -319,6 +319,35 @@ describe("ProductDetail - GalleryModal", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("uses decorative Lucide chevrons in the named desktop thumbnail controls", async () => {
+		mockGetDefaults({
+			lodging: {
+				...lodgingFixture,
+				imageUrls: [
+					"https://example.com/img.jpg",
+					"https://example.com/img2.jpg",
+				],
+			},
+		});
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const previousIcon = screen
+			.getByRole("button", { name: "Imagen anterior" })
+			.querySelector("svg");
+		const nextIcon = screen
+			.getByRole("button", { name: "Imagen siguiente" })
+			.querySelector("svg");
+
+		expect(previousIcon).toHaveClass("lucide-chevron-up");
+		expect(previousIcon).toHaveAttribute("width", "20");
+		expect(previousIcon).toHaveAttribute("aria-hidden", "true");
+		expect(nextIcon).toHaveClass("lucide-chevron-down");
+		expect(nextIcon).toHaveAttribute("width", "20");
+		expect(nextIcon).toHaveAttribute("aria-hidden", "true");
+	});
+
 	it("centers the selected mobile thumbnail and disables motion when requested", async () => {
 		const scrollIntoView = vi.fn();
 		const originalScrollIntoView = Element.prototype.scrollIntoView;
@@ -413,6 +442,7 @@ describe("ProductDetail - mobile gallery CSS contract", () => {
 		);
 
 		expect(css).toMatch(/\.back-arrow\s*{[^}]*width:\s*44px;[^}]*height:\s*44px;/);
+		expect(css).toMatch(/\.gallery-thumbs-arrow\s*{[^}]*width:\s*100%;[^}]*height:\s*44px;/);
 		expect(css).toMatch(/\.btn-share\s*{[\s\S]*?min-height:\s*44px;/);
 		expect(css).toMatch(/\.btn-reserve:focus-visible\s*{[^}]*outline:\s*3px solid var\(--action-primary-focus\);/);
 	});

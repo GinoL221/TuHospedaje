@@ -102,7 +102,7 @@ Use authentic, representative lodging images with credible light, balanced color
 
 Lucide is the approved interface direction. Use recognizable vector icons at `16`, `20`, or `24px`, maintain a consistent stroke within each hierarchy, align icons with text, and provide an accessible label when visible text is absent. Do not use emoji as structural iconography or mix filled and outline styles at the same level. External brand icons may retain their official colors only in their corresponding actions.
 
-**Partially implemented:** Lucide is used in current interface work, but inline SVGs, text glyphs, Icons8 images, stars, and legacy icon mechanisms remain.
+**Partially implemented:** Lucide is used in current interface work. ProductDetail desktop thumbnail controls now use decorative `20px` `ChevronUp`/`ChevronDown` icons, and GalleryModal close/navigation controls use decorative `24px` `X`/`ChevronLeft`/`ChevronRight` icons while retaining their existing named button semantics. Inline SVGs, text glyphs outside this gallery-control slice, Icons8 images, stars, and legacy icon mechanisms remain.
 
 ### Voice and tone
 
@@ -188,5 +188,6 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 - [x] Preserve LodgingFormModal accessibility and unsaved-change coordination with ConfirmDialog.
 - [x] Apply the accessible primary CTA contract while preserving orange as the action accent.
 - [x] Establish semantic H1, H2, Body, Label, and Caption tokens; apply the Body baseline and verified page-title slice without changing compact UI typography.
+- [x] Replace ProductDetail desktop thumbnail and GalleryModal structural text glyphs with named Lucide controls while preserving gallery behavior and accessible names.
 - [ ] Apply the manual typography scale consistently across compact and legacy headings, labels, captions, cards, tables, filters, modals, and Admin.
 - [ ] Consolidate semantic tokens and component states incrementally; do not introduce another palette or infer brand rules from existing exceptions.

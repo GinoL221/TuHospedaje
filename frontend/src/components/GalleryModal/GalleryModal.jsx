@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import "./GalleryModal.css";
 
 export default function GalleryModal({ images, currentIndex, onClose, onNavigate }) {
@@ -53,7 +54,7 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
         onClick={onClose}
         aria-label="Cerrar galería"
       >
-        ×
+        <X size={24} aria-hidden="true" focusable="false" />
       </button>
 
       <button
@@ -61,7 +62,7 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
         onClick={prev}
         aria-label="Imagen anterior"
       >
-        ‹
+        <ChevronLeft size={24} aria-hidden="true" focusable="false" />
       </button>
 
       <div className="gallery-modal-image">
@@ -79,7 +80,7 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
         onClick={next}
         aria-label="Imagen siguiente"
       >
-        ›
+        <ChevronRight size={24} aria-hidden="true" focusable="false" />
       </button>
 
       <div className="gallery-modal-counter" aria-live="polite">

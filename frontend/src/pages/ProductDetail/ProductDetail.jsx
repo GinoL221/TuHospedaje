@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+	ArrowLeft,
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	ChevronUp,
+} from "lucide-react";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -158,7 +164,7 @@ export default function ProductDetail() {
 										disabled={galleryIndex === 0}
 										aria-label="Imagen anterior en galería"
 									>
-										<ChevronLeft aria-hidden="true" />
+										<ChevronLeft size={24} aria-hidden="true" focusable="false" />
 									</button>
 									<button
 										className="gallery-mobile-arrow gallery-mobile-arrow--next"
@@ -170,7 +176,7 @@ export default function ProductDetail() {
 										disabled={galleryIndex === images.length - 1}
 										aria-label="Imagen siguiente en galería"
 									>
-										<ChevronRight aria-hidden="true" />
+										<ChevronRight size={24} aria-hidden="true" focusable="false" />
 									</button>
 								</div>
 							)}
@@ -183,7 +189,7 @@ export default function ProductDetail() {
 								disabled={galleryIndex === 0}
 								aria-label="Imagen anterior"
 							>
-								▲
+								<ChevronUp size={20} aria-hidden="true" focusable="false" />
 							</button>
 								<div className="gallery-thumbs" ref={thumbnailStripRef}>
 									{images.map((url, i) => (
@@ -222,7 +228,7 @@ export default function ProductDetail() {
 								disabled={galleryIndex === images.length - 1}
 								aria-label="Imagen siguiente"
 							>
-								▼
+								<ChevronDown size={20} aria-hidden="true" focusable="false" />
 							</button>
 						</div>
 					)}
