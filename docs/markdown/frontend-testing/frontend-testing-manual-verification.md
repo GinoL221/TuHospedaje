@@ -41,6 +41,16 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 3. Marcá la columna **Estado** de cada paso: `✔ Pasa`, `✘ Falla`, o `⚠ Distinto a lo esperado` (y anotá qué pasó en la sección de Notas al final del TC).
 4. Los pasos marcados **(conocido)** corresponden a comportamiento que la suite automatizada ya documentó como hallazgo (gap de a11y, race condition, etc.) — no debería sorprenderte, solo confirmá que sigue siendo así.
 
+## Límite histórico de esta guía
+
+Esta guía registra la verificación manual y el characterization testing realizados antes del Sprint 4. Sus pasos preservan el comportamiento observado en ese corte; sin este límite, no deben utilizarse como criterios actuales de autenticación, búsqueda o gestión de reservas.
+
+| Afirmación histórica | Estado actual |
+|----------------------|---------------|
+| El JWT se verificaba desde `localStorage`. | El flujo actual de sesión usa cookies `HttpOnly`, protección CSRF y sesiones renovables. |
+| El filtrado de múltiples categorías era client-side. | La búsqueda actual usa filtrado y paginación server-driven. |
+| `MyReservationsPage` y `AdminReservations` se describían como de solo lectura. | Los clientes pueden cancelar sus propias reservas elegibles; las consultas administrativas usan filtros, ordenamiento y paginación server-driven. La cancelación y reprogramación administrativas siguen fuera de alcance. |
+
 ---
 
 ## TC-FT01: Autenticación y persistencia de sesión
@@ -53,11 +63,11 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | 1 | Acceder a `/my-reservations` sin sesión activa | Redirige a `/login` | |
 | 2 | Registrarse con un usuario nuevo desde `/register` | Checklist de complejidad de password se actualiza en vivo (✔/✘ por cada regla) mientras tipeás | |
 | 3 | Completar registro exitoso | Login automático y redirección | |
-| 4 | Cerrar sesión (logout) | Estado de auth se limpia, `localStorage` ya no tiene el token (verificable en DevTools → Application → Local Storage) | |
+| 4 | Cerrar sesión (logout) | Estado de auth se limpia, `localStorage` ya no tiene el token (verificable en DevTools → Application → Local Storage) — **verificación histórica, previa a Sprint 4** | |
 | 5 | Login con credenciales correctas | Redirección a la página desde la que veniste (si llegaste por un redirect de `RequireAuth`) o a home | |
 | 6 | Login con credenciales incorrectas | Mensaje de error visible, sin navegar | |
 | 7 | Recargar la página (F5) estando logueado | Sesión persiste, no te desloguea | |
-| 8 | Editar manualmente el token en `localStorage` con un string inválido y recargar | **(conocido)** Sesión cae a estado "no logueado" en silencio, sin mensaje de error visible — el catch es silencioso por diseño actual | |
+| 8 | Editar manualmente el token en `localStorage` con un string inválido y recargar | **(conocido, histórico)** Sesión cae a estado "no logueado" en silencio — corresponde al flujo JWT previo a Sprint 4 | |
 
 **Notas de este TC:**
 si entro a un alojamiento no estando logueado me logueo desde el boton donde deberia estar el de reservas, cuando inicio sesion no vuelvo ahi me devuelve al /home
@@ -73,7 +83,7 @@ Los demas los probe y pasaron correctamente
 | Paso | Acción | Resultado Esperado | Estado |
 |------|--------|---------------------|--------|
 | 1 | Buscar una ciudad desde el home | Resultados cargan, un solo request a `/lodgings/search` | |
-| 2 | Seleccionar 2+ categorías en el filtro | Filtrado aplica sin disparar un nuevo request (es client-side con 2+ categorías) | |
+| 2 | Seleccionar 2+ categorías en el filtro | Filtrado aplica sin disparar un nuevo request (comportamiento histórico client-side, previo a Sprint 4) | |
 | 3 | Seleccionar UNA sola categoría | Sí dispara un nuevo request, ahora con `category` como query param (filtrado server-side) | |
 | 4 | Quitar el chip de categoría | Resultados vuelven a incluir todas las categorías, un solo request adicional | |
 | 5 | Quitar el chip de fecha | Resultados se recalculan sin el filtro de fecha | |
@@ -139,7 +149,7 @@ el resto de los test los pasa
 | Paso | Acción | Resultado Esperado | Estado |
 |------|--------|---------------------|--------|
 | 1 | Ir a `/my-reservations` | Lista de reservas propias, con noches/total calculados | |
-| 2 | Confirmar que NO hay ninguna acción de cancelar reserva en esta pantalla | **(confirmado por diseño)** `MyReservationsPage` es de solo lectura hoy — si esperabas poder cancelar, es una funcionalidad que no existe todavía, no un bug | |
+| 2 | Confirmar que NO hay ninguna acción de cancelar reserva en esta pantalla | **(confirmado por diseño histórico)** `MyReservationsPage` era de solo lectura en este corte previo a Sprint 4; la implementación actual permite cancelar reservas propias elegibles | |
 | 3 | Ir al detalle de un alojamiento con reviews | Lista de reviews visible | |
 | 4 | Dejar una review nueva con 1 a 5 estrellas | Review se agrega a la lista | |
 | 5 | Intentar enviar una review sin seleccionar estrellas | Validación impide el envío | |
@@ -182,7 +192,7 @@ el resto de los test los pasa
 | 3 | Eliminar una política | Confirmación vía `window.confirm` nativo (igual a Features) | |
 | 4 | Notar la inconsistencia de los 3 pasos anteriores | **(conocido)** 3 mecanismos de confirmación distintos convivendo en 6 pantallas de Admin — no es un bug puntual, es deuda de UX a unificar en un change futuro si se decide | |
 | 5 | Crear una política sin completar la descripción | Se guarda igual — `description` no es un campo obligatorio | |
-| 6 | Ir a `/admin` → tab de Reservas | Lista de reservas de TODOS los usuarios, sin ninguna acción de editar/eliminar/cancelar | |
+| 6 | Ir a `/admin` → tab de Reservas | Lista histórica de reservas de TODOS los usuarios, sin acciones administrativas; la implementación actual consulta la lista con filtros, ordenamiento y paginación server-driven | |
 | 7 | Confirmar el estado de loading al entrar a la tab de Reservas | Mensaje "Cargando reservas..." visible brevemente antes de la lista | |
 
 **Notas de este TC:**
@@ -217,6 +227,6 @@ file:///home/ginopc/Imágenes/Capturas de pantalla/Captura de pantalla_20260619_
 - Confirmación antes de pisar una review existente al reenviar (TC-FT05).
 - Selector de íconos incómodo de usar en los modales de Admin — grid chico, requiere scroll. Ver captura: `Captura de pantalla_20260619_033551.png` (TC-FT07.4).
 - ¿`description` debería ser obligatoria en Categorías/Políticas? — hoy es opcional por diseño, a confirmar si es lo esperado (TC-FT07.5).
-- `AdminReservations` es de solo lectura hoy; si se espera poder operar sobre reservas desde Admin, es funcionalidad a agregar, no un bug (TC-FT07.6).
+- `AdminReservations` era de solo lectura en el corte histórico; si se esperan operaciones administrativas sobre reservas, siguen siendo una funcionalidad a agregar, no un bug de este reporte histórico (TC-FT07.6).
 
 **Nota sobre TC-FT04 puntos 3 y 6:** cortar la BD entera no es la forma de probar el rollback de favoritos — con la BD caída, nada de la app funciona (no es específico de favoritos). Para probar el rollback real hay que bloquear solo esa request puntual desde DevTools → Network → clic derecho → "Block request URL", no tirar la base completa.

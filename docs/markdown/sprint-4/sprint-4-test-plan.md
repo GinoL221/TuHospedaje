@@ -189,13 +189,13 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | `admin-users.spec.js` | 2 | Tabla de usuarios carga con al menos una fila | ✔ Pasa |
 | `verify-cookie-auth.spec.js` | 4 | **(Inc. 4, nuevo)** Login setea `ACCESS_TOKEN` sin exponer el token en el cuerpo; la sesión sobrevive a un reload vía `/me`; logout limpia la cookie; una mutación sin header CSRF es rechazada con 403 | ✔ Pasa |
 
-Cada escenario se ejecuta en Chromium y Firefox: 45 escenarios × 2 navegadores = **90 ejecuciones** — 44 aprobadas y 46 omitidas en CI por falta de credenciales de usuario de prueba en ese entorno (condición de entorno, no fallo; ver Sección 2).
+**Resumen histórico de ejecución:** cada escenario se ejecutó en Chromium y Firefox: 45 escenarios × 2 navegadores = **90 ejecuciones** — 44 aprobadas y 46 omitidas en CI porque ese entorno no tenía credenciales de usuario de prueba (una condición del entorno, no un fallo; ver Sección 2).
 
 <div style="page-break-before: always;"></div>
 
 ### TC-38: Tablas Administrativas Uniformes (US #36, Incremento 2)
 
-* **Historias de Usuario Asociadas:** US #36 (Tablas uniformes con ordenación y paginación local)
+* **Historias de Usuario Asociadas:** US #36 (tablas uniformes con ordenamiento y paginación local en el alcance histórico del Incremento 2)
 * **Precondiciones:** Usuario con rol ADMIN autenticado. Registros suficientes en Categorías, Características, Políticas, Usuarios y Alojamientos para paginar.
 * **Tipos de Verificación:** Test Unitario de Componente (frontend), UI Manual.
 
@@ -205,7 +205,7 @@ Cada escenario se ejecuta en Chromium y Firefox: 45 escenarios × 2 navegadores 
 | **2** | Click nuevamente en el mismo encabezado | Se invierte la dirección de orden | ✔ Pasa |
 | **3** | Navegar a la página siguiente con `Pagination` | Muestra el siguiente subconjunto de registros, paginado en el cliente | ✔ Pasa |
 | **4** | Botones de paginación en el límite (primera/última página) | Se deshabilitan correctamente, sin navegación fuera de rango | ✔ Pasa |
-| **5** | Repetir en `AdminLodgings` tras la migración a `GET /api/lodgings` plano | Comportamiento de orden/paginación idéntico al resto de las entidades administrativas | ✔ Pasa |
+| **5** | Repetir en `AdminLodgings` después de la migración histórica a una petición plana `GET /api/lodgings` | El ordenamiento y la paginación coinciden con los de las demás entidades administrativas en ese incremento | ✔ Pasa |
 
 **Cobertura automatizada (frontend):** `useTableData.test.js` (ordenamiento, paginación, filtrado), `Pagination.test.jsx` (deshabilitado en límites), `AdminCategories/AdminFeatures/AdminPolicies/AdminUsers/AdminLodgings.test.jsx`.
 
@@ -299,7 +299,7 @@ Cada escenario se ejecuta en Chromium y Firefox: 45 escenarios × 2 navegadores 
 **Cobertura automatizada (frontend):** `AuthContext.test.jsx`, `AuthContextCsrfRace.test.jsx` (secuenciación bootstrap-antes-de-publicar-estado, condiciones de carrera), `HeaderCsrf.test.jsx`, `api.csrf.test.js`.
 **Cobertura E2E:** `auth.spec.js` (actualizado), `verify-cookie-auth.spec.js` (nuevo).
 
-**Nota — sesiones renovables (base, no expuesta a UI):** la infraestructura de persistencia/rotación/detección de replay (`RefreshSessionService`, entidades `RefreshToken`/`RefreshTokenFamily`/`SessionSecurityEvent`) está cubierta por `RefreshSessionConfigurationTest`, `RefreshSessionFoundationIntegrationTest`, `RefreshSessionServiceTest` y `RefreshTokenHasherTest`, pero no tiene un TC de UI/API propio en este plan porque no está conectada a ningún endpoint (`app.session.refresh.enabled=false`) — no hay flujo de usuario que ejercitarla todavía.
+**Nota histórica — sesiones renovables:** en el corte original de este plan, la infraestructura de persistencia, rotación y detección de replay estaba cubierta de forma aislada y no estaba conectada a ningún endpoint (`app.session.refresh.enabled=false`). La integración actual y sus endpoints están documentados en la Sección 2.1.
 
 ### TC-44: Cancelación de Reserva Propia (US #42, Incremento 4)
 
@@ -345,12 +345,18 @@ Cada escenario se ejecuta en Chromium y Firefox: 45 escenarios × 2 navegadores 
 
 | Tipo de Prueba | Cantidad | Estado |
 |---------------|----------|--------|
-| Tests Automatizados Backend (JUnit 5 + MockMvc + Testcontainers) | 381 tests en el cierre de Sprint 4; 422 tests verificados en la auditoría posterior de este documento | ✔ Todos pasan |
-| Tests Automatizados Frontend (Vitest + React Testing Library) | 326 tests (46 archivos) en el cierre de Sprint 4; 347 tests (48 archivos) verificados en la auditoría posterior | ✔ Todos pasan |
-| Tests E2E Playwright (Chromium + Firefox) | 45 escenarios × 2 navegadores (90 ejecuciones) | ✔ 44 aprobadas y 46 omitidas por falta de credenciales de prueba en CI — condición de entorno, no fallo |
+| Tests automatizados de backend (JUnit 5 + MockMvc + Testcontainers) | Histórico: 381 tests en el cierre de Sprint 4; 422 tests verificados en la auditoría posterior | ✔ Todos pasaron en sus respectivos cortes |
+| Tests automatizados de frontend (Vitest + React Testing Library) | Histórico: 326 tests (46 archivos) en el cierre de Sprint 4; 347 tests (48 archivos) verificados en la auditoría posterior | ✔ Todos pasaron en sus respectivos cortes |
+| Tests E2E de Playwright (Chromium + Firefox) | Histórico: 45 escenarios × 2 navegadores (90 ejecuciones) | ✔ Histórico: 44 aprobadas y 46 omitidas porque CI no tenía credenciales de prueba; una condición del entorno, no un fallo |
 | Casos de Prueba Funcionales (Plan) | 147 escenarios | ✔ 147/147 verificados |
 
-Totales del cierre de Sprint 4 verificados de punta a punta sobre el commit de integración a `main` (merge commit `8a3fd43`, PR #36) — `./mvnw -B verify` en backend, `npm test` en frontend, CI de GitHub Actions para el conteo E2E. Los totales de "auditoría posterior" (422 backend / 347 frontend) corresponden al re-chequeo completo hecho en una sesión posterior (commits `2bced9d`, `091df56`, `30caab9`, `1e11b5e`), no a un nuevo cierre de sprint.
+Los totales anteriores son históricos: los del cierre de Sprint 4 corresponden al merge commit `8a3fd43`, y los de la auditoría posterior corresponden a los commits `2bced9d`, `091df56`, `30caab9` y `1e11b5e`. No deben confundirse con la evidencia actual de `main`.
+
+### 2.1. Estado actual de verificación
+
+En `main` en `8da44c5`, la ejecución de CI `31397438849` pasó los cuatro jobs publicados: backend, frontend, Chromium E2E y Firefox E2E. Esta evidencia actual reemplaza la interpretación de los skips históricos como una descripción del estado vigente.
+
+La cobertura actual de sesiones renovables incluye `POST /api/auth/refresh`, `POST /api/auth/logout` y `POST /api/auth/password`, además de la emisión de refresh cookies durante login y registro. La rotación, revocación y detección de replay se ejercitan mediante cobertura de servicio e integración; no se indica aquí un nuevo total de tests porque este addendum fija el estado actual y la evidencia de CI en lugar de reescribir los conteos históricos.
 
 ## 3. Cobertura por Historia de Usuario
 

@@ -136,7 +136,7 @@ El método público `aggregateByLodgingIds` incluye un guard para colecciones va
 
 **Problema:** `Lodging.features`, `Lodging.policies` y `User.favorites` eran `@ManyToMany` sin `FetchType` explícito. El default de JPA para `@ManyToMany` es `EAGER`, lo que provoca queries adicionales automáticas en cada `findById` o listado.
 
-**Solución:** `fetch = FetchType.LAZY` explícito en las tres colecciones. OSIV (open-session-in-view) se mantiene habilitado por ahora y los `@Transactional(readOnly=true)` de PR-1 actúan como boundary de sesión. La desactivación de OSIV queda como deuda técnica controlada para un pase futuro.
+**Solución en el corte original:** se hizo explícito `fetch = FetchType.LAZY` en las tres colecciones. OSIV (open-session-in-view) permanecía habilitado en ese momento y su desactivación quedó registrada como deuda técnica controlada. La resolución posterior está documentada en ADR-2.
 
 ### 3.5. Configuración Segura
 
@@ -169,7 +169,7 @@ El método público `aggregateByLodgingIds` incluye un guard para colecciones va
 
 Se eligió `@Lock(PESSIMISTIC_WRITE)` para el chequeo de solapamiento en lugar de confiar únicamente en `@Version` (optimistic locking). El campo `@Version` protege actualizaciones concurrentes sobre una misma fila existente, pero dos INSERTs de nuevas reservas nunca conflictúan en versión. Solo el lock pesimista serializa correctamente el check-then-insert.
 
-### ADR-2: OSIV Deshabilitado
+### ADR-2: OSIV deshabilitado (resolución posterior)
 
 `spring.jpa.open-in-view=false`. El refactor futuro mencionado originalmente en este ADR ya se completó: una auditoría confirmó que todos los controllers devuelven DTOs (nunca entidades) y que todo el mapeo Entity→DTO ocurre dentro de fronteras `@Transactional`/`@Transactional(readOnly=true)`, antes de que la transacción cierre — incluyendo el acceso a colecciones lazy (`Lodging.features`, `Lodging.policies`, `User.favorites`, etc.), cubierto por `LazyFetchIntegrationTest`. Con esas garantías ya en código, mantener OSIV habilitado solo agregaba el costo conocido del anti-patrón (conexión de DB retenida durante toda la request, riesgo de N+1 silencioso) sin necesidad real.
 
@@ -217,6 +217,6 @@ Los 8 tests pre-existentes que fallaban (esperaban 403, recibían 401 para reque
 
 2. **Mensaje de excepción en `UploadException` handler:** `GlobalExceptionHandler` devuelve `ex.getMessage()` como campo `error`. Hoy es seguro porque `CloudinaryServiceImpl` usa un mensaje constante, pero en el futuro convendría hardcodear el mensaje en el handler para blindarlo ante cambios en la excepción.
 
-3. **OSIV habilitado:** `spring.jpa.open-in-view=true` es la configuración explícita actual. La práctica recomendada a largo plazo es deshabilitarlo y garantizar que todas las colecciones lazy se carguen dentro de las fronteras transaccionales. Queda como refactor futuro.
+3. **OSIV habilitado (hallazgo histórico):** en el corte original, `spring.jpa.open-in-view=true` era la configuración explícita y su desactivación estaba registrada como refactor futuro. Una auditoría posterior completó ese refactor: la configuración actual es `spring.jpa.open-in-view=false` y `LazyFetchIntegrationTest` verifica el acceso a colecciones lazy dentro de fronteras transaccionales.
 
 4. **Paginación obligatoria en `GET /api/lodgings`:** `findAll()` sin límite sigue siendo el comportamiento cuando no se pasan parámetros de página. El impacto de rendimiento está mitigado por el fix del N+1 de ratings y el LAZY de colecciones, pero la paginación obligatoria sigue siendo la solución correcta a largo plazo.
