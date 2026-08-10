@@ -33,7 +33,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 **Foco del Incremento:** Reservas, Historial y Comunicación (Incremento 1) · Tablas Uniformes y Dashboard de Reservas (Incremento 2) · Refactor de Arquitectura y Mejoras (Incremento 3) · Autenticación Segura, Cancelación de Reservas y Confiabilidad de Frontend (Incremento 4)
 **Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
 
-Este documento consolida los cuatro incrementos ejecutados sobre la rama `sprint-4`: el alcance original del sprint (reservas, WhatsApp, email), la consolidación posterior del panel de administración (previamente documentada como "Sprint 4.5"), el refactor de arquitectura, y el endurecimiento de autenticación junto con la cancelación de reservas y mejoras de confiabilidad del frontend. Se presentan de forma unificada, no como reportes separados, para reflejar el estado final del incremento. El Sprint 4 quedó integrado a `main` mediante el merge commit `8a3fd43` (PR #36) el 23 de julio de 2026; la rama `sprint-4` queda congelada a partir de este punto.
+Este documento consolida los cuatro incrementos ejecutados sobre la rama `sprint-4`: el alcance original del sprint (reservas, WhatsApp, email), la consolidación posterior del panel de administración (previamente documentada como "Sprint 4.5"), el refactor de arquitectura, y el endurecimiento de autenticación junto con la cancelación de reservas y mejoras de confiabilidad del frontend. Se presentan de forma unificada, no como reportes separados, para reflejar el estado final del incremento. El corte histórico quedó integrado a `main` mediante el merge commit `8a3fd43` (PR #36) el 23 de julio de 2026; el estado vigente de `main` incluye los PR #73 y #75 y se referencia en la Sección 9.
 
 ## 1. Resumen del Incremento (Scope)
 
@@ -101,6 +101,10 @@ Las 11 páginas de rutas de la aplicación (`Home`, `Login`, `Register`, `Produc
 * **Nota histórica sobre CI:** el workflow se configuró para ejecutarse en pushes y pull requests de `main` y `sprint-4`. Esa actualización describía el alcance del workflow y no afirmaba el resultado de una ejecución remota específica; la evidencia actual de CI está registrada en la Sección 9.
 * Flyway pasó a administrar el ciclo de vida del esquema mediante una migración base. Hibernate valida el esquema y los datos de demostración se separaron en un seed de desarrollo versionado, descartable y de activación explícita.
 * Se aprobaron 38 identidades visuales canónicas, una por alojamiento, en `content/lodgings/`. Cada identidad define cinco escenas, por lo que queda una producción pendiente de 190 imágenes.
+
+### 1.6. Slice responsive móvil
+
+El PR #73 incorporó el shell responsive compartido: navegación móvil con menú accesible, prevención de overflow y wrapping en anchos reducidos, y objetivos táctiles adecuados. El PR #75 extendió esa base a `MyReservations`, con tarjetas y acciones que se adaptan sin desbordarse y con la interacción de cancelación disponible desde móvil. La cobertura `mobile-chromium` verifica ambos slices en viewports de `390x844` y `320x844`, incluyendo menú accesible, wrapping, touch targets y confirmación/actualización de cancelación.
 
 #### Límite de integración de imágenes
 
@@ -321,17 +325,17 @@ src/
 
 ### 7.1. Cobertura Automatizada
 
-* **Backend — 284 tests en el cierre original; 381/381 verificados en CI sobre el commit de integración a `main`** (JUnit 5 + Mockito, integración con MockMvc + Testcontainers/MariaDB 10.11). Incluye, entre otros:
+* **Backend — histórico:** 284 tests en el cierre original y 381/381 verificados en CI sobre el commit de integración a `main`. **Estado actual:** 422/422 pasaron en CI sobre `main` (JUnit 5 + Mockito, integración con MockMvc + Testcontainers/MariaDB 10.11). Incluye, entre otros:
   - Incremento 1: `ReservationServiceImplTest`, `ReservationControllerIntegrationTest`, `ReservationOwnershipIntegrationTest` (5 escenarios IDOR), `ReservationConcurrencyTest`.
   - Incremento 2: `ReservationControllerIntegrationTest` — RBAC de `GET /api/reservations` (401/403/200) y ordenamiento `id DESC`.
   - Incremento 3: `LodgingDTOTest` (mapeo a DTOs tipados), `LodgingServiceImplTest`/`LodgingControllerIntegrationTest` (paginación, filtro multi-categoría, validación de `page`/`size`), `GlobalExceptionHandlerTest` (localización de los 4 handlers en scope), `ReservationControllerIntegrationTest` (localización del caso real de `ResourceNotFoundException`).
   - Incremento 4: `AuthCsrfLifecycleIntegrationTest` (7 tests — materialización del token, rotación atómica en login/registro, rechazo de token faltante/mismatcheado), `AuthControllerIntegrationTest`, `AuthCookieFactoryTest`, `JwtAuthenticationFilterIntegrationTest`, `RefreshSessionConfigurationTest`/`RefreshSessionFoundationIntegrationTest`/`RefreshSessionServiceTest`/`RefreshTokenHasherTest` (base de sesiones renovables, aislada), `ReservationCancellationServiceTest`, `ReservationCancellationConcurrencyTest`, 6 casos nuevos en `ReservationControllerIntegrationTest` para cancelación.
-* **Frontend — 276 tests en el cierre original; 326/326 en 46 archivos verificados en CI sobre el commit de integración a `main`** (Vitest + React Testing Library). Incluye, entre otros:
+* **Frontend — histórico:** 276 tests en el cierre original y 326/326 en 46 archivos verificados en CI sobre el commit de integración a `main`. **Estado actual:** 416/416 pasaron en 53 archivos en CI (Vitest + React Testing Library). Incluye, entre otros:
   - Incremento 1: `RequireAuth.test.jsx`, `BookingPage.test.jsx`, `BookingConfirmation.test.jsx`, `MyReservationsPage.test.jsx`, `Header.test.jsx`, `WhatsAppButton.test.jsx`.
   - Incremento 2: `useTableData.test.js`, `Pagination.test.jsx`, `AdminCategories/Features/Policies/Users/Lodgings.test.jsx`, `AdminDashboard.test.jsx`, `AdminReservations.test.jsx`.
   - Incremento 3: `lodgingService.test.js`, `categoryService.test.js`, `favoriteService.test.js` (31 tests nuevos), `SearchResults.test.jsx` (reescrito — filtrado server-side, respuesta paginada), `RequireAdmin.test.jsx` (redirect a `/unauthorized`), `Unauthorized.test.jsx` (nuevo).
   - Incremento 4: `AuthContext.test.jsx` (reescrito), `AuthContextCsrfRace.test.jsx` (nuevo — secuenciación y condiciones de carrera del bootstrap CSRF), `HeaderCsrf.test.jsx`, `api.csrf.test.js`, `RouteChunkErrorBoundary.test.jsx` (3 casos), `RouteLoadingFallback.test.jsx` (4 casos, fake timers), `documentMetadata.test.jsx`, 4 casos nuevos en `MyReservationsPage.test.jsx` para cancelación.
-* **Suite E2E con Playwright (Chromium + Firefox):** creció de 17 a 45 escenarios a lo largo de los cuatro incrementos (13 specs, incluyendo cobertura de administración de categorías/características/políticas/usuarios/alojamientos/reservas agregada progresivamente y no documentada individualmente hasta este reporte, más `verify-cookie-auth.spec.js`, nuevo en el Incremento 4). Verificado en CI sobre el commit de integración a `main`: 44 ejecuciones aprobadas y 46 omitidas por falta de credenciales de usuario de prueba en el entorno de CI — la omisión es una condición de entorno (`e2e/.env` sin `TEST_USER_EMAIL`/`TEST_USER_PASSWORD`), no un fallo.
+* **Suite E2E con Playwright — histórico:** creció de 17 a 45 escenarios a lo largo de los cuatro incrementos (13 specs, incluyendo cobertura de administración de categorías/características/políticas/usuarios/alojamientos/reservas agregada progresivamente y no documentada individualmente hasta este reporte, más `verify-cookie-auth.spec.js`, nuevo en el Incremento 4). **Estado actual:** en CI run `31435735979`, desktop Chromium y Firefox registraron 44 aprobados y 1 omitido cada uno; `mobile-chromium` registró 5 aprobados en total.
 
 ### 7.2. Hallazgos Durante los Incrementos 3 y 4 (verificación empírica antes de asumir)
 
@@ -373,7 +377,7 @@ src/
 
 ## 9. Addendum de estado actual
 
-Este addendum reconcilia el reporte histórico con `main` en `8da44c5`. La ejecución de CI `31397438849` pasó los cuatro jobs publicados: backend, frontend, Chromium E2E y Firefox E2E.
+Este addendum reconcilia el reporte histórico con `main` en el merge commit `cd2bdee76b4a6031f1ebf0cdf3539d4e30245e89`, posterior a los PR #73 y #75. La ejecución de CI `31435735979` pasó los cinco jobs publicados: backend, frontend, desktop Chromium E2E, desktop Firefox E2E y mobile Chromium E2E.
 
 ### 9.1. Sesiones renovables
 
