@@ -65,7 +65,7 @@ Cierre de deuda técnica identificada durante el desarrollo del panel de adminis
 
 **Frontend:** se creó una capa de servicios por dominio (`lodgingService.js`, `categoryService.js`, `favoriteService.js`) para desacoplar las llamadas HTTP directas de los componentes. `SearchResults.jsx` se reescribió para consumir esta capa, eliminando la paginación client-side y el filtrado en memoria de múltiples categorías en favor del nuevo contrato paginado del servidor. `RequireAdmin` se convirtió en un layout basado en `<Outlet/>` (alineado con el patrón ya usado por `RequireAuth`), y el redirect para usuarios autenticados sin rol ADMIN cambió de `/` a una nueva página `/unauthorized`.
 
-**Nota sobre paginación:** el Incremento 2 había documentado como deuda técnica controlada "migrar [alojamientos] a paginación por base de datos únicamente si la volumetría de producción lo requiere". El Incremento 3 resuelve esto específicamente para `/api/lodgings/search` (endpoint público, donde el filtrado en memoria de categorías múltiples ya era una ineficiencia medible), **no** para las tablas del panel de administración (`AdminLodgings` y el resto), que permanecen con paginación client-side por decisión explícita del Incremento 2 — volúmenes de datos bajos/medios en un contexto exclusivamente administrativo.
+**Nota histórica sobre paginación:** el Incremento 2 documentó como deuda técnica controlada "migrar [alojamientos] a paginación por base de datos únicamente si la volumetría de producción lo requiere". El Incremento 3 resolvió esto específicamente para `/api/lodgings/search` (el endpoint público, donde el filtrado en memoria de múltiples categorías ya era una ineficiencia medible), **no** para las tablas administrativas. El resto de esa afirmación describe la decisión histórica del Incremento 2; el estado actual de `AdminLodgings` está documentado en la Sección 9.
 
 ### 1.4. Incremento 4 — Autenticación Segura, Cancelación de Reservas y Confiabilidad de Frontend
 
@@ -79,9 +79,9 @@ El JWT ya no viaja en el cuerpo de la respuesta ni se almacena en `localStorage`
 
 Durante la verificación de este incremento se detectó y corrigió un defecto real: bajo `SessionCreationPolicy.STATELESS` (sin `HttpSession`), la estrategia por defecto de Spring Security (`CsrfAuthenticationStrategy`) rota la cookie CSRF en **cada** request autenticado, no solo en el login, porque no hay sesión donde recordar "ya procesado". Esa rotación competía con los requests paralelos que dispara la SPA después del login, causando cierres de sesión intermitentes con CSRF inválido. Se reemplazó por `NullAuthenticatedSessionStrategy` (correcto en una app sin sesión) y se agregó una rotación puntual y atómica del token exactamente en login/registro, para preservar la única propiedad de seguridad real que la estrategia por defecto aportaba (invalidar un token plantado antes del login).
 
-#### 1.4.2. Base de sesiones renovables (no integrada al flujo HTTP)
+#### 1.4.2. Base de sesiones renovables (estado histórico del reporte original)
 
-Se implementó la infraestructura para sesiones renovables con rotación y detección de replay: entidades `RefreshToken`, `RefreshTokenFamily` y `SessionSecurityEvent`, servicio `RefreshSessionService`/`Impl` (emisión, rotación, revocación, bloqueo de familia, límite de tasa), `RefreshTokenHasher`, y la migración `V2__refresh_session_families.sql`. Esta base está completa y probada de forma aislada, pero **no está conectada a ningún endpoint real**: `AuthController` y `SecurityConfig` no la referencian, `app.session.refresh.enabled=false` por defecto, y el JWT de acceso vigente sigue gobernado exclusivamente por `app.jwt.expiration` (8 horas) vía `JwtService`, sin relación con `app.session.access-token-lifetime` (definido pero no usado). La aplicación, por lo tanto, todavía no ofrece sesiones renovables completas de punta a punta — ver Sección 8.
+En el estado documentado originalmente, la infraestructura de sesiones renovables se implementó con rotación y detección de replay: entidades `RefreshToken`, `RefreshTokenFamily` y `SessionSecurityEvent`; `RefreshSessionService`/`Impl` para emisión, rotación, revocación, bloqueo de familias y límites de tasa; `RefreshTokenHasher`; y la migración `V2__refresh_session_families.sql`. En ese momento, la base estaba probada de forma aislada y **no estaba conectada a un endpoint real**; `app.session.refresh.enabled=false` y los JWT de acceso estaban gobernados exclusivamente por `app.jwt.expiration`. El estado posterior se registra en el addendum de la Sección 9.
 
 #### 1.4.3. Cancelación self-service de reservas
 
@@ -98,7 +98,7 @@ Las 11 páginas de rutas de la aplicación (`Home`, `Login`, `Register`, `Produc
 * `AdminLodgings` volvió a paginación, ordenamiento y búsqueda dirigidos por el servidor. Las tablas administrativas de Categorías, Características, Políticas y Usuarios conservan el esquema client-side.
 * `AdminReservations` incorporó consulta, filtrado, ordenamiento y paginación desde el servidor. La gestión de reservas continúa sin acciones administrativas de cancelación o reprogramación.
 * Se localizaron las respuestas restantes de `GlobalExceptionHandler`, se corrigió la configuración de ESLint para tests y se eliminó la deuda de lint registrada en el reporte original.
-* El workflow de CI quedó configurado para ejecutarse en pushes y pull requests de `main` y `sprint-4`. Esta actualización describe el alcance del workflow; no afirma el resultado de una ejecución remota específica.
+* **Nota histórica sobre CI:** el workflow se configuró para ejecutarse en pushes y pull requests de `main` y `sprint-4`. Esa actualización describía el alcance del workflow y no afirmaba el resultado de una ejecución remota específica; la evidencia actual de CI está registrada en la Sección 9.
 * Flyway pasó a administrar el ciclo de vida del esquema mediante una migración base. Hibernate valida el esquema y los datos de demostración se separaron en un seed de desarrollo versionado, descartable y de activación explícita.
 * Se aprobaron 38 identidades visuales canónicas, una por alojamiento, en `content/lodgings/`. Cada identidad define cinco escenas, por lo que queda una producción pendiente de 190 imágenes.
 
@@ -130,7 +130,7 @@ Controller → Service (Interface + Impl) → Repository → Entity / DTO
 | **Alojamientos — Búsqueda (Inc. 3)** | — | `LodgingServiceImpl.search()`: `Specification` con `IN` sobre categorías, `Pageable`, retorna `Map` paginado | `LodgingController`: `/search` acepta `categories`, `page`, `size` validados (`@Validated` + `@Min`) |
 | **Excepciones — i18n (Inc. 3)** | `ResourceNotFoundException` (+`errorCode`, +`args`, retrocompatible) | — | `GlobalExceptionHandler`: 4 de 9 handlers localizados vía `MessageSource`/`Locale` |
 | **Autenticación — cookie + CSRF (Inc. 4)** | — (sin cambios de entidad) | `AuthCookieFactory` (nueva), `JwtAuthenticationFilter` lee la cookie `ACCESS_TOKEN`, `SpaCsrfTokenRequestHandler` (nuevo), `CsrfTokenRepository` como bean compartido | `AuthController`: nuevos `GET /me`, `POST /logout`, `GET /csrf`; `SecurityConfig`: CSRF habilitado, `NullAuthenticatedSessionStrategy` |
-| **Sesiones renovables — base (Inc. 4)** | `RefreshToken`, `RefreshTokenFamily`, `SessionSecurityEvent` (nuevas, migración `V2`) | `RefreshSessionService`/`Impl`, `RefreshTokenHasher` | — (sin endpoint conectado; `app.session.refresh.enabled=false`) |
+| **Sesiones renovables — base (Incremento 4, estado histórico)** | `RefreshToken`, `RefreshTokenFamily`, `SessionSecurityEvent` (nuevas, migración `V2`) | `RefreshSessionService`/`Impl`, `RefreshTokenHasher` | Sin endpoint conectado en el corte original; `app.session.refresh.enabled=false` |
 | **Reservas — cancelación (Inc. 4)** | `Reservation` (`CANCELLED` ahora alcanzable) | `ReservationServiceImpl.cancelReservation()`, lock pesimista (`findByIdForUpdate`), `TimeConfiguration.businessClock` (nuevo) | `ReservationController`: `PATCH /{id}/cancel` |
 
 * **SmtpEmailServiceImpl con `@Primary`:** se optó por `@Primary` en lugar de `@ConditionalOnMissingBean` porque esta última anotación solo evalúa confiablemente en clases `@Configuration`. `@Primary` resuelve la ambigüedad de forma explícita y determinista.
@@ -189,7 +189,7 @@ src/
 * **RequireAuth como route guard (Inc. 1):** redirige a `/login` preservando la ruta destino en el state (`from`).
 * **`useTableData` (Inc. 2):** encapsula página actual, ordenamiento (`sortKey`, `direction`) y filtrado; provee `paginatedData` y handlers.
 * **`SortableTh`/`Pagination` (Inc. 2):** aíslan la lógica visual, reutilizados en distintas partes del sistema.
-* **Migración a client-side en Alojamientos (Inc. 2):** `AdminLodgings` pasó a `GET /api/lodgings` plano + `useTableData` local, homogeneizando con el resto de las entidades administrativas.
+* **Migración histórica a client-side en Alojamientos (Incremento 2):** durante ese incremento, `AdminLodgings` pasó a una petición plana `GET /api/lodgings` más `useTableData` local, en línea con el resto de las entidades administrativas. La implementación actual usa consultas server-driven; ver la Sección 9.
 * **Capa de servicios por dominio (Inc. 3):** `lodgingService.searchLodgings(params)`, `categoryService.getCategories()`, `favoriteService.getFavorites()/addFavorite()/removeFavorite()` — desacoplan las llamadas HTTP directas de la UI. El alcance de esta primera capa se limitó a `SearchResults.jsx` como slice experimental (no se tocaron `FavoritesPage.jsx`/`ProductCard.jsx`, que siguen llamando `api.js` directo).
 * **`SearchResults.jsx` server-driven (Inc. 3):** se eliminó la paginación local (`page`/`PAGE_SIZE=9` + slicing) y el filtrado en memoria de múltiples categorías (`runCategorySearch`); ahora un único `runSearch()` siempre envía las categorías seleccionadas al backend y la paginación se dirige por `currentPage`/`totalPages` de la respuesta. Los clics de paginación disparan un refetch real (vía `lastSearchRef`, que preserva los filtros aplicados), no un slice local.
 * **`RequireAdmin` como layout (Inc. 3):** retorna `<Outlet/>` en vez de envolver `children`, igual que `RequireAuth`. El redirect para usuario autenticado sin rol ADMIN cambia de `/` a `/unauthorized` (página nueva, mínima, reutiliza estilos existentes de `App.css`).
@@ -350,7 +350,7 @@ src/
 2. **WhatsApp Business API:** el enlace `wa.me` no provee confirmación de envío ni manejo de errores desde la aplicación.
 3. **Email SMTP desactivado por defecto:** requiere `MAIL_SMTP_ENABLED=true` y credenciales del proveedor SMTP.
 4. **Precios por temporada:** el total de reserva es `días × pricePerNight`, sin tarifas variables por temporada o fin de semana.
-5. **Refresh tokens:** el JWT expira a las 8 horas sin renovación automática. La base de persistencia, rotación y detección de replay para sesiones renovables existe completa y probada (Sección 1.4.2), pero no está conectada a ningún endpoint — `app.session.refresh.enabled=false`. No hay todavía sesiones renovables de punta a punta.
+5. **Sesiones renovables (deuda histórica del reporte original):** en el corte original, el JWT expiraba después de 8 horas sin renovación automática y la base de sesiones renovables no estaba conectada a ningún endpoint. Esta deuda se resolvió posteriormente; ver la Sección 9.
 6. **Gestión de reservas en admin:** las consultas administrativas son server-driven, y desde el Incremento 4 el propio cliente puede cancelar su reserva `CONFIRMED` antes del check-in. Siguen sin existir acciones administrativas de cancelación/reprogramación, ni reprogramación de fechas para el cliente.
 7. **`HandlerMethodValidationException` sin cobertura por request real:** el handler existe de forma defensiva, pero ningún endpoint actual lo dispara (ver 7.2); está cubierto solo por test unitario directo.
 8. **Producción visual pendiente:** las 38 identidades están aprobadas, pero faltan generar, revisar, publicar e integrar sus cinco escenas canónicas por alojamiento, para un total de 190 imágenes.
@@ -370,3 +370,15 @@ src/
 | Esquema administrado por Hibernate y datos demo acoplados | Resuelto; Flyway administra el esquema y el seed de desarrollo requiere opt-in | `db/migration/V1__baseline_schema.sql`, `db/dev/V1_9000__dev_demo_data.sql`, `DevSeedFlywayGuard` |
 | Gestión de reservas en admin sin acciones de cancelación de usuarios | Resuelto para cancelación self-service del cliente; cancelación/reprogramación admin y reprogramación de cliente siguen pendientes (ver 8.1.6) | `ReservationController`, `ReservationServiceImpl.cancelReservation()`, `MyReservationsPage.jsx` |
 | JWT en `localStorage`, sin protección CSRF | Resuelto; cookie `HttpOnly` + CSRF double-submit | `AuthCookieFactory`, `SpaCsrfTokenRequestHandler`, `SecurityConfig` |
+
+## 9. Addendum de estado actual
+
+Este addendum reconcilia el reporte histórico con `main` en `8da44c5`. La ejecución de CI `31397438849` pasó los cuatro jobs publicados: backend, frontend, Chromium E2E y Firefox E2E.
+
+### 9.1. Sesiones renovables
+
+La integración de sesiones renovables se completó después del corte original. Actualmente `app.session.refresh.enabled=true` es el valor predeterminado: login y registro emiten cookies `ACCESS_TOKEN` y `REFRESH_TOKEN` `HttpOnly`; `POST /api/auth/refresh` rota el refresh token y emite un nuevo access token; logout revoca únicamente la familia de refresh del dispositivo que realiza la solicitud, mientras que el cambio de contraseña revoca **todas las sesiones de refresh del usuario**. La infraestructura ya no está aislada ni deshabilitada por defecto.
+
+### 9.2. Tablas administrativas
+
+`AdminLodgings` y `AdminReservations` usan consultas server-driven para búsqueda o filtrado, ordenamiento y paginación. Categorías, Características, Políticas y Usuarios conservan el modelo client-side. Las cifras y escenarios del reporte original siguen siendo históricos y no deben interpretarse como una descripción de la implementación actual.

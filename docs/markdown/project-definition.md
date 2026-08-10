@@ -103,5 +103,16 @@ Se adopta la validación de entrada de datos mediante anotaciones declarativas J
 ### 4.6. Sistema Unificado de Íconos
 Se unifica la carga de iconos en el frontend mediante el uso directo de SVGs o de la librería Lucide React. Esto asegura la resolución óptima en dispositivos de alta densidad de píxeles (HiDPI), facilidad de adaptación de estilos responsivos mediante CSS y una mejora en los bundles mediante el "tree-shaking" nativo de Vite al omitir iconos no utilizados.
 
-### 4.7. Tablas Admin Client-Side
-Se decide implementar la ordenación y paginación en el lado del cliente (client-side) a través del hook personalizado `useTableData` para las tablas del administrador (AdminCategories, AdminFeatures, AdminPolicies, AdminUsers, AdminLodgings). Dado el bajo volumen esperado de estos datos de parametrización, esta aproximación simplifica el backend (usando peticiones `GET` planas), reduce el tráfico a la base de datos y provee una experiencia de usuario instantánea y sin latencia en la UI.
+### 4.7. Tablas admin client-side (decisión histórica)
+El alcance original de esta definición eligió el ordenamiento y la paginación client-side mediante `useTableData` para las tablas administrativas, incluida `AdminLodgings`. Esta decisión conserva el contexto histórico del proyecto.
+
+### 4.8. Estado actual de las tablas administrativas
+La implementación actual distingue dos modelos:
+
+| Área | Modelo actual | Alcance |
+|------|---------------|---------|
+| `AdminLodgings` | Server-driven | La búsqueda, el ordenamiento y la paginación se solicitan al backend. |
+| `AdminReservations` | Server-driven | La consulta, los filtros, el ordenamiento y la paginación se solicitan al backend. |
+| `AdminCategories`, `AdminFeatures`, `AdminPolicies`, `AdminUsers` | Client-side | La UI carga los registros y aplica el ordenamiento y la paginación localmente. |
+
+Los reportes históricos que describen todas las tablas administrativas como client-side corresponden a cortes anteriores y no describen por completo el estado actual.
