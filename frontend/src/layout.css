@@ -247,6 +247,11 @@ footer .page-container {
 }
 
 @media (max-width: 768px) {
+  .site-header {
+    position: sticky;
+    top: 0;
+  }
+
   .site-header nav {
     flex-wrap: wrap;
     align-items: center;
@@ -290,7 +295,11 @@ footer .page-container {
   }
 
   .nav-links a,
+  .nav-links button,
   .nav-username {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
     font-size: 0.95rem;
   }
 
@@ -299,7 +308,7 @@ footer .page-container {
   }
 
   main {
-    padding: calc(var(--site-header-height) + 16px) 16px 40px;
+    padding: 16px 16px 40px;
     gap: 28px;
   }
 
