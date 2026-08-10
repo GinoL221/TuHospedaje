@@ -27,11 +27,21 @@ module.exports = defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: '**/mobile-shell.spec.js',
       use: { browserName: 'chromium' },
     },
     {
       name: 'firefox',
+      testIgnore: '**/mobile-shell.spec.js',
       use: { browserName: 'firefox' },
+    },
+    {
+      name: 'mobile-chromium',
+      testMatch: '**/mobile-shell.spec.js',
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+      },
     },
   ],
 });

@@ -19,13 +19,19 @@ export default function Header() {
           <p className="tagline">Encuentra tu lugar ideal al mejor precio</p>
         </div>
         <button
+          type="button"
           className="hamburger-btn"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <div className={`nav-links${menuOpen ? " nav-links--open" : ""}`}>
+        <div
+          id="mobile-navigation"
+          className={`nav-links${menuOpen ? " nav-links--open" : ""}`}
+        >
           {logoutError && <p role="alert">{logoutError}</p>}
           {user ? (
             <>
