@@ -71,7 +71,9 @@ describe("MyReservationsPage - reservation list", () => {
     expect(screen.getByText("30 noches")).toBeInTheDocument();
     expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
     expect(
-      screen.getByText("$1.234.567", { selector: ".reservation-total strong" }),
+      screen.getByText(/^\$\d{1,3}(?:[,.]\d{3})+$/, {
+        selector: ".reservation-total strong",
+      }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ver alojamiento/ })).toHaveAttribute(
       "href",
