@@ -4,11 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.tuhospedaje.configuration.CookieProperties;
 import com.tuhospedaje.configuration.CorsProperties;
+import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.configuration.SessionProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({CookieProperties.class, CorsProperties.class, SessionProperties.class})
+@EnableConfigurationProperties({CookieProperties.class, CorsProperties.class, SessionProperties.class, EmailOutboxProperties.class})
 public class BackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
