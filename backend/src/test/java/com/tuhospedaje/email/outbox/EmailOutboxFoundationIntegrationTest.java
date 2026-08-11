@@ -7,6 +7,7 @@ import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,12 +17,16 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.test.context.transaction.AfterTransaction;
+import org.springframework.test.context.transaction.TestTransaction;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.ZoneOffset;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -46,6 +51,39 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    private final List<Long> fixtureUserIds = new ArrayList<>();
+
+    @AfterEach
+    void cleanUpCreatedFixtures() {
+        if (TestTransaction.isActive()) {
+            return;
+        }
+        deleteCreatedFixtures();
+    }
+
+    @AfterTransaction
+    void cleanUpCreatedFixturesAfterTransaction() {
+        deleteCreatedFixtures();
+    }
+
+    private void deleteCreatedFixtures() {
+        List<Long> userIds = List.copyOf(fixtureUserIds);
+        fixtureUserIds.clear();
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        TransactionTemplate cleanup = new TransactionTemplate(transactionManager);
+        cleanup.executeWithoutResult(status -> {
+            String placeholders = String.join(", ", Collections.nCopies(userIds.size(), "?"));
+            String userIdsClause = "(" + placeholders + ")";
+            Object[] parameters = userIds.toArray();
+
+            jdbcTemplate.update("DELETE FROM email_outbox WHERE user_id IN " + userIdsClause, parameters);
+            jdbcTemplate.update("DELETE FROM users WHERE id IN " + userIdsClause, parameters);
+        });
+    }
 
     @Test
     void migrationsCreateEmailOutboxTableRetryScheduleAndUserFlag() {
@@ -302,13 +340,15 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
     }
 
     private User saveUser(String email) {
-        return userRepository.save(User.builder()
+        User user = userRepository.save(User.builder()
                 .firstName("Test")
                 .lastName("User")
                 .email(email)
                 .password("irrelevant")
                 .role(RoleEnum.USER)
                 .build());
+        fixtureUserIds.add(user.getId());
+        return user;
     }
 
     private EmailOutbox buildOutbox(User user, String emailType, String aggregateId, String recipient) {
