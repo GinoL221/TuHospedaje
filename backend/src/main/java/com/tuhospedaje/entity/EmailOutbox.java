@@ -52,6 +52,9 @@ public class EmailOutbox {
     @Column(name = "failed_attempts", nullable = false)
     private int failedAttempts = 0;
 
+    @Column(name = "next_attempt_at")
+    private Instant nextAttemptAt;
+
     @Column(name = "lease_token", length = 36)
     private String leaseToken;
 

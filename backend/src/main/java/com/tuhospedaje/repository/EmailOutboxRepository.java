@@ -13,28 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long> {
-
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query(value = """
-            UPDATE email_outbox
-            SET status = 'PROCESSING',
-                lease_token = :token,
-                lease_until = :leaseUntil
-            WHERE id IN (
-                SELECT id FROM (
-                    SELECT id FROM email_outbox
-                    WHERE status = 'PENDING'
-                       OR (status = 'PROCESSING' AND lease_until < :now)
-                    ORDER BY id ASC
-                    LIMIT :batchSize
-                ) AS batch
-            )
-            """, nativeQuery = true)
-    int claimEligible(@Param("now") Instant now,
-                      @Param("batchSize") int batchSize,
-                      @Param("token") String token,
-                      @Param("leaseUntil") Instant leaseUntil);
+public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>, EmailOutboxClaimRepository {
 
     @Query("SELECT o FROM EmailOutbox o WHERE o.status = :status AND o.leaseToken = :token ORDER BY o.id ASC")
     List<EmailOutbox> findByStatusAndLeaseToken(@Param("status") EmailOutboxStatus status,
@@ -66,6 +45,7 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long> 
             UPDATE EmailOutbox o
             SET o.status = 'PENDING',
                 o.failedAttempts = o.failedAttempts + 1,
+                o.nextAttemptAt = :nextAttemptAt,
                 o.leaseToken = NULL,
                 o.leaseUntil = NULL,
                 o.errorCode = :errorCode
@@ -73,12 +53,13 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long> 
             """)
     int releaseForRetry(@Param("id") Long id,
                         @Param("token") String token,
-                        @Param("errorCode") String errorCode);
+                        @Param("errorCode") String errorCode,
+                        @Param("nextAttemptAt") Instant nextAttemptAt);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             DELETE FROM EmailOutbox o
-            WHERE o.status = 'DELIVERED' AND o.completedAt < :cutoff
+            WHERE o.status IN ('DELIVERED', 'FAILED') AND o.completedAt < :cutoff
             """)
     int purgeCompletedBefore(@Param("cutoff") Instant cutoff);
 
