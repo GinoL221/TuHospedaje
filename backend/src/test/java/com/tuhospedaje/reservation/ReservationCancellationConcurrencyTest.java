@@ -11,7 +11,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
-import com.tuhospedaje.service.EmailService;
+import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class ReservationCancellationConcurrencyTest extends AbstractIntegrationTest {
     @Autowired RatingRepository ratingRepository;
     @Autowired UserRepository userRepository;
     @Autowired PlatformTransactionManager transactionManager;
-    @MockitoBean EmailService emailService;
+    @MockitoBean EmailOutboxService emailOutboxService;
 
     private User owner;
     private Long reservationId;
@@ -121,6 +121,6 @@ class ReservationCancellationConcurrencyTest extends AbstractIntegrationTest {
 
         assertThat(reservationRepository.findById(reservationId).orElseThrow().getStatus())
                 .isEqualTo(ReservationStatus.CANCELLED);
-        verify(emailService, times(1)).sendReservationCancellation(any(ReservationResponse.class));
+        verify(emailOutboxService, times(1)).enqueueReservationCancellation(any(), any(ReservationResponse.class));
     }
 }

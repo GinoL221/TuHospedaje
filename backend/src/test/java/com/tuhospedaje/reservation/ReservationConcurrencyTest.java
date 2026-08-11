@@ -11,13 +11,14 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.ReservationService;
-import com.tuhospedaje.service.EmailService;
+import com.tuhospedaje.service.EmailOutboxService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -69,8 +70,11 @@ class ReservationConcurrencyTest {
     @Autowired
     private RatingRepository ratingRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @MockitoBean
-    private EmailService emailService;
+    private EmailOutboxService emailOutboxService;
 
     private Lodging seededLodging;
     private User userA;
@@ -80,6 +84,7 @@ class ReservationConcurrencyTest {
     void setUp() {
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM email_outbox");
         userRepository.deleteAll();
         lodgingRepository.deleteAll();
 
@@ -117,6 +122,7 @@ class ReservationConcurrencyTest {
         // Manual cleanup — no auto-rollback since this test is intentionally non-@Transactional
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM email_outbox");
         userRepository.deleteAll();
         lodgingRepository.deleteAll();
     }

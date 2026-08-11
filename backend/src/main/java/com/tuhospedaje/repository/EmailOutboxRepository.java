@@ -10,10 +10,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>, EmailOutboxClaimRepository {
+
+    Optional<EmailOutbox> findByEmailTypeAndAggregateId(String emailType, String aggregateId);
 
     @Query("SELECT o FROM EmailOutbox o WHERE o.status = :status AND o.leaseToken = :token ORDER BY o.id ASC")
     List<EmailOutbox> findByStatusAndLeaseToken(@Param("status") EmailOutboxStatus status,

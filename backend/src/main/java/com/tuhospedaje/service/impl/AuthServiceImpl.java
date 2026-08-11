@@ -8,7 +8,7 @@ import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
-import com.tuhospedaje.service.EmailService;
+import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.RefreshSessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +18,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final EmailService emailService;
+    private final EmailOutboxService emailOutboxService;
     // ObjectProvider, NOT a hard constructor dependency (Design ADR-0): RefreshSessionService
     // has no bean at all when app.session.refresh.enabled=false (RefreshSessionConfiguration
     // is @ConditionalOnProperty). A hard dependency here would break ApplicationContext
@@ -41,13 +39,13 @@ public class AuthServiceImpl implements AuthService {
     private final ObjectProvider<RefreshSessionService> refreshSessions;
 
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-            AuthenticationManager authenticationManager, EmailService emailService,
+            AuthenticationManager authenticationManager, EmailOutboxService emailOutboxService,
             ObjectProvider<RefreshSessionService> refreshSessions) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.emailService = emailService;
+        this.emailOutboxService = emailOutboxService;
         this.refreshSessions = refreshSessions;
     }
 
@@ -69,16 +67,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                try {
-                    emailService.sendWelcomeEmail(request);
-                } catch (RuntimeException ex) {
-                    log.warn("auth.register.welcome_email_failed email={}", request.getEmail());
-                }
-            }
-        });
+        emailOutboxService.enqueueWelcome(user, request);
 
         return buildAuthResult(user);
     }

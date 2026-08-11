@@ -13,7 +13,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
-import com.tuhospedaje.service.EmailService;
+import com.tuhospedaje.service.EmailOutboxService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,7 +74,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     private Clock clock;
 
     @MockitoBean
-    private EmailService emailService;
+    private EmailOutboxService emailOutboxService;
 
     private String userAuthHeader;
     private User reservationOwner;
@@ -128,7 +128,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.guestEmail").value("juan-reservas@test.com"))
                 .andExpect(jsonPath("$.guestPhone").value("+5491122334455"));
 
-        verify(emailService, times(1)).sendReservationConfirmation(any(ReservationResponse.class));
+        verify(emailOutboxService, times(1)).enqueueReservationConfirmation(any(), any(ReservationResponse.class));
     }
 
     @Test
@@ -193,7 +193,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                         .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
-        verify(emailService).sendReservationCancellation(any(ReservationResponse.class));
+        verify(emailOutboxService).enqueueReservationCancellation(any(), any(ReservationResponse.class));
     }
 
     @Test
@@ -234,7 +234,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         Long lodgingId = createTestLodging();
         createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
         Long reservationId = reservationRepository.findAll().get(0).getId();
-        clearInvocations(emailService);
+        clearInvocations(emailOutboxService);
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
 
         for (int request = 0; request < 2; request++) {
@@ -246,7 +246,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                     .andExpect(jsonPath("$.status").value("CANCELLED"));
         }
 
-        verify(emailService, times(1)).sendReservationCancellation(any(ReservationResponse.class));
+        verify(emailOutboxService, times(1)).enqueueReservationCancellation(any(), any(ReservationResponse.class));
     }
 
     @Test
@@ -287,7 +287,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
                 .isEqualTo(ReservationStatus.CONFIRMED);
-        verify(emailService, never()).sendReservationCancellation(any());
+        verify(emailOutboxService, never()).enqueueReservationCancellation(any(), any());
     }
 
     @Test
