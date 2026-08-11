@@ -12,7 +12,7 @@ import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.specification.ReservationSpecifications;
-import com.tuhospedaje.service.EmailService;
+import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.ReservationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,8 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,15 +38,15 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final LodgingRepository lodgingRepository;
-    private final EmailService emailService;
+    private final EmailOutboxService emailOutboxService;
     private final Clock clock;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  LodgingRepository lodgingRepository, EmailService emailService,
+                                  LodgingRepository lodgingRepository, EmailOutboxService emailOutboxService,
                                   Clock clock) {
         this.reservationRepository = reservationRepository;
         this.lodgingRepository = lodgingRepository;
-        this.emailService = emailService;
+        this.emailOutboxService = emailOutboxService;
         this.clock = clock;
     }
 
@@ -74,16 +72,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservation.setStatus(ReservationStatus.CANCELLED);
         ReservationResponse response = ReservationResponse.fromEntity(reservation);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                try {
-                    emailService.sendReservationCancellation(response);
-                } catch (RuntimeException ex) {
-                    log.warn("reservation.cancel.email_failed reservationId={}", id);
-                }
-            }
-        });
+        emailOutboxService.enqueueReservationCancellation(requester, response);
         log.info("reservation.cancelled reservationId={}", id);
         return response;
     }
@@ -127,16 +116,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
         ReservationResponse response = ReservationResponse.fromEntity(saved);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                try {
-                    emailService.sendReservationConfirmation(response);
-                } catch (RuntimeException ex) {
-                    log.warn("reservation.create.email_failed reservationId={}", saved.getId());
-                }
-            }
-        });
+        emailOutboxService.enqueueReservationConfirmation(user, response);
         return response;
     }
 

@@ -8,15 +8,12 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
-import com.tuhospedaje.service.EmailService;
+import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.impl.ReservationServiceImpl;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -27,7 +24,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,28 +34,18 @@ class ReservationCancellationServiceTest {
 
     @Mock ReservationRepository reservationRepository;
     @Mock LodgingRepository lodgingRepository;
-    @Mock EmailService emailService;
-
-    @AfterEach
-    void clearSynchronization() {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
-    }
+    @Mock EmailOutboxService emailOutboxService;
 
     @Test
-    void ownerCanCancelUntilEndOfPreviousBusinessDayAndMailRunsAfterCommit() {
+    void ownerCanCancelUntilEndOfPreviousBusinessDayAndEnqueuesCancellation() {
         var reservation = reservation(1L, 7L, ReservationStatus.CONFIRMED);
         when(reservationRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reservation));
-        TransactionSynchronizationManager.initSynchronization();
 
         var result = serviceAt("2026-08-20T02:59:59Z").cancelReservation(1L, user(7L));
 
         assertThat(result.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
-        verify(emailService, never()).sendReservationCancellation(result);
-        TransactionSynchronizationManager.getSynchronizations()
-                .forEach(TransactionSynchronization::afterCommit);
-        verify(emailService).sendReservationCancellation(result);
+        verify(emailOutboxService).enqueueReservationCancellation(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(result));
     }
 
     @Test
@@ -71,7 +57,8 @@ class ReservationCancellationServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
 
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
-        verify(emailService, never()).sendReservationCancellation(org.mockito.ArgumentMatchers.any());
+        verify(emailOutboxService, never()).enqueueReservationCancellation(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -95,28 +82,25 @@ class ReservationCancellationServiceTest {
         var result = serviceAt("2026-08-19T12:00:00Z").cancelReservation(1L, user(7L));
 
         assertThat(result.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
-        verify(emailService, never()).sendReservationCancellation(result);
+        verify(emailOutboxService, never()).enqueueReservationCancellation(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
     }
 
     @Test
-    void mailFailureAfterCommitCannotUndoCancellation() {
+    void enqueueFailureIsPropagatedToTheOwningTransaction() {
         var reservation = reservation(1L, 7L, ReservationStatus.CONFIRMED);
         when(reservationRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reservation));
         org.mockito.Mockito.doThrow(new IllegalStateException("smtp down"))
-                .when(emailService).sendReservationCancellation(org.mockito.ArgumentMatchers.any());
-        TransactionSynchronizationManager.initSynchronization();
+                .when(emailOutboxService).enqueueReservationCancellation(org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any());
 
-        var result = serviceAt("2026-08-19T12:00:00Z").cancelReservation(1L, user(7L));
-        TransactionSynchronizationManager.getSynchronizations()
-                .forEach(TransactionSynchronization::afterCommit);
-
-        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
-        assertThat(result.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
-        verify(emailService, times(1)).sendReservationCancellation(result);
+        assertThatThrownBy(() -> serviceAt("2026-08-19T12:00:00Z")
+                .cancelReservation(1L, user(7L)))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     private ReservationServiceImpl serviceAt(String instant) {
-        return new ReservationServiceImpl(reservationRepository, lodgingRepository, emailService,
+        return new ReservationServiceImpl(reservationRepository, lodgingRepository, emailOutboxService,
                 Clock.fixed(Instant.parse(instant), BUSINESS_ZONE));
     }
 

@@ -5,6 +5,7 @@ import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.EmailOutboxService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.regex.Pattern;
 
@@ -39,6 +41,9 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @MockitoBean
+    private EmailOutboxService emailOutboxService;
 
     @BeforeEach
     void setUp() {
