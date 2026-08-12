@@ -26,11 +26,15 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +54,9 @@ class DatabaseMigrationIntegrationTest {
 
     @Autowired
     private MariaDBContainer<?> mariadbContainer;
+
+    @TempDir
+    private Path isolatedConfigRoot;
 
     @Test
     void migratesAnEmptyDatabaseThroughFlywayAndDoesNotLoadDemoData() {
@@ -78,6 +85,33 @@ class DatabaseMigrationIntegrationTest {
     }
 
     @Test
+    void keepsTheExplicitProductionProfileWhenLocalEnvSelectsDevelopment() {
+        assertActualProfileStartupHasNoDemoData("prod");
+    }
+
+    @Test
+    void createsACompleteSanitizedProductionConfigurationCopy() throws IOException {
+        Path isolatedConfigDirectory = createIsolatedProductionConfigDirectory();
+        Path mainResourcesDirectory = Path.of("src/main/resources").toAbsolutePath();
+
+        assertThat(applicationPropertyFileNames(isolatedConfigDirectory))
+                .isEqualTo(applicationPropertyFileNames(mainResourcesDirectory));
+        assertThat(Files.readAllBytes(isolatedConfigDirectory.resolve("application-dev.properties")))
+                .isEqualTo(Files.readAllBytes(mainResourcesDirectory.resolve("application-dev.properties")));
+        assertThat(Files.readAllBytes(isolatedConfigDirectory.resolve("application-prod.properties")))
+                .isEqualTo(Files.readAllBytes(mainResourcesDirectory.resolve("application-prod.properties")));
+
+        String sourceBaseConfiguration = Files.readString(mainResourcesDirectory.resolve("application.properties"));
+        String isolatedBaseConfiguration = Files.readString(isolatedConfigDirectory.resolve("application.properties"));
+        assertThat(sourceBaseConfiguration.lines()
+                .filter(line -> line.startsWith("spring.config.import="))
+                .count()).isEqualTo(1);
+        assertThat(isolatedBaseConfiguration).doesNotContain("spring.config.import=");
+        assertThat(isolatedBaseConfiguration).isEqualTo(sourceBaseConfiguration.replace(
+                "spring.config.import=optional:file:.env[.properties]\n", ""));
+    }
+
+    @Test
     void keepsDevelopmentAndDefaultProfileStartupsSchemaOnly() {
         assertActualDevelopmentProfileStartupHasNoDemoData();
         assertActualProfileStartupHasNoDemoData();
@@ -85,13 +119,39 @@ class DatabaseMigrationIntegrationTest {
 
     @Test
     void loadsCanonicalDemoDataOnlyWithExplicitSeedOptIn() {
+        runExplicitDevelopmentSeedProbe(createProbeDatabase("explicit_dev_seed_probe"), false);
+    }
+
+    @Test
+    void cleansExplicitSeedProbeAfterSuccessfulSeedRun() {
         ProbeDatabase probe = createProbeDatabase("explicit_dev_seed_probe");
-        String mainResourcesDirectory = Path.of("src/main/resources").toAbsolutePath().toString();
-        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
+        runExplicitDevelopmentSeedProbe(probe, false);
+
+        assertThat(probeArtifactsExist(probe)).isFalse();
+    }
+
+    @Test
+    void cleansExplicitSeedProbeWhenIsolationPreparationFails() {
+        ProbeDatabase probe = createProbeDatabase("failed_isolation_seed_probe");
+        try {
+            assertThatThrownBy(() -> runExplicitDevelopmentSeedProbe(probe, true))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Forced isolated configuration preparation failure");
+
+            assertThat(probeArtifactsExist(probe)).isFalse();
+        } finally {
+            dropProbeDatabase(probe);
+        }
+    }
+
+    private void runExplicitDevelopmentSeedProbe(ProbeDatabase probe, boolean failIsolationPreparation) {
+        try {
+            Path isolatedConfigDirectory = createIsolatedProductionConfigDirectory(failIsolationPreparation);
+            try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
                 .profiles("dev")
                 .properties(
                         "spring.main.web-application-type=none",
-                        "spring.config.location=optional:file:" + mainResourcesDirectory + "/"
+                        "spring.config.location=" + isolatedConfigDirectory.toUri()
                 )
                 .run(
                         "--spring.datasource.url=" + probe.jdbcUrl(),
@@ -128,6 +188,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                     probeJdbcTemplate.queryForObject("SELECT password FROM users WHERE id = 1", String.class)))
                     .isTrue();
             assertCanonicalSeedManifest(probeJdbcTemplate);
+            }
         } finally {
             dropProbeDatabase(probe);
         }
@@ -487,12 +548,12 @@ assertThat(probeJdbcTemplate.queryForObject(
                 .withPassword(probePassword)) {
             profileContainer.start();
 
-            String mainResourcesDirectory = Path.of("src/main/resources").toAbsolutePath().toString();
+            Path isolatedConfigDirectory = createIsolatedProductionConfigDirectory();
             try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
                     .profiles(profiles)
                     .properties(
                             "spring.main.web-application-type=none",
-                            "spring.config.location=optional:file:" + mainResourcesDirectory + "/"
+                            "spring.config.location=" + isolatedConfigDirectory.toUri()
                     )
                     .initializers(applicationContext -> applicationContext.getEnvironment().getPropertySources().addFirst(
                             new MapPropertySource("actual-profile-testcontainer", Map.of(
@@ -536,12 +597,12 @@ assertThat(probeJdbcTemplate.queryForObject(
                 .withPassword(probePassword)) {
             profileContainer.start();
 
-            String mainResourcesDirectory = Path.of("src/main/resources").toAbsolutePath().toString();
+            Path isolatedConfigDirectory = createIsolatedProductionConfigDirectory();
             try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
                     .profiles("dev")
                     .properties(
                             "spring.main.web-application-type=none",
-                            "spring.config.location=optional:file:" + mainResourcesDirectory + "/"
+                            "spring.config.location=" + isolatedConfigDirectory.toUri()
                     )
                     .run(
                             "--spring.datasource.url=" + profileContainer.getJdbcUrl(),
@@ -566,6 +627,87 @@ assertThat(probeJdbcTemplate.queryForObject(
                 .placeholders(Map.of("dev_admin_password_hash", adminPasswordHash))
                 .outOfOrder(true)
                 .load();
+    }
+
+    private Path createIsolatedProductionConfigDirectory() {
+        return createIsolatedProductionConfigDirectory(false);
+    }
+
+    private Path createIsolatedProductionConfigDirectory(boolean failPreparation) {
+        try {
+            if (failPreparation) {
+                throw new IllegalStateException("Forced isolated configuration preparation failure");
+            }
+            Path mainResourcesDirectory = Path.of("src/main/resources").toAbsolutePath();
+            Set<String> sourceFileNames = applicationPropertyFileNames(mainResourcesDirectory);
+            if (!sourceFileNames.contains("application.properties")) {
+                throw new IllegalStateException("Missing base production application.properties");
+            }
+
+            Path isolatedConfigDirectory = Files.createDirectory(
+                    isolatedConfigRoot.resolve("production-config-" + UUID.randomUUID()));
+            try (Stream<Path> sourceFiles = Files.list(mainResourcesDirectory)) {
+                for (Path sourceFile : sourceFiles
+                        .filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().startsWith("application"))
+                        .filter(path -> path.getFileName().toString().endsWith(".properties"))
+                        .toList()) {
+                    byte[] sourceBytes = Files.readAllBytes(sourceFile);
+                    byte[] targetBytes = sourceFile.getFileName().toString().equals("application.properties")
+                            ? removeLocalEnvironmentImport(sourceBytes)
+                            : sourceBytes;
+                    Files.write(isolatedConfigDirectory.resolve(sourceFile.getFileName()), targetBytes);
+                }
+            }
+
+            if (!applicationPropertyFileNames(isolatedConfigDirectory).equals(sourceFileNames)) {
+                throw new IllegalStateException("Isolated configuration file set differs from production resources");
+            }
+            verifyIsolatedConfigCopy(mainResourcesDirectory, isolatedConfigDirectory);
+            return isolatedConfigDirectory;
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to prepare isolated production configuration", exception);
+        }
+    }
+
+    private Set<String> applicationPropertyFileNames(Path directory) throws IOException {
+        try (Stream<Path> files = Files.list(directory)) {
+            return files
+                    .filter(Files::isRegularFile)
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.startsWith("application") && name.endsWith(".properties"))
+                    .collect(Collectors.toUnmodifiableSet());
+        }
+    }
+
+    private byte[] removeLocalEnvironmentImport(byte[] sourceBytes) {
+        String source = new String(sourceBytes, StandardCharsets.UTF_8);
+        String importLine = "spring.config.import=optional:file:.env[.properties]\n";
+        long importDeclarationCount = source.lines()
+                .filter(line -> line.startsWith("spring.config.import="))
+                .count();
+        if (importDeclarationCount != 1 || !source.contains(importLine)) {
+            throw new IllegalStateException("Production base configuration does not contain exactly one supported import");
+        }
+
+        String sanitized = source.replace(importLine, "");
+        if (sanitized.contains("spring.config.import=")) {
+            throw new IllegalStateException("Local environment import remained in isolated configuration");
+        }
+        return sanitized.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private void verifyIsolatedConfigCopy(Path sourceDirectory, Path isolatedDirectory) throws IOException {
+        for (String fileName : applicationPropertyFileNames(sourceDirectory)) {
+            if (fileName.equals("application.properties")) {
+                continue;
+            }
+            if (!Arrays.equals(
+                    Files.readAllBytes(sourceDirectory.resolve(fileName)),
+                    Files.readAllBytes(isolatedDirectory.resolve(fileName)))) {
+                throw new IllegalStateException("Profile configuration copy differs for " + fileName);
+            }
+        }
     }
 
     private JdbcTemplate jdbcTemplateFor(ProbeDatabase probe) {
@@ -695,6 +837,28 @@ assertThat(probeJdbcTemplate.queryForObject(
     private void dropProbeDatabase(ProbeDatabase probe) {
         executeAsContainerRoot("DROP DATABASE IF EXISTS `" + probe.schema() + "`");
         executeAsContainerRoot("DROP USER IF EXISTS '" + probe.username() + "'@'" + WILDCARD_HOST + "'");
+    }
+
+    private boolean probeArtifactsExist(ProbeDatabase probe) {
+        try (Connection connection = DriverManager.getConnection(
+                mariadbContainer.getJdbcUrl(),
+                "root",
+                mariadbContainer.getEnvMap().get("MYSQL_ROOT_PASSWORD")
+        ); var statement = connection.prepareStatement("""
+                SELECT
+                    (SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = ?) +
+                    (SELECT COUNT(*) FROM mysql.user WHERE user = ? AND host = ?)
+                """)) {
+            statement.setString(1, probe.schema());
+            statement.setString(2, probe.username());
+            statement.setString(3, WILDCARD_HOST);
+            try (var resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1) > 0;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to inspect temporary test artifacts", exception);
+        }
     }
 
     private String jdbcUrlFor(String schema) {
