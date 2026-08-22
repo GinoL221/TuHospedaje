@@ -8,18 +8,32 @@ import useTableData from "../../hooks/useTableData";
 import SortableTh from "../../components/SortableTh/SortableTh";
 import Pagination from "../../components/Pagination/Pagination";
 
+// Mirrors the backend's @HttpsImageUrl rule (absolute https URL, non-blank
+// host) as a client-side convenience check. The backend remains the final
+// validation authority; no network request is made here.
+function isValidHttpsImageUrl(value) {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return false;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "https:" && url.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export default function AdminCategories() {
   const [catList, setCatList] = useState([]);
   const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(catList);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", icon: "" });
+  const [form, setForm] = useState({ name: "", description: "", icon: "", imageUrl: "" });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const resetForm = () => setForm({ name: "", description: "", icon: "" });
-  const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const resetForm = () => setForm({ name: "", description: "", icon: "", imageUrl: "" });
+  const cancel = useConfirmCancel(form.name || form.description || form.icon || form.imageUrl, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
 
   useEffect(() => {
     let cancelled = false;
@@ -38,10 +52,10 @@ export default function AdminCategories() {
 
   const openModal = (cat = null) => {
     if (cat) {
-      setForm({ name: cat.name, description: cat.description || "", icon: cat.icon || "" });
+      setForm({ name: cat.name, description: cat.description || "", icon: cat.icon || "", imageUrl: cat.imageUrl || "" });
       setEditing(cat);
     } else {
-      setForm({ name: "", description: "", icon: "" });
+      setForm({ name: "", description: "", icon: "", imageUrl: "" });
       setEditing(null);
     }
     setError("");
@@ -58,6 +72,14 @@ export default function AdminCategories() {
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "El nombre es obligatorio";
+    const trimmedImageUrl = form.imageUrl.trim();
+    if (!trimmedImageUrl) {
+      // Creation requires media; a legacy edit may omit it to preserve the
+      // previously stored image (see CategoryServiceImpl.update).
+      if (!editing) errs.imageUrl = "La imagen representativa es obligatoria";
+    } else if (!isValidHttpsImageUrl(trimmedImageUrl)) {
+      errs.imageUrl = "La imagen debe ser una URL https válida";
+    }
     return errs;
   };
 
@@ -72,7 +94,13 @@ export default function AdminCategories() {
       return;
     }
 
-    const body = { name: form.name, description: form.description, icon: form.icon || null };
+    const trimmedImageUrl = form.imageUrl.trim();
+    const body = {
+      name: form.name,
+      description: form.description,
+      icon: form.icon || null,
+      imageUrl: trimmedImageUrl || null,
+    };
     const request = editing
       ? put(`/categories/${editing.id}`, body)
       : post("/categories", body);
@@ -174,6 +202,34 @@ export default function AdminCategories() {
                 Ícono
                 <IconPicker value={form.icon} onChange={(val) => setForm({ ...form, icon: val })} placeholder="Buscar ícono" />
               </label>
+              <label className="required-dot">
+                Imagen representativa (URL)
+                <input
+                  type="url"
+                  data-testid="field-image-url"
+                  value={form.imageUrl}
+                  className={fieldErrors.imageUrl ? "input-error" : ""}
+                  aria-invalid={fieldErrors.imageUrl ? "true" : "false"}
+                  aria-describedby={fieldErrors.imageUrl ? "error-image-url" : undefined}
+                  onChange={(e) => {
+                    setForm({ ...form, imageUrl: e.target.value });
+                    if (fieldErrors.imageUrl) setFieldErrors({ ...fieldErrors, imageUrl: "" });
+                  }}
+                />
+                {fieldErrors.imageUrl && (
+                  <span className="field-error" id="error-image-url" data-testid="error-image-url">
+                    {fieldErrors.imageUrl}
+                  </span>
+                )}
+              </label>
+              {isValidHttpsImageUrl(form.imageUrl) && (
+                <img
+                  src={form.imageUrl.trim()}
+                  alt="Vista previa de la imagen representativa"
+                  className="admin-image-preview"
+                  data-testid="image-url-preview"
+                />
+              )}
               {error && <p className="form-error" data-testid="admin-form-error">{error}</p>}
               <p className="required-note">* Campos obligatorios</p>
               <div className="modal-actions">

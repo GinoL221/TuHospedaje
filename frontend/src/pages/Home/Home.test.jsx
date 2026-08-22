@@ -40,7 +40,7 @@ const lodgingFixture = {
 	pricePerNight: 100,
 	imageUrls: [],
 };
-const categoryFixture = { id: 1, name: "Cabaña", icon: null };
+const categoryFixture = { id: 1, name: "Cabaña", icon: null, imageUrl: null };
 
 function recommendationsPage({
 	lodgings = [lodgingFixture],
@@ -394,6 +394,41 @@ describe("Home - category filter compatibility", () => {
 				screen.queryByRole("button", { name: "Mostrar todos" }),
 			).not.toBeInTheDocument(),
 		);
+	});
+
+	it("renders the category's representative image with accessible alt text and preserves filter behavior on click", async () => {
+		const imageCategory = {
+			id: 2,
+			name: "Hoteles",
+			icon: null,
+			imageUrl: "https://img.example.com/hoteles.jpg",
+		};
+		mockGetDefaults({ categories: [imageCategory] });
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+		expect(
+			screen.getByRole("img", { name: "Imagen representativa de Hoteles" }),
+		).toBeInTheDocument();
+
+		get.mockClear();
+		await user.click(screen.getByRole("button", { name: /Hoteles/ }));
+
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith("/lodgings?category=2"),
+		);
+	});
+
+	it("falls back to an accessible placeholder, not a lodging feature icon, when a category has no representative image", async () => {
+		mockGetDefaults({ categories: [categoryFixture] });
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(
+			screen.getByRole("img", { name: "Imagen no disponible para Cabaña" }),
+		).toBeInTheDocument();
 	});
 });
 
