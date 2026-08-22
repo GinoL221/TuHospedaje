@@ -128,6 +128,34 @@ describe("Home - lodgings render", () => {
 });
 
 describe("Home - recommendation snapshot persistence", () => {
+	it("uses valid fallback seeds when randomUUID throws during initial load and refresh", async () => {
+		crypto.randomUUID.mockImplementation(() => {
+			throw new Error("UUID unavailable");
+		});
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+		await user.click(
+			screen.getByRole("button", { name: "Actualizar recomendaciones" }),
+		);
+		await waitFor(() =>
+			expect(
+				get.mock.calls.filter(([endpoint]) =>
+					endpoint.startsWith("/lodgings/recommendations"),
+				),
+			).toHaveLength(2),
+		);
+
+		for (const [endpoint] of get.mock.calls.filter(([path]) =>
+			path.startsWith("/lodgings/recommendations"),
+		)) {
+			const seed = new URL(endpoint, "http://localhost").searchParams.get("seed");
+			expect(seed).toMatch(/^[A-Za-z0-9_-]{16,64}$/);
+		}
+	});
+
 	it("persists the generated seed under the tab-scoped sessionStorage key", async () => {
 		mockGetDefaults();
 		renderHome();
