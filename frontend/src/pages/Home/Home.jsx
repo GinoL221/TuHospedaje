@@ -66,6 +66,7 @@ export default function Home() {
 	const revisionRef = useRef(readStoredRecommendationSession()?.revision ?? null);
 	const [recStatus, setRecStatus] = useState("idle"); // idle | loading | error
 	const requestIdRef = useRef(0);
+	const skipResetPageFetchRef = useRef(false);
 
 	useEffect(() => {
 		writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
@@ -93,6 +94,7 @@ export default function Home() {
 				setPage((prev) => {
 					const actualPage =
 						typeof data.currentPage === "number" ? data.currentPage : prev;
+					if (data.reset && prev !== actualPage) skipResetPageFetchRef.current = true;
 					return prev === actualPage ? prev : actualPage;
 				});
 			})
@@ -114,6 +116,8 @@ export default function Home() {
 	useEffect(() => {
 		if (selectedCategory) {
 			fetchCategoryLodgings();
+		} else if (skipResetPageFetchRef.current) {
+			skipResetPageFetchRef.current = false;
 		} else {
 			fetchRecommendations();
 		}

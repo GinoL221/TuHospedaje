@@ -245,27 +245,85 @@ describe("Home - explicit refresh and catalog reset", () => {
 		);
 	});
 
-	it("resets to page 0 and swaps the rendered snapshot when the backend reports reset:true", async () => {
-		mockGetDefaults({
-			recommendations: recommendationsPage({ totalPages: 2 }),
+	it("adopts an atomic reset from a stale nonzero page without issuing another recommendation request", async () => {
+		const pageOneFixture = { ...lodgingFixture, id: 2, name: "Casa de Playa" };
+		const resetFixture = { ...lodgingFixture, id: 9, name: "Depto Centro" };
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations")) {
+				const requestedPage = new URL(endpoint, "http://localhost").searchParams.get("page");
+				return Promise.resolve(
+					requestedPage === "1"
+						? recommendationsPage({
+								lodgings: [resetFixture],
+								currentPage: 0,
+								totalPages: 1,
+								revision: "rev-2",
+								reset: true,
+							})
+						: recommendationsPage({
+								lodgings: [pageOneFixture],
+								currentPage: 0,
+								totalPages: 2,
+								revision: "rev-1",
+							}),
+				);
+			}
+			if (endpoint === "/categories") return Promise.resolve([]);
+			if (endpoint === "/favorites") return Promise.resolve([]);
+			return Promise.resolve(null);
 		});
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Casa de Playa");
+		await user.click(screen.getByRole("button", { name: "Siguiente" }));
+
+		expect(await screen.findByText("Depto Centro")).toBeInTheDocument();
+		expect(screen.queryByText("Casa de Playa")).not.toBeInTheDocument();
+		expect(screen.queryByText(/Página/)).not.toBeInTheDocument();
+		expect(JSON.parse(sessionStorage.getItem("tuhospedaje.recommendations.v1"))).toEqual({
+			seed: FIXED_SEED,
+			revision: "rev-2",
+		});
+		expect(
+			get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/recommendations")),
+		).toHaveLength(2);
+	});
+
+	it("keeps later pagination available after a reset already served at page 0", async () => {
+		const secondPageFixture = { ...lodgingFixture, id: 10, name: "Loft Norte" };
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations")) {
+				const url = new URL(endpoint, "http://localhost");
+				return Promise.resolve(
+					url.searchParams.get("page") === "1"
+						? recommendationsPage({
+								lodgings: [secondPageFixture],
+								currentPage: 1,
+								totalPages: 2,
+								revision: "rev-2",
+							})
+						: recommendationsPage({
+								currentPage: 0,
+								totalPages: 2,
+								revision: "rev-2",
+								reset: true,
+							}),
+				);
+			}
+			if (endpoint === "/categories") return Promise.resolve([]);
+			if (endpoint === "/favorites") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
 		renderHome();
 
 		await screen.findByText("Cabaña del Lago");
+		await user.click(screen.getByRole("button", { name: "Siguiente" }));
 
-		const revisedFixture = { ...lodgingFixture, id: 9, name: "Depto Centro" };
-		get.mockResolvedValue(
-			recommendationsPage({
-				lodgings: [revisedFixture],
-				currentPage: 0,
-				totalPages: 1,
-				revision: "rev-2",
-				reset: true,
-			}),
-		);
-
-		await waitFor(() =>
-			expect(screen.getByText("Página 1 de 2")).toBeInTheDocument(),
+		expect(await screen.findByText("Loft Norte")).toBeInTheDocument();
+		expect(get).toHaveBeenCalledWith(
+			`/lodgings/recommendations?seed=${FIXED_SEED}&page=1&size=10&revision=rev-2`,
 		);
 	});
 });
