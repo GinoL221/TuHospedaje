@@ -202,12 +202,13 @@ export default function AdminCategories() {
                 Ícono
                 <IconPicker value={form.icon} onChange={(val) => setForm({ ...form, icon: val })} placeholder="Buscar ícono" />
               </label>
-              <label className="required-dot">
+              <label className={editing ? undefined : "required-dot"}>
                 Imagen representativa (URL)
                 <input
                   type="url"
                   data-testid="field-image-url"
                   value={form.imageUrl}
+                  required={!editing}
                   className={fieldErrors.imageUrl ? "input-error" : ""}
                   aria-invalid={fieldErrors.imageUrl ? "true" : "false"}
                   aria-describedby={fieldErrors.imageUrl ? "error-image-url" : undefined}

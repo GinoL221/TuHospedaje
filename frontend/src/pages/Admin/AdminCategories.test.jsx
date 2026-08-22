@@ -228,6 +228,28 @@ describe("AdminCategories - delete", () => {
 });
 
 describe("AdminCategories - representative image", () => {
+  it("marks the representative image as required when creating a category", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+
+    expect(screen.getByTestId("field-image-url")).toBeRequired();
+  });
+
+  it("does not mark the representative image as required when editing a category", async () => {
+    get.mockResolvedValue([categoryFixture()]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("Cabañas");
+    await user.click(screen.getByTestId("row-edit-btn"));
+
+    expect(screen.getByTestId("field-image-url")).not.toBeRequired();
+  });
+
   it("renders a representative-image URL field in the create form", async () => {
     get.mockResolvedValue([]);
     const user = userEvent.setup();
