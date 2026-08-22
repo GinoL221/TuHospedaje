@@ -673,6 +673,8 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 		expect(
 			screen.getByRole("button", { name: "Confirmar reserva" }),
 		).toBeDisabled();
+		expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
+		expect(screen.getByLabelText("Check-out")).not.toBeDisabled();
 
 		await user.click(screen.getByRole("button", { name: "Reintentar" }));
 
@@ -681,6 +683,58 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 		expect(
 			screen.getByRole("button", { name: "Confirmar reserva" }),
 		).not.toBeDisabled();
+	});
+
+	it("keeps date inputs editable after a stale refresh while submission remains blocked", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.setSystemTime(new Date("2026-07-01T12:00:00"));
+		try {
+			mockGetSequenced({
+				availabilityResponses: [
+					{ available: true, occupiedRanges: [] },
+					() => Promise.reject(new Error("down")),
+				],
+			});
+			const user = userEvent.setup();
+			renderBookingPage({
+				authValue: makeAuthValue(),
+				initialEntries: [preloadedDatesEntry],
+			});
+
+			await screen.findByText("Cabaña del Lago");
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Confirmar reserva" })).not.toBeDisabled(),
+			);
+			await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 2nd, 2026");
+
+			await screen.findByRole("alert");
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
+			expect(screen.getByLabelText("Check-out")).not.toBeDisabled();
+			expect(screen.getByRole("button", { name: "Confirmar reserva" })).toBeDisabled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("asks the user to retry when the preflight returns no technical result", async () => {
+		mockGetSequenced({
+			availabilityResponses: [{ available: true, occupiedRanges: [] }, null],
+		});
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue: makeAuthValue(),
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Confirmar reserva" })).not.toBeDisabled(),
+		);
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(await screen.findByText("No pudimos verificar la disponibilidad. Reintentá antes de confirmar la reserva.")).toHaveAttribute("role", "alert");
+		expect(post).not.toHaveBeenCalled();
 	});
 });
 

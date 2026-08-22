@@ -103,9 +103,15 @@ export default function BookingPage() {
       // Client-side preflight is a UX improvement only; it never replaces
       // the backend's locked overlap check below.
       const preflight = await loadAvailability({ checkIn, checkOut });
-      if (!preflight || preflight.available !== true) {
+      if (preflight?.available === false) {
         setError(
           "Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+        );
+        return;
+      }
+      if (!preflight || preflight.available !== true) {
+        setError(
+          "No pudimos verificar la disponibilidad. Reintentá antes de confirmar la reserva.",
         );
         return;
       }
@@ -238,7 +244,7 @@ export default function BookingPage() {
             filterDate={(date) => !isDateOccupied(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Check-in"
-            disabled={availabilityStatus !== "ready"}
+            disabled={availabilityStatus === "loading"}
           />
 
           <label htmlFor="booking-check-out">Check-out</label>
@@ -253,7 +259,7 @@ export default function BookingPage() {
             filterDate={(date) => !isDateOccupied(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Check-out"
-            disabled={availabilityStatus !== "ready"}
+            disabled={availabilityStatus === "loading"}
           />
 
           {nights > 0 && (
