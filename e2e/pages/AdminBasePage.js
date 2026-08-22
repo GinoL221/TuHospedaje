@@ -31,6 +31,26 @@ class AdminBasePage extends BasePage {
     await this.page.waitForTimeout(300);
   }
 
+  /**
+   * Navigate directly to the canonical Unicode administration route and wait
+   * for the admin shell to render. Verifies US-9.1-S1 (exact route) for a
+   * fresh/direct load rather than an in-app link click.
+   */
+  async gotoCanonical() {
+    await this.page.goto('/administración');
+    await this.page.locator('[data-testid="admin-nav-dashboard"]').waitFor({ state: 'visible' });
+  }
+
+  /**
+   * Navigate directly to the browser-encoded form of the canonical route and
+   * wait for the same admin shell to render. Verifies US-9.1-S2 (encoded
+   * route resolves without a not-found result).
+   */
+  async gotoEncoded() {
+    await this.page.goto('/administraci%C3%B3n');
+    await this.page.locator('[data-testid="admin-nav-dashboard"]').waitFor({ state: 'visible' });
+  }
+
   // ---------------------------------------------------------------------------
   // Modal / form
   // ---------------------------------------------------------------------------
