@@ -34,8 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Real-database coverage: authenticated eligibility read, checkout-boundary-day and
  * cancelled-reservation exclusion, anonymous denial, and rejection of an ineligible
- * POST. Multiple-reservation/wrong-scope branching is covered with {@code Clock.fixed}
- * at the service unit level (RatingEligibilityServiceTest).
+ * POST and real-database user/lodging query scoping.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -104,6 +103,32 @@ class RatingEligibilityControllerIntegrationTest extends AbstractIntegrationTest
     }
 
     @Test
+    void qualifyingStayForDifferentUserOrLodging_doesNotGrantEligibility() throws Exception {
+        User otherUser = userRepository.save(User.builder()
+                .firstName("Mateo")
+                .lastName("Luna")
+                .email("mateo-eligibility-test@tuhospedaje.com")
+                .password("123456")
+                .role(RoleEnum.USER)
+                .build());
+        seedReservation(otherUser, lodging, ReservationStatus.CONFIRMED, LocalDate.now(clock).minusDays(2));
+        assertEligibility(false);
+
+        Lodging otherLodging = new Lodging();
+        otherLodging.setName("Posada Norte");
+        otherLodging.setAddress("Calle Norte 12");
+        otherLodging.setCity("Springfield");
+        otherLodging.setCountry("USA");
+        otherLodging.setPhoneNumber("555-0188");
+        otherLodging.setEmail("posada-norte-eligibility@test.com");
+        otherLodging.setPricePerNight(new BigDecimal("90.00"));
+        otherLodging.setMaxGuests(2);
+        otherLodging = lodgingRepository.save(otherLodging);
+        seedReservation(user, otherLodging, ReservationStatus.CONFIRMED, LocalDate.now(clock).minusDays(2));
+        assertEligibility(false);
+    }
+
+    @Test
     void anonymousRequest_isDenied() throws Exception {
         mockMvc.perform(get("/api/ratings/lodging/{lodgingId}/eligibility", lodging.getId()))
                 .andExpect(status().isForbidden());
@@ -138,13 +163,18 @@ class RatingEligibilityControllerIntegrationTest extends AbstractIntegrationTest
     }
 
     private void seedReservation(ReservationStatus status, LocalDate checkOut) {
+        seedReservation(user, lodging, status, checkOut);
+    }
+
+    private void seedReservation(User reservationUser, Lodging reservationLodging,
+                                 ReservationStatus status, LocalDate checkOut) {
         Reservation reservation = new Reservation();
-        reservation.setLodging(lodging);
-        reservation.setUser(user);
+        reservation.setLodging(reservationLodging);
+        reservation.setUser(reservationUser);
         reservation.setCheckIn(checkOut.minusDays(3));
         reservation.setCheckOut(checkOut);
-        reservation.setGuestName(user.getFirstName() + " " + user.getLastName());
-        reservation.setGuestEmail(user.getEmail());
+        reservation.setGuestName(reservationUser.getFirstName() + " " + reservationUser.getLastName());
+        reservation.setGuestEmail(reservationUser.getEmail());
         reservation.setGuestPhone("555-0100");
         reservation.setTotalPrice(new BigDecimal("240.00"));
         reservation.setStatus(status);
