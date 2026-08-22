@@ -32,6 +32,8 @@ vi.mock("../../components/ProductCard/ProductCard", () => ({
 	),
 }));
 
+const FIXED_SEED = "11111111-1111-4111-8111-111111111111";
+
 const lodgingFixture = {
 	id: 1,
 	name: "Cabaña del Lago",
@@ -40,17 +42,39 @@ const lodgingFixture = {
 };
 const categoryFixture = { id: 1, name: "Cabaña", icon: null };
 
-function mockGetDefaults({
+function recommendationsPage({
 	lodgings = [lodgingFixture],
+	currentPage = 0,
 	totalPages = 1,
+	revision = "rev-1",
+	reset = false,
+} = {}) {
+	return {
+		lodgings,
+		currentPage,
+		totalItems: lodgings.length,
+		totalPages,
+		revision,
+		reset,
+	};
+}
+
+function mockGetDefaults({
+	recommendations = recommendationsPage(),
 	categories = [],
 	favorites = [],
+	categoryLodgings = [lodgingFixture],
 } = {}) {
 	get.mockImplementation((endpoint) => {
+		if (endpoint.startsWith("/lodgings/recommendations")) {
+			// Echo the requested page back as currentPage, like the real
+			// backend does for an in-range request (see RecommendationPageResponse).
+			const requestedPage =
+				Number(new URL(endpoint, "http://localhost").searchParams.get("page")) || 0;
+			return Promise.resolve({ ...recommendations, currentPage: requestedPage });
+		}
 		if (endpoint.startsWith("/lodgings?category="))
-			return Promise.resolve(lodgings);
-		if (endpoint.startsWith("/lodgings?page="))
-			return Promise.resolve({ lodgings, totalPages });
+			return Promise.resolve(categoryLodgings);
 		if (endpoint === "/categories") return Promise.resolve(categories);
 		if (endpoint === "/favorites") return Promise.resolve(favorites);
 		if (endpoint.startsWith("/lodgings/cities")) return Promise.resolve([]);
@@ -73,19 +97,26 @@ function renderHome({ authValue } = {}) {
 	);
 }
 
+beforeEach(() => {
+	sessionStorage.clear();
+	vi.spyOn(crypto, "randomUUID").mockReturnValue(FIXED_SEED);
+});
+
 describe("Home - lodgings render", () => {
-	it("renders lodging cards fetched on mount", async () => {
+	it("renders lodging cards fetched from the recommendations endpoint on mount", async () => {
 		mockGetDefaults();
 		renderHome();
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(get).toHaveBeenCalledWith(
-			expect.stringContaining("/lodgings?page="),
+			`/lodgings/recommendations?seed=${FIXED_SEED}&page=0&size=10`,
 		);
 	});
 
-	it("shows the empty state when there are no lodgings", async () => {
-		mockGetDefaults({ lodgings: [] });
+	it("shows the empty state when the recommendations catalog is empty", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({ lodgings: [], totalPages: 0 }),
+		});
 		renderHome();
 
 		expect(
@@ -96,18 +127,165 @@ describe("Home - lodgings render", () => {
 	});
 });
 
-describe("Home - category filter", () => {
-	it("calls the category-filtered endpoint when a category is clicked", async () => {
-		mockGetDefaults({ categories: [categoryFixture] });
+describe("Home - recommendation snapshot persistence", () => {
+	it("persists the generated seed under the tab-scoped sessionStorage key", async () => {
+		mockGetDefaults();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const stored = JSON.parse(
+			sessionStorage.getItem("tuhospedaje.recommendations.v1"),
+		);
+		expect(stored.seed).toBe(FIXED_SEED);
+	});
+
+	it("reuses the stored seed and revision instead of generating a new one", async () => {
+		sessionStorage.setItem(
+			"tuhospedaje.recommendations.v1",
+			JSON.stringify({ seed: "stored-seed-0123456789", revision: "rev-stored" }),
+		);
+		mockGetDefaults();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(get).toHaveBeenCalledWith(
+			"/lodgings/recommendations?seed=stored-seed-0123456789&page=0&size=10&revision=rev-stored",
+		);
+		expect(crypto.randomUUID).not.toHaveBeenCalled();
+	});
+});
+
+describe("Home - recommendation pagination stability", () => {
+	it("keeps forward/back navigation stable and reuses page 1 identities on return", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({
+				lodgings: [lodgingFixture],
+				totalPages: 2,
+			}),
+		});
 		const user = userEvent.setup();
 		renderHome();
 
 		await screen.findByText("Cabaña del Lago");
 
+		const page2Fixture = { ...lodgingFixture, id: 2, name: "Casa de Playa" };
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations?"))
+				return Promise.resolve(
+					endpoint.includes("page=1")
+						? recommendationsPage({
+								lodgings: [page2Fixture],
+								currentPage: 1,
+								totalPages: 2,
+							})
+						: recommendationsPage({
+								lodgings: [lodgingFixture],
+								currentPage: 0,
+								totalPages: 2,
+							}),
+				);
+			if (endpoint === "/categories") return Promise.resolve([]);
+			if (endpoint === "/favorites") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+
+		await user.click(screen.getByRole("button", { name: "Siguiente" }));
+		expect(await screen.findByText("Casa de Playa")).toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Anterior" }));
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+	});
+
+	it("requests the last page when Última is clicked and first page when Inicio is clicked", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({ totalPages: 3 }),
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		await user.click(screen.getByRole("button", { name: "Última" }));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(
+				expect.stringContaining("page=2"),
+			),
+		);
+
+		await user.click(screen.getByRole("button", { name: "Inicio" }));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(
+				expect.stringContaining("page=0"),
+			),
+		);
+	});
+});
+
+describe("Home - explicit refresh and catalog reset", () => {
+	it("replaces the seed, clears the revision, and resets to page 0 on explicit refresh", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({ totalPages: 2 }),
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		crypto.randomUUID.mockReturnValue("22222222-2222-4222-8222-222222222222");
+		await user.click(
+			screen.getByRole("button", { name: "Actualizar recomendaciones" }),
+		);
+
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(
+				"/lodgings/recommendations?seed=22222222-2222-4222-8222-222222222222&page=0&size=10",
+			),
+		);
+	});
+
+	it("resets to page 0 and swaps the rendered snapshot when the backend reports reset:true", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({ totalPages: 2 }),
+		});
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const revisedFixture = { ...lodgingFixture, id: 9, name: "Depto Centro" };
+		get.mockResolvedValue(
+			recommendationsPage({
+				lodgings: [revisedFixture],
+				currentPage: 0,
+				totalPages: 1,
+				revision: "rev-2",
+				reset: true,
+			}),
+		);
+
+		await waitFor(() =>
+			expect(screen.getByText("Página 1 de 2")).toBeInTheDocument(),
+		);
+	});
+});
+
+describe("Home - category filter compatibility", () => {
+	it("calls the category-filtered endpoint (not recommendations) when a category is clicked", async () => {
+		mockGetDefaults({ categories: [categoryFixture] });
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+		get.mockClear();
+
 		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
 
 		await waitFor(() =>
 			expect(get).toHaveBeenCalledWith("/lodgings?category=1"),
+		);
+		expect(get).not.toHaveBeenCalledWith(
+			expect.stringContaining("/lodgings/recommendations"),
 		);
 	});
 
@@ -133,14 +311,110 @@ describe("Home - category filter", () => {
 	});
 });
 
+describe("Home - stale response rejection", () => {
+	it("ignores an out-of-order response from an earlier (page 1) request that resolves after a later (page 0) one", async () => {
+		let resolvePage1;
+		const pendingPage1 = new Promise((resolve) => {
+			resolvePage1 = resolve;
+		});
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations")) {
+				const requestedPage = Number(
+					new URL(endpoint, "http://localhost").searchParams.get("page"),
+				);
+				if (requestedPage === 0)
+					return Promise.resolve(
+						recommendationsPage({
+							lodgings: [{ ...lodgingFixture, id: 2, name: "Casa de Playa" }],
+							currentPage: 0,
+							totalPages: 2,
+						}),
+					);
+				return pendingPage1;
+			}
+			if (endpoint === "/categories") return Promise.resolve([]);
+			if (endpoint === "/favorites") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+		await screen.findByText("Casa de Playa");
+
+		// Navigate to page 1 (request stays pending), then back to page 0
+		// (resolves immediately) before the page 1 response ever arrives.
+		await user.click(screen.getByRole("button", { name: "Siguiente" }));
+		await user.click(screen.getByRole("button", { name: "Anterior" }));
+		await screen.findByText("Casa de Playa");
+
+		resolvePage1(
+			recommendationsPage({
+				lodgings: [{ ...lodgingFixture, id: 3, name: "Producto Viejo" }],
+				currentPage: 1,
+				totalPages: 2,
+			}),
+		);
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(screen.queryByText("Producto Viejo")).not.toBeInTheDocument();
+		expect(screen.getByText("Casa de Playa")).toBeInTheDocument();
+	});
+});
+
+describe("Home - loading failure, retry, and repeated failure", () => {
+	it("shows an accessible alert with Retry on load failure and clears it on successful retry", async () => {
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.reject(new Error("network error"));
+			if (endpoint === "/categories") return Promise.resolve([]);
+			if (endpoint === "/favorites") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"No pudimos cargar las recomendaciones.",
+		);
+		expect(screen.queryByTestId("product-card")).not.toBeInTheDocument();
+
+		mockGetDefaults();
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	it("keeps showing the failure state without stale products after a repeated failure", async () => {
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.reject(new Error("network error"));
+			if (endpoint === "/categories") return Promise.resolve([]);
+			if (endpoint === "/favorites") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByRole("alert");
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		expect(await screen.findByRole("alert")).toBeInTheDocument();
+		expect(screen.queryByTestId("product-card")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("No hay alojamientos cargados todavía. Volvé más tarde."),
+		).not.toBeInTheDocument();
+	});
+});
+
 describe("Home - search form", () => {
 	it("supports mouse and keyboard selection with listbox semantics", async () => {
 		mockGetDefaults();
 		get.mockImplementation((endpoint) => {
 			if (endpoint.startsWith("/lodgings/cities"))
 				return Promise.resolve(["Bariloche", "Buenos Aires"]);
-			if (endpoint.startsWith("/lodgings?page="))
-				return Promise.resolve({ lodgings: [lodgingFixture], totalPages: 1 });
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
 			if (endpoint === "/categories") return Promise.resolve([]);
 			return Promise.resolve(null);
 		});
@@ -176,8 +450,8 @@ describe("Home - search form", () => {
 		mockGetDefaults();
 		get.mockImplementation((endpoint) => {
 			if (endpoint.startsWith("/lodgings/cities")) return Promise.resolve(["Mendoza"]);
-			if (endpoint.startsWith("/lodgings?page="))
-				return Promise.resolve({ lodgings: [lodgingFixture], totalPages: 1 });
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
 			if (endpoint === "/categories") return Promise.resolve([]);
 			return Promise.resolve(null);
 		});
@@ -252,7 +526,9 @@ describe("Home - search form", () => {
 
 describe("Home - pagination", () => {
 	it("enables Siguiente on page 0 and disables it after reaching the last page", async () => {
-		mockGetDefaults({ totalPages: 2 });
+		mockGetDefaults({
+			recommendations: recommendationsPage({ totalPages: 2 }),
+		});
 		const user = userEvent.setup();
 		renderHome();
 

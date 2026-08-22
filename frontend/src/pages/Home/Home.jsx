@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
 import { get } from "../../services/api";
+import { getRecommendations } from "../../services/lodgingService";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategoryCard from "./CategoryCard";
@@ -10,6 +11,31 @@ import "../../App.css";
 import "./Home.css";
 
 registerLocale("es", es);
+
+// Tab-scoped snapshot key (see design.md §1): a seed is generated once per
+// browser tab via crypto.randomUUID and reused across reload/back/forward;
+// closing the tab ends the session because sessionStorage is tab-scoped.
+const RECOMMENDATIONS_STORAGE_KEY = "tuhospedaje.recommendations.v1";
+
+function readStoredRecommendationSession() {
+	try {
+		const raw = sessionStorage.getItem(RECOMMENDATIONS_STORAGE_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		return parsed && typeof parsed.seed === "string" ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+function writeStoredRecommendationSession(session) {
+	try {
+		sessionStorage.setItem(RECOMMENDATIONS_STORAGE_KEY, JSON.stringify(session));
+	} catch {
+		// sessionStorage may be unavailable (e.g. private mode); the
+		// recommendation session then simply lives only in memory.
+	}
+}
 
 export default function Home() {
 	const navigate = useNavigate();
@@ -30,27 +56,74 @@ export default function Home() {
 	const [favoriteIds, setFavoriteIds] = useState(new Set());
 	const debounceRef = useRef();
 
-	const fetchLodgings = useCallback(() => {
-		if (selectedCategory) {
-			get(`/lodgings?category=${selectedCategory}`)
-				.then((data) => {
-					setLodgings(Array.isArray(data) ? data : []);
-					setTotalPages(1);
-				})
-				.catch(console.error);
-		} else {
-			get(`/lodgings?page=${page}&size=8`)
-				.then((data) => {
-					setLodgings(data.lodgings || []);
-					setTotalPages(data.totalPages || 1);
-				})
-				.catch(console.error);
-		}
-	}, [selectedCategory, page]);
+	// Recommendation snapshot: seed is created once (or reused from
+	// sessionStorage) and only replaced on an explicit refresh. Revision
+	// lives in a ref because updating it from a response must not itself
+	// re-trigger a fetch (see design.md §1, item 6-8).
+	const [recSeed, setRecSeed] = useState(
+		() => readStoredRecommendationSession()?.seed ?? crypto.randomUUID(),
+	);
+	const revisionRef = useRef(readStoredRecommendationSession()?.revision ?? null);
+	const [recStatus, setRecStatus] = useState("idle"); // idle | loading | error
+	const requestIdRef = useRef(0);
 
 	useEffect(() => {
-		fetchLodgings();
-	}, [fetchLodgings]);
+		writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
+	}, [recSeed]);
+
+	const fetchRecommendations = useCallback(() => {
+		const requestId = ++requestIdRef.current;
+		// Matches the SearchResults.jsx convention for setState called
+		// synchronously from inside an effect (see runSearch).
+		startTransition(() => {
+			setRecStatus("loading");
+			// Clear stale results before issuing the request so a slow/failed
+			// response can never be presented alongside the previous page.
+			setLodgings([]);
+		});
+
+		getRecommendations({ seed: recSeed, page, revision: revisionRef.current ?? undefined })
+			.then((data) => {
+				if (requestId !== requestIdRef.current) return; // stale/out-of-order response
+				revisionRef.current = data.revision ?? revisionRef.current;
+				writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
+				setLodgings(data.lodgings || []);
+				setTotalPages(data.totalPages || 1);
+				setRecStatus("idle");
+				setPage((prev) => {
+					const actualPage =
+						typeof data.currentPage === "number" ? data.currentPage : prev;
+					return prev === actualPage ? prev : actualPage;
+				});
+			})
+			.catch(() => {
+				if (requestId !== requestIdRef.current) return;
+				setRecStatus("error");
+			});
+	}, [recSeed, page]);
+
+	const fetchCategoryLodgings = useCallback(() => {
+		get(`/lodgings?category=${selectedCategory}`)
+			.then((data) => {
+				setLodgings(Array.isArray(data) ? data : []);
+				setTotalPages(1);
+			})
+			.catch(console.error);
+	}, [selectedCategory]);
+
+	useEffect(() => {
+		if (selectedCategory) {
+			fetchCategoryLodgings();
+		} else {
+			fetchRecommendations();
+		}
+	}, [selectedCategory, fetchCategoryLodgings, fetchRecommendations]);
+
+	function handleRefreshRecommendations() {
+		revisionRef.current = null;
+		setPage(0);
+		setRecSeed(crypto.randomUUID());
+	}
 
 	useEffect(() => {
 		get("/categories")
@@ -295,23 +368,46 @@ export default function Home() {
 							Mostrar todos
 						</button>
 					)}
+					{!selectedCategory && (
+						<button
+							type="button"
+							className="btn-refresh-recommendations"
+							onClick={handleRefreshRecommendations}
+						>
+							Actualizar recomendaciones
+						</button>
+					)}
 				</div>
-				{lodgings.length === 0 ? (
-					<p className="empty-state">
-						No hay alojamientos cargados todavía. Volvé más tarde.
+				{!selectedCategory && recStatus === "loading" && (
+					<p className="recommendations-status" role="status">
+						Cargando recomendaciones...
 					</p>
-				) : (
-					<div className="hotel-list">
-						{lodgings.map((lodging) => (
-							<ProductCard
-								key={lodging.id}
-								lodging={lodging}
-								defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
-								onFavoriteToggle={handleFavoriteToggle}
-							/>
-						))}
+				)}
+				{!selectedCategory && recStatus === "error" && (
+					<div className="recommendations-alert" role="alert">
+						<p>No pudimos cargar las recomendaciones.</p>
+						<button type="button" onClick={fetchRecommendations}>
+							Reintentar
+						</button>
 					</div>
 				)}
+				{(selectedCategory || recStatus === "idle") &&
+					(lodgings.length === 0 ? (
+						<p className="empty-state">
+							No hay alojamientos cargados todavía. Volvé más tarde.
+						</p>
+					) : (
+						<div className="hotel-list">
+							{lodgings.map((lodging) => (
+								<ProductCard
+									key={lodging.id}
+									lodging={lodging}
+									defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
+									onFavoriteToggle={handleFavoriteToggle}
+								/>
+							))}
+						</div>
+					))}
 				{!selectedCategory && totalPages > 1 && (
 					<div className="home-pagination">
 						<button disabled={page === 0} onClick={() => setPage(0)}>
