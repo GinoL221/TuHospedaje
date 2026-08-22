@@ -1,6 +1,7 @@
 package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.rating.RatingDTO;
+import com.tuhospedaje.dto.rating.RatingEligibilityDTO;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.User;
@@ -13,6 +14,8 @@ import com.tuhospedaje.service.RatingService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -24,20 +27,22 @@ public class RatingServiceImpl implements RatingService {
     private final RatingRepository ratingRepository;
     private final LodgingRepository lodgingRepository;
     private final ReservationRepository reservationRepository;
+    private final Clock clock;
 
     public RatingServiceImpl(RatingRepository ratingRepository, LodgingRepository lodgingRepository,
-                             ReservationRepository reservationRepository) {
+                             ReservationRepository reservationRepository, Clock clock) {
         this.ratingRepository = ratingRepository;
         this.lodgingRepository = lodgingRepository;
         this.reservationRepository = reservationRepository;
+        this.clock = clock;
     }
 
     @Override
     @Transactional
     public RatingDTO createRating(User user, Long lodgingId, Integer score, String comment) {
-        if (!reservationRepository.existsByUserIdAndLodgingIdAndStatus(
-                user.getId(), lodgingId, ReservationStatus.CONFIRMED)) {
-            throw new IllegalArgumentException("Solo los huéspedes con reserva confirmada pueden puntuar este alojamiento");
+        if (!isEligible(user.getId(), lodgingId)) {
+            throw new IllegalArgumentException(
+                    "Solo los huéspedes con una estadía confirmada y finalizada pueden puntuar este alojamiento");
         }
 
         Lodging lodging = lodgingRepository.findById(lodgingId)
@@ -49,7 +54,6 @@ public class RatingServiceImpl implements RatingService {
             rating = existingRatingOpt.get();
             rating.setScore(score);
             rating.setComment(comment);
-            rating.setCreatedAt(LocalDateTime.now());
         } else {
             rating = new Rating();
             rating.setLodging(lodging);
@@ -57,8 +61,23 @@ public class RatingServiceImpl implements RatingService {
             rating.setScore(score);
             rating.setComment(comment);
         }
+        rating.setCreatedAt(LocalDateTime.now(clock));
 
         return RatingDTO.fromEntity(ratingRepository.save(rating));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RatingEligibilityDTO getEligibility(User user, Long lodgingId) {
+        return isEligible(user.getId(), lodgingId)
+                ? RatingEligibilityDTO.eligible()
+                : RatingEligibilityDTO.ineligible();
+    }
+
+    private boolean isEligible(Long userId, Long lodgingId) {
+        LocalDate businessToday = LocalDate.now(clock);
+        return reservationRepository.existsByUserIdAndLodgingIdAndStatusAndCheckOutBefore(
+                userId, lodgingId, ReservationStatus.CONFIRMED, businessToday);
     }
 
     @Override

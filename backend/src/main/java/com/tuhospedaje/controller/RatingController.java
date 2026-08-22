@@ -1,6 +1,7 @@
 package com.tuhospedaje.controller;
 
 import com.tuhospedaje.dto.rating.RatingDTO;
+import com.tuhospedaje.dto.rating.RatingEligibilityDTO;
 import com.tuhospedaje.dto.rating.RatingRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.service.RatingService;
@@ -67,5 +68,19 @@ public class RatingController {
     })
     public ResponseEntity<Map<String, Object>> getByLodging(@PathVariable Long lodgingId) {
         return ResponseEntity.ok(ratingService.getRatingsByLodging(lodgingId));
+    }
+
+    @GetMapping("/lodging/{lodgingId}/eligibility")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Check rating eligibility",
+            description = "Whether the authenticated user has a completed confirmed reservation for this lodging.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Eligibility computed successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+    })
+    public ResponseEntity<RatingEligibilityDTO> getEligibility(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long lodgingId) {
+        return ResponseEntity.ok(ratingService.getEligibility(user, lodgingId));
     }
 }
