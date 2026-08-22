@@ -40,7 +40,14 @@ export default function WhatsAppButton() {
       return;
     }
 
-    const handoffWindow = window.open("", "_blank");
+    let handoffWindow;
+    try {
+      handoffWindow = window.open("", "_blank");
+    } catch {
+      setStatus("popup_blocked");
+      return;
+    }
+
     if (!handoffWindow) {
       setStatus("popup_blocked");
       return;

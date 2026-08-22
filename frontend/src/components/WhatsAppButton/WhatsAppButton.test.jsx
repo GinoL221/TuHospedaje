@@ -111,6 +111,21 @@ describe("WhatsAppButton - detectable handoff failures", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/no pudimos abrir whatsapp/i);
   });
 
+  it("catches a window.open exception without crashing", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, "open").mockImplementation(() => {
+      throw new Error("blocked by browser policy");
+    });
+    vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
+
+    render(<WhatsAppButton />);
+    await expect(
+      user.click(screen.getByRole("button", { name: "Contactar por WhatsApp" })),
+    ).resolves.not.toThrow();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/no pudimos abrir whatsapp/i);
+  });
+
   it("catches a URL-assignment exception without crashing", async () => {
     const user = userEvent.setup();
     vi.spyOn(window, "open").mockReturnValue(makeFakeWindow({ throwOnLocation: true }));
