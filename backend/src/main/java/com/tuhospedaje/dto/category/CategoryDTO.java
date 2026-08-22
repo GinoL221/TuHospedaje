@@ -1,6 +1,7 @@
 package com.tuhospedaje.dto.category;
 
 import com.tuhospedaje.entity.Category;
+import com.tuhospedaje.validation.HttpsImageUrl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
@@ -26,11 +27,19 @@ public class CategoryDTO {
     @Schema(description = "Icon identifier or URL representing the category", example = "fa-house-chimney")
     private String icon;
 
+    @NotBlank(message = "La imagen representativa es obligatoria", groups = CategoryValidationGroups.OnCreate.class)
+    @HttpsImageUrl(groups = {CategoryValidationGroups.OnCreate.class, CategoryValidationGroups.OnUpdate.class})
+    @Schema(description = "Representative image URL for the category (absolute https). Required on create; "
+            + "omit on update to preserve the previously stored value.",
+            example = "https://res.cloudinary.com/demo/image/upload/hotel.jpg")
+    private String imageUrl;
+
     public Category toEntity() {
         Category category = new Category();
         category.setName(this.name);
         category.setDescription(this.description);
         category.setIcon(this.icon);
+        category.setImageUrl(this.imageUrl);
         return category;
     }
 
@@ -40,6 +49,7 @@ public class CategoryDTO {
         dto.setName(category.getName());
         dto.setDescription(category.getDescription());
         dto.setIcon(category.getIcon());
+        dto.setImageUrl(category.getImageUrl());
         return dto;
     }
 }

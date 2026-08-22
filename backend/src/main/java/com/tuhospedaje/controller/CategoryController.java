@@ -1,6 +1,7 @@
 package com.tuhospedaje.controller;
 
 import com.tuhospedaje.dto.category.CategoryDTO;
+import com.tuhospedaje.dto.category.CategoryValidationGroups;
 import com.tuhospedaje.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -8,10 +9,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,7 +44,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
     })
-    public ResponseEntity<CategoryDTO> create(@Valid @RequestBody CategoryDTO dto) {
+    public ResponseEntity<CategoryDTO> create(@Validated(CategoryValidationGroups.OnCreate.class) @RequestBody CategoryDTO dto) {
         CategoryDTO saved = categoryService.save(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -79,7 +80,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
             @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
     })
-    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Valid @RequestBody CategoryDTO dto) {
+    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Validated(CategoryValidationGroups.OnUpdate.class) @RequestBody CategoryDTO dto) {
         dto.setId(id);
         CategoryDTO updated = categoryService.update(dto);
         return ResponseEntity.ok(updated);

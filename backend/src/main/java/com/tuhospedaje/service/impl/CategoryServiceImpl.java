@@ -50,6 +50,12 @@ public class CategoryServiceImpl implements CategoryService {
         category.setName(dto.getName());
         category.setDescription(dto.getDescription());
         category.setIcon(dto.getIcon());
+        // A null imageUrl means the edit omitted media (controller-level validation
+        // already rejected any non-null but invalid replacement before reaching here),
+        // so the previously stored, legacy-nullable image is preserved unchanged.
+        if (dto.getImageUrl() != null) {
+            category.setImageUrl(dto.getImageUrl());
+        }
         Category updated = categoryRepository.save(category);
         return CategoryDTO.fromEntity(updated);
     }

@@ -64,6 +64,7 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         CategoryDTO request = new CategoryDTO();
         request.setName("Hotel 5 estrellas");
         request.setDescription("Alojamientos de lujo");
+        request.setImageUrl("https://cdn.tuhospedaje.test/categories/hotel-5-estrellas.jpg");
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
@@ -88,6 +89,7 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         CategoryDTO request = new CategoryDTO();
         request.setName("Cabaña");
         request.setDescription("Otra");
+        request.setImageUrl("https://cdn.tuhospedaje.test/categories/cabana.jpg");
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
