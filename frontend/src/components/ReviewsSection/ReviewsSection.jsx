@@ -54,7 +54,7 @@ export default function ReviewsSection({ lodgingId, user }) {
       setUserScore(0);
       setUserComment("");
     } catch (err) {
-      setSubmitError(err.message);
+      setSubmitError(err.message || "No pudimos enviar tu reseña.");
     }
   }
 

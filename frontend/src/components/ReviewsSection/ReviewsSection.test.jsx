@@ -208,6 +208,21 @@ describe("ReviewsSection - successful submission", () => {
 });
 
 describe("ReviewsSection - failed submission", () => {
+  it("shows a generic accessible error when the failed request has no message", async () => {
+    get.mockImplementation(makeGetMock());
+    post.mockRejectedValue({});
+    const user = userEvent.setup();
+    render(<ReviewsSection lodgingId="1" user={loggedUser} />);
+
+    await screen.findByText("4.5");
+    await user.click(await screen.findByRole("button", { name: "1 estrella" }));
+    await user.click(screen.getByRole("button", { name: "Enviar reseña" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No pudimos enviar tu reseña.",
+    );
+  });
+
   it("shows an inline non-success message, keeps the score and comment, and never uses window.alert", async () => {
     get.mockImplementation(makeGetMock());
     post.mockRejectedValue(new Error("Ya calificaste este alojamiento"));
