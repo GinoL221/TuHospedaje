@@ -285,6 +285,35 @@ describe("App admin route authorization", () => {
 });
 
 describe("App /admin compatibility alias", () => {
+  it("sends an anonymous visitor through the existing login boundary without rendering admin content", async () => {
+    const admin = deferred();
+    await renderAppAt({
+      path: "/admin",
+      authValue: UNAUTHENTICATED,
+      pages: { "./pages/Admin/Admin": admin.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/login");
+    expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
+  });
+
+  it("denies an authenticated non-admin visitor without rendering admin content", async () => {
+    const admin = deferred();
+    await renderAppAt({
+      path: "/admin",
+      authValue: AUTHENTICATED_USER,
+      pages: { "./pages/Admin/Admin": admin.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/unauthorized");
+    expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
+    expect(screen.getByText("Header shell")).toBeInTheDocument();
+  });
+
   it("redirects /admin to /administración for an authorized admin, exposing identical content under the same guard", async () => {
     await renderAppAt({
       path: "/admin",
