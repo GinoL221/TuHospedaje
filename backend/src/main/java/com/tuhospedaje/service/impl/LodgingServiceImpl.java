@@ -280,7 +280,7 @@ public class LodgingServiceImpl implements LodgingService {
         int pageSize = Math.max(1, Math.min(size, RANDOM_RESULT_SIZE));
         int totalItems = ordered.size();
         int totalPages = totalItems == 0 ? 0 : (int) Math.ceil((double) totalItems / pageSize);
-        int currentPage = totalPages == 0 ? 0 : (reset ? 0 : Math.min(page, totalPages - 1));
+        int currentPage = totalPages == 0 ? 0 : (reset ? 0 : Math.max(0, Math.min(page, totalPages - 1)));
         int fromIndex = totalPages == 0 ? 0 : currentPage * pageSize;
         int toIndex = totalPages == 0 ? 0 : Math.min(fromIndex + pageSize, totalItems);
         List<LodgingDTO> lodgings = ordered.subList(fromIndex, toIndex).stream()

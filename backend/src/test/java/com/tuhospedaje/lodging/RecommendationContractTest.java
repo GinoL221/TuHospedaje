@@ -76,6 +76,18 @@ class RecommendationServiceContractTest {
     }
 
     @Test
+    void clampsNegativeDirectServicePageToFirstPage() {
+        when(lodgingRepository.findAll(any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(lodgings(12));
+        when(ratingRepository.aggregateByLodgingIds(any())).thenReturn(List.of());
+
+        RecommendationPageResponse page = lodgingService.findRecommendations("recommendationseed", -1, 10, null);
+
+        assertThat(page.currentPage()).isZero();
+        assertThat(page.lodgings()).hasSize(10);
+    }
+
+    @Test
     void returnsBoundedEmptyPageAndCapsServiceSize() {
         when(lodgingRepository.findAll(any(org.springframework.data.domain.Sort.class))).thenReturn(List.of());
         when(ratingRepository.aggregateByLodgingIds(any())).thenReturn(List.of());
@@ -140,6 +152,10 @@ class RecommendationControllerContractTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/lodgings/recommendations")
                         .param("seed", "recommendationseed")
                         .param("size", "11"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/lodgings/recommendations")
+                        .param("seed", "recommendationseed")
+                        .param("page", "-1"))
                 .andExpect(status().isBadRequest());
     }
 }
