@@ -1,16 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CategoryCard from "./CategoryCard";
 
-vi.mock("../../utils/iconMap", () => ({
-  ICON_MAP: { wifi: "wifi-icon" },
-}));
-
-vi.mock("../../components/Icons/Icon", () => ({
-  default: ({ name }) => <span data-testid={`icon-${name}`} />,
-}));
-
-const baseCategory = { id: 1, name: "Cabaña", icon: null, description: null };
+const baseCategory = { id: 1, name: "Cabaña", imageUrl: null, description: null };
 
 describe("CategoryCard - render", () => {
   it("renders the category name", () => {
@@ -18,18 +10,19 @@ describe("CategoryCard - render", () => {
     expect(screen.getByText("Cabaña")).toBeInTheDocument();
   });
 
-  it("adds the active class when isActive is true", () => {
-    const { container } = render(
-      <CategoryCard category={baseCategory} isActive={true} onClick={vi.fn()} />
-    );
-    expect(container.firstChild).toHaveClass("active");
+  it("renders as a semantic button with aria-pressed reflecting an active category", () => {
+    render(<CategoryCard category={baseCategory} isActive={true} onClick={vi.fn()} />);
+    const button = screen.getByRole("button", { name: /Cabaña/ });
+    expect(button.tagName).toBe("BUTTON");
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button).toHaveClass("active");
   });
 
-  it("does not add the active class when isActive is false", () => {
-    const { container } = render(
-      <CategoryCard category={baseCategory} isActive={false} onClick={vi.fn()} />
-    );
-    expect(container.firstChild).not.toHaveClass("active");
+  it("reflects an inactive category via aria-pressed and no active class", () => {
+    render(<CategoryCard category={baseCategory} isActive={false} onClick={vi.fn()} />);
+    const button = screen.getByRole("button", { name: /Cabaña/ });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(button).not.toHaveClass("active");
   });
 });
 
@@ -70,29 +63,55 @@ describe("CategoryCard - interactions", () => {
     await user.keyboard("{Enter}");
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it("calls onClick when Space is pressed while focused", async () => {
+    const onClick = vi.fn();
+    const user = userEvent.setup();
+    render(<CategoryCard category={baseCategory} isActive={false} onClick={onClick} />);
+    screen.getByRole("button", { name: /Cabaña/ }).focus();
+    await user.keyboard(" ");
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
 });
 
-describe("CategoryCard - icon", () => {
-  it("renders the mapped Icon component when category.icon is a known ICON_MAP key", () => {
+describe("CategoryCard - representative image", () => {
+  it("renders the representative image with alt text derived from the category name", () => {
     render(
       <CategoryCard
-        category={{ ...baseCategory, icon: "wifi" }}
+        category={{ ...baseCategory, imageUrl: "https://img.example.com/cabana.jpg" }}
         isActive={false}
         onClick={vi.fn()}
       />
     );
-    expect(screen.getByTestId("icon-wifi")).toBeInTheDocument();
+    const img = screen.getByRole("img", { name: "Imagen representativa de Cabaña" });
+    expect(img).toHaveAttribute("src", "https://img.example.com/cabana.jpg");
   });
 
-  it("falls back gracefully when category.icon is not in ICON_MAP", () => {
+  it("renders an accessible fallback, not a lodging feature icon, when imageUrl is absent", () => {
+    render(<CategoryCard category={baseCategory} isActive={false} onClick={vi.fn()} />);
+    expect(
+      screen.getByRole("img", { name: "Imagen no disponible para Cabaña" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Imagen representativa de Cabaña" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("falls back to the accessible placeholder, preserving layout, when the image fails to load", () => {
     render(
       <CategoryCard
-        category={{ ...baseCategory, icon: "unknown-icon" }}
+        category={{ ...baseCategory, imageUrl: "https://img.example.com/broken.jpg" }}
         isActive={false}
         onClick={vi.fn()}
       />
     );
-    expect(screen.queryByTestId("icon-unknown-icon")).not.toBeInTheDocument();
-    expect(screen.getByText("Cabaña")).toBeInTheDocument();
+    const img = screen.getByRole("img", { name: "Imagen representativa de Cabaña" });
+    fireEvent.error(img);
+    expect(
+      screen.getByRole("img", { name: "Imagen no disponible para Cabaña" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Imagen representativa de Cabaña" })
+    ).not.toBeInTheDocument();
   });
 });
