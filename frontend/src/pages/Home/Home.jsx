@@ -17,6 +17,17 @@ registerLocale("es", es);
 // closing the tab ends the session because sessionStorage is tab-scoped.
 const RECOMMENDATIONS_STORAGE_KEY = "tuhospedaje.recommendations.v1";
 
+function createRecommendationSeed() {
+	try {
+		return crypto.randomUUID();
+	} catch {
+		return `fallback-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-seed`.slice(
+			0,
+			64,
+		);
+	}
+}
+
 function readStoredRecommendationSession() {
 	try {
 		const raw = sessionStorage.getItem(RECOMMENDATIONS_STORAGE_KEY);
@@ -61,7 +72,7 @@ export default function Home() {
 	// lives in a ref because updating it from a response must not itself
 	// re-trigger a fetch (see design.md §1, item 6-8).
 	const [recSeed, setRecSeed] = useState(
-		() => readStoredRecommendationSession()?.seed ?? crypto.randomUUID(),
+		() => readStoredRecommendationSession()?.seed ?? createRecommendationSeed(),
 	);
 	const revisionRef = useRef(readStoredRecommendationSession()?.revision ?? null);
 	const [recStatus, setRecStatus] = useState("idle"); // idle | loading | error
@@ -126,7 +137,7 @@ export default function Home() {
 	function handleRefreshRecommendations() {
 		revisionRef.current = null;
 		setPage(0);
-		setRecSeed(crypto.randomUUID());
+		setRecSeed(createRecommendationSeed());
 	}
 
 	useEffect(() => {
