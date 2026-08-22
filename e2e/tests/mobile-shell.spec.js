@@ -60,3 +60,65 @@ test.describe('Mobile shell — Home', () => {
     }
   });
 });
+
+// WU10/US-34.1-S3: WhatsApp must stay in the lower/right region without
+// causing horizontal overflow at both required narrow breakpoints.
+test.describe('Mobile shell — WhatsApp placement', () => {
+  test.describe('at 320px', () => {
+    test.use({ viewport: { width: 320, height: 844 } });
+
+    test('the WhatsApp button stays visible and reachable with no horizontal overflow', async ({ page, homePage }) => {
+      await homePage.open('/');
+      const button = page.getByRole('button', { name: 'Contactar por WhatsApp' });
+      await expect(button).toBeVisible();
+      await expectTouchTarget(button);
+      await expectNoHorizontalOverflow(page);
+
+      const box = await button.boundingBox();
+      const viewportWidth = page.viewportSize()?.width ?? 320;
+      // Right/lower region: right edge within the viewport, positioned in
+      // the lower half of the visible screen.
+      expect(box.x + box.width).toBeLessThanOrEqual(viewportWidth + 1);
+      expect(box.y).toBeGreaterThan(300);
+    });
+  });
+
+  test.describe('at 390px', () => {
+    test('the WhatsApp button stays visible with no horizontal overflow', async ({ page, homePage }) => {
+      await homePage.open('/');
+      const button = page.getByRole('button', { name: 'Contactar por WhatsApp' });
+      await expect(button).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    });
+  });
+});
+
+// WU3/US-9.2-S3: the mobile/touch admin-unavailable state must appear
+// (instead of a broken/partial admin layout) at narrow, touch-capable
+// viewports, and must be accessible for a direct/deep-link visit.
+test.describe('Mobile shell — Admin unavailable state', () => {
+  test.use({ hasTouch: true });
+
+  test.describe('at 320px', () => {
+    test.use({ viewport: { width: 320, height: 844 } });
+
+    test('shows an accessible, focused unavailable message instead of the admin shell', async ({ page, loginPage }) => {
+      // Not the `adminUser` fixture: that fixture itself asserts the full
+      // desktop admin shell renders, which never happens under touch+narrow
+      // viewport — the exact condition this test verifies.
+      const email = process.env.TEST_ADMIN_EMAIL || 'admin@tuhospedaje.com';
+      const password = process.env.TEST_ADMIN_PASSWORD || 'Admin1';
+      await loginPage.open('/login');
+      await loginPage.login(email, password);
+      await page.waitForURL('/');
+
+      await page.goto('/administración');
+      const status = page.locator('.admin-mobile-block[role="status"]');
+      await expect(status).toBeVisible();
+      await expect(status.locator('h2')).toHaveText('Panel no disponible en móvil');
+      await expect(status.locator('h2')).toBeFocused();
+      await expect(page.locator('[data-testid="admin-nav-dashboard"]')).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+    });
+  });
+});
