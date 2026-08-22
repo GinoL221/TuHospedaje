@@ -2,6 +2,7 @@ package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.lodging.RecommendationPageResponse;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.dto.reservation.OccupiedRange;
 import com.tuhospedaje.entity.Category;
@@ -30,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -258,6 +263,62 @@ public class LodgingServiceImpl implements LodgingService {
                 cb.like(cb.lower(root.get("email")), pattern),
                 cb.like(cb.lower(root.get("address")), pattern)
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecommendationPageResponse findRecommendations(String seed, int page, int size, String requestedRevision) {
+        List<Lodging> eligible = lodgingRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+        String revision = recommendationRevision(eligible);
+        boolean reset = requestedRevision != null && !requestedRevision.equals(revision);
+        List<Lodging> ordered = new ArrayList<>(eligible);
+        Collections.shuffle(ordered, new Random(recommendationSeed(seed, revision)));
+        if (isDefaultIdOrder(ordered)) {
+            Collections.rotate(ordered, 1);
+        }
+
+        int pageSize = Math.max(1, Math.min(size, RANDOM_RESULT_SIZE));
+        int totalItems = ordered.size();
+        int totalPages = totalItems == 0 ? 0 : (int) Math.ceil((double) totalItems / pageSize);
+        int currentPage = totalPages == 0 ? 0 : (reset ? 0 : Math.min(page, totalPages - 1));
+        int fromIndex = totalPages == 0 ? 0 : currentPage * pageSize;
+        int toIndex = totalPages == 0 ? 0 : Math.min(fromIndex + pageSize, totalItems);
+        List<LodgingDTO> lodgings = ordered.subList(fromIndex, toIndex).stream()
+                .map(LodgingDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        return new RecommendationPageResponse(enrichWithRatings(lodgings), currentPage, totalItems, totalPages, revision, reset);
+    }
+
+    private String recommendationRevision(List<Lodging> eligible) {
+        String ids = eligible.stream().map(Lodging::getId).map(String::valueOf).collect(Collectors.joining(","));
+        return "v1-" + java.util.HexFormat.of().formatHex(sha256(ids));
+    }
+
+    private long recommendationSeed(String seed, String revision) {
+        byte[] hash = sha256(seed + ":" + revision);
+        long value = 0;
+        for (int index = 0; index < Long.BYTES; index++) {
+            value = (value << Byte.SIZE) | (hash[index] & 0xffL);
+        }
+        return value;
+    }
+
+    private byte[] sha256(String value) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 must be available", exception);
+        }
+    }
+
+    private boolean isDefaultIdOrder(List<Lodging> lodgings) {
+        for (int index = 1; index < lodgings.size(); index++) {
+            if (lodgings.get(index - 1).getId().compareTo(lodgings.get(index).getId()) > 0) {
+                return false;
+            }
+        }
+        return lodgings.size() > 1;
     }
 
     @Override
