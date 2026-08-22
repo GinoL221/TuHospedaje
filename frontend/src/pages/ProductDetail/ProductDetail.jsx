@@ -30,7 +30,10 @@ export default function ProductDetail() {
 	const [showGallery, setShowGallery] = useState(false);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
-	const [selectionConflict, setSelectionConflict] = useState(false);
+	const [selectionConflict, setSelectionConflict] = useState({ lodgingId: id, visible: false });
+	if (selectionConflict.lodgingId !== id) {
+		setSelectionConflict({ lodgingId: id, visible: false });
+	}
 	const [showShare, setShowShare] = useState(false);
 	const thumbnailStripRef = useRef(null);
 	const thumbnailRefs = useRef([]);
@@ -110,7 +113,7 @@ export default function ProductDetail() {
 	) {
 		setCheckIn(null);
 		setCheckOut(null);
-		setSelectionConflict(true);
+		setSelectionConflict({ lodgingId: id, visible: true });
 	}
 
 	if (!lodging)
@@ -271,7 +274,7 @@ export default function ProductDetail() {
 							Todas las fechas están disponibles.
 						</p>
 					)}
-					{selectionConflict && (
+					{selectionConflict.visible && (
 						<p className="availability-alert" role="alert">
 							Las fechas seleccionadas ya no están disponibles. Elegí otro
 							rango.
@@ -285,7 +288,7 @@ export default function ProductDetail() {
 								id="product-check-in"
 								selected={checkIn}
 								onChange={(date) => {
-									setSelectionConflict(false);
+									setSelectionConflict({ lodgingId: id, visible: false });
 									setCheckIn(date);
 								}}
 								selectsStart
@@ -304,7 +307,7 @@ export default function ProductDetail() {
 								id="product-check-out"
 								selected={checkOut}
 								onChange={(date) => {
-									setSelectionConflict(false);
+									setSelectionConflict({ lodgingId: id, visible: false });
 									setCheckOut(date);
 								}}
 								selectsEnd

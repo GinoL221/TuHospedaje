@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import {
 	customRender,
 	screen,
@@ -19,6 +19,16 @@ vi.mock("../../services/api");
 
 function BookingSentinel() {
 	return <div data-testid="booking-sentinel">booking page</div>;
+}
+
+function LodgingNavigation() {
+	const navigate = useNavigate();
+	return (
+		<>
+			<button type="button" onClick={() => navigate("/lodgings/2")}>Ver otro alojamiento</button>
+			<button type="button" onClick={() => navigate("/lodgings/1")}>Volver al alojamiento</button>
+		</>
+	);
 }
 
 const lodgingFixture = {
@@ -100,7 +110,15 @@ function renderProductDetail({
 } = {}) {
 	return customRender(
 		<Routes>
-			<Route path="/lodgings/:id" element={<ProductDetail />} />
+			<Route
+				path="/lodgings/:id"
+				element={
+					<>
+						<LodgingNavigation />
+						<ProductDetail />
+					</>
+				}
+			/>
 			<Route path="/booking/:id" element={<BookingSentinel />} />
 			<Route path="/login" element={<LoginSentinel />} />
 		</Routes>,
@@ -420,6 +438,62 @@ describe("ProductDetail - availability state machine", () => {
 		expect(screen.getByLabelText("Check-in")).toHaveValue("");
 		expect(screen.getByLabelText("Check-out")).toHaveValue("");
 		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+	});
+
+	it("clears a selection conflict when navigation starts loading another lodging", async () => {
+		let availabilityCallIndex = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/") && endpoint.includes("/availability")) {
+				const responses = [
+					{ available: true, occupiedRanges: [] },
+					{ available: false, occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }] },
+				];
+				return Promise.resolve(responses[Math.min(availabilityCallIndex++, 1)]);
+			}
+			if (endpoint === "/lodgings/1") return Promise.resolve(lodgingFixture);
+			if (endpoint === "/lodgings/2")
+				return Promise.resolve({ ...lodgingFixture, id: 2, name: "Cabaña del Bosque" });
+			if (endpoint.startsWith("/ratings/lodging/"))
+				return Promise.resolve({ average: 0, count: 0, ratings: [] });
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Todas las fechas están disponibles.");
+		await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 15th, 2026");
+		await selectDateByLabelPart(user, screen.getByLabelText("Check-out"), "July 16th, 2026");
+		await screen.findByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.");
+
+		await user.click(screen.getByRole("button", { name: "Ver otro alojamiento" }));
+
+		await waitFor(() =>
+			expect(screen.queryByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.")).not.toBeInTheDocument(),
+		);
+
+		await user.click(screen.getByRole("button", { name: "Volver al alojamiento" }));
+		expect(screen.queryByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.")).not.toBeInTheDocument();
+	});
+
+	it("clears a selection conflict after the user reselects a valid date range", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{ available: true, occupiedRanges: [] },
+				{ available: false, occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }] },
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Todas las fechas están disponibles.");
+		await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 15th, 2026");
+		await selectDateByLabelPart(user, screen.getByLabelText("Check-out"), "July 16th, 2026");
+		await screen.findByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.");
+
+		await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 17th, 2026");
+		await selectDateByLabelPart(user, screen.getByLabelText("Check-out"), "July 18th, 2026");
+
+		expect(screen.queryByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.")).not.toBeInTheDocument();
 	});
 });
 
