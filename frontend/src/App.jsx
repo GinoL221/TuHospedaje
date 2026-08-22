@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
 import RequireAuth from "./components/RequireAuth";
@@ -21,9 +21,17 @@ const BookingConfirmationPage = lazy(() => import("./pages/Booking/BookingConfir
 const MyReservationsPage = lazy(() => import("./pages/MyReservations/MyReservationsPage"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized/Unauthorized"));
 
+// Canonical administration route plus its compatibility alias. Both are
+// checked so the shell suppressor never flashes Header/Footer while the
+// alias redirects to the canonical destination.
+const ADMIN_PATH_PREFIXES = ["/administración", "/admin"];
+function isAdminPath(pathname) {
+  return ADMIN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 function AppLayout() {
   const { pathname } = useLocation();
-  const isAdmin = pathname.startsWith("/admin");
+  const isAdmin = isAdminPath(pathname);
 
   return (
     <>
@@ -46,7 +54,11 @@ function AppLayout() {
             </Route>
 
             <Route element={<RequireAdmin />}>
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/administración" element={<Admin />} />
+              <Route
+                path="/admin"
+                element={<Navigate to="/administración" replace />}
+              />
             </Route>
           </Routes>
         </Suspense>

@@ -49,7 +49,7 @@ export default function Header() {
               />
 				{user.role === "ADMIN" ? (
 					<Link
-						to="/admin"
+						to="/administración"
 						className="nav-link nav-username"
 						onClick={() => setMenuOpen(false)}
 					>
