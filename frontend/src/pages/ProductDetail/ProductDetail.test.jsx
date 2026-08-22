@@ -6,6 +6,7 @@ import {
 	screen,
 	userEvent,
 	makeAuthValue,
+	waitFor,
 } from "../../test/test-utils";
 import ProductDetail from "./ProductDetail";
 import { get } from "../../services/api";
@@ -45,6 +46,41 @@ function mockGetDefaults({
 		if (endpoint.startsWith("/ratings/lodging/")) {
 			return Promise.resolve({ average: 0, count: 0, ratings: [], ...ratings });
 		}
+		return Promise.resolve(null);
+	});
+}
+
+function deferred() {
+	let resolve;
+	let reject;
+	const promise = new Promise((res, rej) => {
+		resolve = res;
+		reject = rej;
+	});
+	return { promise, resolve, reject };
+}
+
+// Lets a test control each successive call to the availability endpoint
+// independently (e.g. the initial dateless load vs. a later dated
+// re-fetch triggered by selecting both check-in/check-out).
+function mockGetSequenced({
+	lodging = lodgingFixture,
+	ratings = {},
+	availabilityResponses = [{}],
+} = {}) {
+	let availabilityCallIndex = 0;
+	get.mockImplementation((endpoint) => {
+		if (endpoint.startsWith(`/lodgings/${lodging.id}/availability`)) {
+			const entry =
+				availabilityResponses[
+					Math.min(availabilityCallIndex, availabilityResponses.length - 1)
+				];
+			availabilityCallIndex += 1;
+			return typeof entry === "function" ? entry() : Promise.resolve(entry);
+		}
+		if (endpoint === `/lodgings/${lodging.id}`) return Promise.resolve(lodging);
+		if (endpoint.startsWith("/ratings/lodging/"))
+			return Promise.resolve({ average: 0, count: 0, ratings: [], ...ratings });
 		return Promise.resolve(null);
 	});
 }
@@ -197,6 +233,193 @@ describe("ProductDetail - navigation to booking", () => {
 		const sameDayInCheckoutCalendar = getDateCellByLabelPart("July 15th, 2026");
 
 		expect(sameDayInCheckoutCalendar).toHaveAttribute("aria-disabled", "true");
+	});
+});
+
+describe("ProductDetail - availability state machine", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.setSystemTime(new Date("2026-07-15"));
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("shows an accessible loading status while availability resolves, then enables the date pickers", async () => {
+		const pending = deferred();
+		mockGetSequenced({ availabilityResponses: [() => pending.promise] });
+		const authValue = makeAuthValue();
+		renderProductDetail({ authValue });
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"Comprobando disponibilidad",
+		);
+		expect(screen.getByLabelText("Check-in")).toBeDisabled();
+		expect(screen.getByLabelText("Check-out")).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+
+		pending.resolve({ available: true, occupiedRanges: [] });
+		await screen.findByText("Todas las fechas están disponibles.");
+
+		expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
+		expect(screen.getByLabelText("Check-out")).not.toBeDisabled();
+	});
+
+	it("shows a usable status with zero occupied ranges instead of an error or indefinite loading state", async () => {
+		mockGetSequenced({ availabilityResponses: [{ available: true, occupiedRanges: [] }] });
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(
+			await screen.findByText("Todas las fechas están disponibles."),
+		).toHaveAttribute("role", "status");
+	});
+
+	it("disables occupied dates in the check-in calendar and blocks their selection", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }],
+				},
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
+
+		await user.click(screen.getByLabelText("Check-in"));
+		const occupiedCell = getDateCellByLabelPart("July 15th, 2026");
+
+		expect(occupiedCell).toHaveAttribute("aria-disabled", "true");
+	});
+
+	it("shows an accessible error with Retry on initial failure and keeps controls disabled", async () => {
+		mockGetSequenced({ availabilityResponses: [() => Promise.reject(new Error("down"))] });
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("No pudimos obtener la disponibilidad");
+		expect(screen.getByLabelText("Check-in")).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+	});
+
+	it("clears the error and enables controls when the user retries successfully", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				() => Promise.reject(new Error("down")),
+				{ available: true, occupiedRanges: [] },
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByRole("alert");
+
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		await screen.findByText("Todas las fechas están disponibles.");
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
+	});
+
+	it("keeps actionable failure feedback when the initial request and a retry both fail", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				() => Promise.reject(new Error("down")),
+				() => Promise.reject(new Error("still down")),
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByRole("alert");
+
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("No pudimos obtener la disponibilidad");
+		expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+	});
+
+	it("marks a stale refresh as non-authoritative and keeps Reserve disabled after a ready state", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{ available: true, occupiedRanges: [] },
+				() => Promise.reject(new Error("refresh failed")),
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 16th, 2026",
+		);
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent(
+			"No pudimos actualizar la disponibilidad",
+		);
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+	});
+
+	it("clears an already-selected range and shows a conflict message once a refreshed response marks it occupied", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{ available: true, occupiedRanges: [] },
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }],
+				},
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 16th, 2026",
+		);
+
+		expect(
+			await screen.findByText(
+				"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+			),
+		).toHaveAttribute("role", "alert");
+		expect(screen.getByLabelText("Check-in")).toHaveValue("");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
 	});
 });
 
