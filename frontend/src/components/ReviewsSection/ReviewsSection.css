@@ -52,13 +52,63 @@
 }
 
 .star-selector {
+  display: flex;
+  gap: 4px;
   font-size: 2rem;
-  cursor: pointer;
   margin-bottom: 12px;
 }
 
-.star-selector span {
+.star-selector button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
   transition: color 0.15s ease;
+}
+
+.star-selector button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.eligibility-status {
+  color: var(--text);
+  opacity: 0.75;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+}
+
+.eligibility-alert,
+.submit-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: #c0392b;
+}
+
+.eligibility-alert p,
+.submit-error {
+  margin: 0;
+  font-weight: 600;
+}
+
+.eligibility-alert button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
 }
 
 .review-form textarea {
