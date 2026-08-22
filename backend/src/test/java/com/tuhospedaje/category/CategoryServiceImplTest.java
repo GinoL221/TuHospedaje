@@ -136,6 +136,26 @@ class CategoryServiceImplTest {
     }
 
     @Test
+    void shouldPreserveTheStoredImageWhenUpdateDtoOmitsIt() {
+        Category existing = new Category();
+        existing.setId(3L);
+        existing.setName("Hotel");
+        existing.setImageUrl("https://cdn.tuhospedaje.test/hotel.jpg");
+
+        CategoryDTO input = new CategoryDTO();
+        input.setId(3L);
+        input.setName("Hotel");
+
+        when(categoryRepository.findById(3L)).thenReturn(Optional.of(existing));
+        when(categoryRepository.findByNameIgnoreCase("Hotel")).thenReturn(Optional.empty());
+        when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CategoryDTO response = categoryService.update(input);
+
+        assertThat(response.getImageUrl()).isEqualTo("https://cdn.tuhospedaje.test/hotel.jpg");
+    }
+
+    @Test
     void shouldThrowWhenUpdateCategoryDoesNotExist() {
         CategoryDTO input = new CategoryDTO();
         input.setId(777L);

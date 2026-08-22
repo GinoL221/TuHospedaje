@@ -1,0 +1,2 @@
+ALTER TABLE categories
+    ADD COLUMN IF NOT EXISTS image_url VARCHAR(2048) NULL AFTER icon;
