@@ -147,8 +147,8 @@ describe("useAvailability - retrying the last request", () => {
 
     await act(async () => {
       await result.current.load({
-        checkIn: new Date("2026-08-01T00:00:00Z"),
-        checkOut: new Date("2026-08-03T00:00:00Z"),
+        checkIn: new Date(2026, 7, 1),
+        checkOut: new Date(2026, 7, 3),
       });
     });
     expect(result.current.status).toBe("error");
@@ -162,6 +162,57 @@ describe("useAvailability - retrying the last request", () => {
       "/lodgings/5/availability?checkIn=2026-08-01&checkOut=2026-08-03",
     );
     expect(result.current.status).toBe("ready");
+  });
+});
+
+describe("useAvailability - availability query dates", () => {
+  it("uses local calendar fields rather than UTC serialization for a single-digit month and day", async () => {
+    const utcSpy = vi
+      .spyOn(Date.prototype, "toISOString")
+      .mockReturnValue("1999-12-31T00:00:00.000Z");
+    try {
+      get.mockResolvedValueOnce(availabilityResponse([]));
+      const { result } = renderHook(() => useAvailability(11));
+
+      await act(async () => {
+        await result.current.load({
+          checkIn: new Date(2026, 0, 9),
+          checkOut: new Date(2026, 0, 10),
+        });
+      });
+
+      expect(get).toHaveBeenCalledWith(
+        "/lodgings/11/availability?checkIn=2026-01-09&checkOut=2026-01-10",
+      );
+    } finally {
+      utcSpy.mockRestore();
+    }
+  });
+
+  it("includes only checkIn when checkOut is omitted", async () => {
+    get.mockResolvedValueOnce(availabilityResponse([]));
+    const { result } = renderHook(() => useAvailability(12));
+
+    await act(async () => {
+      await result.current.load({ checkIn: new Date(2026, 10, 5) });
+    });
+
+    expect(get).toHaveBeenCalledWith(
+      "/lodgings/12/availability?checkIn=2026-11-05",
+    );
+  });
+
+  it("includes only checkOut when checkIn is omitted", async () => {
+    get.mockResolvedValueOnce(availabilityResponse([]));
+    const { result } = renderHook(() => useAvailability(13));
+
+    await act(async () => {
+      await result.current.load({ checkOut: new Date(2026, 10, 6) });
+    });
+
+    expect(get).toHaveBeenCalledWith(
+      "/lodgings/13/availability?checkOut=2026-11-06",
+    );
   });
 });
 
