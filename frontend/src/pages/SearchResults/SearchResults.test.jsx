@@ -79,15 +79,89 @@ describe("SearchResults - empty and error states", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the error message when the search rejects", async () => {
-    getCategories.mockResolvedValue(categoriesFixture);
-    getFavorites.mockResolvedValue([]);
-    searchLodgings.mockRejectedValue(new Error("fail"));
-    renderSearchResults();
+      it("shows the error message when the search rejects", async () => {
+        getCategories.mockResolvedValue(categoriesFixture);
+        getFavorites.mockResolvedValue([]);
+        searchLodgings.mockRejectedValue(new Error("fail"));
+        renderSearchResults();
 
-    expect(await screen.findByText("fail")).toBeInTheDocument();
-  });
-});
+        expect(await screen.findByText("fail")).toBeInTheDocument();
+      });
+    });
+
+    function deferred() {
+      let resolve;
+      const promise = new Promise((res) => {
+        resolve = res;
+      });
+      return { promise, resolve };
+    }
+
+    describe("SearchResults - pending list transition", () => {
+      it("keeps previous results visible and marks the list busy while a new search is in flight", async () => {
+        mockServiceDefaults();
+        const user = userEvent.setup();
+        renderSearchResults();
+        await screen.findByText("Cabaña del Lago");
+
+        const pending = deferred();
+        searchLodgings.mockReturnValue(pending.promise);
+
+        await user.click(screen.getByRole("checkbox", { name: "Cabaña" }));
+        await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+
+        const list = screen.getByRole("list", { name: 'Resultados para "Bariloche"' });
+        expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+        expect(list).toHaveAttribute("aria-busy", "true");
+        expect(list).toHaveClass("is-pending");
+        expect(screen.getByRole("status")).toHaveTextContent("Buscando...");
+
+        pending.resolve(
+          searchResponse({
+            lodgings: [lodgingFixture({ id: 2, name: "Hotel Centro" })],
+          }),
+        );
+
+        expect(await screen.findByText("Hotel Centro")).toBeInTheDocument();
+        expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+        expect(
+          screen.getByRole("list", { name: 'Resultados para "Bariloche"' }),
+        ).toHaveAttribute("aria-busy", "false");
+      });
+
+      it("keeps the previous page visible and busy until the next page arrives", async () => {
+        mockServiceDefaults();
+        searchLodgings.mockResolvedValue(
+          searchResponse({
+            lodgings: [lodgingFixture()],
+            totalPages: 2,
+          }),
+        );
+        const user = userEvent.setup();
+        renderSearchResults();
+        await screen.findByText("Cabaña del Lago");
+
+        const pending = deferred();
+        searchLodgings.mockReturnValue(pending.promise);
+        await user.click(screen.getByRole("button", { name: "Siguiente" }));
+
+        expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+        expect(
+          screen.getByRole("list", { name: 'Resultados para "Bariloche"' }),
+        ).toHaveAttribute("aria-busy", "true");
+
+        pending.resolve(
+          searchResponse({
+            lodgings: [lodgingFixture({ id: 2, name: "Hotel Centro" })],
+            currentPage: 1,
+            totalPages: 2,
+          }),
+        );
+
+        expect(await screen.findByText("Hotel Centro")).toBeInTheDocument();
+        expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+      });
+    });
 
 // Per the PR2/PR3 backend contract, categories are now always filtered
 // server-side (no more client-side intersection): the component always
