@@ -272,8 +272,9 @@ describe("ProductDetail - availability state machine", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getByRole("status")).toHaveTextContent(
-			"Comprobando disponibilidad",
+		expect(screen.getByText("Comprobando disponibilidad...")).toHaveAttribute(
+			"role",
+			"status",
 		);
 		expect(screen.getByLabelText("Check-in")).toBeDisabled();
 		expect(screen.getByLabelText("Check-out")).toBeDisabled();
