@@ -155,7 +155,7 @@ jobs:
             "SELECT id FROM users WHERE email = '${{ steps.test-user.outputs.email }}';")
           mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -e \
             "INSERT INTO reservations (lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version)
-             VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Runner', '${{ steps.test-user.outputs.email }}', '+5491100000000', 100.00, 'CONFIRMED', 0);"
+             VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Fixture', 'e2e-fixture@tuhospedaje.com', '+5491100000000', 100.00, 'CONFIRMED', 0);"
 
       - name: Install Playwright
         working-directory: e2e
