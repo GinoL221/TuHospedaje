@@ -84,6 +84,8 @@ test.describe('Mobile shell — WhatsApp placement', () => {
   });
 
   test.describe('at 390px', () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
     test('the WhatsApp button stays visible with no horizontal overflow', async ({ page, homePage }) => {
       await homePage.open('/');
       const button = page.getByRole('button', { name: 'Contactar por WhatsApp' });

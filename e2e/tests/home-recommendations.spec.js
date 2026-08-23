@@ -83,10 +83,14 @@ test.describe('Home recommendations — stable pagination', () => {
       if (req.url().includes('/lodgings/recommendations')) recommendationCalls += 1;
     });
 
+    const unexpectedRecommendation = page
+      .waitForRequest((req) => req.url().includes('/lodgings/recommendations'), { timeout: 500 })
+      .then(() => true)
+      .catch(() => false);
     const categoryRequest = page.waitForRequest((req) => req.url().includes('/lodgings?category='));
     await page.locator('.category-tag').first().click();
     await categoryRequest;
-    await page.waitForTimeout(200);
+    expect(await unexpectedRecommendation).toBe(false);
     expect(recommendationCalls).toBe(0);
 
     await page.getByRole('button', { name: 'Mostrar todos' }).click();

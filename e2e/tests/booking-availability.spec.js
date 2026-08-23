@@ -110,12 +110,15 @@ test.describe('BookingPage — preflight and conflict recovery', () => {
   async function selectDate(page, pickerId, date) {
     await page.locator(`#${pickerId}`).click();
     const popper = page.locator('.react-datepicker-popper').last();
-    const targetLabel = date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    const targetLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const header = (await popper.locator('.react-datepicker__current-month').innerText()).toLowerCase();
       if (header.includes(targetLabel.toLowerCase())) break;
       await popper.locator('.react-datepicker__navigation--next').click();
     }
+    await expect(popper.locator('.react-datepicker__current-month')).toHaveText(
+      new RegExp(targetLabel, 'i'),
+    );
     await popper
       .locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)')
       .filter({ hasText: new RegExp(`^${date.getDate()}$`) })
