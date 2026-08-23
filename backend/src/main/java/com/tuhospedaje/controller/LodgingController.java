@@ -2,6 +2,7 @@ package com.tuhospedaje.controller;
 
 import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.lodging.RecommendationPageResponse;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.service.LodgingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -91,6 +93,16 @@ public class LodgingController {
             return ResponseEntity.ok(lodgingService.findAllPaginated(page, size));
         }
         return ResponseEntity.ok(lodgingService.findAll());
+    }
+
+    @GetMapping("/recommendations")
+    @Operation(summary = "Get stable random recommendations", description = "Returns a deterministic recommendation page for a client seed and catalog revision.")
+    public ResponseEntity<RecommendationPageResponse> recommendations(
+            @RequestParam @Pattern(regexp = "[A-Za-z0-9_-]{16,64}") String seed,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "{error.size.negative}") @Max(value = 10, message = "{error.size.max}") int size,
+            @RequestParam(required = false) String revision) {
+        return ResponseEntity.ok(lodgingService.findRecommendations(seed, page, size, revision));
     }
 
     @GetMapping("/random")
