@@ -1,4 +1,4 @@
-import { customRender, screen, userEvent, waitFor } from "../../test/test-utils";
+import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
 import AdminCategories from "./AdminCategories";
 import { get, post, put, del } from "../../services/api";
 
@@ -9,6 +9,7 @@ const categoryFixture = (overrides = {}) => ({
   name: "Cabañas",
   description: "Alojamientos tipo cabaña.",
   icon: "fa-solid fa-tree",
+  imageUrl: "https://img.example.com/cabanas.jpg",
   ...overrides,
 });
 
@@ -74,6 +75,21 @@ describe("AdminCategories - create", () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  it("focuses the first invalid field without scheduling delayed DOM work", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+    const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
+
+    fireEvent.click(screen.getByTestId("admin-save-btn"));
+
+    expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 100);
+    expect(screen.getByTestId("field-name")).toHaveFocus();
+  });
+
   it("submits the form and refreshes the list on success", async () => {
     get.mockResolvedValue([]);
     post.mockResolvedValue(categoryFixture());
@@ -85,6 +101,7 @@ describe("AdminCategories - create", () => {
 
     await user.type(screen.getByTestId("field-name"), "Cabañas");
     await user.type(screen.getByTestId("field-description"), "Alojamientos tipo cabaña.");
+    await user.type(screen.getByTestId("field-image-url"), "https://img.example.com/cabanas.jpg");
 
     get.mockResolvedValue([categoryFixture()]);
 
@@ -92,7 +109,11 @@ describe("AdminCategories - create", () => {
 
     expect(post).toHaveBeenCalledWith(
       "/categories",
-      expect.objectContaining({ name: "Cabañas", description: "Alojamientos tipo cabaña." })
+      expect.objectContaining({
+        name: "Cabañas",
+        description: "Alojamientos tipo cabaña.",
+        imageUrl: "https://img.example.com/cabanas.jpg",
+      })
     );
 
     await waitFor(() => {
@@ -218,5 +239,139 @@ describe("AdminCategories - delete", () => {
       expect(alertSpy).toHaveBeenCalledWith("No se pudo eliminar");
     });
     expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
+  });
+});
+
+describe("AdminCategories - representative image", () => {
+  it("marks the representative image as required when creating a category", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+
+    expect(screen.getByTestId("field-image-url")).toBeRequired();
+  });
+
+  it("does not mark the representative image as required when editing a category", async () => {
+    get.mockResolvedValue([categoryFixture()]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("Cabañas");
+    await user.click(screen.getByTestId("row-edit-btn"));
+
+    expect(screen.getByTestId("field-image-url")).not.toBeRequired();
+  });
+
+  it("renders a representative-image URL field in the create form", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+
+    expect(screen.getByTestId("field-image-url")).toHaveValue("");
+  });
+
+  it("rejects create submission without a representative image and does not call the API", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+    await user.type(screen.getByTestId("field-name"), "Cabañas");
+    await user.click(screen.getByTestId("admin-save-btn"));
+
+    const fieldError = await screen.findByTestId("error-image-url");
+    expect(fieldError).toHaveTextContent("La imagen representativa es obligatoria");
+    const field = screen.getByTestId("field-image-url");
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveAttribute("aria-describedby", "error-image-url");
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed representative-image URL and does not call the API", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+    await user.type(screen.getByTestId("field-name"), "Cabañas");
+    await user.type(screen.getByTestId("field-image-url"), "not-a-url");
+    await user.click(screen.getByTestId("admin-save-btn"));
+
+    expect(await screen.findByTestId("error-image-url")).toHaveTextContent(
+      "La imagen debe ser una URL https válida"
+    );
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("shows a live preview once a syntactically valid https URL is entered", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+
+    expect(screen.queryByTestId("image-url-preview")).not.toBeInTheDocument();
+
+    await user.type(screen.getByTestId("field-image-url"), "https://img.example.com/cabana.jpg");
+
+    expect(screen.getByTestId("image-url-preview")).toHaveAttribute(
+      "src",
+      "https://img.example.com/cabana.jpg"
+    );
+  });
+
+  it("prefills the representative-image field when editing an existing category", async () => {
+    get.mockResolvedValue([categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" })]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("Cabañas");
+    await user.click(screen.getByTestId("row-edit-btn"));
+
+    expect(screen.getByTestId("field-image-url")).toHaveValue(
+      "https://img.example.com/existing.jpg"
+    );
+  });
+
+  it("preserves the stored image when an edit omits the representative-image field", async () => {
+    get.mockResolvedValue([categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" })]);
+    put.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("Cabañas");
+    await user.click(screen.getByTestId("row-edit-btn"));
+    await user.clear(screen.getByTestId("field-image-url"));
+    await user.click(screen.getByTestId("admin-save-btn"));
+
+    expect(put).toHaveBeenCalledWith(
+      "/categories/1",
+      expect.objectContaining({ imageUrl: null })
+    );
+    expect(screen.queryByTestId("error-image-url")).not.toBeInTheDocument();
+  });
+
+  it("rejects an invalid replacement on edit without erasing the existing valid image", async () => {
+    get.mockResolvedValue([categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" })]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("Cabañas");
+    await user.click(screen.getByTestId("row-edit-btn"));
+    await user.clear(screen.getByTestId("field-image-url"));
+    await user.type(screen.getByTestId("field-image-url"), "not-a-url");
+    await user.click(screen.getByTestId("admin-save-btn"));
+
+    expect(await screen.findByTestId("error-image-url")).toBeInTheDocument();
+    expect(put).not.toHaveBeenCalled();
   });
 });

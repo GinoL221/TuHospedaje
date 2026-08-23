@@ -27,4 +27,7 @@ public class Category {
 
     @Column
     private String icon;
+
+    @Column(name = "image_url", length = 2048)
+    private String imageUrl;
 }

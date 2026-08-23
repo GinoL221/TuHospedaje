@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -64,6 +65,7 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         CategoryDTO request = new CategoryDTO();
         request.setName("Hotel 5 estrellas");
         request.setDescription("Alojamientos de lujo");
+        request.setImageUrl("https://cdn.tuhospedaje.test/categories/hotel-5-estrellas.jpg");
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
@@ -88,6 +90,7 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
         CategoryDTO request = new CategoryDTO();
         request.setName("Cabaña");
         request.setDescription("Otra");
+        request.setImageUrl("https://cdn.tuhospedaje.test/categories/cabana.jpg");
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
@@ -158,6 +161,35 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.id").value(saved.getId()))
                 .andExpect(jsonPath("$.name").value("Hotel Boutique"))
                 .andExpect(jsonPath("$.description").value("Actualizado"));
+    }
+
+    @Test
+    void shouldPreserveStoredImageWhenEditOmitsImageUrlAfterReload() throws Exception {
+        Category category = new Category();
+        category.setName("Cabaña con imagen");
+        category.setDescription("Original");
+        category.setImageUrl("https://cdn.tuhospedaje.test/categories/original.jpg");
+        Category saved = categoryRepository.save(category);
+
+        var request = objectMapper.createObjectNode()
+                .put("name", "Cabaña renovada")
+                .put("description", "Actualizada");
+        assertFalse(request.has("imageUrl"));
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/categories/{id}", saved.getId())
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/categories/{id}", saved.getId())
+                        .cookie(accessCookie(authHeader)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl")
+                        .value("https://cdn.tuhospedaje.test/categories/original.jpg"));
     }
 
     @Test

@@ -1,26 +1,41 @@
-import { Tag } from "lucide-react";
-import { ICON_MAP } from "../../utils/iconMap";
-import Icon from "../../components/Icons/Icon";
+import { useState } from "react";
+import { ImageOff } from "lucide-react";
 
+// A category's representative image (US-21.2) is deliberately distinct from
+// the lodging feature icons rendered by <Icon>/ICON_MAP elsewhere in the
+// app: reusing a feature icon here would conflate category media with
+// amenity representation, which is the exact gap this component closes.
 export default function CategoryCard({ category, isActive, onClick }) {
-  const hasIcon = category.icon && ICON_MAP[category.icon];
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(category.imageUrl) && !imageFailed;
+
   return (
-    <div
+    <button
+      type="button"
       className={"category-tag" + (isActive ? " active" : "")}
       onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && onClick()}
+      aria-pressed={isActive}
     >
-      {hasIcon ? (
-        <Icon name={category.icon} size={28} className="category-icon" />
+      {hasImage ? (
+        <img
+          src={category.imageUrl}
+          alt={`Imagen representativa de ${category.name}`}
+          className="category-image"
+          onError={() => setImageFailed(true)}
+        />
       ) : (
-        <Tag size={28} className="category-icon" />
+        <span
+          className="category-image category-image-fallback"
+          role="img"
+          aria-label={`Imagen no disponible para ${category.name}`}
+        >
+          <ImageOff size={24} aria-hidden="true" />
+        </span>
       )}
       <span className="category-name">{category.name}</span>
       {category.description && (
         <span className="category-description">{category.description}</span>
       )}
-    </div>
+    </button>
   );
 }
