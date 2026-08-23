@@ -13,12 +13,15 @@ import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.impl.RatingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,30 +46,37 @@ class RatingServiceImplTest {
     @Mock
     private ReservationRepository reservationRepository;
 
-    @InjectMocks
+    private static final Clock FIXED_CLOCK =
+            Clock.fixed(Instant.parse("2026-08-15T12:00:00Z"), ZoneId.of("America/Argentina/Buenos_Aires"));
+
     private RatingServiceImpl ratingService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUpService() {
+        ratingService = new RatingServiceImpl(ratingRepository, lodgingRepository, reservationRepository, FIXED_CLOCK);
+    }
 
     // --- createRating ---
 
     @Test
     void createRating_whenNoConfirmedReservation_throwsIllegalArgumentException() {
         User user = buildUser(1L);
-        when(reservationRepository.existsByUserIdAndLodgingIdAndStatus(
-                1L, 10L, ReservationStatus.CONFIRMED)).thenReturn(false);
+        when(reservationRepository.existsByUserIdAndLodgingIdAndStatusAndCheckOutBefore(
+                1L, 10L, ReservationStatus.CONFIRMED, LocalDate.now(FIXED_CLOCK))).thenReturn(false);
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> ratingService.createRating(user, 10L, 4, "Great stay")
         );
-        assertThat(ex.getMessage()).contains("reserva confirmada");
+        assertThat(ex.getMessage()).contains("confirmada");
         verify(lodgingRepository, never()).findById(any());
     }
 
     @Test
     void createRating_whenLodgingNotFound_throwsResourceNotFoundException() {
         User user = buildUser(1L);
-        when(reservationRepository.existsByUserIdAndLodgingIdAndStatus(
-                1L, 99L, ReservationStatus.CONFIRMED)).thenReturn(true);
+        when(reservationRepository.existsByUserIdAndLodgingIdAndStatusAndCheckOutBefore(
+                1L, 99L, ReservationStatus.CONFIRMED, LocalDate.now(FIXED_CLOCK))).thenReturn(true);
         when(lodgingRepository.findById(99L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(
@@ -81,8 +91,8 @@ class RatingServiceImplTest {
         User user = buildUser(1L);
         Lodging lodging = buildLodging(10L);
 
-        when(reservationRepository.existsByUserIdAndLodgingIdAndStatus(
-                1L, 10L, ReservationStatus.CONFIRMED)).thenReturn(true);
+        when(reservationRepository.existsByUserIdAndLodgingIdAndStatusAndCheckOutBefore(
+                1L, 10L, ReservationStatus.CONFIRMED, LocalDate.now(FIXED_CLOCK))).thenReturn(true);
         when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
         when(ratingRepository.findByUserIdAndLodgingId(1L, 10L)).thenReturn(Optional.empty());
 
@@ -101,8 +111,8 @@ class RatingServiceImplTest {
         User user = buildUser(1L);
         Lodging lodging = buildLodging(10L);
 
-        when(reservationRepository.existsByUserIdAndLodgingIdAndStatus(
-                1L, 10L, ReservationStatus.CONFIRMED)).thenReturn(true);
+        when(reservationRepository.existsByUserIdAndLodgingIdAndStatusAndCheckOutBefore(
+                1L, 10L, ReservationStatus.CONFIRMED, LocalDate.now(FIXED_CLOCK))).thenReturn(true);
         when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
 
         Rating existing = buildRating(1L, lodging, user, 2, "Old comment");
