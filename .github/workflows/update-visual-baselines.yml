@@ -78,6 +78,9 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: http://localhost:8080/api
+          # Kept in sync with ci.yml's e2e job so the baseline is captured
+          # under the same conditions the real check runs under.
+          VITE_WHATSAPP_NUMBER: "5491123456789"
         run: |
           npm ci
           nohup npm run dev -- --port 5173 --strictPort > ../frontend.log 2>&1 &
@@ -101,6 +104,16 @@ jobs:
             -d "{\"firstName\":\"E2E\",\"lastName\":\"Runner\",\"email\":\"$EMAIL\",\"password\":\"Test1234\"}" \
             > /dev/null
           echo "email=$EMAIL" >> "$GITHUB_OUTPUT"
+
+      # Kept in sync with ci.yml's e2e job — without this, "my reservations"
+      # would be captured empty, the opposite of what the real check sees.
+      - name: Seed a confirmed past reservation for the e2e test user
+        run: |
+          USER_ID=$(mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -N -e \
+            "SELECT id FROM users WHERE email = '${{ steps.test-user.outputs.email }}';")
+          mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -e \
+            "INSERT INTO reservations (lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version)
+             VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Runner', '${{ steps.test-user.outputs.email }}', '+5491100000000', 100.00, 'CONFIRMED', 0);"
 
       - name: Install Playwright
         working-directory: e2e
