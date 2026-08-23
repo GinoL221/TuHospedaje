@@ -16,6 +16,31 @@ const BLANK_PNG = Buffer.from(
   'base64',
 );
 
+/** Fixed payload so my-reservations screenshots do not depend on seed or ephemeral users. */
+const visualReservation = {
+  id: 9100,
+  lodgingId: 1,
+  lodgingName: 'Hotel Buenos Aires Centro',
+  city: 'Buenos Aires',
+  status: 'CONFIRMED',
+  checkIn: '2099-03-10',
+  checkOut: '2099-03-14',
+  guestName: 'E2E Visual',
+  guestEmail: 'e2e.visual@tuhospedaje.com',
+  guestPhone: '+54 11 4000 0000',
+  totalPrice: 48000,
+};
+
+async function useMyReservationsHarness(page) {
+  await page.route('**/reservations/my', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([visualReservation]),
+    });
+  });
+}
+
 test.describe('Visual regression', () => {
   test.beforeEach(async ({ page }) => {
     await page.route(
@@ -68,8 +93,10 @@ test.describe('Visual regression', () => {
   test.skip(!process.env.TEST_USER_EMAIL, 'Set TEST_USER_EMAIL and TEST_USER_PASSWORD in .env');
 
   test('my reservations page (authenticated)', async ({ page, authUser }) => {
+    await useMyReservationsHarness(page);
     await page.goto('/my-reservations');
     await page.waitForLoadState('networkidle');
+    await expect(page.getByText(visualReservation.lodgingName)).toBeVisible();
     await expect(page).toHaveScreenshot('my-reservations.png', {
       mask: maskImages(page),
     });

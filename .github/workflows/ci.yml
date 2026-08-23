@@ -7,7 +7,7 @@ on:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
@@ -21,7 +21,7 @@ jobs:
       - run: ./mvnw -B verify
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
@@ -37,7 +37,7 @@ jobs:
 
   e2e:
     needs: [backend, frontend]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -45,7 +45,8 @@ jobs:
         browser: [chromium, firefox, mobile-chromium]
     services:
       mariadb:
-        image: mariadb:11
+        # Match backend Testcontainers (mariadb:10.11) so lock/gap behavior aligns.
+        image: mariadb:10.11
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           # Named tuhospedaje_test (not just tuhospedaje) because the dev

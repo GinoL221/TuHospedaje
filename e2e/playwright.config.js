@@ -32,7 +32,9 @@ module.exports = defineConfig({
     },
     {
       name: 'firefox',
-      testIgnore: '**/mobile-*.spec.js',
+      // Visual baselines run on Chromium only: Firefox text AA is runner-sensitive
+      // and doubles CI cost without proportional product signal (functional suite still runs).
+      testIgnore: ['**/mobile-*.spec.js', '**/visual.spec.js'],
       use: { browserName: 'firefox' },
     },
     {
