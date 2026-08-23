@@ -41,14 +41,13 @@ describe("Footer - content", () => {
     expect(instagramLink).toHaveAttribute("target", "_blank");
   });
 
-  it("mounts the single WhatsApp link inside the footer when configured", () => {
-    vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
+  it("mounts the single always-visible WhatsApp control inside the footer", () => {
     render(<Footer />);
 
     const footer = screen.getByRole("contentinfo");
-    const whatsappLink = screen.getByRole("link", { name: "Contactar por WhatsApp" });
+    const whatsappButton = screen.getByRole("button", { name: "Contactar por WhatsApp" });
 
-    expect(footer).toContainElement(whatsappLink);
-    expect(screen.getAllByRole("link", { name: "Contactar por WhatsApp" })).toHaveLength(1);
+    expect(footer).toContainElement(whatsappButton);
+    expect(screen.getAllByRole("button", { name: "Contactar por WhatsApp" })).toHaveLength(1);
   });
 });
