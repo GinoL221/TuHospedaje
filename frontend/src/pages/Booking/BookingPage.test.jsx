@@ -34,7 +34,7 @@ const lodgingFixture = {
 function mockGetDefaults({
 	lodging = lodgingFixture,
 	myReservations = [],
-	availability = {},
+	availability = { available: true, occupiedRanges: [] },
 } = {}) {
 	get.mockImplementation((endpoint) => {
 		if (endpoint === "/reservations/my") {
@@ -46,6 +46,42 @@ function mockGetDefaults({
 		if (endpoint === `/lodgings/${lodging?.id ?? 1}`) {
 			return Promise.resolve(lodging);
 		}
+		return Promise.resolve(null);
+	});
+}
+
+function deferred() {
+	let resolve;
+	let reject;
+	const promise = new Promise((res, rej) => {
+		resolve = res;
+		reject = rej;
+	});
+	return { promise, resolve, reject };
+}
+
+// Lets a test control each successive call to the availability endpoint
+// independently (initial load, a dated re-load, and the submit-time
+// preflight all hit the same endpoint).
+function mockGetSequenced({
+	lodging = lodgingFixture,
+	myReservations = [],
+	availabilityResponses = [{}],
+} = {}) {
+	let availabilityCallIndex = 0;
+	get.mockImplementation((endpoint) => {
+		if (endpoint === "/reservations/my") {
+			return Promise.resolve(myReservations);
+		}
+		if (endpoint.startsWith(`/lodgings/${lodging.id}/availability`)) {
+			const entry =
+				availabilityResponses[
+					Math.min(availabilityCallIndex, availabilityResponses.length - 1)
+				];
+			availabilityCallIndex += 1;
+			return typeof entry === "function" ? entry() : Promise.resolve(entry);
+		}
+		if (endpoint === `/lodgings/${lodging.id}`) return Promise.resolve(lodging);
 		return Promise.resolve(null);
 	});
 }
@@ -350,6 +386,9 @@ describe("BookingPage - check-out calendar minimum date", () => {
 		renderBookingPage({ authValue });
 
 		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
 
 		await selectDateByLabelPart(
 			user,
@@ -399,6 +438,9 @@ describe("BookingPage - occupied date filtering", () => {
 		renderBookingPage({ authValue });
 
 		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
 
 		const checkInInput = screen.getByLabelText("Check-in");
 		await user.click(checkInInput);
@@ -420,6 +462,279 @@ describe("BookingPage - occupied date filtering", () => {
 
 		// A date outside the occupied range entirely is also selectable.
 		expect(july25).toHaveAttribute("aria-disabled", "false");
+	});
+});
+
+describe("BookingPage - availability preflight and conflict recovery", () => {
+	const preloadedDatesEntry = {
+		pathname: "/booking/1",
+		state: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+	};
+
+	it("keeps the submit button disabled while preloaded dates await the current availability load", async () => {
+		const pending = deferred();
+		mockGetSequenced({ availabilityResponses: [() => pending.promise] });
+		renderBookingPage({
+			authValue: makeAuthValue(),
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"Comprobando disponibilidad",
+		);
+		expect(
+			screen.getByRole("button", { name: "Confirmar reserva" }),
+		).toBeDisabled();
+
+		pending.resolve({ available: true, occupiedRanges: [] });
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Confirmar reserva" }),
+			).not.toBeDisabled(),
+		);
+	});
+
+	it("blocks a direct form submit and shows an inline message until availability reports ready, without calling post", async () => {
+		const pending = deferred();
+		mockGetSequenced({ availabilityResponses: [() => pending.promise] });
+		const { container } = renderBookingPage({
+			authValue: makeAuthValue(),
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+
+		fireEvent.submit(container.querySelector("form.booking-form"));
+
+		expect(
+			await screen.findByText(
+				"Estamos verificando la disponibilidad. Probá de nuevo en un instante.",
+			),
+		).toBeInTheDocument();
+		expect(post).not.toHaveBeenCalled();
+
+		pending.resolve({ available: true, occupiedRanges: [] });
+	});
+
+	it("runs a successful range preflight before creating the reservation", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{ available: true, occupiedRanges: [] },
+				{ available: true, occupiedRanges: [] },
+			],
+		});
+		const reservationFixture = {
+			id: 99,
+			checkIn: "2026-07-01",
+			checkOut: "2026-07-04",
+		};
+		post.mockResolvedValue(reservationFixture);
+		const authValue = makeAuthValue();
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue,
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Confirmar reserva" }),
+			).not.toBeDisabled(),
+		);
+
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(post).toHaveBeenCalledWith("/reservations", {
+			lodgingId: 1,
+			checkIn: "2026-07-01",
+			checkOut: "2026-07-04",
+			guestName: `${authValue.user.firstName} ${authValue.user.lastName}`,
+			guestEmail: authValue.user.email,
+			guestPhone: "123456",
+		});
+		expect(
+			await screen.findByTestId("confirmation-sentinel"),
+		).toBeInTheDocument();
+	});
+
+	it("shows an inline conflict message and never calls post when the preflight finds the range unavailable", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{ available: true, occupiedRanges: [] },
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-01", checkOut: "2026-07-04" }],
+				},
+			],
+		});
+		const authValue = makeAuthValue();
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue,
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Confirmar reserva" }),
+			).not.toBeDisabled(),
+		);
+
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(
+			await screen.findByText(
+				"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+			),
+		).toHaveAttribute("role", "alert");
+		expect(post).not.toHaveBeenCalled();
+		expect(
+			screen.queryByTestId("confirmation-sentinel"),
+		).not.toBeInTheDocument();
+	});
+
+	it("keeps the backend overlap rejection as final authority, shows an inline conflict, and refreshes availability for recovery", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{ available: true, occupiedRanges: [] },
+				{ available: true, occupiedRanges: [] },
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-01", checkOut: "2026-07-04" }],
+				},
+			],
+		});
+		post.mockRejectedValue(
+			new Error("Las fechas seleccionadas ya no están disponibles."),
+		);
+		const authValue = makeAuthValue();
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue,
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Confirmar reserva" }),
+			).not.toBeDisabled(),
+		);
+
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(
+			await screen.findByText(
+				"Las fechas seleccionadas ya no están disponibles.",
+			),
+		).toHaveAttribute("role", "alert");
+		expect(post).toHaveBeenCalledTimes(1);
+		expect(
+			screen.queryByTestId("confirmation-sentinel"),
+		).not.toBeInTheDocument();
+
+		// Recovery refresh: a third availability call (beyond the initial load
+		// and the pre-post preflight) proves the hook re-fetched current
+		// occupied ranges after the backend rejected the booking.
+		await waitFor(() =>
+			expect(
+				get.mock.calls.filter((call) =>
+					call[0].startsWith("/lodgings/1/availability"),
+				).length,
+			).toBe(3),
+		);
+	});
+
+	it("shows an accessible error with Retry when the initial availability load fails, and clears it on a successful retry", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				() => Promise.reject(new Error("down")),
+				{ available: true, occupiedRanges: [] },
+			],
+		});
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue: makeAuthValue(),
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("No pudimos obtener la disponibilidad");
+		expect(
+			screen.getByRole("button", { name: "Confirmar reserva" }),
+		).toBeDisabled();
+		expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
+		expect(screen.getByLabelText("Check-out")).not.toBeDisabled();
+
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		await screen.findByText("Todas las fechas están disponibles.");
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Confirmar reserva" }),
+		).not.toBeDisabled();
+	});
+
+	it("keeps date inputs editable after a stale refresh while submission remains blocked", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.setSystemTime(new Date("2026-07-01T12:00:00"));
+		try {
+			mockGetSequenced({
+				availabilityResponses: [
+					{ available: true, occupiedRanges: [] },
+					() => Promise.reject(new Error("down")),
+				],
+			});
+			const user = userEvent.setup();
+			renderBookingPage({
+				authValue: makeAuthValue(),
+				initialEntries: [preloadedDatesEntry],
+			});
+
+			await screen.findByText("Cabaña del Lago");
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Confirmar reserva" })).not.toBeDisabled(),
+			);
+			await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 2nd, 2026");
+
+			await screen.findByRole("alert");
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
+			expect(screen.getByLabelText("Check-out")).not.toBeDisabled();
+			expect(screen.getByRole("button", { name: "Confirmar reserva" })).toBeDisabled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("asks the user to retry when the preflight returns no technical result", async () => {
+		mockGetSequenced({
+			availabilityResponses: [{ available: true, occupiedRanges: [] }, null],
+		});
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue: makeAuthValue(),
+			initialEntries: [preloadedDatesEntry],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Confirmar reserva" })).not.toBeDisabled(),
+		);
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(await screen.findByText("No pudimos verificar la disponibilidad. Reintentá antes de confirmar la reserva.")).toHaveAttribute("role", "alert");
+		expect(post).not.toHaveBeenCalled();
 	});
 });
 

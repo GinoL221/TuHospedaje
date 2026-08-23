@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { get, post } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import useAvailability from "../../hooks/useAvailability";
 
 import DatePicker from "react-datepicker";
 import Icon from "../../components/Icons/Icon";
@@ -25,10 +26,15 @@ export default function BookingPage() {
   const [lodging, setLodging] = useState(null);
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
-  const [occupiedDates, setOccupiedDates] = useState([]);
   const [guestPhone, setGuestPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const {
+    status: availabilityStatus,
+    occupiedRanges,
+    load: loadAvailability,
+    retry: retryAvailability,
+  } = useAvailability(lodgingId);
 
   useEffect(() => {
     get("/reservations/my")
@@ -54,32 +60,15 @@ export default function BookingPage() {
       });
   }, [lodgingId]);
 
+  // Replaces the two duplicated availability fetches (see ProductDetail):
+  // dateless load on mount/reset, dated reload once both dates are picked.
   useEffect(() => {
-    get(`/lodgings/${lodgingId}/availability`)
-      .then((data) => {
-        if (data?.occupiedRanges) {
-          setOccupiedDates(data.occupiedRanges);
-        }
-      })
-      .catch(() => {});
-  }, [lodgingId]);
-
-  useEffect(() => {
-    if (!checkIn || !checkOut) return;
-
-    get(
-      `/lodgings/${lodgingId}/availability?checkIn=${formatDate(checkIn)}&checkOut=${formatDate(checkOut)}`,
-    )
-      .then((data) => {
-        if (data?.occupiedRanges) {
-          setOccupiedDates(data.occupiedRanges);
-        }
-      })
-      .catch(() => {});
-  }, [lodgingId, checkIn, checkOut]);
+    if ((checkIn && !checkOut) || (!checkIn && checkOut)) return;
+    loadAvailability({ checkIn, checkOut });
+  }, [checkIn, checkOut, loadAvailability]);
 
   function isDateOccupied(date) {
-    return occupiedDates.some(
+    return occupiedRanges.some(
       (range) =>
         date >= new Date(range.checkIn) && date < new Date(range.checkOut),
     );
@@ -99,8 +88,33 @@ export default function BookingPage() {
       return;
     }
 
+    // No attempt starts until the hook reports a current ready result —
+    // stale/failed availability never proves a free range (US-23.2).
+    if (availabilityStatus !== "ready") {
+      setError(
+        "Estamos verificando la disponibilidad. Probá de nuevo en un instante.",
+      );
+      return;
+    }
+
     try {
       setLoading(true);
+
+      // Client-side preflight is a UX improvement only; it never replaces
+      // the backend's locked overlap check below.
+      const preflight = await loadAvailability({ checkIn, checkOut });
+      if (preflight?.available === false) {
+        setError(
+          "Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+        );
+        return;
+      }
+      if (!preflight || preflight.available !== true) {
+        setError(
+          "No pudimos verificar la disponibilidad. Reintentá antes de confirmar la reserva.",
+        );
+        return;
+      }
 
       const reservation = await post("/reservations", {
         lodgingId: Number(lodgingId),
@@ -118,7 +132,10 @@ export default function BookingPage() {
         },
       });
     } catch (err) {
+      // Backend lock rejected an overlap the preflight missed (a race);
+      // refresh availability so the user can recover.
       setError(err.message);
+      retryAvailability();
     } finally {
       setLoading(false);
     }
@@ -191,6 +208,30 @@ export default function BookingPage() {
             required
           />
 
+          {availabilityStatus === "loading" && (
+            <p className="availability-status" role="status">
+              Comprobando disponibilidad...
+            </p>
+          )}
+          {(availabilityStatus === "error" ||
+            availabilityStatus === "stale") && (
+            <div className="availability-alert" role="alert">
+              <p>
+                {availabilityStatus === "stale"
+                  ? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
+                  : "No pudimos obtener la disponibilidad de este alojamiento."}
+              </p>
+              <button type="button" onClick={retryAvailability}>
+                Reintentar
+              </button>
+            </div>
+          )}
+          {availabilityStatus === "ready" && occupiedRanges.length === 0 && (
+            <p className="availability-status" role="status">
+              Todas las fechas están disponibles.
+            </p>
+          )}
+
           <label htmlFor="booking-check-in">Check-in</label>
           <DatePicker
             id="booking-check-in"
@@ -203,6 +244,7 @@ export default function BookingPage() {
             filterDate={(date) => !isDateOccupied(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Check-in"
+            disabled={availabilityStatus === "loading"}
           />
 
           <label htmlFor="booking-check-out">Check-out</label>
@@ -217,6 +259,7 @@ export default function BookingPage() {
             filterDate={(date) => !isDateOccupied(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Check-out"
+            disabled={availabilityStatus === "loading"}
           />
 
           {nights > 0 && (
@@ -226,9 +269,21 @@ export default function BookingPage() {
             </p>
           )}
 
-          {error && <p className="error">{error}</p>}
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
 
-          <button type="submit" disabled={loading || !checkIn || !checkOut}>
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              !checkIn ||
+              !checkOut ||
+              availabilityStatus !== "ready"
+            }
+          >
             {loading ? "Confirmando..." : "Confirmar reserva"}
           </button>
         </form>

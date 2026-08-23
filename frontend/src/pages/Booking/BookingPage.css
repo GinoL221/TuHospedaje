@@ -222,6 +222,41 @@
   font-size: 0.88rem;
 }
 
+.availability-status {
+  color: var(--text);
+  opacity: 0.75;
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+}
+
+.availability-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: var(--radius-sm);
+}
+
+.availability-alert p {
+  margin: 0;
+  font-weight: 600;
+  color: #c0392b;
+  font-size: 0.85rem;
+}
+
+.availability-alert button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
   .booking-layout {
