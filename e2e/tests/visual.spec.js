@@ -4,7 +4,31 @@ const { test, expect } = require('../fixtures/fixtures');
 // Images from Unsplash are masked to avoid flakiness from external CDN variance.
 const maskImages = (page) => [page.locator('img')];
 
+// A 1x1 PNG fulfilled instantly for every non-local image request (avatar,
+// footer social icons, lodging/category photos). maskImages() only covers
+// whatever <img> already exists in the DOM at capture time — without this,
+// a real network round-trip to an external host can still be in flight when
+// the screenshot is taken, so the real (unmasked) image occasionally renders
+// in time and the snapshot no longer matches. Fulfilling locally removes
+// that race entirely; it changes nothing about what the real app does.
+const BLANK_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGM4ceIEAAS0AlkWLoFAAAAAAElFTkSuQmCC',
+  'base64',
+);
+
 test.describe('Visual regression', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(
+      (url) => url.hostname !== 'localhost',
+      (route) => {
+        if (route.request().resourceType() === 'image') {
+          return route.fulfill({ body: BLANK_PNG, contentType: 'image/png' });
+        }
+        return route.continue();
+      },
+    );
+  });
+
   test('home page', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
