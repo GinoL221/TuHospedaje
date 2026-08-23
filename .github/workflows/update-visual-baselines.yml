@@ -2,10 +2,11 @@ name: Update visual baselines
 
 # Manual only. The e2e job in ci.yml runs the suite as-is; this workflow
 # regenerates tests/visual.spec.js-snapshots/*-linux.png directly on the
-# same ubuntu-latest runner so pixel comparisons stop drifting against
+# same ubuntu-24.04 runner so pixel comparisons stop drifting against
 # baselines captured on someone's local machine. Review the diff (open
 # the PNGs) before trusting a green run afterward — this only proves the
 # new baseline matches itself, not that the UI is correct.
+# Visual suite runs on Chromium only (see playwright.config.js firefox testIgnore).
 on:
   workflow_dispatch:
 
@@ -14,11 +15,11 @@ permissions:
 
 jobs:
   update-snapshots:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       mariadb:
-        image: mariadb:11
+        image: mariadb:10.11
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: tuhospedaje_test
@@ -78,6 +79,9 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: http://localhost:8080/api
+          # Kept in sync with ci.yml's e2e job so the baseline is captured
+          # under the same conditions the real check runs under.
+          VITE_WHATSAPP_NUMBER: "5491123456789"
         run: |
           npm ci
           nohup npm run dev -- --port 5173 --strictPort > ../frontend.log 2>&1 &
@@ -102,11 +106,21 @@ jobs:
             > /dev/null
           echo "email=$EMAIL" >> "$GITHUB_OUTPUT"
 
+      # Kept in sync with ci.yml's e2e job — without this, "my reservations"
+      # would be captured empty, the opposite of what the real check sees.
+      - name: Seed a confirmed past reservation for the e2e test user
+        run: |
+          USER_ID=$(mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -N -e \
+            "SELECT id FROM users WHERE email = '${{ steps.test-user.outputs.email }}';")
+          mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -e \
+            "INSERT INTO reservations (lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version)
+             VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Fixture', 'e2e-fixture@tuhospedaje.com', '+5491100000000', 100.00, 'CONFIRMED', 0);"
+
       - name: Install Playwright
         working-directory: e2e
         run: |
           npm ci
-          npx playwright install --with-deps chromium firefox
+          npx playwright install --with-deps chromium
 
       - name: Regenerate visual baselines
         working-directory: e2e
@@ -117,7 +131,7 @@ jobs:
           TEST_USER_EMAIL: ${{ steps.test-user.outputs.email }}
           TEST_USER_PASSWORD: Test1234
           TEST_USER_NAME: E2E
-        run: npx playwright test tests/visual.spec.js --update-snapshots
+        run: npx playwright test tests/visual.spec.js --project=chromium --update-snapshots
 
       - name: Commit updated baselines
         run: |

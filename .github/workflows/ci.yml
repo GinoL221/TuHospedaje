@@ -7,7 +7,7 @@ on:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
@@ -21,7 +21,7 @@ jobs:
       - run: ./mvnw -B verify
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
@@ -37,7 +37,7 @@ jobs:
 
   e2e:
     needs: [backend, frontend]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -45,7 +45,8 @@ jobs:
         browser: [chromium, firefox, mobile-chromium]
     services:
       mariadb:
-        image: mariadb:11
+        # Match backend Testcontainers (mariadb:10.11) so lock/gap behavior aligns.
+        image: mariadb:10.11
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           # Named tuhospedaje_test (not just tuhospedaje) because the dev
@@ -113,6 +114,10 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: http://localhost:8080/api
+          # Must satisfy WhatsAppButton's PHONE_PATTERN (/^[1-9]\d{7,14}$/) or the
+          # button falls into its "not configured" state before ever calling
+          # window.open, breaking tests/whatsapp.spec.js's handoff assertions.
+          VITE_WHATSAPP_NUMBER: "5491123456789"
         run: |
           npm ci
           nohup npm run dev -- --port 5173 --strictPort > ../frontend.log 2>&1 &
@@ -138,6 +143,20 @@ jobs:
             -d "{\"firstName\":\"E2E\",\"lastName\":\"Runner\",\"email\":\"$EMAIL\",\"password\":\"Test1234\"}" \
             > /dev/null
           echo "email=$EMAIL" >> "$GITHUB_OUTPUT"
+
+      # tests/reviews.spec.js assumes LODGING_ELIGIBLE (id=1, seeded by
+      # V1_9000__dev_demo_data.sql) already has a CONFIRMED reservation with a
+      # past checkout for the test user — the public API rejects past dates
+      # (@FutureOrPresent on CreateReservationRequest), so this can only be
+      # done with a direct insert, once the just-registered user's real id is
+      # known.
+      - name: Seed a confirmed past reservation for the e2e test user
+        run: |
+          USER_ID=$(mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -N -e \
+            "SELECT id FROM users WHERE email = '${{ steps.test-user.outputs.email }}';")
+          mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -e \
+            "INSERT INTO reservations (lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version)
+             VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Fixture', 'e2e-fixture@tuhospedaje.com', '+5491100000000', 100.00, 'CONFIRMED', 0);"
 
       - name: Install Playwright
         working-directory: e2e

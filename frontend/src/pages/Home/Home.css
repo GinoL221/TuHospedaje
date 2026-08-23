@@ -559,6 +559,11 @@
 }
 
 @media (max-width: 480px) {
+  .section-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   .search-card,
   .categories,
   .recommendations {
