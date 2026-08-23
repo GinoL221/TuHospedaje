@@ -201,10 +201,24 @@ describe("App protected route authorization", () => {
 });
 
 describe("App admin route authorization", () => {
+  it("denies an anonymous visitor requesting /administración by redirecting to /login", async () => {
+    const admin = deferred();
+    await renderAppAt({
+      path: "/administración",
+      authValue: UNAUTHENTICATED,
+      pages: { "./pages/Admin/Admin": admin.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/login");
+    expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
+  });
+
   it("denies an authenticated non-admin visitor before the deferred Admin page resolves", async () => {
     const admin = deferred();
     await renderAppAt({
-      path: "/admin",
+      path: "/administración",
       authValue: AUTHENTICATED_USER,
       pages: { "./pages/Admin/Admin": admin.promise },
     });
@@ -219,7 +233,7 @@ describe("App admin route authorization", () => {
   it("keeps the shell suppressed, delays feedback, and replaces it immediately for an authorized admin", async () => {
     const admin = deferred();
     await renderAppAt({
-      path: "/admin",
+      path: "/administración",
       authValue: AUTHENTICATED_ADMIN,
       pages: { "./pages/Admin/Admin": admin.promise },
     });
@@ -239,7 +253,7 @@ describe("App admin route authorization", () => {
 
   it("does not flash loading feedback when the admin page resolves quickly", async () => {
     await renderAppAt({
-      path: "/admin",
+      path: "/administración",
       authValue: AUTHENTICATED_ADMIN,
       pages: { "./pages/Admin/Admin": { default: () => <main>Fast Admin</main> } },
     });
@@ -256,7 +270,7 @@ describe("App admin route authorization", () => {
     const reload = vi.fn();
     vi.spyOn(console, "error").mockImplementation(() => {});
     await renderAppAt({
-      path: "/admin",
+      path: "/administración",
       authValue: AUTHENTICATED_ADMIN,
       pages: { "./pages/Admin/Admin": admin.promise },
     });
@@ -266,6 +280,54 @@ describe("App admin route authorization", () => {
 
     expect(screen.getByRole("button", { name: "Recargar página" })).toBeInTheDocument();
     expect(reload).not.toHaveBeenCalled();
+    expect(screen.queryByText("Header shell")).not.toBeInTheDocument();
+  });
+});
+
+describe("App /admin compatibility alias", () => {
+  it("sends an anonymous visitor through the existing login boundary without rendering admin content", async () => {
+    const admin = deferred();
+    await renderAppAt({
+      path: "/admin",
+      authValue: UNAUTHENTICATED,
+      pages: { "./pages/Admin/Admin": admin.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/login");
+    expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
+  });
+
+  it("denies an authenticated non-admin visitor without rendering admin content", async () => {
+    const admin = deferred();
+    await renderAppAt({
+      path: "/admin",
+      authValue: AUTHENTICATED_USER,
+      pages: { "./pages/Admin/Admin": admin.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/unauthorized");
+    expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
+    expect(screen.getByText("Header shell")).toBeInTheDocument();
+  });
+
+  it("redirects /admin to /administración for an authorized admin, exposing identical content under the same guard", async () => {
+    await renderAppAt({
+      path: "/admin",
+      authValue: AUTHENTICATED_ADMIN,
+      pages: { "./pages/Admin/Admin": { default: () => <main>Admin resolved</main> } },
+    });
+    await act(async () => {});
+
+    // jsdom's URL implementation percent-encodes non-ASCII path segments when
+    // reporting window.location.pathname; this is the same literal
+    // destination as "/administración" (React Router decodes it for
+    // matching/rendering purposes, verified by the assertions below).
+    expect(window.location.pathname).toBe("/administraci%C3%B3n");
+    expect(screen.getByText("Admin resolved")).toBeInTheDocument();
     expect(screen.queryByText("Header shell")).not.toBeInTheDocument();
   });
 });

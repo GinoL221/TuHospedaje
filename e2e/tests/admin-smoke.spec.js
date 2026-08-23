@@ -47,6 +47,27 @@ test.describe('Admin shell smoke', () => {
     }
   });
 
+  test('direct navigation to the literal and encoded canonical /administración route loads the admin shell', async ({ adminUser }) => {
+    const { page } = adminUser;
+
+    const shellPresent = await page
+      .locator('[data-testid="admin-nav-dashboard"]')
+      .isVisible()
+      .catch(() => false);
+    if (!shellPresent) {
+      test.skip(true, 'Admin shell not accessible — stack may be down or admin seed missing');
+      return;
+    }
+
+    const adminPage = new AdminBasePage(page);
+
+    await adminPage.gotoCanonical();
+    await expect(page.locator('[data-testid="admin-nav-dashboard"]')).toBeVisible();
+
+    await adminPage.gotoEncoded();
+    await expect(page.locator('[data-testid="admin-nav-dashboard"]')).toBeVisible();
+  });
+
   test('each entity tab is reachable by clicking the sidebar nav', async ({ adminUser }) => {
     const { page } = adminUser;
 

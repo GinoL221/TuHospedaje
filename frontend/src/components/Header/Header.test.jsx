@@ -33,14 +33,14 @@ describe("Header - authenticated user", () => {
 		);
 	});
 
-	it("renders an admin name as navigation with the shared link classes", () => {
+	it("renders an admin name as navigation pointing to the canonical /administración route", () => {
 		customRender(<Header />, {
 			authValue: makeAuthValue({ user: mockAdmin }),
 		});
 
 		const adminLink = screen.getByRole("link", { name: "Test" });
 
-		expect(adminLink).toHaveAttribute("href", "/admin");
+		expect(adminLink).toHaveAttribute("href", "/administración");
 		expect(adminLink).toHaveClass("nav-link", "nav-username");
 	});
 

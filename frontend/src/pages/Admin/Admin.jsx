@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -36,6 +36,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("dashboard");
   const [isMobile, setIsMobile] = useState(false);
+  const mobileHeadingRef = useRef(null);
 
   useEffect(() => {
     const check = () => {
@@ -47,10 +48,18 @@ export default function Admin() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Focus the heading so a screen reader announces the unavailable state
+  // immediately when this route is opened directly (deep link/refresh).
+  useEffect(() => {
+    if (isMobile) mobileHeadingRef.current?.focus();
+  }, [isMobile]);
+
   if (isMobile) {
     return (
-      <div className="admin-mobile-block">
-        <h2>Panel no disponible en móvil</h2>
+      <div className="admin-mobile-block" role="status">
+        <h2 tabIndex={-1} ref={mobileHeadingRef}>
+          Panel no disponible en móvil
+        </h2>
         <p>Accedé desde una computadora.</p>
       </div>
     );

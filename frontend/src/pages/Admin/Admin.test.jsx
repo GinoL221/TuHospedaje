@@ -114,4 +114,16 @@ describe("Admin - mobile block", () => {
     expect(screen.getByText("Panel no disponible en móvil")).toBeInTheDocument();
     expect(screen.queryByTestId("admin-dashboard")).not.toBeInTheDocument();
   });
+
+  it("announces the unavailable state as an accessible status and focuses its heading for direct navigation", () => {
+    renderAdmin();
+
+    const status = screen.getByRole("status");
+    const heading = screen.getByRole("heading", {
+      name: "Panel no disponible en móvil",
+    });
+
+    expect(status).toContainElement(heading);
+    expect(heading).toHaveFocus();
+  });
 });
