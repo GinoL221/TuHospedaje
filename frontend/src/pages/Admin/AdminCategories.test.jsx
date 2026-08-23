@@ -1,4 +1,4 @@
-import { customRender, screen, userEvent, waitFor } from "../../test/test-utils";
+import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
 import AdminCategories from "./AdminCategories";
 import { get, post, put, del } from "../../services/api";
 
@@ -73,6 +73,21 @@ describe("AdminCategories - create", () => {
 
     expect(await screen.findByTestId("error-name")).toHaveTextContent("El nombre es obligatorio");
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it("focuses the first invalid field without scheduling delayed DOM work", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+    const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
+
+    fireEvent.click(screen.getByTestId("admin-save-btn"));
+
+    expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 100);
+    expect(screen.getByTestId("field-name")).toHaveFocus();
   });
 
   it("submits the form and refreshes the list on success", async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
@@ -31,6 +31,8 @@ export default function AdminCategories() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const nameInputRef = useRef(null);
+  const imageUrlInputRef = useRef(null);
 
   const resetForm = () => setForm({ name: "", description: "", icon: "", imageUrl: "" });
   const cancel = useConfirmCancel(form.name || form.description || form.icon || form.imageUrl, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
@@ -49,6 +51,14 @@ export default function AdminCategories() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (fieldErrors.name) {
+      nameInputRef.current?.focus();
+    } else if (fieldErrors.imageUrl) {
+      imageUrlInputRef.current?.focus();
+    }
+  }, [fieldErrors]);
 
   const openModal = (cat = null) => {
     if (cat) {
@@ -90,7 +100,6 @@ export default function AdminCategories() {
     const errs = validate();
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) {
-      setTimeout(() => document.querySelector(".input-error")?.focus(), 100);
       return;
     }
 
@@ -185,7 +194,7 @@ export default function AdminCategories() {
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
-                <input data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
+                <input ref={nameInputRef} data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
                 {fieldErrors.name && <span className="field-error" data-testid="error-name">{fieldErrors.name}</span>}
               </label>
               <label>
@@ -205,6 +214,7 @@ export default function AdminCategories() {
               <label className={editing ? undefined : "required-dot"}>
                 Imagen representativa (URL)
                 <input
+                  ref={imageUrlInputRef}
                   type="url"
                   data-testid="field-image-url"
                   value={form.imageUrl}
