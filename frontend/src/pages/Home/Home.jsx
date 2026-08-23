@@ -76,6 +76,8 @@ export default function Home() {
 	);
 	const revisionRef = useRef(readStoredRecommendationSession()?.revision ?? null);
 	const [recStatus, setRecStatus] = useState("idle"); // idle | loading | error
+	const [listBusy, setListBusy] = useState(false);
+	const [listGeneration, setListGeneration] = useState(0);
 	const requestIdRef = useRef(0);
 	const skipResetPageFetchRef = useRef(false);
 
@@ -89,9 +91,7 @@ export default function Home() {
 		// synchronously from inside an effect (see runSearch).
 		startTransition(() => {
 			setRecStatus("loading");
-			// Clear stale results before issuing the request so a slow/failed
-			// response can never be presented alongside the previous page.
-			setLodgings([]);
+			setListBusy(true);
 		});
 
 		getRecommendations({ seed: recSeed, page, revision: revisionRef.current ?? undefined })
@@ -101,6 +101,8 @@ export default function Home() {
 				writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
 				setLodgings(data.lodgings || []);
 				setTotalPages(data.totalPages || 1);
+				setListGeneration((generation) => generation + 1);
+				setListBusy(false);
 				setRecStatus("idle");
 				setPage((prev) => {
 					const actualPage =
@@ -111,17 +113,27 @@ export default function Home() {
 			})
 			.catch(() => {
 				if (requestId !== requestIdRef.current) return;
+				setListBusy(false);
 				setRecStatus("error");
 			});
 	}, [recSeed, page]);
 
 	const fetchCategoryLodgings = useCallback(() => {
+		const requestId = ++requestIdRef.current;
+		setListBusy(true);
 		get(`/lodgings?category=${selectedCategory}`)
 			.then((data) => {
+				if (requestId !== requestIdRef.current) return;
 				setLodgings(Array.isArray(data) ? data : []);
 				setTotalPages(1);
+				setListGeneration((generation) => generation + 1);
+				setListBusy(false);
 			})
-			.catch(console.error);
+			.catch((error) => {
+				if (requestId !== requestIdRef.current) return;
+				setListBusy(false);
+				console.error(error);
+			});
 	}, [selectedCategory]);
 
 	useEffect(() => {
@@ -281,20 +293,25 @@ export default function Home() {
 								{showSuggestions && (
 									<ul
 										id="city-suggestions-listbox"
-										className="city-suggestions"
-										role="listbox"
-										aria-label="Sugerencias de ciudades"
-									>
-										{loadingCities ? (
+									className={
+										"city-suggestions" +
+										(loadingCities ? " is-pending" : "")
+									}
+									role="listbox"
+									aria-label="Sugerencias de ciudades"
+									aria-busy={loadingCities}
+								>
+										{loadingCities && (
 											<li className="city-suggestions-loading" role="status">
 												Buscando...
 											</li>
-										) : suggestions.length === 0 ? (
+										)}
+										{!loadingCities && suggestions.length === 0 && (
 											<li className="city-suggestions-empty" role="status">
 												Sin resultados
 											</li>
-										) : (
-											suggestions.map((c, index) => (
+										)}
+										{suggestions.map((c, index) => (
 												<li
 													key={c}
 													id={`city-suggestion-${index}`}
@@ -308,8 +325,7 @@ export default function Home() {
 											>
 												{c}
 											</li>
-										))
-									)}
+										))}
 								</ul>
 							)}
 						</div>
@@ -406,23 +422,34 @@ export default function Home() {
 						</button>
 					</div>
 				)}
-				{(selectedCategory || recStatus === "idle") &&
-					(lodgings.length === 0 ? (
-						<p className="empty-state">
-							No hay alojamientos cargados todavía. Volvé más tarde.
-						</p>
-					) : (
-						<div className="hotel-list">
-							{lodgings.map((lodging) => (
-								<ProductCard
-									key={lodging.id}
-									lodging={lodging}
-									defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
-									onFavoriteToggle={handleFavoriteToggle}
-								/>
-							))}
-						</div>
-					))}
+				{lodgings.length > 0 && (
+					<div
+						key={listGeneration}
+						className={"hotel-list" + (listBusy ? " is-pending" : "")}
+						role="list"
+						aria-label={
+							selectedCategory
+								? categories.find((c) => c.id === selectedCategory)?.name ||
+									"Alojamientos"
+								: "Recomendaciones"
+						}
+						aria-busy={listBusy}
+					>
+						{lodgings.map((lodging) => (
+							<ProductCard
+								key={lodging.id}
+								lodging={lodging}
+								defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
+								onFavoriteToggle={handleFavoriteToggle}
+							/>
+						))}
+					</div>
+				)}
+				{!listBusy && recStatus !== "error" && lodgings.length === 0 && (
+					<p className="empty-state">
+						No hay alojamientos cargados todavía. Volvé más tarde.
+					</p>
+				)}
 				{!selectedCategory && totalPages > 1 && (
 					<div className="home-pagination">
 						<button disabled={page === 0} onClick={() => setPage(0)}>

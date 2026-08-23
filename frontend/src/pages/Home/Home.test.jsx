@@ -40,7 +40,7 @@ const lodgingFixture = {
 	pricePerNight: 100,
 	imageUrls: [],
 };
-const categoryFixture = { id: 1, name: "Cabaña", icon: null, imageUrl: null };
+const categoryFixture = { id: 1, name: "Cabaña", icon: "tree-pine", imageUrl: null };
 
 function recommendationsPage({
 	lodgings = [lodgingFixture],
@@ -109,7 +109,7 @@ describe("Home - lodgings render", () => {
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(get).toHaveBeenCalledWith(
-			`/lodgings/recommendations?seed=${FIXED_SEED}&page=0&size=10`,
+			`/lodgings/recommendations?seed=${FIXED_SEED}&page=0&size=8`,
 		);
 	});
 
@@ -179,7 +179,7 @@ describe("Home - recommendation snapshot persistence", () => {
 		await screen.findByText("Cabaña del Lago");
 
 		expect(get).toHaveBeenCalledWith(
-			"/lodgings/recommendations?seed=stored-seed-0123456789&page=0&size=10&revision=rev-stored",
+			"/lodgings/recommendations?seed=stored-seed-0123456789&page=0&size=8&revision=rev-stored",
 		);
 		expect(crypto.randomUUID).not.toHaveBeenCalled();
 	});
@@ -251,6 +251,119 @@ describe("Home - recommendation pagination stability", () => {
 	});
 });
 
+function deferred() {
+	let resolve;
+	const promise = new Promise((res) => {
+		resolve = res;
+	});
+	return { promise, resolve };
+}
+
+describe("Home - pending list transition", () => {
+	it("keeps the previous recommendation cards visible and marks the list busy while refresh is in flight", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderHome();
+		await screen.findByText("Cabaña del Lago");
+
+		const pending = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return pending.promise;
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+
+		crypto.randomUUID.mockReturnValue("22222222-2222-4222-8222-222222222222");
+		await user.click(
+			screen.getByRole("button", { name: "Actualizar recomendaciones" }),
+		);
+
+		const list = screen.getByRole("list", { name: "Recomendaciones" });
+		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(list).toHaveAttribute("aria-busy", "true");
+		expect(list).toHaveClass("is-pending");
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"Cargando recomendaciones...",
+		);
+
+		pending.resolve(
+			recommendationsPage({
+				lodgings: [{ ...lodgingFixture, id: 8, name: "Hotel La Perla" }],
+			}),
+		);
+
+		expect(await screen.findByText("Hotel La Perla")).toBeInTheDocument();
+		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+		expect(screen.getByRole("list", { name: "Recomendaciones" })).toHaveAttribute(
+			"aria-busy",
+			"false",
+		);
+	});
+
+	it("keeps the previous page visible and busy until the next page arrives", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({ totalPages: 2 }),
+		});
+		const user = userEvent.setup();
+		renderHome();
+		await screen.findByText("Cabaña del Lago");
+
+		const pending = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return pending.promise;
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+
+		await user.click(screen.getByRole("button", { name: "Siguiente" }));
+
+		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(screen.getByRole("list", { name: "Recomendaciones" })).toHaveAttribute(
+			"aria-busy",
+			"true",
+		);
+
+		pending.resolve(
+			recommendationsPage({
+				lodgings: [{ ...lodgingFixture, id: 2, name: "Casa de Playa" }],
+				currentPage: 1,
+				totalPages: 2,
+			}),
+		);
+
+		expect(await screen.findByText("Casa de Playa")).toBeInTheDocument();
+		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+	});
+
+	it("keeps recommendation cards visible and busy until category lodgings arrive", async () => {
+		mockGetDefaults({ categories: [categoryFixture] });
+		const user = userEvent.setup();
+		renderHome();
+		await screen.findByText("Cabaña del Lago");
+
+		const pending = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings?category=")) return pending.promise;
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([categoryFixture]);
+			return Promise.resolve(null);
+		});
+
+		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
+
+		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(screen.getByRole("list")).toHaveAttribute("aria-busy", "true");
+
+		pending.resolve([{ ...lodgingFixture, id: 4, name: "Cabaña Filtrada" }]);
+
+		expect(await screen.findByText("Cabaña Filtrada")).toBeInTheDocument();
+		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+	});
+});
+
 describe("Home - explicit refresh and catalog reset", () => {
 	it("replaces the seed, clears the revision, and resets to page 0 on explicit refresh", async () => {
 		mockGetDefaults({
@@ -268,7 +381,7 @@ describe("Home - explicit refresh and catalog reset", () => {
 
 		await waitFor(() =>
 			expect(get).toHaveBeenCalledWith(
-				"/lodgings/recommendations?seed=22222222-2222-4222-8222-222222222222&page=0&size=10",
+				"/lodgings/recommendations?seed=22222222-2222-4222-8222-222222222222&page=0&size=8",
 			),
 		);
 	});
@@ -351,7 +464,7 @@ describe("Home - explicit refresh and catalog reset", () => {
 
 		expect(await screen.findByText("Loft Norte")).toBeInTheDocument();
 		expect(get).toHaveBeenCalledWith(
-			`/lodgings/recommendations?seed=${FIXED_SEED}&page=1&size=10&revision=rev-2`,
+			`/lodgings/recommendations?seed=${FIXED_SEED}&page=1&size=8&revision=rev-2`,
 		);
 	});
 });
@@ -396,21 +509,18 @@ describe("Home - category filter compatibility", () => {
 		);
 	});
 
-	it("renders the category's representative image with accessible alt text and preserves filter behavior on click", async () => {
-		const imageCategory = {
+	it("renders the category Lucide icon and preserves filter behavior on click", async () => {
+		const hotelCategory = {
 			id: 2,
 			name: "Hoteles",
-			icon: null,
-			imageUrl: "https://img.example.com/hoteles.jpg",
+			icon: "hotel",
 		};
-		mockGetDefaults({ categories: [imageCategory] });
+		mockGetDefaults({ categories: [hotelCategory] });
 		const user = userEvent.setup();
-		renderHome();
+		const { container } = renderHome();
 
 		await screen.findByText("Cabaña del Lago");
-		expect(
-			screen.getByRole("img", { name: "Imagen representativa de Hoteles" }),
-		).toBeInTheDocument();
+		expect(container.querySelector("svg.lucide-hotel")).toBeInTheDocument();
 
 		get.mockClear();
 		await user.click(screen.getByRole("button", { name: /Hoteles/ }));
@@ -420,15 +530,15 @@ describe("Home - category filter compatibility", () => {
 		);
 	});
 
-	it("falls back to an accessible placeholder, not a lodging feature icon, when a category has no representative image", async () => {
+	it("renders the seeded category icon on the home filter chips", async () => {
 		mockGetDefaults({ categories: [categoryFixture] });
-		renderHome();
+		const { container } = renderHome();
 
 		await screen.findByText("Cabaña del Lago");
-
+		expect(container.querySelector("svg.lucide-tree-pine")).toBeInTheDocument();
 		expect(
-			screen.getByRole("img", { name: "Imagen no disponible para Cabaña" }),
-		).toBeInTheDocument();
+			screen.queryByRole("img", { name: /Imagen/ }),
+		).not.toBeInTheDocument();
 	});
 });
 
@@ -565,6 +675,39 @@ describe("Home - search form", () => {
 		await screen.findByRole("option", { name: "Buenos Aires" });
 		fireEvent.mouseDown(screen.getByRole("option", { name: "Buenos Aires" }));
 		expect(input).toHaveValue("Buenos Aires");
+	});
+
+	it("keeps previous city suggestions visible while a new search is in flight", async () => {
+		mockGetDefaults();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/cities"))
+				return Promise.resolve(["Bariloche"]);
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+		const input = screen.getByRole("combobox");
+		await user.type(input, "Ba");
+		await screen.findByRole("option", { name: "Bariloche" });
+
+		const pending = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/cities")) return pending.promise;
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			return Promise.resolve([]);
+		});
+
+		await user.type(input, "r");
+		expect(await screen.findByRole("status")).toHaveTextContent("Buscando...");
+		expect(screen.getByRole("option", { name: "Bariloche" })).toBeInTheDocument();
+
+		pending.resolve(["Bariloche", "Baradero"]);
+		expect(await screen.findByRole("option", { name: "Baradero" })).toBeInTheDocument();
+		expect(screen.queryByText("Buscando...")).not.toBeInTheDocument();
 	});
 
 	it("closes city suggestions with Escape", async () => {

@@ -7,6 +7,7 @@ import { getCategories } from "../../services/categoryService";
 import { getFavorites } from "../../services/favoriteService";
 import { useAuth } from "../../hooks/useAuth";
 import ProductCard from "../../components/ProductCard/ProductCard";
+import Icon from "../../components/Icons/Icon";
 import Pagination from "../../components/Pagination/Pagination";
 import "../../App.css";
 import "./SearchResults.css";
@@ -30,6 +31,7 @@ export default function SearchResults() {
 	const [results, setResults] = useState([]);
 	const [categories, setCategories] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [listGeneration, setListGeneration] = useState(0);
 	const [error, setError] = useState("");
 	const [favoriteIds, setFavoriteIds] = useState(new Set());
 
@@ -58,6 +60,7 @@ export default function SearchResults() {
 
 	const [, startTransition] = useTransition();
 	const skipNextSearchRef = useRef(false);
+	const requestIdRef = useRef(0);
 	const lastSearchRef = useRef({
 		cats: new Set(),
 		baseParams: new URLSearchParams(),
@@ -78,6 +81,7 @@ export default function SearchResults() {
 		const params = new URLSearchParams(baseParams);
 		cats.forEach((id) => params.append("categories", id));
 		params.set("page", pageNum);
+		const requestId = ++requestIdRef.current;
 
 		startTransition(() => {
 			setLoading(true);
@@ -85,12 +89,15 @@ export default function SearchResults() {
 		});
 		searchLodgings(params)
 			.then((data) => {
+				if (requestId !== requestIdRef.current) return;
 				setResults(Array.isArray(data?.lodgings) ? data.lodgings : []);
 				setPage(data?.currentPage ?? pageNum);
 				setTotalPages(data?.totalPages ?? 0);
+				setListGeneration((generation) => generation + 1);
 				setLoading(false);
 			})
 			.catch((err) => {
+				if (requestId !== requestIdRef.current) return;
 				setError(err.message);
 				setLoading(false);
 			});
@@ -261,7 +268,12 @@ export default function SearchResults() {
 										});
 									}}
 								/>
-								{c.name}
+								{c.icon && (
+									<span className="filter-category-icon" aria-hidden="true">
+										<Icon name={c.icon} size={16} />
+									</span>
+								)}
+								<span className="filter-category-name">{c.name}</span>
 							</label>
 						))}
 					</div>
@@ -348,17 +360,28 @@ export default function SearchResults() {
 					</div>
 				)}
 
-				{loading ? (
-					<p className="empty-state">Buscando...</p>
-				) : error ? (
-					<p className="empty-state error">{error}</p>
-				) : results.length === 0 ? (
+				{loading && (
+					<p className="empty-state" role="status">
+						Buscando...
+					</p>
+				)}
+				{error && <p className="empty-state error">{error}</p>}
+				{!loading && !error && results.length === 0 && (
 					<p className="empty-state">
 						No se encontraron resultados para tu búsqueda.
 					</p>
-				) : (
+				)}
+				{results.length > 0 && (
 					<>
-						<div className="hotel-list">
+						<div
+							key={listGeneration}
+							className={"hotel-list" + (loading ? " is-pending" : "")}
+							role="list"
+							aria-label={
+								city ? `Resultados para "${city}"` : "Todos los alojamientos"
+							}
+							aria-busy={loading}
+						>
 							{results.map((lodging) => (
 								<ProductCard
 									key={lodging.id}

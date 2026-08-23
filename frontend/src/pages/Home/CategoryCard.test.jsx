@@ -1,8 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CategoryCard from "./CategoryCard";
 
-const baseCategory = { id: 1, name: "Cabaña", imageUrl: null, description: null };
+const baseCategory = { id: 1, name: "Cabaña", icon: "tree-pine", description: null };
 
 describe("CategoryCard - render", () => {
   it("renders the category name", () => {
@@ -74,8 +74,29 @@ describe("CategoryCard - interactions", () => {
   });
 });
 
-describe("CategoryCard - representative image", () => {
-  it("renders the representative image with alt text derived from the category name", () => {
+describe("CategoryCard - icon", () => {
+  it("renders the Lucide icon mapped from category.icon", () => {
+    const { container } = render(
+      <CategoryCard category={baseCategory} isActive={false} onClick={vi.fn()} />
+    );
+    const icon = container.querySelector("svg.lucide-tree-pine");
+    expect(icon).toBeInTheDocument();
+    expect(icon).toHaveAttribute("width", "24");
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("renders a placeholder mark when the icon name is unknown", () => {
+    render(
+      <CategoryCard
+        category={{ ...baseCategory, icon: "not-a-real-icon" }}
+        isActive={false}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByText("?")).toBeInTheDocument();
+  });
+
+  it("does not render a representative photo even if imageUrl is present", () => {
     render(
       <CategoryCard
         category={{ ...baseCategory, imageUrl: "https://img.example.com/cabana.jpg" }}
@@ -83,35 +104,6 @@ describe("CategoryCard - representative image", () => {
         onClick={vi.fn()}
       />
     );
-    const img = screen.getByRole("img", { name: "Imagen representativa de Cabaña" });
-    expect(img).toHaveAttribute("src", "https://img.example.com/cabana.jpg");
-  });
-
-  it("renders an accessible fallback, not a lodging feature icon, when imageUrl is absent", () => {
-    render(<CategoryCard category={baseCategory} isActive={false} onClick={vi.fn()} />);
-    expect(
-      screen.getByRole("img", { name: "Imagen no disponible para Cabaña" })
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("img", { name: "Imagen representativa de Cabaña" })
-    ).not.toBeInTheDocument();
-  });
-
-  it("falls back to the accessible placeholder, preserving layout, when the image fails to load", () => {
-    render(
-      <CategoryCard
-        category={{ ...baseCategory, imageUrl: "https://img.example.com/broken.jpg" }}
-        isActive={false}
-        onClick={vi.fn()}
-      />
-    );
-    const img = screen.getByRole("img", { name: "Imagen representativa de Cabaña" });
-    fireEvent.error(img);
-    expect(
-      screen.getByRole("img", { name: "Imagen no disponible para Cabaña" })
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("img", { name: "Imagen representativa de Cabaña" })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 });

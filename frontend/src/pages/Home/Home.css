@@ -301,6 +301,9 @@
   color: var(--secondary);
   background-color: var(--bg);
 }
+.city-suggestions.is-pending li[role="option"] {
+  opacity: 0.55;
+}
 .search-error {
   color: var(--primary);
   margin-top: 10px;
@@ -429,21 +432,18 @@
   box-shadow: var(--shadow-md);
   border-color: var(--accent);
 }
-.category-image {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  flex-shrink: 0;
-}
-.category-image-fallback {
+.category-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
   color: var(--accent);
   background: rgba(0, 0, 0, 0.04);
 }
-.category-tag.active .category-image-fallback {
+.category-tag.active .category-icon {
   color: #fff;
   background: rgba(255, 255, 255, 0.15);
 }
@@ -486,6 +486,33 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
+}
+.recommendations .hotel-list.is-pending {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.recommendations .hotel-list:not(.is-pending) .hotel-card {
+  animation: hotel-card-enter 200ms ease both;
+}
+@keyframes hotel-card-enter {
+  from {
+opacity: 0;
+transform: translateY(8px);
+  }
+  to {
+opacity: 1;
+transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recommendations .hotel-list.is-pending {
+transition: none;
+opacity: 0.7;
+  }
+  .recommendations .hotel-list:not(.is-pending) .hotel-card {
+animation: none;
+  }
 }
 
 /* PAGINATION */

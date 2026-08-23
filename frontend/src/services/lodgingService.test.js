@@ -37,7 +37,7 @@ describe("lodgingService - getRecommendations", () => {
     await getRecommendations({ seed: "seed-value-0123456789", page: 0 });
 
     expect(get).toHaveBeenCalledWith(
-      "/lodgings/recommendations?seed=seed-value-0123456789&page=0&size=10",
+      "/lodgings/recommendations?seed=seed-value-0123456789&page=0&size=8",
     );
   });
 
@@ -47,7 +47,7 @@ describe("lodgingService - getRecommendations", () => {
     await getRecommendations({ seed: "seed-value-0123456789", page: 2, revision: "r1" });
 
     expect(get).toHaveBeenCalledWith(
-      "/lodgings/recommendations?seed=seed-value-0123456789&page=2&size=10&revision=r1",
+      "/lodgings/recommendations?seed=seed-value-0123456789&page=2&size=8&revision=r1",
     );
   });
 
