@@ -283,6 +283,14 @@ npx playwright test
 
 Reportes generados en `e2e/playwright-report/`.
 
+El escenario de imágenes canónicas se habilita de forma local con:
+
+```bash
+CANONICAL_ASSETS_E2E=1 npx playwright test tests/canonical-lodging-images.spec.js --project=chromium
+```
+
+El CI genérico lo omite porque los archivos JPEG canónicos maestros permanecen fuera del repositorio.
+
 El workflow de CI ejecuta los proyectos `chromium`, `firefox` y `mobile-chromium`. En Sprint 4, `mobile-chromium` cubre el shell responsive y el flujo de reservas en viewport móvil.
 
 ---
