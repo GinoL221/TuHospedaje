@@ -113,12 +113,18 @@ export default function AdminLodgings() {
 			>
 				+ Agregar alojamiento
 			</button>
-			<input
-				aria-label="Buscar alojamientos"
-				value={search}
-				onChange={handleSearchChange}
-				placeholder="Buscar alojamientos"
-			/>
+			<div className="admin-table-controls">
+				<label htmlFor="admin-lodgings-search">
+					Buscar alojamientos
+					<input
+						id="admin-lodgings-search"
+						aria-label="Buscar alojamientos"
+						value={search}
+						onChange={handleSearchChange}
+						placeholder="Buscar por nombre, ciudad o país"
+					/>
+				</label>
+			</div>
 			<LodgingsTable
 				lodgings={lodgings}
 				onDelete={handleDelete}
