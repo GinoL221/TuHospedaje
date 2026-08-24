@@ -270,6 +270,56 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void staleTokenCannotCompleteDeliveredRetryOrFailedOutcomes() {
+        User user = saveUser("stale-outcomes@test.com");
+        String currentToken = UUID.randomUUID().toString();
+        EmailOutbox outbox = buildOutbox(user, "WELCOME", "stale-outcomes-1", "stale-outcomes@test.com");
+        outbox.setStatus(EmailOutboxStatus.PROCESSING);
+        outbox.setLeaseToken(currentToken);
+        outbox.setLeaseUntil(Instant.now().plus(5, ChronoUnit.MINUTES));
+        EmailOutbox saved = emailOutboxRepository.save(outbox);
+        String staleToken = UUID.randomUUID().toString();
+
+        int delivered = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.markDelivered(saved.getId(), staleToken, Instant.now()));
+        int retry = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.releaseForRetry(saved.getId(), staleToken, "SMTP_UNAVAILABLE",
+                        Instant.now().plus(1, ChronoUnit.MINUTES)));
+        int failed = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.markFailed(saved.getId(), staleToken, Instant.now(), "SMTP_UNAVAILABLE"));
+
+        assertThat(delivered).isZero();
+        assertThat(retry).isZero();
+        assertThat(failed).isZero();
+        EmailOutbox found = emailOutboxRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found.getStatus()).isEqualTo(EmailOutboxStatus.PROCESSING);
+        assertThat(found.getLeaseToken()).isEqualTo(currentToken);
+        assertThat(found.getFailedAttempts()).isZero();
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void markDeliveredRejectsCompletionAfterTheLeaseExpired() {
+        User user = saveUser("expired-delivery@test.com");
+        String token = UUID.randomUUID().toString();
+        Instant leaseUntil = Instant.parse("2026-08-24T15:05:00Z");
+        EmailOutbox outbox = buildOutbox(user, "WELCOME", "expired-delivery-1", "expired-delivery@test.com");
+        outbox.setStatus(EmailOutboxStatus.PROCESSING);
+        outbox.setLeaseToken(token);
+        outbox.setLeaseUntil(leaseUntil);
+        EmailOutbox saved = emailOutboxRepository.save(outbox);
+
+        int updated = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.markDelivered(saved.getId(), token, leaseUntil.plusSeconds(1)));
+
+        assertThat(updated).isZero();
+        EmailOutbox found = emailOutboxRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found.getStatus()).isEqualTo(EmailOutboxStatus.PROCESSING);
+        assertThat(found.getLeaseToken()).isEqualTo(token);
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void releaseForRetryPersistsNextAttemptAndWaitsUntilItIsDue() {
         User user = saveUser("retry-schedule@test.com");
         String token = UUID.randomUUID().toString();
