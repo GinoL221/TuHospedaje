@@ -31,6 +31,11 @@ class EmailOutboxConfigurationTest {
                 .run(context -> assertThat(context).doesNotHaveBean(EmailOutboxConfiguration.class));
     }
 
+    @Test
+    void configurationDoesNotLoadWhenDispatchControlIsUnset() {
+        runner.run(context -> assertThat(context).doesNotHaveBean(EmailOutboxConfiguration.class));
+    }
+
     @Configuration
     @EnableConfigurationProperties(EmailOutboxProperties.class)
     @Import(EmailOutboxConfiguration.class)

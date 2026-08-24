@@ -71,6 +71,24 @@ class EmailOutboxPropertiesValidationTest {
                 .run(context -> assertThat(context).hasFailed());
     }
 
+    @Test
+    void rejectsNonPositiveTimingControls() {
+        runner.withPropertyValues(
+                        "tuhospedaje.email-outbox.poll-interval=PT0S",
+                        "tuhospedaje.email-outbox.lease-duration=PT0S",
+                        "tuhospedaje.email-outbox.retention=PT0S",
+                        "tuhospedaje.email-outbox.cleanup-interval=PT0S")
+                .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void rejectsBackoffThatCannotCoverConfiguredRetries() {
+        runner.withPropertyValues(
+                        "tuhospedaje.email-outbox.max-attempts=3",
+                        "tuhospedaje.email-outbox.backoff[0]=PT1M")
+                .run(context -> assertThat(context).hasFailed());
+    }
+
     @Configuration
     @EnableConfigurationProperties(EmailOutboxProperties.class)
     static class EmailOutboxPropertiesTestConfig {
