@@ -5,10 +5,8 @@ import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.entity.User;
-import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
-import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.RefreshSessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final EmailOutboxService emailOutboxService;
+    private final RegistrationPersistenceService registrationPersistenceService;
     // ObjectProvider, NOT a hard constructor dependency (Design ADR-0): RefreshSessionService
     // has no bean at all when app.session.refresh.enabled=false (RefreshSessionConfiguration
     // is @ConditionalOnProperty). A hard dependency here would break ApplicationContext
@@ -39,37 +37,31 @@ public class AuthServiceImpl implements AuthService {
     private final ObjectProvider<RefreshSessionService> refreshSessions;
 
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-            AuthenticationManager authenticationManager, EmailOutboxService emailOutboxService,
+            AuthenticationManager authenticationManager, RegistrationPersistenceService registrationPersistenceService,
             ObjectProvider<RefreshSessionService> refreshSessions) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.emailOutboxService = emailOutboxService;
+        this.registrationPersistenceService = registrationPersistenceService;
         this.refreshSessions = refreshSessions;
     }
 
     @Override
-    @Transactional
     public AuthResult register(RegisterRequest request) {
-        if (userRepository. findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
 
-        User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(RoleEnum.USER)
-                .imageUrl("https://ui-avatars.com/api/?name=" + request.getFirstName() + "+" + request.getLastName())
-                .build();
-
-        userRepository.save(user);
-
-        emailOutboxService.enqueueWelcome(user, request);
-
-        return buildAuthResult(user);
+        try {
+            User user = registrationPersistenceService.persist(request, passwordEncoder.encode(request.getPassword()));
+            return buildAuthResult(user);
+        } catch (RuntimeException exception) {
+            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new IllegalArgumentException("El email ya está registrado");
+            }
+            throw exception;
+        }
     }
 
     @Override

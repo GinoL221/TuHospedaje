@@ -3,11 +3,12 @@ package com.tuhospedaje.auth;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService.AuthResult;
-import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.RefreshSessionService;
 import com.tuhospedaje.service.impl.AuthServiceImpl;
+import com.tuhospedaje.service.impl.RegistrationPersistenceService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,13 +35,14 @@ class AuthServiceImplIssuanceFailureTest {
     @SuppressWarnings("unchecked")
     private final ObjectProvider<RefreshSessionService> refreshSessions = mock(ObjectProvider.class);
     private final RefreshSessionService sessions = mock(RefreshSessionService.class);
+    private final RegistrationPersistenceService registrationPersistenceService = mock(RegistrationPersistenceService.class);
 
     private final AuthServiceImpl authService = new AuthServiceImpl(
             userRepository,
             mock(PasswordEncoder.class),
             jwtService,
             mock(AuthenticationManager.class),
-            mock(EmailOutboxService.class),
+            registrationPersistenceService,
             refreshSessions);
 
     @Test
@@ -49,6 +51,12 @@ class AuthServiceImplIssuanceFailureTest {
         when(jwtService.generateToken(any(), any())).thenReturn("access-token-123");
         when(refreshSessions.getIfAvailable()).thenReturn(sessions);
         when(sessions.issue(any(User.class))).thenThrow(new RuntimeException("refresh_token_families insert failed"));
+        when(registrationPersistenceService.persist(any(), any())).thenReturn(User.builder()
+                .firstName("Ada")
+                .lastName("Lovelace")
+                .email("ada-issuance-failure@test.com")
+                .role(RoleEnum.USER)
+                .build());
 
         AuthResult result = authService.register(
                 new RegisterRequest("Ada", "Lovelace", "ada-issuance-failure@test.com", "123456"));

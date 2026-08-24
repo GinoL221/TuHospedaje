@@ -1,12 +1,14 @@
 package com.tuhospedaje.email.outbox;
 
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.EmailOutbox;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.repository.EmailOutboxRepository;
+import com.tuhospedaje.service.WelcomeEmailRenderer;
 import com.tuhospedaje.service.impl.EmailOutboxServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +31,8 @@ class EmailOutboxServiceImplTest {
 
     @Mock
     private EmailOutboxRepository repository;
+    @Mock
+    private WelcomeEmailRenderer welcomeEmailRenderer;
 
     @Test
     void enqueueWelcomeStoresTheRenderedWelcomeMessage() {
@@ -36,15 +40,18 @@ class EmailOutboxServiceImplTest {
         RegisterRequest request = new RegisterRequest("Ana", "Gomez", "ana@example.com", "secret");
         when(repository.findByEmailTypeAndAggregateId("WELCOME", "7")).thenReturn(Optional.empty());
 
-        new EmailOutboxServiceImpl(repository).enqueueWelcome(user, request);
+        when(welcomeEmailRenderer.render(7L, "ana@example.com", "Ana"))
+                .thenReturn(new EmailMessage("ana@example.com", "¡Bienvenido a TuHospedaje!", "<p>Hola Ana</p>", "WELCOME", "7"));
 
-        EmailOutbox saved = capturedOutbox();
+        newService().enqueueWelcome(user, request);
+
+        EmailOutbox saved = capturedFlushedOutbox();
         assertThat(saved.getUser()).isSameAs(user);
         assertThat(saved.getEmailType()).isEqualTo("WELCOME");
         assertThat(saved.getAggregateId()).isEqualTo("7");
         assertThat(saved.getRecipient()).isEqualTo("ana@example.com");
-        assertThat(saved.getSubject()).isEqualTo("Welcome to TuHospedaje!");
-        assertThat(saved.getHtmlBody()).contains("Welcome to TuHospedaje, Ana!");
+        assertThat(saved.getSubject()).isEqualTo("¡Bienvenido a TuHospedaje!");
+        assertThat(saved.getHtmlBody()).isEqualTo("<p>Hola Ana</p>");
         assertThat(saved.getStatus()).isEqualTo(EmailOutboxStatus.PENDING);
     }
 
@@ -55,7 +62,7 @@ class EmailOutboxServiceImplTest {
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
                 .thenReturn(Optional.empty());
 
-        new EmailOutboxServiceImpl(repository).enqueueReservationConfirmation(user, reservation);
+        newService().enqueueReservationConfirmation(user, reservation);
 
         EmailOutbox saved = capturedOutbox();
         assertThat(saved.getEmailType()).isEqualTo("RESERVATION_CONFIRMATION");
@@ -74,7 +81,7 @@ class EmailOutboxServiceImplTest {
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CANCELLATION", "42"))
                 .thenReturn(Optional.empty());
 
-        new EmailOutboxServiceImpl(repository).enqueueReservationCancellation(user, reservation);
+        newService().enqueueReservationCancellation(user, reservation);
 
         EmailOutbox saved = capturedOutbox();
         assertThat(saved.getEmailType()).isEqualTo("RESERVATION_CANCELLATION");
@@ -92,8 +99,10 @@ class EmailOutboxServiceImplTest {
         RegisterRequest request = new RegisterRequest("Ana", "Gomez", "ana@example.com", "secret");
         when(repository.findByEmailTypeAndAggregateId("WELCOME", "7"))
                 .thenReturn(Optional.of(new EmailOutbox()));
+        when(welcomeEmailRenderer.render(7L, "ana@example.com", "Ana"))
+                .thenReturn(new EmailMessage("ana@example.com", "¡Bienvenido a TuHospedaje!", "<p>Hola Ana</p>", "WELCOME", "7"));
 
-        new EmailOutboxServiceImpl(repository).enqueueWelcome(user, request);
+        newService().enqueueWelcome(user, request);
 
         verify(repository, never()).save(any(EmailOutbox.class));
     }
@@ -102,6 +111,16 @@ class EmailOutboxServiceImplTest {
         ArgumentCaptor<EmailOutbox> captor = ArgumentCaptor.forClass(EmailOutbox.class);
         verify(repository).save(captor.capture());
         return captor.getValue();
+    }
+
+    private EmailOutbox capturedFlushedOutbox() {
+        ArgumentCaptor<EmailOutbox> captor = ArgumentCaptor.forClass(EmailOutbox.class);
+        verify(repository).saveAndFlush(captor.capture());
+        return captor.getValue();
+    }
+
+    private EmailOutboxServiceImpl newService() {
+        return new EmailOutboxServiceImpl(repository, welcomeEmailRenderer);
     }
 
     private static User user(Long id, String email) {

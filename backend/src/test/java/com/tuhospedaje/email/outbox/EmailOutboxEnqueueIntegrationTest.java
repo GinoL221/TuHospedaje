@@ -16,6 +16,7 @@ import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.ReservationService;
+import com.tuhospedaje.service.impl.RegistrationPersistenceService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,14 +24,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -38,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EmailOutboxEnqueueIntegrationTest {
 
     private static final String EMAIL_PREFIX = "phase2-enqueue-";
+    private static final String CONCURRENT_EMAIL = EMAIL_PREFIX + "concurrent@test.com";
     @Autowired
     private AuthService authService;
     @Autowired
@@ -48,6 +59,8 @@ class EmailOutboxEnqueueIntegrationTest {
     private EmailOutboxRepository emailOutboxRepository;
     @Autowired
     private UserRepository userRepository;
+    @MockitoSpyBean
+    private RegistrationPersistenceService registrationPersistenceService;
     @Autowired
     private ReservationRepository reservationRepository;
     @Autowired
@@ -67,11 +80,11 @@ class EmailOutboxEnqueueIntegrationTest {
     }
 
     @Test
-    void registrationCommitsOneWelcomeOutboxRowWithTheBusinessChange() {
+    void registrationCommitsOneSpanishWelcomeOutboxRowWithTheBusinessChange() {
         String email = EMAIL_PREFIX + "welcome@test.com";
 
         AuthService.AuthResult result = authService.register(
-                new RegisterRequest("Ana", "Gomez", email, "secret123"));
+                new RegisterRequest("Ana <b>Gómez</b>", "Gomez", email, "secret123"));
 
         User user = userRepository.findByEmail(email).orElseThrow();
         List<com.tuhospedaje.entity.EmailOutbox> rows = emailOutboxRepository.findAll().stream()
@@ -83,6 +96,12 @@ class EmailOutboxEnqueueIntegrationTest {
             assertThat(row.getEmailType()).isEqualTo("WELCOME");
             assertThat(row.getAggregateId()).isEqualTo(user.getId().toString());
             assertThat(row.getStatus()).isEqualTo(EmailOutboxStatus.PENDING);
+            assertThat(row.getRecipient()).isEqualTo(email);
+            assertThat(row.getSubject()).isEqualTo("¡Bienvenido a TuHospedaje!");
+            assertThat(row.getHtmlBody())
+                    .contains("href=\"https://app.test/login\"")
+                    .contains("Ana &lt;b&gt;")
+                    .doesNotContain("localhost", "<b>Gómez</b>", "Welcome", "Thanks");
         });
     }
 
@@ -123,6 +142,43 @@ class EmailOutboxEnqueueIntegrationTest {
         assertThat(emailOutboxRepository.findAll().stream()
                 .filter(row -> row.getEmailType().equals("WELCOME")
                         && row.getAggregateId().equals(user.getId().toString())))
+                .hasSize(1);
+    }
+
+    @Test
+    void concurrentDuplicateRegistrationPreservesTheEstablishedDuplicateOutcome() throws Exception {
+        CountDownLatch bothRequestsReachedDuplicateCheck = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            bothRequestsReachedDuplicateCheck.countDown();
+            assertThat(bothRequestsReachedDuplicateCheck.await(5, TimeUnit.SECONDS)).isTrue();
+            return invocation.callRealMethod();
+        }).when(registrationPersistenceService).persist(any(RegisterRequest.class), any(String.class));
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Callable<Object> register = () -> {
+                try {
+                    return authService.register(new RegisterRequest("Ana", "Gómez", CONCURRENT_EMAIL, "secret123"));
+                } catch (RuntimeException exception) {
+                    return exception;
+                }
+            };
+            Future<Object> first = executor.submit(register);
+            Future<Object> second = executor.submit(register);
+            List<Object> outcomes = List.of(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
+
+            assertThat(outcomes.stream().filter(AuthService.AuthResult.class::isInstance)).hasSize(1);
+            assertThat(outcomes.stream().filter(IllegalArgumentException.class::isInstance)
+                    .map(IllegalArgumentException.class::cast)
+                    .map(Throwable::getMessage))
+                    .containsExactly("El email ya está registrado");
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(userRepository.findByEmail(CONCURRENT_EMAIL)).isPresent();
+        assertThat(emailOutboxRepository.findAll().stream()
+                .filter(row -> row.getEmailType().equals("WELCOME") && row.getRecipient().equals(CONCURRENT_EMAIL)))
                 .hasSize(1);
     }
 

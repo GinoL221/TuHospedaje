@@ -98,7 +98,8 @@ class DatabaseMigrationIntegrationTest {
                         "--spring.datasource.username=" + probe.username(),
                         "--spring.datasource.password=" + probe.password(),
                         "--spring.flyway.locations=classpath:db/migration,classpath:db/dev",
-                        "--spring.flyway.placeholders.dev_admin_password_hash=" + validDevAdminPasswordHash()
+                        "--spring.flyway.placeholders.dev_admin_password_hash=" + validDevAdminPasswordHash(),
+                        "--tuhospedaje.email.welcome.public-base-url=https://app.test"
                 )) {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
@@ -504,7 +505,9 @@ assertThat(probeJdbcTemplate.queryForObject(
                                     // fallback in production — see .env.example), exactly like app.jwt.secret above.
                                     "app.session.key-ring.active-key-id", "test-actual-profile-rt1",
                                     "app.session.key-ring.key-entries[0].id", "test-actual-profile-rt1",
-                                    "app.session.key-ring.key-entries[0].secret", "test-actual-profile-refresh-key-not-for-production"
+                                    "app.session.key-ring.key-entries[0].secret", "test-actual-profile-refresh-key-not-for-production",
+                                    // Welcome public base URL has no production fallback.
+                                    "tuhospedaje.email.welcome.public-base-url", "https://app.test"
                             ))))
                     .run(
                             "--spring.datasource.url=" + profileContainer.getJdbcUrl(),
@@ -546,7 +549,8 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .run(
                             "--spring.datasource.url=" + profileContainer.getJdbcUrl(),
                             "--spring.datasource.username=" + probeUsername,
-                            "--spring.datasource.password=" + probePassword
+                            "--spring.datasource.password=" + probePassword,
+                            "--tuhospedaje.email.welcome.public-base-url=https://app.test"
                     )) {
                 JdbcTemplate profileJdbcTemplate = context.getBean(JdbcTemplate.class);
 
