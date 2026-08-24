@@ -16,9 +16,10 @@ public class EmailOutboxRepositoryImpl implements EmailOutboxClaimRepository {
     private static final String SELECT_ELIGIBLE_IDS = """
             SELECT id
             FROM email_outbox
-            WHERE (status = 'PENDING'
+            WHERE email_type = :emailType
+              AND ((status = 'PENDING'
                    AND (next_attempt_at IS NULL OR next_attempt_at <= :now))
-               OR (status = 'PROCESSING' AND lease_until < :now)
+               OR (status = 'PROCESSING' AND lease_until < :now))
             ORDER BY id ASC
             LIMIT :batchSize
             FOR UPDATE SKIP LOCKED
@@ -42,9 +43,10 @@ public class EmailOutboxRepositoryImpl implements EmailOutboxClaimRepository {
 
     @Override
     @Transactional
-    public int claimEligible(Instant now, int batchSize, String token, Instant leaseUntil) {
+    public int claimEligible(String emailType, Instant now, int batchSize, String token, Instant leaseUntil) {
         entityManager.flush();
         MapSqlParameterSource parameters = new MapSqlParameterSource()
+                .addValue("emailType", emailType)
                 .addValue("now", mariaDbDateTime(now))
                 .addValue("batchSize", batchSize);
         List<Long> ids = jdbcTemplate.queryForList(SELECT_ELIGIBLE_IDS, parameters, Long.class);
