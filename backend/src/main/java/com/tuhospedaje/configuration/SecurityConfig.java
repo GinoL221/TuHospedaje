@@ -74,6 +74,7 @@ public class SecurityConfig {
                         // CSRF-protected — it is NOT in the ignoringRequestMatchers list above.
                         .requestMatchers("/api/auth/password").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/canonical-lodging-images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/features/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/policies/**").permitAll()

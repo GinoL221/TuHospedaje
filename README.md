@@ -80,10 +80,21 @@ MAILTRAP_HOST=sandbox.smtp.mailtrap.io
 MAILTRAP_PORT=2525
 MAILTRAP_USERNAME=your_username
 MAILTRAP_PASSWORD=your_password
+
+# Canonical lodging masters for the local dev profile (optional).
+# Default: ~/TuHospedajeAssets/canonical-lodging-images
+# Override when the external asset directory is mounted elsewhere.
+TUHOSPEDAJE_CANONICAL_ASSETS_ROOT=/home/your-user/TuHospedajeAssets/canonical-lodging-images
 ```
 
 > Para desarrollo local existe un perfil `dev` con defaults seguros (sin secretos reales).
 > Activar con: `SPRING_PROFILES_ACTIVE=dev`
+>
+> Con el perfil `dev`, el backend sirve los masters JPEG externos en
+> `http://localhost:8080/canonical-lodging-images/**`. El seed demo usa esas URLs
+> locales y conserva los binarios fuera del repositorio. El root por defecto es
+> `~/TuHospedajeAssets/canonical-lodging-images`; podés cambiarlo con
+> `TUHOSPEDAJE_CANONICAL_ASSETS_ROOT`.
 
 #### Correr el backend
 ```bash
