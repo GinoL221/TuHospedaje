@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,10 +22,12 @@ public class EmailOutboxTransactionService {
 
     private final EmailOutboxRepository repository;
     private final EmailOutboxProperties properties;
+    private final Clock clock;
 
-    public EmailOutboxTransactionService(EmailOutboxRepository repository, EmailOutboxProperties properties) {
+    public EmailOutboxTransactionService(EmailOutboxRepository repository, EmailOutboxProperties properties, Clock clock) {
         this.repository = repository;
         this.properties = properties;
+        this.clock = clock;
     }
 
     @Transactional
@@ -52,6 +55,11 @@ public class EmailOutboxTransactionService {
     public int markFailed(long id, String token, EmailTransportFailureClassification classification,
                           Instant outcomeTime) {
         return repository.markFailed(id, token, outcomeTime, classification.name());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int cleanupWelcome() {
+        return repository.purgeWelcomeCompletedBefore(clock.instant().minus(properties.getRetention()));
     }
 
     private ClaimedEmail snapshot(EmailOutbox outbox, String token) {

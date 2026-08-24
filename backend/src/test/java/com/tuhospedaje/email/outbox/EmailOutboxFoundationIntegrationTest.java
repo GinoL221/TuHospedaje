@@ -296,7 +296,7 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void purgeCompletedBeforeRemovesOnlyCompletedRecords() {
+    void purgeWelcomeCompletedBeforeRetainsActiveAndNonWelcomeRecords() {
         User user = saveUser("purge@test.com");
 
         EmailOutbox delivered = buildOutbox(user, "WELCOME", "purge-delivered", "purge@test.com");
@@ -312,18 +312,25 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
         EmailOutbox pending = buildOutbox(user, "WELCOME", "purge-pending", "purge@test.com");
         emailOutboxRepository.save(pending);
 
+        EmailOutbox reservation = buildOutbox(user, "RESERVATION_CONFIRMATION", "purge-reservation", "purge@test.com");
+        reservation.setStatus(EmailOutboxStatus.DELIVERED);
+        reservation.setCompletedAt(Instant.now().minus(31, ChronoUnit.DAYS));
+        emailOutboxRepository.save(reservation);
+
         Instant cutoff = Instant.now().minus(30, ChronoUnit.DAYS);
         long expectedDeleted = emailOutboxRepository.findAll().stream()
                 .filter(outbox -> (outbox.getStatus() == EmailOutboxStatus.DELIVERED
                         || outbox.getStatus() == EmailOutboxStatus.FAILED)
+                        && outbox.getEmailType().equals("WELCOME")
                         && outbox.getCompletedAt() != null
                         && outbox.getCompletedAt().isBefore(cutoff))
                 .count();
-        int deleted = emailOutboxRepository.purgeCompletedBefore(cutoff);
+        int deleted = emailOutboxRepository.purgeWelcomeCompletedBefore(cutoff);
         assertThat(deleted).isEqualTo(expectedDeleted);
         assertThat(emailOutboxRepository.findById(delivered.getId())).isEmpty();
         assertThat(emailOutboxRepository.findById(failed.getId())).isEmpty();
         assertThat(emailOutboxRepository.findById(pending.getId())).isPresent();
+        assertThat(emailOutboxRepository.findById(reservation.getId())).isPresent();
     }
 
     private void await(CountDownLatch latch) {

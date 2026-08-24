@@ -70,6 +70,13 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
             """)
     int purgeCompletedBefore(@Param("cutoff") Instant cutoff);
 
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            DELETE FROM EmailOutbox o
+            WHERE o.emailType = 'WELCOME' AND o.status IN ('DELIVERED', 'FAILED') AND o.completedAt < :cutoff
+            """)
+    int purgeWelcomeCompletedBefore(@Param("cutoff") Instant cutoff);
+
     default List<EmailOutbox> claimEligible(Instant now, int batchSize) {
         String token = UUID.randomUUID().toString();
         Instant leaseUntil = now.plus(java.time.Duration.ofMinutes(5));
