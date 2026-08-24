@@ -25,8 +25,9 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE EmailOutbox o
-            SET o.status = 'DELIVERED', o.completedAt = :completedAt
+            SET o.status = 'DELIVERED', o.completedAt = :completedAt, o.leaseToken = NULL, o.leaseUntil = NULL
             WHERE o.id = :id AND o.status = 'PROCESSING' AND o.leaseToken = :token
+              AND o.leaseUntil > :completedAt
             """)
     int markDelivered(@Param("id") Long id,
                       @Param("token") String token,
@@ -35,8 +36,10 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE EmailOutbox o
-            SET o.status = 'FAILED', o.completedAt = :completedAt, o.errorCode = :errorCode
+            SET o.status = 'FAILED', o.completedAt = :completedAt, o.errorCode = :errorCode,
+                o.failedAttempts = o.failedAttempts + 1, o.leaseToken = NULL, o.leaseUntil = NULL
             WHERE o.id = :id AND o.status = 'PROCESSING' AND o.leaseToken = :token
+              AND o.leaseUntil > :completedAt
             """)
     int markFailed(@Param("id") Long id,
                    @Param("token") String token,
@@ -53,6 +56,7 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
                 o.leaseUntil = NULL,
                 o.errorCode = :errorCode
             WHERE o.id = :id AND o.status = 'PROCESSING' AND o.leaseToken = :token
+              AND o.leaseUntil > CURRENT_TIMESTAMP
             """)
     int releaseForRetry(@Param("id") Long id,
                         @Param("token") String token,
@@ -69,7 +73,7 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
     default List<EmailOutbox> claimEligible(Instant now, int batchSize) {
         String token = UUID.randomUUID().toString();
         Instant leaseUntil = now.plus(java.time.Duration.ofMinutes(5));
-        claimEligible(now, batchSize, token, leaseUntil);
+        claimEligible("WELCOME", now, batchSize, token, leaseUntil);
         return findByStatusAndLeaseToken(EmailOutboxStatus.PROCESSING, token);
     }
 }
