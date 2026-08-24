@@ -7,10 +7,11 @@ import com.tuhospedaje.configuration.CanonicalAssetsProperties;
 import com.tuhospedaje.configuration.CorsProperties;
 import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.configuration.SessionProperties;
+import com.tuhospedaje.configuration.WelcomeEmailProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({CookieProperties.class, CanonicalAssetsProperties.class, CorsProperties.class, SessionProperties.class, EmailOutboxProperties.class})
+@EnableConfigurationProperties({CookieProperties.class, CanonicalAssetsProperties.class, CorsProperties.class, SessionProperties.class, EmailOutboxProperties.class, WelcomeEmailProperties.class})
 public class BackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);

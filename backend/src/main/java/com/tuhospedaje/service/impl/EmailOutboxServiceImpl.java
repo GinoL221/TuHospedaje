@@ -1,12 +1,14 @@
 package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.EmailOutbox;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.service.EmailOutboxService;
+import com.tuhospedaje.service.WelcomeEmailRenderer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,23 +20,18 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
     private static final String RESERVATION_CANCELLATION = "RESERVATION_CANCELLATION";
 
     private final EmailOutboxRepository repository;
+    private final WelcomeEmailRenderer welcomeEmailRenderer;
 
-    public EmailOutboxServiceImpl(EmailOutboxRepository repository) {
+    public EmailOutboxServiceImpl(EmailOutboxRepository repository, WelcomeEmailRenderer welcomeEmailRenderer) {
         this.repository = repository;
+        this.welcomeEmailRenderer = welcomeEmailRenderer;
     }
 
     @Override
     @Transactional
     public void enqueueWelcome(User user, RegisterRequest request) {
-        enqueue(user, WELCOME, user.getId().toString(), request.getEmail(),
-                "Welcome to TuHospedaje!", """
-                        <html><body style="font-family:sans-serif;color:#222;">
-                        <h2 style="color:#c0392b;">Welcome to TuHospedaje, %s!</h2>
-                        <p>Thanks for registering. Your account is ready.</p>
-                        <p>Start exploring lodgings at <a href="http://localhost:5173">TuHospedaje</a>.</p>
-                        <hr><p style="font-size:12px;color:#888;">TuHospedaje &mdash; Your next stay, confirmed.</p>
-                        </body></html>
-                        """.formatted(request.getFirstName()));
+        EmailMessage message = welcomeEmailRenderer.render(user.getId(), request.getEmail(), request.getFirstName());
+        enqueue(user, message.emailType(), message.aggregateId(), message.to(), message.subject(), message.htmlBody(), true);
     }
 
     @Override
@@ -72,7 +69,7 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
         );
 
         enqueue(user, RESERVATION_CONFIRMATION, reservation.getId().toString(),
-                reservation.getGuestEmail(), subject, body);
+                reservation.getGuestEmail(), subject, body, false);
     }
 
     @Override
@@ -87,11 +84,11 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
                 """.formatted(reservation.getLodgingName(), reservation.getCheckIn(), reservation.getCheckOut());
 
         enqueue(user, RESERVATION_CANCELLATION, reservation.getId().toString(),
-                reservation.getGuestEmail(), subject, body);
+                reservation.getGuestEmail(), subject, body, false);
     }
 
     private void enqueue(User user, String emailType, String aggregateId, String recipient,
-                         String subject, String htmlBody) {
+                         String subject, String htmlBody, boolean flush) {
         if (repository.findByEmailTypeAndAggregateId(emailType, aggregateId).isPresent()) {
             return;
         }
@@ -105,6 +102,10 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
         outbox.setHtmlBody(htmlBody);
         outbox.setStatus(EmailOutboxStatus.PENDING);
         outbox.setFailedAttempts(0);
-        repository.save(outbox);
+        if (flush) {
+            repository.saveAndFlush(outbox);
+        } else {
+            repository.save(outbox);
+        }
     }
 }
