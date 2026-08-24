@@ -6,6 +6,8 @@ import com.tuhospedaje.entity.EmailOutbox;
 import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class EmailOutboxTransactionService {
 
     private static final String WELCOME = "WELCOME";
+    private static final Logger log = LoggerFactory.getLogger(EmailOutboxTransactionService.class);
 
     private final EmailOutboxRepository repository;
     private final EmailOutboxProperties properties;
@@ -35,9 +38,15 @@ public class EmailOutboxTransactionService {
         String token = UUID.randomUUID().toString();
         Instant leaseUntil = now.plus(properties.getLeaseDuration());
         repository.claimEligible(WELCOME, now, properties.getBatchSize(), token, leaseUntil);
-        return repository.findByStatusAndLeaseToken(EmailOutboxStatus.PROCESSING, token).stream()
+        List<ClaimedEmail> claimed = repository.findByStatusAndLeaseToken(EmailOutboxStatus.PROCESSING, token).stream()
                 .map(outbox -> snapshot(outbox, token))
                 .toList();
+        if (claimed.isEmpty()) {
+            log.debug("event=email_outbox.poll_empty email_type=WELCOME");
+        } else {
+            log.info("event=email_outbox.claimed email_type=WELCOME claimed_count={}", claimed.size());
+        }
+        return claimed;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
