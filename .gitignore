@@ -15,6 +15,10 @@ frontend/.env.local
 # Environment (secrets)
 .env
 
+# Python
+__pycache__/
+*.py[cod]
+
 # IDE
 .idea/
 .vscode/

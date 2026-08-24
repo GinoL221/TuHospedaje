@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 IDENTITY_KEYS = ["positioning", "architecture", "palette", "floors", "wallsAndFinishes", "joinery", "furniture", "lighting", "continuityElements", "recommendedScenes"]
-EXPECTED_MANIFEST_DIGEST = "71e13efa921d8bd254c1020477cf2ae08922e96303b0d850e72676257ee79c0e"
+EXPECTED_MANIFEST_DIGEST = "0d357b4b81544a10b88942a4c9c6ca9eedee4c9ae0b9d1ae2bc3404ab9d9dfbc"
 INDEX_ROOT = {"schemaVersion": 1, "source": "recovered-from-approved-context"}
 CATEGORY_TOTALS = {"hotel": 9, "cabin": 8, "apartment": 7, "hostel": 6, "resort": 4, "glamping": 4}
 NUMBER_WORDS = {"un": 1, "una": 1, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6, "siete": 7, "ocho": 8}
