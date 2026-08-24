@@ -149,6 +149,82 @@
   margin: 0;
 }
 
+/* TABLE FILTERS */
+.admin-table-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-table-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-table-controls label:first-child {
+  flex: 1 1 280px;
+  max-width: 440px;
+}
+
+.admin-table-controls input,
+.admin-table-controls select,
+.admin-table-controls button {
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.admin-table-controls input,
+.admin-table-controls select {
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+  color: var(--text);
+}
+
+.admin-table-controls input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-table-controls select {
+  min-width: 190px;
+  cursor: pointer;
+}
+
+.admin-table-controls input:focus-visible,
+.admin-table-controls select:focus-visible,
+.admin-table-controls button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.admin-table-controls input:focus,
+.admin-table-controls select:focus {
+  border-color: var(--accent);
+}
+
+.admin-table-controls button {
+  padding: 0 20px;
+  border: 2px solid var(--accent);
+  background: var(--bg);
+  color: var(--secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.admin-table-controls button:hover {
+  border-color: var(--secondary);
+  background: var(--secondary);
+  color: #fff;
+}
+
 /* MOBILE BLOCK */
 .admin-mobile-block {
   display: flex;
