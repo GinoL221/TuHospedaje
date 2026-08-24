@@ -11,8 +11,6 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.mail.MailAuthenticationException;
@@ -25,8 +23,6 @@ import org.springframework.stereotype.Service;
 @Primary
 @ConditionalOnProperty(name = "app.mail.smtp.enabled", havingValue = "true")
 public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
-
-    private static final Logger log = LoggerFactory.getLogger(SmtpEmailServiceImpl.class);
 
     private final JavaMailSender mailSender;
 
@@ -124,13 +120,11 @@ public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
             mailSender.send(message);
-            log.info("Email sent to {}: {}", to, subject);
         } catch (MessagingException | MailException e) {
             // MessagingException covers message construction (checked); MailException
             // (unchecked) is what JavaMailSender#send actually throws on real SMTP failures
             // (e.g. MailSendException) — without this branch, an SMTP outage propagated as
             // a RuntimeException straight out of an @Transactional caller.
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
         }
     }
 

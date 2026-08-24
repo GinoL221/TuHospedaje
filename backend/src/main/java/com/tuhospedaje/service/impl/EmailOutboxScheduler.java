@@ -4,10 +4,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 @ConditionalOnProperty(prefix = "tuhospedaje.email-outbox", name = "enabled", havingValue = "true")
 public class EmailOutboxScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailOutboxScheduler.class);
 
     private final ObjectProvider<EmailOutboxDispatcher> dispatcher;
     private final EmailOutboxTransactionService transactions;
@@ -28,9 +32,10 @@ public class EmailOutboxScheduler {
     @Scheduled(fixedDelayString = "${tuhospedaje.email-outbox.cleanup-interval}")
     public void cleanupWelcome() {
         try {
-            transactions.cleanupWelcome();
+            int deleted = transactions.cleanupWelcome();
+            log.info("event=email_outbox.cleanup_completed email_type=WELCOME deleted_count={}", deleted);
         } catch (RuntimeException ignored) {
-            // Cleanup is isolated from dispatch and may retry on its next scheduled run.
+            log.warn("event=email_outbox.cleanup_failed email_type=WELCOME classification=CLEANUP_FAILED");
         }
     }
 }

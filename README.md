@@ -74,7 +74,7 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-# Email (opcional — false deshabilita SMTP y logea en consola)
+# Email (opcional — false deshabilita SMTP)
 MAIL_SMTP_ENABLED=false
 MAILTRAP_HOST=sandbox.smtp.mailtrap.io
 MAILTRAP_PORT=2525
@@ -102,6 +102,12 @@ cd backend
 ./mvnw spring-boot:run
 ```
 > Disponible en `http://localhost:8080`
+
+#### Operación del outbox de bienvenida
+
+El registro persiste el email de bienvenida y responde sin esperar el envío SMTP. Los eventos `email_outbox.*` incluyen solo el tipo `WELCOME`, identificadores de correlación y estados acotados; no incluyen destinatarios, nombres, asunto, cuerpo HTML, credenciales ni tokens.
+
+`DELIVERED` indica únicamente que el servidor SMTP aceptó la entrega para su envío. No prueba entrega del proveedor, llegada al buzón, recepción por la persona destinataria ni lectura. Salidas históricas de consola, observaciones de Mailtrap, US #19 y PR #80 no son evidencia de aceptación.
 
 #### Ciclo de vida del esquema
 
