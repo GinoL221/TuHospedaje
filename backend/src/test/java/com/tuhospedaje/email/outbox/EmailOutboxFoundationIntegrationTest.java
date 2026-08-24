@@ -7,10 +7,12 @@ import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.impl.EmailOutboxScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -51,6 +53,9 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     private final List<Long> fixtureUserIds = new ArrayList<>();
 
@@ -131,6 +136,36 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void disabledDispatchPreservesEligibleWelcomeRowsWithoutConsumingAttempts() {
+        User user = saveUser("disabled-dispatch@test.com");
+        EmailOutbox saved = emailOutboxRepository.save(buildOutbox(
+                user, "WELCOME", "disabled-dispatch-1", "disabled-dispatch@test.com"));
+
+        assertThat(applicationContext.getBeansOfType(EmailOutboxScheduler.class)).isEmpty();
+
+        EmailOutbox preserved = emailOutboxRepository.findById(saved.getId()).orElseThrow();
+        assertThat(preserved.getStatus()).isEqualTo(EmailOutboxStatus.PENDING);
+        assertThat(preserved.getFailedAttempts()).isZero();
+        assertThat(preserved.getLeaseToken()).isNull();
+        assertThat(preserved.getLeaseUntil()).isNull();
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void preservedEligibleWelcomeRowCanBeClaimedWhenDispatchBecomesAvailable() {
+        User user = saveUser("reenabled-dispatch@test.com");
+        EmailOutbox saved = emailOutboxRepository.save(buildOutbox(
+                user, "WELCOME", "reenabled-dispatch-1", "reenabled-dispatch@test.com"));
+
+        List<EmailOutbox> claimed = emailOutboxRepository.claimEligible(Instant.now(), 1);
+
+        assertThat(claimed).extracting(EmailOutbox::getId).containsExactly(saved.getId());
+        EmailOutbox reclaimed = emailOutboxRepository.findById(saved.getId()).orElseThrow();
+        assertThat(reclaimed.getStatus()).isEqualTo(EmailOutboxStatus.PROCESSING);
+        assertThat(reclaimed.getFailedAttempts()).isZero();
+    }
+
+    @Test
     void uniqueConstraintRejectsDuplicateEmailTypeAndAggregateId() {
         User user = saveUser("unique@test.com");
 
@@ -173,7 +208,8 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
 
         EmailOutbox expired = buildOutbox(user, "WELCOME", "expired-1", "expired@test.com");
         expired.setStatus(EmailOutboxStatus.PROCESSING);
-        expired.setLeaseToken(UUID.randomUUID().toString());
+        String oldToken = UUID.randomUUID().toString();
+        expired.setLeaseToken(oldToken);
         expired.setLeaseUntil(Instant.now().minus(1, ChronoUnit.MINUTES));
         emailOutboxRepository.save(expired);
 
@@ -186,8 +222,20 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
 
         List<EmailOutbox> claimed = emailOutboxRepository.claimEligible(now, 1_000);
 
-        assertThat(claimed).filteredOn(outbox -> outbox.getId().equals(expired.getId()))
-                .singleElement().satisfies(outbox -> assertThat(outbox.getLeaseUntil()).isAfter(Instant.now()));
+        EmailOutbox reclaimed = claimed.stream()
+                .filter(outbox -> outbox.getId().equals(expired.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(reclaimed.getLeaseUntil()).isAfter(Instant.now());
+        assertThat(reclaimed.getLeaseToken()).isNotEqualTo(oldToken);
+
+        int staleCompletion = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.markDelivered(reclaimed.getId(), oldToken, now));
+        int currentCompletion = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.markDelivered(reclaimed.getId(), reclaimed.getLeaseToken(), now));
+
+        assertThat(staleCompletion).isZero();
+        assertThat(currentCompletion).isEqualTo(1);
     }
 
     @Test
@@ -343,6 +391,31 @@ class EmailOutboxFoundationIntegrationTest extends AbstractIntegrationTest {
                 .filteredOn(candidate -> candidate.getId().equals(saved.getId())).isEmpty();
         assertThat(emailOutboxRepository.claimEligible(nextAttemptAt.plusSeconds(1), 1_000))
                 .extracting(EmailOutbox::getId).containsExactly(saved.getId());
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void terminalFailureAtMaximumAttemptsIsNotClaimedAgain() {
+        User user = saveUser("attempt-exhaustion@test.com");
+        String token = UUID.randomUUID().toString();
+        EmailOutbox outbox = buildOutbox(user, "WELCOME", "attempt-exhaustion-1", "attempt-exhaustion@test.com");
+        outbox.setStatus(EmailOutboxStatus.PROCESSING);
+        outbox.setFailedAttempts(2);
+        outbox.setLeaseToken(token);
+        outbox.setLeaseUntil(Instant.now().plus(5, ChronoUnit.MINUTES));
+        EmailOutbox saved = emailOutboxRepository.save(outbox);
+        Instant outcomeTime = Instant.now();
+
+        int updated = new TransactionTemplate(transactionManager).execute(status ->
+                emailOutboxRepository.markFailed(saved.getId(), token, outcomeTime, "SMTP_UNAVAILABLE"));
+
+        assertThat(updated).isEqualTo(1);
+        EmailOutbox failed = emailOutboxRepository.findById(saved.getId()).orElseThrow();
+        assertThat(failed.getStatus()).isEqualTo(EmailOutboxStatus.FAILED);
+        assertThat(failed.getFailedAttempts()).isEqualTo(3);
+        assertThat(emailOutboxRepository.claimEligible(outcomeTime.plus(1, ChronoUnit.HOURS), 1))
+                .extracting(EmailOutbox::getId)
+                .doesNotContain(saved.getId());
     }
 
     @Test
