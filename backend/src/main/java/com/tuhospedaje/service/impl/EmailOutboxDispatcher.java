@@ -34,14 +34,14 @@ public class EmailOutboxDispatcher {
     public void dispatch() {
         Instant now = clock.instant();
         for (EmailOutboxTransactionService.ClaimedEmail claimed : transactions.claimWelcomeBatch(now)) {
-            submit(claimed, now);
+            submit(claimed);
         }
     }
 
-    private void submit(EmailOutboxTransactionService.ClaimedEmail claimed, Instant outcomeTime) {
+    private void submit(EmailOutboxTransactionService.ClaimedEmail claimed) {
         try {
             transport.submit(claimed.message());
-            int updated = transactions.markDelivered(claimed.id(), claimed.token(), outcomeTime);
+            int updated = transactions.markDelivered(claimed.id(), claimed.token(), clock.instant());
             if (updated == 0) {
                 logStaleOwner(claimed, "DELIVERED");
                 return;
@@ -49,12 +49,13 @@ public class EmailOutboxDispatcher {
             log.info("event=email_outbox.smtp_accepted email_type=WELCOME outbox_id={} aggregate_id={} updated={}",
                     claimed.id(), claimed.message().aggregateId(), updated);
         } catch (EmailTransportFailure failure) {
-            completeFailure(claimed, failure.classification(), outcomeTime);
+            completeFailure(claimed, failure.classification());
         }
     }
 
     private void completeFailure(EmailOutboxTransactionService.ClaimedEmail claimed,
-                                 EmailTransportFailureClassification classification, Instant outcomeTime) {
+                                 EmailTransportFailureClassification classification) {
+        Instant outcomeTime = clock.instant();
         int attempt = claimed.failedAttempts() + 1;
         if (!classification.isRetryable() || attempt >= properties.getMaxAttempts()) {
             int updated = transactions.markFailed(claimed.id(), claimed.token(), classification, outcomeTime);
