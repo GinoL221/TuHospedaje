@@ -64,7 +64,7 @@ class EmailOutboxObservabilityTest {
     }
 
     @Test
-    void emitsAcceptanceRetryTerminalAndStaleOwnerEventsWithoutPayloadData() {
+    void emitsSmtpAcceptanceRetryTerminalAndStaleOwnerEventsWithoutPayloadOrMailboxDeliveryClaims() {
         EmailOutboxTransactionService transactions = mock(EmailOutboxTransactionService.class);
         EmailTransport transport = mock(EmailTransport.class);
         EmailOutboxProperties properties = properties();
@@ -97,6 +97,9 @@ class EmailOutboxObservabilityTest {
                     "event=email_outbox.stale_owner_rejected email_type=WELCOME outbox_id=10 aggregate_id=42 state=DELIVERED");
             assertThat(messages(events)).noneMatch(messageText -> messageText.contains(SENSITIVE_RECIPIENT)
                     || messageText.contains(SENSITIVE_BODY) || messageText.contains("Sensitive subject"));
+            assertThat(messages(events)).noneMatch(messageText -> messageText.contains("provider delivery")
+                    || messageText.contains("mailbox arrival") || messageText.contains("recipient receipt")
+                    || messageText.contains("message read"));
         } finally {
             detach(EmailOutboxDispatcher.class, events);
         }

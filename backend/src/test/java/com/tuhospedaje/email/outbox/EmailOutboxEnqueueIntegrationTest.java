@@ -15,7 +15,9 @@ import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.EmailOutboxService;
+import com.tuhospedaje.service.EmailTransportFailureClassification;
 import com.tuhospedaje.service.ReservationService;
+import com.tuhospedaje.service.impl.EmailOutboxTransactionService;
 import com.tuhospedaje.service.impl.RegistrationPersistenceService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +31,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -67,6 +71,8 @@ class EmailOutboxEnqueueIntegrationTest {
     private LodgingRepository lodgingRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private EmailOutboxTransactionService emailOutboxTransactions;
 
     @BeforeEach
     @AfterEach
@@ -103,6 +109,35 @@ class EmailOutboxEnqueueIntegrationTest {
                     .contains("Ana &lt;b&gt;")
                     .doesNotContain("localhost", "<b>Gómez</b>", "Welcome", "Thanks");
         });
+    }
+
+    @Test
+    void terminalWelcomeFailureAfterRegistrationDoesNotChangeCommittedAuthOutcome() {
+        String email = EMAIL_PREFIX + "terminal-failure@test.com";
+        AuthService.AuthResult result = authService.register(
+                new RegisterRequest("Ana", "Gómez", email, "secret123"));
+        User user = userRepository.findByEmail(email).orElseThrow();
+        com.tuhospedaje.entity.EmailOutbox outbox = emailOutboxRepository.findByEmailTypeAndAggregateId(
+                "WELCOME", user.getId().toString()).orElseThrow();
+        String token = UUID.randomUUID().toString();
+        outbox.setStatus(EmailOutboxStatus.PROCESSING);
+        outbox.setLeaseToken(token);
+        outbox.setLeaseUntil(Instant.now().plusSeconds(60));
+        emailOutboxRepository.saveAndFlush(outbox);
+
+        int updated = emailOutboxTransactions.markFailed(
+                outbox.getId(), token, EmailTransportFailureClassification.SMTP_UNAVAILABLE, Instant.now());
+
+        assertThat(updated).isEqualTo(1);
+        assertThat(emailOutboxRepository.findById(outbox.getId()).orElseThrow())
+                .satisfies(failed -> {
+                    assertThat(failed.getStatus()).isEqualTo(EmailOutboxStatus.FAILED);
+                    assertThat(failed.getFailedAttempts()).isEqualTo(1);
+                });
+        assertThat(userRepository.findByEmail(email).orElseThrow().getId()).isEqualTo(user.getId());
+        assertThat(authService.currentUser(email).getEmail()).isEqualTo(email);
+        assertThat(result.body().getEmail()).isEqualTo(email);
+        assertThat(result.token()).isNotBlank();
     }
 
     @Test
