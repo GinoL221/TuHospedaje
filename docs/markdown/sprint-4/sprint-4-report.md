@@ -386,3 +386,7 @@ La integración de sesiones renovables se completó después del corte original.
 ### 9.2. Tablas administrativas
 
 `AdminLodgings` y `AdminReservations` usan consultas server-driven para búsqueda o filtrado, ordenamiento y paginación. Categorías, Características, Políticas y Usuarios conservan el modelo client-side. Las cifras y escenarios del reporte original siguen siendo históricos y no deben interpretarse como una descripción de la implementación actual.
+
+## Anotación de estado actual
+
+Este informe preserva las decisiones y la estructura del Sprint 4 en su contexto histórico. La búsqueda vigente se renderiza en `Home`, con la URL como fuente de verdad; las referencias históricas a la vista de resultados no describen el flujo actual. Home descarta respuestas obsoletas cuando cambia o se elimina la consulta.

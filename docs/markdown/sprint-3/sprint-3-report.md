@@ -238,3 +238,7 @@ src/
 5. **Frontend sin Tests Automatizados:** No hay test runner configurado en el frontend. Las validaciones son manuales.
 6. **Gestión de Reservas en Admin:** El panel admin no incluye una vista de reservas para moderación (cancelar, confirmar). Depende del backend de Sprint 4.
 7. **Imágenes en Admin:** La subida de imágenes a Cloudinary desde el panel admin no está conectada a la UI de LodgingFormModal.
+
+## Anotación de estado actual
+
+Este informe conserva el estado histórico del Sprint 3. La búsqueda vigente se muestra en `Home` y usa la consulta de la URL como fuente de verdad; la vista histórica de resultados ya no integra el flujo actual. Ante cambios o eliminación de la consulta, Home no debe mostrar resultados de una respuesta anterior.
