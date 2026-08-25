@@ -7,6 +7,7 @@ import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.entity.EmailOutbox;
 import com.tuhospedaje.enums.EmailOutboxStatus;
+import com.tuhospedaje.enums.EmailOutboxType;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.service.EmailTransport;
 import com.tuhospedaje.service.EmailTransportFailure;
@@ -109,17 +110,19 @@ class EmailOutboxObservabilityTest {
     void emitsBoundedCleanupEventsWithoutRawFailureText() {
         EmailOutboxTransactionService transactions = mock(EmailOutboxTransactionService.class);
         ObjectProvider<EmailOutboxDispatcher> dispatcher = mock(ObjectProvider.class);
-        when(transactions.cleanupWelcome()).thenReturn(3).thenThrow(new IllegalStateException(SENSITIVE_BODY));
+        when(transactions.cleanup(EmailOutboxType.WELCOME)).thenReturn(3);
+        when(transactions.cleanup(EmailOutboxType.RESERVATION_CONFIRMATION))
+                .thenThrow(new IllegalStateException(SENSITIVE_BODY));
         EmailOutboxScheduler scheduler = new EmailOutboxScheduler(dispatcher, transactions);
 
         ListAppender<ILoggingEvent> events = attach(EmailOutboxScheduler.class);
         try {
-            scheduler.cleanupWelcome();
-            scheduler.cleanupWelcome();
+            scheduler.cleanup();
 
             assertThat(messages(events)).containsExactly(
                     "event=email_outbox.cleanup_completed email_type=WELCOME deleted_count=3",
-                    "event=email_outbox.cleanup_failed email_type=WELCOME classification=CLEANUP_FAILED");
+                    "event=email_outbox.cleanup_failed email_type=RESERVATION_CONFIRMATION classification=CLEANUP_FAILED",
+                    "event=email_outbox.cleanup_completed email_type=RESERVATION_CANCELLATION deleted_count=0");
             assertThat(messages(events)).noneMatch(message -> message.contains(SENSITIVE_BODY));
         } finally {
             detach(EmailOutboxScheduler.class, events);

@@ -4,6 +4,7 @@ import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.entity.EmailOutbox;
 import com.tuhospedaje.enums.EmailOutboxStatus;
+import com.tuhospedaje.enums.EmailOutboxType;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
 import org.slf4j.Logger;
@@ -20,7 +21,6 @@ import java.util.UUID;
 @Service
 public class EmailOutboxTransactionService {
 
-    private static final String WELCOME = "WELCOME";
     private static final Logger log = LoggerFactory.getLogger(EmailOutboxTransactionService.class);
 
     private final EmailOutboxRepository repository;
@@ -34,19 +34,24 @@ public class EmailOutboxTransactionService {
     }
 
     @Transactional
-    public List<ClaimedEmail> claimWelcomeBatch(Instant now) {
+    public List<ClaimedEmail> claimBatch(EmailOutboxType type, Instant now) {
         String token = UUID.randomUUID().toString();
         Instant leaseUntil = now.plus(properties.getLeaseDuration());
-        repository.claimEligible(WELCOME, now, properties.getBatchSize(), token, leaseUntil);
+        repository.claimEligible(type.name(), now, properties.getBatchSize(), token, leaseUntil);
         List<ClaimedEmail> claimed = repository.findByStatusAndLeaseToken(EmailOutboxStatus.PROCESSING, token).stream()
                 .map(outbox -> snapshot(outbox, token))
                 .toList();
         if (claimed.isEmpty()) {
-            log.debug("event=email_outbox.poll_empty email_type=WELCOME");
+            log.debug("event=email_outbox.poll_empty email_type={}", type);
         } else {
-            log.info("event=email_outbox.claimed email_type=WELCOME claimed_count={}", claimed.size());
+            log.info("event=email_outbox.claimed email_type={} claimed_count={}", type, claimed.size());
         }
         return claimed;
+    }
+
+    @Transactional
+    public List<ClaimedEmail> claimWelcomeBatch(Instant now) {
+        return claimBatch(EmailOutboxType.WELCOME, now);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -67,8 +72,13 @@ public class EmailOutboxTransactionService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int cleanup(EmailOutboxType type) {
+        return repository.purgeCompletedBefore(type.name(), clock.instant().minus(properties.getRetention()));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int cleanupWelcome() {
-        return repository.purgeWelcomeCompletedBefore(clock.instant().minus(properties.getRetention()));
+        return cleanup(EmailOutboxType.WELCOME);
     }
 
     private ClaimedEmail snapshot(EmailOutbox outbox, String token) {

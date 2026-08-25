@@ -6,6 +6,7 @@ import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.EmailOutbox;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.EmailOutboxStatus;
+import com.tuhospedaje.enums.EmailOutboxType;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.service.WelcomeEmailRenderer;
@@ -47,7 +48,7 @@ class EmailOutboxServiceImplTest {
 
         EmailOutbox saved = capturedFlushedOutbox();
         assertThat(saved.getUser()).isSameAs(user);
-        assertThat(saved.getEmailType()).isEqualTo("WELCOME");
+        assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.WELCOME.name());
         assertThat(saved.getAggregateId()).isEqualTo("7");
         assertThat(saved.getRecipient()).isEqualTo("ana@example.com");
         assertThat(saved.getSubject()).isEqualTo("¡Bienvenido a TuHospedaje!");
@@ -65,7 +66,7 @@ class EmailOutboxServiceImplTest {
         newService().enqueueReservationConfirmation(user, reservation);
 
         EmailOutbox saved = capturedOutbox();
-        assertThat(saved.getEmailType()).isEqualTo("RESERVATION_CONFIRMATION");
+        assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.RESERVATION_CONFIRMATION.name());
         assertThat(saved.getAggregateId()).isEqualTo("42");
         assertThat(saved.getRecipient()).isEqualTo("guest@example.com");
         assertThat(saved.getSubject()).isEqualTo("Booking confirmed — Hotel Sur");
@@ -84,7 +85,7 @@ class EmailOutboxServiceImplTest {
         newService().enqueueReservationCancellation(user, reservation);
 
         EmailOutbox saved = capturedOutbox();
-        assertThat(saved.getEmailType()).isEqualTo("RESERVATION_CANCELLATION");
+        assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.RESERVATION_CANCELLATION.name());
         assertThat(saved.getAggregateId()).isEqualTo("42");
         assertThat(saved.getRecipient()).isEqualTo("guest@example.com");
         assertThat(saved.getSubject()).isEqualTo("Booking cancelled — Hotel Sur");

@@ -77,9 +77,9 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             DELETE FROM EmailOutbox o
-            WHERE o.status IN ('DELIVERED', 'FAILED') AND o.completedAt < :cutoff
+            WHERE o.emailType = :emailType AND o.status IN ('DELIVERED', 'FAILED') AND o.completedAt < :cutoff
             """)
-    int purgeCompletedBefore(@Param("cutoff") Instant cutoff);
+    int purgeCompletedBefore(@Param("emailType") String emailType, @Param("cutoff") Instant cutoff);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""

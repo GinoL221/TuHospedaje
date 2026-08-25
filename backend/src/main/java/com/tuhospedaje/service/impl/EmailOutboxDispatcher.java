@@ -4,6 +4,7 @@ import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.service.EmailTransport;
 import com.tuhospedaje.service.EmailTransportFailure;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
+import com.tuhospedaje.enums.EmailOutboxType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -32,8 +33,15 @@ public class EmailOutboxDispatcher {
     }
 
     public void dispatch() {
-        Instant now = clock.instant();
-        for (EmailOutboxTransactionService.ClaimedEmail claimed : transactions.claimWelcomeBatch(now)) {
+        dispatch(transactions.claimWelcomeBatch(clock.instant()));
+    }
+
+    public void dispatch(EmailOutboxType type) {
+        dispatch(transactions.claimBatch(type, clock.instant()));
+    }
+
+    private void dispatch(Iterable<EmailOutboxTransactionService.ClaimedEmail> claimedEmails) {
+        for (EmailOutboxTransactionService.ClaimedEmail claimed : claimedEmails) {
             submit(claimed);
         }
     }
@@ -46,8 +54,8 @@ public class EmailOutboxDispatcher {
                 logStaleOwner(claimed, "DELIVERED");
                 return;
             }
-            log.info("event=email_outbox.smtp_accepted email_type=WELCOME outbox_id={} aggregate_id={} updated={}",
-                    claimed.id(), claimed.message().aggregateId(), updated);
+            log.info("event=email_outbox.smtp_accepted email_type={} outbox_id={} aggregate_id={} updated={}",
+                    claimed.message().emailType(), claimed.id(), claimed.message().aggregateId(), updated);
         } catch (EmailTransportFailure failure) {
             completeFailure(claimed, failure.classification());
         }
@@ -63,8 +71,8 @@ public class EmailOutboxDispatcher {
                 logStaleOwner(claimed, "FAILED");
                 return;
             }
-            log.info("event=email_outbox.failed email_type=WELCOME outbox_id={} aggregate_id={} attempt={} max_attempts={} classification={} updated={}",
-                    claimed.id(), claimed.message().aggregateId(), attempt, properties.getMaxAttempts(), classification, updated);
+            log.info("event=email_outbox.failed email_type={} outbox_id={} aggregate_id={} attempt={} max_attempts={} classification={} updated={}",
+                    claimed.message().emailType(), claimed.id(), claimed.message().aggregateId(), attempt, properties.getMaxAttempts(), classification, updated);
             return;
         }
         int updated = transactions.releaseForRetry(claimed.id(), claimed.token(), classification,
@@ -73,12 +81,12 @@ public class EmailOutboxDispatcher {
             logStaleOwner(claimed, "PENDING");
             return;
         }
-        log.info("event=email_outbox.retry_scheduled email_type=WELCOME outbox_id={} aggregate_id={} attempt={} max_attempts={} classification={} updated={}",
-                claimed.id(), claimed.message().aggregateId(), attempt, properties.getMaxAttempts(), classification, updated);
+        log.info("event=email_outbox.retry_scheduled email_type={} outbox_id={} aggregate_id={} attempt={} max_attempts={} classification={} updated={}",
+                claimed.message().emailType(), claimed.id(), claimed.message().aggregateId(), attempt, properties.getMaxAttempts(), classification, updated);
     }
 
     private void logStaleOwner(EmailOutboxTransactionService.ClaimedEmail claimed, String state) {
-        log.warn("event=email_outbox.stale_owner_rejected email_type=WELCOME outbox_id={} aggregate_id={} state={}",
-                claimed.id(), claimed.message().aggregateId(), state);
+        log.warn("event=email_outbox.stale_owner_rejected email_type={} outbox_id={} aggregate_id={} state={}",
+                claimed.message().emailType(), claimed.id(), claimed.message().aggregateId(), state);
     }
 }
