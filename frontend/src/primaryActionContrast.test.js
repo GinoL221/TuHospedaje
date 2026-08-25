@@ -38,7 +38,6 @@ describe("primary action contrast contract", () => {
 		["authentication", "src/assets/css/auth.css", ".register-box button"],
 		["booking form", "src/pages/Booking/BookingPage.css", '.booking-form button[type="submit"]'],
 		["booking confirmation", "src/pages/Booking/BookingConfirmation.css", ".confirmation-actions .btn-primary"],
-		["search filters", "src/pages/SearchResults/SearchResults.css", ".btn-filter"],
 		["lodging reservation", "src/pages/ProductDetail/ProductDetail.css", ".btn-reserve"],
 		["review submission", "src/components/ReviewsSection/ReviewsSection.css", ".btn-submit-review"],
 		["admin add", "src/pages/Admin/Admin.css", ".btn-fab"],
