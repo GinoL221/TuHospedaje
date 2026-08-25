@@ -30,7 +30,7 @@ const lodgingFixture = (overrides = {}) => ({
 // AdminLodgings fires 4 independent GET effects on mount: /lodgings/admin
 // (the server-paginated table data), plus /categories, /features, /policies
 // (modal dropdown/checkbox data). Branch by endpoint so each test only
-// overrides what it cares about — same pattern as SearchResults.test.jsx.
+// overrides what it cares about — same pattern as Home.test.jsx.
 function pageResponse(items, overrides = {}) {
 	return {
 		items,
