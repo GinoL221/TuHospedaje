@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -51,6 +52,9 @@ public class SecurityConfig {
                         // reopen the PR #60 NullAuthenticatedSessionStrategy rotation race below;
                         // see AuthCsrfLifecycleIntegrationTest's regression coverage.
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh")
+                        .ignoringRequestMatchers(request -> "/api/auth/welcome-email/resend".equals(request.getRequestURI())
+                                && (request.getCookies() == null || Arrays.stream(request.getCookies())
+                                .noneMatch(cookie -> "ACCESS_TOKEN".equals(cookie.getName()))))
                         // Without this, CsrfConfigurer defaults to a CsrfAuthenticationStrategy that
                         // clears and regenerates the XSRF-TOKEN cookie every time SessionManagementFilter
                         // sees a newly-authenticated request. That guard exists to prevent session
@@ -68,6 +72,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/refresh").permitAll()
+                        .requestMatchers("/api/auth/welcome-email/resend").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         // Unlike /api/auth/refresh, this call has an established session and stays
@@ -93,6 +98,10 @@ public class SecurityConfig {
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/auth/me")
+                        )
+                        .defaultAuthenticationEntryPointFor(
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/auth/welcome-email/resend")
                         )
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),

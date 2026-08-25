@@ -2,12 +2,14 @@ package com.tuhospedaje.controller;
 
 import com.tuhospedaje.configuration.AuthCookieFactory;
 import com.tuhospedaje.configuration.RefreshCookieFactory;
+import com.tuhospedaje.configuration.WelcomeEmailProperties;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.PasswordChangeRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
+import com.tuhospedaje.service.EmailOutboxService.WelcomeResendResult;
 import com.tuhospedaje.service.RefreshSessionService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,6 +52,7 @@ public class AuthController {
     private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
 
     private final AuthService authService;
+    private final WelcomeEmailProperties welcomeEmailProperties;
     private final AuthCookieFactory authCookieFactory;
     private final RefreshCookieFactory refreshCookieFactory;
     private final CsrfTokenRepository csrfTokenRepository;
@@ -114,6 +117,17 @@ public class AuthController {
     public ResponseEntity<AuthResponse> me(Authentication authentication) {
         AuthResponse response = authService.currentUser(authentication.getName());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/welcome-email/resend")
+    public ResponseEntity<Void> resendWelcome(Authentication authentication) {
+        WelcomeResendResult result = authService.resendWelcome(authentication.getName());
+        if (result == WelcomeResendResult.SCHEDULED) {
+            return ResponseEntity.accepted().build();
+        }
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(welcomeEmailProperties.getResendCooldown().toSeconds()))
+                .build();
     }
 
     @Operation(summary = "Bootstrap the browser CSRF token")

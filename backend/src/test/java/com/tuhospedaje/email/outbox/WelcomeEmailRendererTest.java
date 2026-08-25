@@ -14,9 +14,9 @@ class WelcomeEmailRendererTest {
     void rendersSpanishWelcomeWithEscapedNameAndNormalizedLoginLink() {
         WelcomeEmailRenderer renderer = new WelcomeEmailRenderer(properties("https://app.example/"));
 
-        EmailMessage message = renderer.render(42L, "ana@example.com", "Ana <script>alert(1)</script>");
+        EmailMessage message = renderer.render(42L, "ana<unsafe>@example.com", "Ana <script>alert(1)</script>");
 
-        assertThat(message.to()).isEqualTo("ana@example.com");
+        assertThat(message.to()).isEqualTo("ana<unsafe>@example.com");
         assertThat(message.emailType()).isEqualTo("WELCOME");
         assertThat(message.aggregateId()).isEqualTo("42");
         assertThat(message.subject()).isEqualTo("¡Bienvenido a TuHospedaje!");
@@ -24,6 +24,7 @@ class WelcomeEmailRendererTest {
                 .contains("Bienvenido", "Gracias por registrarte")
                 .contains("href=\"https://app.example/login\"")
                 .contains("Ana &lt;script&gt;alert(1)&lt;/script&gt;")
+                .contains("ana&lt;unsafe&gt;@example.com")
                 .doesNotContain("<script>", "localhost", "Welcome", "Thanks");
     }
 

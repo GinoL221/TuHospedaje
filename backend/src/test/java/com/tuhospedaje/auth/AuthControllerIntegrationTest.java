@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -370,6 +372,43 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                 .andReturn();
 
         assertBodyHasNoJwt(result.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldReturn401WhenWelcomeResendIsAnonymous() throws Exception {
+        mockMvc.perform(post("/api/auth/welcome-email/resend"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRejectWelcomeResendWithoutCsrfToken() throws Exception {
+        Cookie accessTokenCookie = loginAndGetAccessTokenCookie("resend-no-csrf@test.com");
+
+        mockMvc.perform(post("/api/auth/welcome-email/resend").cookie(accessTokenCookie))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldScheduleWelcomeResendForAuthenticatedPrincipalWithCsrfToken() throws Exception {
+        LoginCookies cookies = loginAndGetCookies("resend-scheduled@test.com");
+        when(emailOutboxService.resendWelcome(any())).thenReturn(EmailOutboxService.WelcomeResendResult.SCHEDULED);
+
+        mockMvc.perform(post("/api/auth/welcome-email/resend")
+                        .cookie(cookies.accessToken(), cookies.csrfToken())
+                        .header("X-XSRF-TOKEN", cookies.csrfToken().getValue()))
+                .andExpect(status().isAccepted());
+    }
+
+    @Test
+    void shouldApplyCooldownAndRetryAfterToWelcomeResend() throws Exception {
+        LoginCookies cookies = loginAndGetCookies("resend-cooldown@test.com");
+        when(emailOutboxService.resendWelcome(any())).thenReturn(EmailOutboxService.WelcomeResendResult.COOLDOWN);
+
+        mockMvc.perform(post("/api/auth/welcome-email/resend")
+                        .cookie(cookies.accessToken(), cookies.csrfToken())
+                        .header("X-XSRF-TOKEN", cookies.csrfToken().getValue()))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "300"));
     }
 
     private void registerUser(String email) throws Exception {
