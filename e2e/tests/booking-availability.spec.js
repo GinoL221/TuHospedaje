@@ -129,6 +129,8 @@ test.describe('BookingPage — preflight and conflict recovery', () => {
   /** @param {import('@playwright/test').Page} page */
   async function revealGuestPhone(page) {
     const showDetails = page.getByRole('button', { name: 'Mostrar detalles del huésped' });
+    const hideDetails = page.getByRole('button', { name: 'Ocultar detalles del huésped' });
+    await expect(showDetails.or(hideDetails)).toBeVisible();
     if (await showDetails.isVisible()) {
       await showDetails.click();
     }
