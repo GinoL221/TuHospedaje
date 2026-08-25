@@ -143,6 +143,29 @@ describe("ProductDetail - rendering lodging detail", () => {
 	});
 });
 
+describe("ProductDetail - header navigation placement", () => {
+	it("renders the back action after Share so it is the rightmost header control", async () => {
+		mockGetDefaults();
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+		const header = screen.getByRole("heading", { name: "Cabaña del Lago" }).parentElement.parentElement;
+
+		expect(Array.from(header.children).map((child) => child.getAttribute("aria-label") || child.textContent))
+			.toEqual(["Cabaña del LagoBariloche, Argentina", "Compartir", "Volver"]);
+	});
+
+	it("does not override the header controls' DOM order through Share CSS", () => {
+		const css = readFileSync(
+			resolve(process.cwd(), "src/pages/ProductDetail/ProductDetail.css"),
+			"utf8",
+		);
+
+		const shareRule = css.match(/\.btn-share\s*{([^}]*)}/)?.[1] ?? "";
+		expect(shareRule).not.toMatch(/\border\s*:/);
+	});
+});
+
 describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 	it("shows a login prompt instead of the reserve button for anonymous users", async () => {
 		mockGetDefaults();

@@ -96,7 +96,7 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
         );
 
         enqueue(user, RESERVATION_CONFIRMATION, reservation.getId().toString(),
-                reservation.getGuestEmail(), subject, body, false);
+                user.getEmail(), subject, body, false);
     }
 
     @Override
@@ -107,11 +107,18 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
                 <html><body style="font-family:sans-serif;color:#222;">
                 <h2>Your booking was cancelled</h2>
                 <p>Your reservation at %s from %s to %s is now cancelled.</p>
+                <p>Contact the lodging at %s or %s for further assistance.</p>
                 </body></html>
-                """.formatted(reservation.getLodgingName(), reservation.getCheckIn(), reservation.getCheckOut());
+                """.formatted(
+                reservation.getLodgingName(),
+                reservation.getCheckIn(),
+                reservation.getCheckOut(),
+                reservation.getLodgingPhone() != null ? reservation.getLodgingPhone() : "-",
+                reservation.getLodgingEmail() != null ? reservation.getLodgingEmail() : "-"
+        );
 
         enqueue(user, RESERVATION_CANCELLATION, reservation.getId().toString(),
-                reservation.getGuestEmail(), subject, body, false);
+                user.getEmail(), subject, body, false);
     }
 
     private void enqueue(User user, String emailType, String aggregateId, String recipient,
