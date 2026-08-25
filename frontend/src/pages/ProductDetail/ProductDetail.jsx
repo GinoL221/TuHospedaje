@@ -1,11 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import {
 	ArrowLeft,
-	ChevronDown,
-	ChevronLeft,
-	ChevronRight,
-	ChevronUp,
 } from "lucide-react";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,7 +10,7 @@ import useAvailability from "../../hooks/useAvailability";
 import DatePicker from "react-datepicker";
 import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ShareModal from "../../components/ShareModal/ShareModal";
-import GalleryModal from "../../components/GalleryModal/GalleryModal";
+import LodgingGallery from "../../components/LodgingGallery/LodgingGallery";
 import Icon from "../../components/Icons/Icon";
 import { minCheckoutDate } from "../../utils/dateRange";
 
@@ -26,8 +22,6 @@ export default function ProductDetail() {
 	const location = useLocation();
 	const { user } = useAuth();
 	const [lodging, setLodging] = useState(null);
-	const [galleryIndex, setGalleryIndex] = useState(0);
-	const [showGallery, setShowGallery] = useState(false);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
 	const [selectionConflict, setSelectionConflict] = useState({ lodgingId: id, visible: false });
@@ -35,8 +29,6 @@ export default function ProductDetail() {
 		setSelectionConflict({ lodgingId: id, visible: false });
 	}
 	const [showShare, setShowShare] = useState(false);
-	const thumbnailStripRef = useRef(null);
-	const thumbnailRefs = useRef([]);
 	const {
 		status: availabilityStatus,
 		occupiedRanges,
@@ -57,34 +49,6 @@ export default function ProductDetail() {
 		if ((checkIn && !checkOut) || (!checkIn && checkOut)) return;
 		loadAvailability({ checkIn, checkOut });
 	}, [checkIn, checkOut, loadAvailability]);
-
-	useEffect(() => {
-		if (
-			typeof window === "undefined" ||
-			typeof window.matchMedia !== "function" ||
-			!window.matchMedia("(max-width: 768px)").matches
-		) {
-			return;
-		}
-
-		const selectedThumbnail = thumbnailRefs.current[galleryIndex];
-		if (
-			!selectedThumbnail ||
-			!thumbnailStripRef.current?.contains(selectedThumbnail) ||
-			typeof selectedThumbnail.scrollIntoView !== "function"
-		) {
-			return;
-		}
-
-		const reduceMotion = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-		selectedThumbnail.scrollIntoView({
-			inline: "center",
-			block: "nearest",
-			behavior: reduceMotion ? "auto" : "smooth",
-		});
-	}, [galleryIndex]);
 
 	function isDateOccupied(date) {
 		return occupiedRanges.some(
@@ -123,9 +87,6 @@ export default function ProductDetail() {
 			</main>
 		);
 
-	const images = lodging.imageUrls || [];
-	const previewImages = images.slice(0, 5);
-	const previewIndex = Math.min(galleryIndex, previewImages.length - 1);
 	const nights = calcNights();
 	const total = lodging.pricePerNight ? nights * lodging.pricePerNight : 0;
 
@@ -150,112 +111,7 @@ export default function ProductDetail() {
 				</button>
 			</div>
 
-			{images.length > 0 && (
-				<div className="gallery-wrapper">
-					<div className="gallery-main">
-						<button
-							className="gallery-main-trigger"
-							onClick={() => setShowGallery(true)}
-							aria-label="Abrir galería"
-						>
-							<img
-								src={previewImages[previewIndex]}
-								alt={`${lodging.name} - ${previewIndex + 1}`}
-								loading="lazy"
-								onError={(e) => {
-									e.target.src = "https://placehold.co/800x600?text=Sin+imagen";
-								}}
-							/>
-						</button>
-							{images.length > 1 && (
-								<div className="gallery-mobile-controls">
-									<button
-										className="gallery-mobile-arrow gallery-mobile-arrow--prev"
-										onClick={() =>
-											setGalleryIndex((prev) => Math.max(0, prev - 1))
-										}
-										disabled={galleryIndex === 0}
-										aria-label="Imagen anterior en galería"
-									>
-										<ChevronLeft size={24} aria-hidden="true" focusable="false" />
-									</button>
-									<button
-										className="gallery-mobile-arrow gallery-mobile-arrow--next"
-										onClick={() =>
-											setGalleryIndex((prev) =>
-													Math.min(previewImages.length - 1, prev + 1),
-											)
-										}
-									disabled={previewIndex === previewImages.length - 1}
-										aria-label="Imagen siguiente en galería"
-									>
-										<ChevronRight size={24} aria-hidden="true" focusable="false" />
-									</button>
-								</div>
-							)}
-						</div>
-						{images.length > 1 && (
-							<div className="gallery-thumbs-col">
-							<button
-								className="gallery-thumbs-arrow gallery-desktop-arrow"
-								onClick={() => setGalleryIndex((prev) => Math.max(0, prev - 1))}
-								disabled={galleryIndex === 0}
-								aria-label="Imagen anterior"
-							>
-								<ChevronUp size={20} aria-hidden="true" focusable="false" />
-							</button>
-								<div className="gallery-thumbs" ref={thumbnailStripRef}>
-								{previewImages.slice(1).map((url, i) => (
-									<button
-										key={url}
-										ref={(node) => {
-											thumbnailRefs.current[i + 1] = node;
-										}}
-										className={`gallery-thumb ${previewIndex === i + 1 ? "gallery-thumb--active" : ""}`}
-										onClick={() => {
-											setGalleryIndex(i + 1);
-											setShowGallery(true);
-										}}
-										aria-label={`Ver imagen ${i + 2}`}
-										aria-current={previewIndex === i + 1 ? "true" : undefined}
-									>
-										<img
-										src={url}
-										alt={`${lodging.name} - ${i + 2}`}
-											loading="lazy"
-											onError={(e) => {
-												e.target.src =
-													"https://placehold.co/400x300?text=Sin+imagen";
-											}}
-											/>
-										</button>
-									))}
-								</div>
-							<button
-								className="gallery-thumbs-arrow gallery-desktop-arrow"
-								onClick={() =>
-									setGalleryIndex((prev) =>
-											Math.min(previewImages.length - 1, prev + 1),
-									)
-								}
-								disabled={previewIndex === previewImages.length - 1}
-								aria-label="Imagen siguiente"
-							>
-								<ChevronDown size={20} aria-hidden="true" focusable="false" />
-							</button>
-							<button
-								className="gallery-more"
-								onClick={() => {
-									setGalleryIndex(0);
-									setShowGallery(true);
-								}}
-							>
-								Ver más
-							</button>
-						</div>
-					)}
-				</div>
-			)}
+				<LodgingGallery images={lodging.imageUrls} name={lodging.name} />
 
 			{lodging.pricePerNight && (
 				<section className="booking-section">
@@ -416,14 +272,6 @@ export default function ProductDetail() {
 				<ShareModal lodging={lodging} onClose={() => setShowShare(false)} />
 			)}
 
-			{showGallery && (
-				<GalleryModal
-					images={images}
-					currentIndex={galleryIndex}
-					onClose={() => setShowGallery(false)}
-					onNavigate={setGalleryIndex}
-				/>
-			)}
 		</main>
 	);
 }

@@ -1,0 +1,14 @@
+.lodging-gallery { display: flex; gap: 10px; width: 100%; min-width: 0; }
+.lodging-gallery-main { flex: 1; min-width: 0; position: relative; }
+.lodging-gallery-main-trigger { display: block; width: 100%; padding: 0; border: 0; border-radius: var(--radius-md); overflow: hidden; background: none; cursor: pointer; }
+.lodging-gallery-main img { display: block; width: 100%; min-height: 400px; max-height: 560px; object-fit: contain; background: var(--bg); }
+.lodging-gallery-thumbnails-column { display: flex; flex-direction: column; align-self: center; width: 110px; max-height: 560px; }
+.lodging-gallery-thumbnails { display: flex; flex: 1; flex-direction: column; gap: 8px; overflow-y: auto; padding: 6px 0; }
+.lodging-gallery-thumbnails button { height: 75px; flex: 0 0 auto; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; background: none; cursor: pointer; }
+.lodging-gallery-thumbnails button.is-active { border-color: var(--primary); }
+.lodging-gallery-thumbnails img { width: 100%; height: 100%; object-fit: cover; }
+.lodging-gallery-desktop-arrow, .lodging-gallery-more { min-height: 44px; border: 0; border-radius: 6px; background: var(--secondary); color: var(--bg); cursor: pointer; }
+.lodging-gallery-more { margin-top: 8px; background: var(--primary); font: inherit; font-weight: 600; }
+.lodging-gallery-mobile-controls { display: none; }
+.lodging-gallery-main-trigger:focus-visible, .lodging-gallery-thumbnails button:focus-visible, .lodging-gallery-desktop-arrow:focus-visible, .lodging-gallery-mobile-controls button:focus-visible, .lodging-gallery-more:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+@media (max-width: 768px) { .lodging-gallery { flex-direction: column; } .lodging-gallery-main img { min-height: 240px; max-height: 340px; } .lodging-gallery-thumbnails-column { width: 100%; max-height: none; flex-direction: row; } .lodging-gallery-desktop-arrow { display: none; } .lodging-gallery-thumbnails { flex-direction: row; overflow-x: auto; overflow-y: visible; padding: 4px 2px 8px; scroll-snap-type: x proximity; } .lodging-gallery-thumbnails button { width: 80px; height: 56px; scroll-snap-align: center; } .lodging-gallery-mobile-controls { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; pointer-events: none; } .lodging-gallery-mobile-controls button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(20, 32, 38, .78); color: #fff; pointer-events: auto; } }

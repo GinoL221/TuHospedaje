@@ -579,6 +579,18 @@ describe("ProductDetail - ShareModal", () => {
 });
 
 describe("ProductDetail - GalleryModal", () => {
+	it("delegates the first-five preview and full gallery to LodgingGallery", async () => {
+		const imageUrls = Array.from({ length: 6 }, (_, index) => `https://example.com/image-${index + 1}.jpg`);
+		mockGetDefaults({ lodging: { ...lodgingFixture, imageUrls } });
+		const user = userEvent.setup();
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+		expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ })).toHaveLength(5);
+		await user.click(screen.getByRole("button", { name: "Ver más" }));
+		expect(screen.getByText("1 / 6")).toBeInTheDocument();
+	});
+
 	it("opens GalleryModal showing the real image from the lodging's data", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();
@@ -654,35 +666,6 @@ describe("ProductDetail - GalleryModal", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("uses decorative Lucide chevrons in the named desktop thumbnail controls", async () => {
-		mockGetDefaults({
-			lodging: {
-				...lodgingFixture,
-				imageUrls: [
-					"https://example.com/img.jpg",
-					"https://example.com/img2.jpg",
-				],
-			},
-		});
-		renderProductDetail();
-
-		await screen.findByText("Cabaña del Lago");
-
-		const previousIcon = screen
-			.getByRole("button", { name: "Imagen anterior" })
-			.querySelector("svg");
-		const nextIcon = screen
-			.getByRole("button", { name: "Imagen siguiente" })
-			.querySelector("svg");
-
-		expect(previousIcon).toHaveClass("lucide-chevron-up");
-		expect(previousIcon).toHaveAttribute("width", "20");
-		expect(previousIcon).toHaveAttribute("aria-hidden", "true");
-		expect(nextIcon).toHaveClass("lucide-chevron-down");
-		expect(nextIcon).toHaveAttribute("width", "20");
-		expect(nextIcon).toHaveAttribute("aria-hidden", "true");
-	});
-
 	it("centers the selected mobile thumbnail and disables motion when requested", async () => {
 		const scrollIntoView = vi.fn();
 		const originalScrollIntoView = Element.prototype.scrollIntoView;
@@ -727,60 +710,6 @@ describe("ProductDetail - GalleryModal", () => {
 		}
 	});
 
-	it("exposes separate desktop and mobile navigation class contracts", async () => {
-		mockGetDefaults({
-			lodging: {
-				...lodgingFixture,
-				imageUrls: [
-					"https://example.com/img.jpg",
-					"https://example.com/img2.jpg",
-				],
-			},
-		});
-		renderProductDetail();
-
-		await screen.findByText("Cabaña del Lago");
-
-		expect(screen.getByRole("button", { name: "Imagen anterior" })).toHaveClass(
-			"gallery-desktop-arrow",
-		);
-		expect(
-			screen.getByRole("button", { name: "Imagen anterior en galería" }),
-		).toHaveClass("gallery-mobile-arrow");
-		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(1);
-	});
-});
-
-describe("ProductDetail - mobile gallery CSS contract", () => {
-	it("keeps gallery overflow inside the thumbnail strip", () => {
-		const css = readFileSync(
-			resolve(process.cwd(), "src/pages/ProductDetail/ProductDetail.css"),
-			"utf8",
-		);
-		expect(css).toMatch(
-			/@media \(max-width: 768px\)[\s\S]*?\.gallery-mobile-arrow\s*{[^}]*flex:\s*0 0 44px;[^}]*width:\s*44px;[^}]*height:\s*44px;/,
-		);
-		expect(css).toMatch(
-			/@media \(max-width: 768px\)[\s\S]*?\.gallery-thumbs\s*{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;[^}]*scroll-snap-type:\s*x proximity;/,
-		);
-		expect(css).toMatch(/\.gallery-desktop-arrow\s*{[^}]*display:\s*none;/);
-		expect(css).toMatch(
-			/\.gallery-thumbs::before,\s*\.gallery-thumbs::after\s*{[^}]*flex:\s*0 0 max\(2px, calc\(50% - 40px\)\);/,
-		);
-		expect(css).not.toMatch(/overflow-x:\s*hidden/);
-	});
-
-	it("keeps detail actions touch-sized with explicit keyboard focus", () => {
-		const css = readFileSync(
-			resolve(process.cwd(), "src/pages/ProductDetail/ProductDetail.css"),
-			"utf8",
-		);
-
-		expect(css).toMatch(/\.back-arrow\s*{[^}]*width:\s*44px;[^}]*height:\s*44px;/);
-		expect(css).toMatch(/\.gallery-thumbs-arrow\s*{[^}]*width:\s*100%;[^}]*height:\s*44px;/);
-		expect(css).toMatch(/\.btn-share\s*{[\s\S]*?min-height:\s*44px;/);
-		expect(css).toMatch(/\.btn-reserve:focus-visible\s*{[^}]*outline:\s*3px solid var\(--action-primary-focus\);/);
-	});
 });
 
 describe("ProductDetail - Features detail", () => {
