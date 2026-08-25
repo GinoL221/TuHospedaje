@@ -710,7 +710,7 @@ describe("ProductDetail - GalleryModal", () => {
 		expect(
 			screen.getByRole("button", { name: "Imagen anterior en galería" }),
 		).toHaveClass("gallery-mobile-arrow");
-		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(2);
+		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(1);
 	});
 });
 
@@ -747,19 +747,69 @@ describe("ProductDetail - mobile gallery CSS contract", () => {
 });
 
 describe("ProductDetail - Features detail", () => {
-	it("renders the lodging's features by name and icon", async () => {
+	it("renders only existing images when the gallery has fewer than five", async () => {
 		mockGetDefaults({
 			lodging: {
 				...lodgingFixture,
-				features: [{ id: 1, icon: "wifi", name: "WiFi" }],
+				imageUrls: [
+					"https://example.com/one.jpg",
+					"https://example.com/two.jpg",
+					"https://example.com/three.jpg",
+				],
 			},
 		});
 		renderProductDetail();
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getByText("Qué ofrece este lugar?")).toBeInTheDocument();
+		expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }))
+			.toHaveLength(3);
+		expect(screen.getAllByRole("button", { name: /Ver imagen/ }))
+			.toHaveLength(2);
+	});
+
+	it("renders up to four existing secondary images and opens every image from Ver más", async () => {
+		const imageUrls = Array.from(
+			{ length: 6 },
+			(_, index) => `https://example.com/image-${index + 1}.jpg`,
+		);
+		mockGetDefaults({ lodging: { ...lodgingFixture, imageUrls } });
+		const user = userEvent.setup();
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }))
+			.toHaveLength(5);
+		expect(screen.getByRole("button", { name: "Ver más" })).toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Ver más" }));
+
+		expect(screen.getByRole("dialog", { name: "Galería de imágenes" })).toBeInTheDocument();
+		expect(screen.getByText("1 / 6")).toBeInTheDocument();
+	});
+
+	it("renders the lodging's features by name and icon", async () => {
+		mockGetDefaults({
+			lodging: {
+				...lodgingFixture,
+				features: [
+					{ id: 1, icon: "wifi", name: "WiFi" },
+					{ id: 2, icon: "car", name: "Estacionamiento" },
+				],
+			},
+		});
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByText("Características")).toBeInTheDocument();
 		expect(screen.getByText("WiFi")).toBeInTheDocument();
+		expect(screen.getByText("Estacionamiento")).toBeInTheDocument();
+		expect(screen.getByRole("img", { name: "Ícono de WiFi" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("img", { name: "Ícono de Estacionamiento" }),
+		).toBeInTheDocument();
 	});
 
 	it("does not render the features section when the lodging has none", async () => {
@@ -769,7 +819,7 @@ describe("ProductDetail - Features detail", () => {
 		await screen.findByText("Cabaña del Lago");
 
 		expect(
-			screen.queryByText("Qué ofrece este lugar?"),
+			screen.queryByText("Características"),
 		).not.toBeInTheDocument();
 	});
 });

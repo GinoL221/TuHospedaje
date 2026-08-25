@@ -8,6 +8,7 @@ import com.tuhospedaje.dto.reservation.OccupiedRange;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
+import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
@@ -117,6 +118,12 @@ public class LodgingServiceImpl implements LodgingService {
         return new HashSet<>(policyRepository.findAllById(policyIds));
     }
 
+    private void replaceImages(Lodging lodging, List<String> imageUrls) {
+        lodging.getImages().clear();
+        if (imageUrls == null) return;
+        imageUrls.forEach(imageUrl -> lodging.getImages().add(LodgingImage.forLodging(lodging, imageUrl)));
+    }
+
     @Override
     @Transactional
     public LodgingDTO save(LodgingDTO dto) {
@@ -130,6 +137,7 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setCategory(resolveCategory(dto.getCategoryId()));
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
+        replaceImages(lodging, dto.getImageUrls());
 
         Lodging saved = lodgingRepository.save(lodging);
         return enrichWithRatings(LodgingDTO.fromEntity(saved));
@@ -157,6 +165,7 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setCategory(resolveCategory(dto.getCategoryId()));
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
+        replaceImages(lodging, dto.getImageUrls());
 
         Lodging updated = lodgingRepository.save(lodging);
         return enrichWithRatings(LodgingDTO.fromEntity(updated));

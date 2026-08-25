@@ -124,6 +124,8 @@ export default function ProductDetail() {
 		);
 
 	const images = lodging.imageUrls || [];
+	const previewImages = images.slice(0, 5);
+	const previewIndex = Math.min(galleryIndex, previewImages.length - 1);
 	const nights = calcNights();
 	const total = lodging.pricePerNight ? nights * lodging.pricePerNight : 0;
 
@@ -157,8 +159,8 @@ export default function ProductDetail() {
 							aria-label="Abrir galería"
 						>
 							<img
-								src={images[galleryIndex]}
-								alt={`${lodging.name} - ${galleryIndex + 1}`}
+								src={previewImages[previewIndex]}
+								alt={`${lodging.name} - ${previewIndex + 1}`}
 								loading="lazy"
 								onError={(e) => {
 									e.target.src = "https://placehold.co/800x600?text=Sin+imagen";
@@ -181,10 +183,10 @@ export default function ProductDetail() {
 										className="gallery-mobile-arrow gallery-mobile-arrow--next"
 										onClick={() =>
 											setGalleryIndex((prev) =>
-												Math.min(images.length - 1, prev + 1),
+													Math.min(previewImages.length - 1, prev + 1),
 											)
 										}
-										disabled={galleryIndex === images.length - 1}
+									disabled={previewIndex === previewImages.length - 1}
 										aria-label="Imagen siguiente en galería"
 									>
 										<ChevronRight size={24} aria-hidden="true" focusable="false" />
@@ -203,23 +205,23 @@ export default function ProductDetail() {
 								<ChevronUp size={20} aria-hidden="true" focusable="false" />
 							</button>
 								<div className="gallery-thumbs" ref={thumbnailStripRef}>
-									{images.map((url, i) => (
-										<button
-											key={i}
-											ref={(node) => {
-												thumbnailRefs.current[i] = node;
-											}}
-											className={`gallery-thumb ${galleryIndex === i ? "gallery-thumb--active" : ""}`}
-											onClick={() => {
-												setGalleryIndex(i);
-												setShowGallery(true);
-											}}
-											aria-label={`Ver imagen ${i + 1}`}
-											aria-current={galleryIndex === i ? "true" : undefined}
-										>
-											<img
-											src={url}
-											alt={`${lodging.name} - ${i + 1}`}
+								{previewImages.slice(1).map((url, i) => (
+									<button
+										key={url}
+										ref={(node) => {
+											thumbnailRefs.current[i + 1] = node;
+										}}
+										className={`gallery-thumb ${previewIndex === i + 1 ? "gallery-thumb--active" : ""}`}
+										onClick={() => {
+											setGalleryIndex(i + 1);
+											setShowGallery(true);
+										}}
+										aria-label={`Ver imagen ${i + 2}`}
+										aria-current={previewIndex === i + 1 ? "true" : undefined}
+									>
+										<img
+										src={url}
+										alt={`${lodging.name} - ${i + 2}`}
 											loading="lazy"
 											onError={(e) => {
 												e.target.src =
@@ -233,13 +235,22 @@ export default function ProductDetail() {
 								className="gallery-thumbs-arrow gallery-desktop-arrow"
 								onClick={() =>
 									setGalleryIndex((prev) =>
-										Math.min(images.length - 1, prev + 1),
+											Math.min(previewImages.length - 1, prev + 1),
 									)
 								}
-								disabled={galleryIndex === images.length - 1}
+								disabled={previewIndex === previewImages.length - 1}
 								aria-label="Imagen siguiente"
 							>
 								<ChevronDown size={20} aria-hidden="true" focusable="false" />
+							</button>
+							<button
+								className="gallery-more"
+								onClick={() => {
+									setGalleryIndex(0);
+									setShowGallery(true);
+								}}
+							>
+								Ver más
 							</button>
 						</div>
 					)}
@@ -362,11 +373,13 @@ export default function ProductDetail() {
 
 			{lodging.features && lodging.features.length > 0 && (
 				<section className="features-section">
-					<h2>Qué ofrece este lugar?</h2>
+					<h2>Características</h2>
 					<div className="features-grid">
 						{lodging.features.map((f) => (
 							<div key={f.id} className="feature-item">
-								<Icon name={f.icon} size={20} />
+								<span role="img" aria-label={`Ícono de ${f.name}`}>
+									<Icon name={f.icon} size={20} />
+								</span>
 								<span className="feature-name">{f.name}</span>
 							</div>
 						))}
