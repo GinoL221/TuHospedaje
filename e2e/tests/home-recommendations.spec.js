@@ -77,23 +77,20 @@ test.describe('Home recommendations — stable pagination', () => {
   test('selecting a category does not call the recommendations endpoint', async ({ page, homePage }) => {
     await homePage.open('/');
     await currentPageIds(page);
+    await page.locator('.category-tag').first().waitFor({ state: 'visible' });
 
     let recommendationCalls = 0;
     page.on('request', (req) => {
       if (req.url().includes('/lodgings/recommendations')) recommendationCalls += 1;
     });
 
-    const unexpectedRecommendation = page
-      .waitForRequest((req) => req.url().includes('/lodgings/recommendations'), { timeout: 500 })
-      .then(() => true)
-      .catch(() => false);
-    const categoryRequest = page.waitForRequest((req) => req.url().includes('/lodgings?category='));
     await page.locator('.category-tag').first().click();
-    await categoryRequest;
-    expect(await unexpectedRecommendation).toBe(false);
+    await expect(page).toHaveURL(/categories=/);
+    await expect(page.getByText(/resultados de/)).toBeVisible();
     expect(recommendationCalls).toBe(0);
+    await expect(page.getByRole('heading', { name: 'Recomendaciones' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Mostrar todos' }).click();
+    await page.getByRole('button', { name: 'Limpiar filtros' }).click();
     await expect(page.getByRole('button', { name: 'Actualizar recomendaciones' })).toBeVisible();
   });
 

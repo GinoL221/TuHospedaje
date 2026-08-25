@@ -75,8 +75,9 @@ test.describe('Visual regression', () => {
   });
 
   test('search results page', async ({ page }) => {
-    await page.goto('/search?city=Buenos+Aires');
+    await page.goto('/?city=Buenos+Aires');
     await page.waitForLoadState('networkidle');
+    await expect(page.getByText(/resultados de/)).toBeVisible();
     await expect(page).toHaveScreenshot('search-results.png', {
       mask: maskImages(page),
     });

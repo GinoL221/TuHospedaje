@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, startTransition } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
 import { get } from "../../services/api";
@@ -50,10 +50,11 @@ function writeStoredRecommendationSession(session) {
 
 export default function Home() {
 	const navigate = useNavigate();
+	const { search } = useLocation();
 	const { user } = useAuth();
 	const [lodgings, setLodgings] = useState([]);
 	const [categories, setCategories] = useState([]);
-	const [selectedCategory, setSelectedCategory] = useState(null);
+	const [searchResults, setSearchResults] = useState(null);
 	const [city, setCity] = useState("");
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
@@ -118,33 +119,37 @@ export default function Home() {
 			});
 	}, [recSeed, page]);
 
-	const fetchCategoryLodgings = useCallback(() => {
-		const requestId = ++requestIdRef.current;
-		setListBusy(true);
-		get(`/lodgings?category=${selectedCategory}`)
-			.then((data) => {
-				if (requestId !== requestIdRef.current) return;
-				setLodgings(Array.isArray(data) ? data : []);
-				setTotalPages(1);
-				setListGeneration((generation) => generation + 1);
-				setListBusy(false);
-			})
-			.catch((error) => {
-				if (requestId !== requestIdRef.current) return;
-				setListBusy(false);
-				console.error(error);
-			});
-	}, [selectedCategory]);
-
 	useEffect(() => {
-		if (selectedCategory) {
-			fetchCategoryLodgings();
-		} else if (skipResetPageFetchRef.current) {
+		if (skipResetPageFetchRef.current) {
 			skipResetPageFetchRef.current = false;
 		} else {
 			fetchRecommendations();
 		}
-	}, [selectedCategory, fetchCategoryLodgings, fetchRecommendations]);
+	}, [fetchRecommendations]);
+
+	useEffect(() => {
+		if (!search) {
+			setSearchResults(null);
+			return;
+		}
+		get(`/lodgings/search${search}`).then((data) => setSearchResults(data)).catch(() => setSearchResults({ lodgings: [], totalItems: 0, catalogItems: 0 }));
+	}, [search]);
+
+	const searchParams = new URLSearchParams(search);
+	const selectedCategories = searchParams.getAll("categories");
+	function updateCategories(categoryId) {
+		const next = new URLSearchParams(search);
+		const category = String(categoryId);
+		const selected = next.getAll("categories").filter((id) => id !== category);
+		next.delete("categories");
+		(selected.length === selectedCategories.length ? [...selected, category] : selected).forEach((id) => next.append("categories", id));
+		navigate(`/?${next.toString()}`);
+	}
+	function clearCategories() {
+		const next = new URLSearchParams(search);
+		next.delete("categories");
+		navigate(next.toString() ? `/?${next.toString()}` : "/");
+	}
 
 	function handleRefreshRecommendations() {
 		revisionRef.current = null;
@@ -208,7 +213,7 @@ export default function Home() {
 		if (checkIn) params.set("checkIn", formatDate(checkIn));
 		if (checkOut) params.set("checkOut", formatDate(checkOut));
 
-		navigate(`/search?${params.toString()}`);
+		navigate(`/?${params.toString()}`);
 	}
 
 	function handleFavoriteToggle(id, add) {
@@ -374,32 +379,25 @@ export default function Home() {
 							<CategoryCard
 								key={c.id}
 								category={c}
-								isActive={selectedCategory === c.id}
-								onClick={() => {
-									setSelectedCategory(selectedCategory === c.id ? null : c.id);
-									setPage(0);
-								}}
+								isActive={selectedCategories.includes(String(c.id))}
+								onClick={() => updateCategories(c.id)}
 							/>
 						))}
 					</div>
 				)}
 			</section>
+			{searchResults && (
+				<section className="search-results" aria-live="polite">
+					<div className="section-header"><h2>Resultados de búsqueda</h2>{selectedCategories.length > 0 && <button className="btn-clear-filter" onClick={clearCategories}>Limpiar filtros</button>}</div>
+					<p>{searchResults.totalItems ?? 0} resultados de {searchResults.catalogItems ?? 0} alojamientos</p>
+					{searchResults.lodgings?.length > 0 && <div className="hotel-list">{searchResults.lodgings.map((lodging) => <ProductCard key={lodging.id} lodging={lodging} />)}</div>}
+				</section>
+			)}
 			<section className="recommendations">
 				<div className="section-header">
 					<h2>
-						{selectedCategory
-							? categories.find((c) => c.id === selectedCategory)?.name
-							: "Recomendaciones"}
+						Recomendaciones
 					</h2>
-					{selectedCategory && (
-						<button
-							className="btn-clear-filter"
-							onClick={() => setSelectedCategory(null)}
-						>
-							Mostrar todos
-						</button>
-					)}
-					{!selectedCategory && (
 						<button
 							type="button"
 							className="btn-refresh-recommendations"
@@ -407,14 +405,13 @@ export default function Home() {
 						>
 							Actualizar recomendaciones
 						</button>
-					)}
 				</div>
-				{!selectedCategory && recStatus === "loading" && (
+				{recStatus === "loading" && (
 					<p className="recommendations-status" role="status">
 						Cargando recomendaciones...
 					</p>
 				)}
-				{!selectedCategory && recStatus === "error" && (
+				{recStatus === "error" && (
 					<div className="recommendations-alert" role="alert">
 						<p>No pudimos cargar las recomendaciones.</p>
 						<button type="button" onClick={fetchRecommendations}>
@@ -427,12 +424,7 @@ export default function Home() {
 						key={listGeneration}
 						className={"hotel-list" + (listBusy ? " is-pending" : "")}
 						role="list"
-						aria-label={
-							selectedCategory
-								? categories.find((c) => c.id === selectedCategory)?.name ||
-									"Alojamientos"
-								: "Recomendaciones"
-						}
+						aria-label="Recomendaciones"
 						aria-busy={listBusy}
 					>
 						{lodgings.map((lodging) => (
@@ -450,7 +442,7 @@ export default function Home() {
 						No hay alojamientos cargados todavía. Volvé más tarde.
 					</p>
 				)}
-				{!selectedCategory && totalPages > 1 && (
+				{totalPages > 1 && (
 					<div className="home-pagination">
 						<button disabled={page === 0} onClick={() => setPage(0)}>
 							Inicio

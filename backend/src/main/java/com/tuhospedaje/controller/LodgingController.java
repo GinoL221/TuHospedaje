@@ -2,6 +2,7 @@ package com.tuhospedaje.controller;
 
 import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.lodging.LodgingSearchResponse;
 import com.tuhospedaje.dto.lodging.RecommendationPageResponse;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.service.LodgingService;
@@ -164,7 +165,7 @@ public class LodgingController {
             @ApiResponse(responseCode = "200", description = "Search results returned as a paginated wrapper ({lodgings, currentPage, totalItems, totalPages})"),
             @ApiResponse(responseCode = "400", description = "Invalid pagination parameters (e.g. negative page)", content = @Content),
     })
-    public ResponseEntity<Map<String, Object>> search(
+    public ResponseEntity<LodgingSearchResponse> search(
             @RequestParam(required = false) String city,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,

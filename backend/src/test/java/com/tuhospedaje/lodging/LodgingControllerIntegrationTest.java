@@ -328,6 +328,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.lodgings[0].name").value("Hotel Boutique"))
                 .andExpect(jsonPath("$.currentPage").value(0))
                 .andExpect(jsonPath("$.totalItems").isNumber())
+                .andExpect(jsonPath("$.catalogItems").isNumber())
                 .andExpect(jsonPath("$.totalPages").isNumber());
     }
 
@@ -790,9 +791,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lodgings[*].id", hasItem(id.intValue())));
 
-        // search (1 query with NOT EXISTS subquery) + ratings aggregate (1 query) = 2 max
+        // Search + ratings aggregate + catalog total = 3 queries.
         long queryCount = sf.getStatistics().getQueryExecutionCount();
-        assertThat(queryCount).isLessThanOrEqualTo(2L);
+        assertThat(queryCount).isLessThanOrEqualTo(3L);
     }
 
     private void seedReservation(Long lodgingId, LocalDate checkIn, LocalDate checkOut, ReservationStatus status) {

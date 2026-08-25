@@ -18,7 +18,6 @@ vi.mock("./pages/LoginPage", () => ({ default: () => null }));
 vi.mock("./pages/RegisterPage", () => ({ default: () => null }));
 vi.mock("./pages/ProductDetail/ProductDetail", () => ({ default: () => null }));
 vi.mock("./pages/Admin/Admin", () => ({ default: () => null }));
-vi.mock("./pages/SearchResults/SearchResults", () => ({ default: () => null }));
 vi.mock("./pages/Favorites/FavoritesPage", () => ({ default: () => null }));
 vi.mock("./pages/Booking/BookingPage", () => ({ default: () => null }));
 vi.mock("./pages/Booking/BookingConfirmation", () => ({ default: () => null }));
@@ -118,55 +117,15 @@ describe("App Home route delivery", () => {
   });
 });
 
-describe("App SearchResults route delivery", () => {
-  it("keeps the shell visible, delays feedback, and replaces it immediately on resolution", async () => {
-    const search = deferred();
-    await renderAppAt({
-      path: "/search",
-      pages: { "./pages/SearchResults/SearchResults": search.promise },
-    });
+describe("App legacy search route", () => {
+	it("redirects /search to Home while preserving encoded, repeated, empty, and date parameters", async () => {
+		await renderAppAt({ path: "/search?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=" });
+		await act(async () => {});
 
-    expect(screen.getByText("Header shell")).toBeInTheDocument();
-    expect(screen.getByText("Footer shell")).toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-
-    act(() => vi.advanceTimersByTime(150));
-    expect(screen.getByRole("status")).toHaveTextContent("Cargando página…");
-
-    await act(async () => search.resolve({ default: () => <main>Search resolved</main> }));
-    expect(screen.getByText("Search resolved")).toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByText("Header shell")).toBeInTheDocument();
-  });
-
-  it("does not flash loading feedback when SearchResults resolves quickly", async () => {
-    await renderAppAt({
-      path: "/search",
-      pages: { "./pages/SearchResults/SearchResults": { default: () => <main>Fast Search</main> } },
-    });
-    await act(async () => {});
-
-    expect(screen.getByText("Fast Search")).toBeInTheDocument();
-    act(() => vi.runAllTimers());
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  });
-
-  it("shows manual recovery after SearchResults rejects without reloading automatically", async () => {
-    const search = deferred();
-    const reload = vi.fn();
-    vi.stubGlobal("location", { reload });
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    await renderAppAt({
-      path: "/search",
-      pages: { "./pages/SearchResults/SearchResults": search.promise },
-    });
-
-    await act(async () => search.reject(new Error("chunk failed")));
-
-    expect(screen.getByRole("button", { name: "Recargar página" })).toBeInTheDocument();
-    expect(reload).not.toHaveBeenCalled();
-    expect(screen.getByText("Header shell")).toBeInTheDocument();
-  });
+		expect(window.location.pathname).toBe("/");
+		expect(window.location.search).toBe("?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=");
+		expect(screen.getByText("Home shell")).toBeInTheDocument();
+	});
 });
 
 describe("App protected route authorization", () => {
@@ -365,12 +324,10 @@ describe("App document title", () => {
   it("never sets document.title while resolving public, authenticated, and admin routes", async () => {
     const titleSetter = vi.spyOn(document, "title", "set");
 
-    const search = deferred();
-    const publicRender = await renderAppAt({
-      path: "/search",
-      pages: { "./pages/SearchResults/SearchResults": search.promise },
-    });
-    await act(async () => search.resolve({ default: () => <main>Search resolved</main> }));
+		const publicRender = await renderAppAt({
+			path: "/search",
+		});
+		await act(async () => {});
     publicRender.unmount();
 
     const reservations = deferred();

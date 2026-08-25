@@ -474,6 +474,12 @@
 }
 
 /* RECOMENDACIONES */
+.search-results {
+  box-sizing: border-box;
+  padding: 30px;
+  background-color: var(--bg);
+  border-radius: 8px;
+}
 .recommendations {
   box-sizing: border-box;
   min-width: 0;

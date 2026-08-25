@@ -479,15 +479,15 @@ class LodgingServiceImplTest {
         when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(lodging), PageRequest.of(0, 9), 1));
 
-        Map<String, Object> result = lodgingService.search(null, null, null, null, null, null, null, 0, 9);
+        var result = lodgingService.search(null, null, null, null, null, null, null, 0, 9);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(lodgingRepository).findAll(any(Specification.class), pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(0);
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(9);
-        assertThat(result.get("currentPage")).isEqualTo(0);
-        assertThat(result.get("totalItems")).isEqualTo(1L);
-        assertThat((List<?>) result.get("lodgings")).hasSize(1);
+        assertThat(result.currentPage()).isEqualTo(0);
+        assertThat(result.totalItems()).isEqualTo(1L);
+        assertThat(result.lodgings()).hasSize(1);
     }
 
     @Test
@@ -499,13 +499,13 @@ class LodgingServiceImplTest {
         when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(lodging), PageRequest.of(0, 9), 1));
 
-        Map<String, Object> result = lodgingService.search(
+        var result = lodgingService.search(
                 null, null, null, null, List.of(1L, 2L), null, null, 0, 9);
 
         ArgumentCaptor<Specification> specCaptor = ArgumentCaptor.forClass(Specification.class);
         verify(lodgingRepository).findAll(specCaptor.capture(), any(Pageable.class));
         assertThat(specCaptor.getValue()).isNotNull();
-        assertThat((List<?>) result.get("lodgings")).hasSize(1);
+        assertThat(result.lodgings()).hasSize(1);
     }
 
     @Test
@@ -513,11 +513,11 @@ class LodgingServiceImplTest {
         when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(999, 9), 0));
 
-        Map<String, Object> result = lodgingService.search(null, null, null, null, null, null, null, 999, 9);
+        var result = lodgingService.search(null, null, null, null, null, null, null, 999, 9);
 
-        assertThat((List<?>) result.get("lodgings")).isEmpty();
-        assertThat(result.get("currentPage")).isEqualTo(999);
-        assertThat(result.get("totalItems")).isEqualTo(0L);
+        assertThat(result.lodgings()).isEmpty();
+        assertThat(result.currentPage()).isEqualTo(999);
+        assertThat(result.totalItems()).isEqualTo(0L);
     }
 
     @Test
