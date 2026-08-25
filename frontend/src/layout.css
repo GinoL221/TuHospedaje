@@ -37,6 +37,13 @@
   flex-shrink: 0;
 }
 
+.logo-container a.tagline {
+  display: block;
+  flex-shrink: 1;
+  min-width: 0;
+  text-decoration: none;
+}
+
 .logo-container img {
   display: block;
   width: 140px;
@@ -360,7 +367,7 @@ footer .page-container {
 }
 
 @media (max-width: 640px) {
-  .tagline {
+  .logo-container a.tagline {
     display: none;
   }
 }

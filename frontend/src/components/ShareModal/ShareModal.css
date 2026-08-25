@@ -195,6 +195,20 @@
   line-height: 20px;
 }
 
+.share-message-label {
+  display: grid;
+  gap: 6px;
+  margin: 12px 24px 0;
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+.share-message-label textarea {
+  min-height: 76px;
+  resize: vertical;
+  font: inherit;
+}
+
 .share-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

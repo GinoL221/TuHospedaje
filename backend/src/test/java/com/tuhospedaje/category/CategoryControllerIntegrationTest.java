@@ -5,9 +5,11 @@ import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.dto.category.CategoryDTO;
 import com.tuhospedaje.entity.Category;
+import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.CategoryRepository;
+import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,6 +40,9 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private LodgingRepository lodgingRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -219,6 +225,37 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldKeepCategoryAndLodgingsWhenDeletingUsedCategory() throws Exception {
+        Category category = new Category();
+        category.setName("En uso");
+        Category savedCategory = categoryRepository.save(category);
+        Lodging lodging = new Lodging();
+        lodging.setName("Alojamiento de categoría en uso");
+        lodging.setDescription("No debe perder su categoría");
+        lodging.setAddress("Calle 1");
+        lodging.setCity("Bariloche");
+        lodging.setCountry("Argentina");
+        lodging.setPhoneNumber("123456789");
+        lodging.setEmail("used-category-lodging@tuhospedaje.com");
+        lodging.setPricePerNight(new java.math.BigDecimal("100.00"));
+        lodging.setMaxGuests(2);
+        lodging.setCategory(savedCategory);
+        lodgingRepository.save(lodging);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/categories/{id}", savedCategory.getId())
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(
+                        "No se puede eliminar la categoría: 1 alojamiento(s) la están usando"));
+
+        assertTrue(categoryRepository.existsById(savedCategory.getId()));
+        assertTrue(lodgingRepository.countByCategoryId(savedCategory.getId()) == 1);
     }
 
     @Test

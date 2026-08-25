@@ -100,6 +100,7 @@ function LoginSentinel() {
 	return (
 		<div data-testid="login-sentinel">
 			login page, from: {location.state?.from?.pathname ?? "none"}
+			{location.state?.message && `, message: ${location.state.message}`}
 		</div>
 	);
 }
@@ -174,6 +175,19 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 		// falling back to "/".
 		expect(await screen.findByTestId("login-sentinel")).toHaveTextContent(
 			"from: /lodgings/1",
+		);
+	});
+
+	it("explains the mandatory login and registration path after selecting reserve", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: null, initialEntries: ["/lodgings/1"] });
+
+		await screen.findByText("Cabaña del Lago");
+		await user.click(screen.getByRole("link", { name: "Iniciá sesión" }));
+
+		expect(await screen.findByTestId("login-sentinel")).toHaveTextContent(
+			"message: Para reservar necesitás iniciar sesión. Si no tenés cuenta, registrate.",
 		);
 	});
 

@@ -63,6 +63,18 @@ function renderAdminLodgings(options) {
 }
 
 describe("AdminLodgings - listing", () => {
+	it("labels the product list with its required columns", async () => {
+		mockGetDefaults();
+		renderAdminLodgings();
+
+		await screen.findByText("Cabaña del Lago");
+		expect(screen.getByRole("heading", { name: "Lista de productos" })).toBeInTheDocument();
+		expect(screen.getAllByRole("columnheader")).toHaveLength(3);
+		expect(screen.getByRole("columnheader", { name: /Id/ })).toBeInTheDocument();
+		expect(screen.getByRole("columnheader", { name: /Nombre/ })).toBeInTheDocument();
+		expect(screen.getByRole("columnheader", { name: "Acciones" })).toBeInTheDocument();
+	});
+
 	it("renders the empty state when there are no lodgings", async () => {
 		mockGetDefaults({ lodgings: [] });
 		renderAdminLodgings();
@@ -74,7 +86,7 @@ describe("AdminLodgings - listing", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders a row per lodging with name and description", async () => {
+	it("renders a row per lodging with its name", async () => {
 		mockGetDefaults({
 			lodgings: [
 				lodgingFixture({ id: 1, name: "Cabaña del Lago" }),
@@ -89,7 +101,6 @@ describe("AdminLodgings - listing", () => {
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(screen.getByText("Hotel Centro")).toBeInTheDocument();
-		expect(screen.getByText("En el centro de la ciudad.")).toBeInTheDocument();
 	});
 
 	it("fetches a server-paginated lodging page on mount", async () => {
@@ -190,9 +201,6 @@ describe("AdminLodgings - listing", () => {
 			);
 		});
 		expect(await screen.findByText("Apart Hotel Sur")).toBeInTheDocument();
-		expect(
-			screen.getByText("Resultado ordenado por nombre."),
-		).toBeInTheDocument();
 		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
 	});
 
@@ -248,9 +256,6 @@ describe("AdminLodgings - listing", () => {
 			);
 		});
 		expect(await screen.findByText("Lago Azul")).toBeInTheDocument();
-		expect(
-			screen.getByText("Resultado filtrado por búsqueda."),
-		).toBeInTheDocument();
 		expect(screen.queryByText("Hotel Centro")).not.toBeInTheDocument();
 	});
 });

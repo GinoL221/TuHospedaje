@@ -31,6 +31,7 @@ export default function AdminCategories() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
   const nameInputRef = useRef(null);
   const imageUrlInputRef = useRef(null);
 
@@ -122,6 +123,7 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (id, name) => {
+    setDeleteError("");
     setDeleteConfirm({ id, name });
   };
 
@@ -132,7 +134,7 @@ export default function AdminCategories() {
       setDeleteConfirm(null);
       refresh();
     } catch (err) {
-      alert(err.message);
+      setDeleteError(err.message);
       setDeleteConfirm(null);
     }
   };
@@ -271,11 +273,12 @@ export default function AdminCategories() {
 
       <ConfirmDialog
         show={deleteConfirm !== null}
-        message={deleteConfirm ? `¿Eliminar la categoría "${deleteConfirm.name}"? Los alojamientos asociados quedarán sin categoría.` : ""}
+        message={deleteConfirm ? `¿Eliminar la categoría "${deleteConfirm.name}"? Solo se puede eliminar si no tiene alojamientos asociados.` : ""}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
         testId="confirm-delete"
       />
+      {deleteError && <p role="alert" className="form-error">{deleteError}</p>}
     </>
   );
 }

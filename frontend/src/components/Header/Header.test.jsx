@@ -24,6 +24,14 @@ describe("Header - authenticated user", () => {
 		);
 	});
 
+	it("navigates home through the tagline", () => {
+		customRender(<Header />);
+
+		expect(
+			screen.getByRole("link", { name: "Encuentra tu lugar ideal al mejor precio" }),
+		).toHaveAttribute("href", "/");
+	});
+
 	it("shows 'Mis reservas' link pointing to /my-reservations", () => {
 		customRender(<Header />);
 
