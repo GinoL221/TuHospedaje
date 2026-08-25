@@ -11,6 +11,12 @@ const lodging = {
 };
 
 describe("ShareModal", () => {
+	afterEach(() => {
+		if (Object.prototype.hasOwnProperty.call(navigator, "clipboard")) {
+			delete navigator.clipboard;
+		}
+	});
+
 	it("exposes a named, described modal and initially focuses close", () => {
 		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
 
@@ -66,7 +72,7 @@ describe("ShareModal", () => {
 	});
 
 	it("copies the current URL and announces success", async () => {
-		const user = userEvent.setup();
+		const user = userEvent.setup({ delay: null });
 		const writeText = vi.fn().mockResolvedValue(undefined);
 		Object.defineProperty(navigator, "clipboard", {
 			configurable: true,
@@ -77,7 +83,7 @@ describe("ShareModal", () => {
 		await user.click(screen.getByRole("button", { name: "Copiar enlace" }));
 
 		expect(writeText).toHaveBeenCalledWith(window.location.href);
-		expect(screen.getByText("Enlace copiado")).toHaveAttribute(
+		expect(await screen.findByText("Enlace copiado")).toHaveAttribute(
 			"aria-live",
 			"polite",
 		);
