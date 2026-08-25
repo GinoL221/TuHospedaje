@@ -106,6 +106,7 @@ export default function AdminLodgings() {
 
 	return (
 		<>
+			<h2>Lista de productos</h2>
 			<button
 				className="btn-fab"
 				data-testid="admin-add-btn"

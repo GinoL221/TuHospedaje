@@ -16,7 +16,9 @@ export default function Header() {
           <Link to="/" className="brand-link">
             <img src={logo} alt="TuHospedaje — Inicio" className="logo" />
           </Link>
-          <p className="tagline">Encuentra tu lugar ideal al mejor precio</p>
+          <Link to="/" className="tagline">
+            Encuentra tu lugar ideal al mejor precio
+          </Link>
         </div>
         <button
           type="button"

@@ -191,7 +191,7 @@ describe("AdminCategories - delete", () => {
     // window.confirm — same mechanism as AdminLodgings, but different from
     // AdminFeatures/AdminPolicies which use window.confirm for delete.
     expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
-      '¿Eliminar la categoría "Cabañas"? Los alojamientos asociados quedarán sin categoría.'
+      '¿Eliminar la categoría "Cabañas"? Solo se puede eliminar si no tiene alojamientos asociados.'
     );
 
     get.mockResolvedValue([]);
@@ -221,10 +221,9 @@ describe("AdminCategories - delete", () => {
     expect(screen.getByText("Cabañas")).toBeInTheDocument();
   });
 
-  it("surfaces the request error via alert when DELETE rejects", async () => {
+  it("shows the backend policy error without claiming lodgings were unlinked", async () => {
     get.mockResolvedValue([categoryFixture({ id: 1, name: "Cabañas" })]);
-    del.mockRejectedValue(new Error("No se pudo eliminar"));
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    del.mockRejectedValue(new Error("No se puede eliminar la categoría: 1 alojamiento(s) la están usando"));
     const user = userEvent.setup();
     renderAdminCategories();
 
@@ -232,12 +231,9 @@ describe("AdminCategories - delete", () => {
     await user.click(screen.getByTestId("row-delete-btn"));
     await user.click(screen.getByTestId("confirm-delete-yes"));
 
-    // SUSPICIOUS: confirmDelete's own failure path uses window.alert, while
-    // the create/edit failure path in the SAME file uses an inline
-    // `.form-error` string. Asserted as-is per spec Risks; not unified here.
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith("No se pudo eliminar");
-    });
+    expect(
+      await screen.findByText("No se puede eliminar la categoría: 1 alojamiento(s) la están usando"),
+    ).toHaveAttribute("role", "alert");
     expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
   });
 });

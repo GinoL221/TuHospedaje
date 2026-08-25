@@ -31,7 +31,7 @@ export default function LodgingsTable({
               sortDir={sortDir}
               onSort={onSort}
             >
-              ID
+              Id
             </SortableTh>
             <SortableTh
               columnKey="name"
@@ -41,14 +41,6 @@ export default function LodgingsTable({
             >
               Nombre
             </SortableTh>
-            <SortableTh
-              columnKey="description"
-              sortKey={sortKey}
-              sortDir={sortDir}
-              onSort={onSort}
-            >
-              Descripción
-            </SortableTh>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -57,7 +49,6 @@ export default function LodgingsTable({
             <tr key={l.id} data-testid={`row-${l.id}`}>
               <td>{l.id}</td>
               <td>{l.name}</td>
-              <td>{l.description}</td>
               <td>
                 <button
                   className="btn-edit"

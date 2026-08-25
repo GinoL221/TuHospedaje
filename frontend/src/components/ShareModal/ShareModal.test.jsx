@@ -127,7 +127,7 @@ describe("ShareModal", () => {
 		expect(screen.queryByRole("img")).not.toBeInTheDocument();
 	});
 
-	it("preserves all share URLs and external-link attributes", () => {
+	it("uses external links for providers that support a handoff", () => {
 		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
 
 		const url = window.location.href;
@@ -136,7 +136,6 @@ describe("ShareModal", () => {
 			Facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
 			Twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
 			WhatsApp: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
-			Instagram: "https://www.instagram.com/",
 		};
 
 		for (const [name, href] of Object.entries(expectedLinks)) {
@@ -145,6 +144,28 @@ describe("ShareModal", () => {
 			expect(link).toHaveAttribute("target", "_blank");
 			expect(link).toHaveAttribute("rel", "noopener noreferrer");
 		}
+	});
+
+	it("copies the edited handoff message for Instagram and explains the manual step", async () => {
+		const user = userEvent.setup();
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText },
+		});
+		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
+
+		const message = screen.getByLabelText("Mensaje para compartir");
+		await user.clear(message);
+		await user.type(message, "Una estadía para compartir");
+		await user.click(screen.getByRole("button", { name: "Instagram" }));
+
+		expect(writeText).toHaveBeenCalledWith(
+			`Una estadía para compartir ${window.location.href}`,
+		);
+		expect(
+			screen.getByText("El contenido fue copiado. Completá la publicación en Instagram."),
+		).toHaveAttribute("aria-live", "polite");
 	});
 
 	it("keeps interactive foregrounds on the accessible secondary token", () => {
@@ -173,13 +194,18 @@ describe("ShareModal", () => {
 
 		const closeButton = screen.getByRole("button", { name: "Cerrar" });
 		const copyButton = screen.getByRole("button", { name: "Copiar enlace" });
+		const messageInput = screen.getByLabelText("Mensaje para compartir");
 		const links = ["Facebook", "Twitter", "WhatsApp", "Instagram"].map((name) =>
-			screen.getByRole("link", { name }),
+			name === "Instagram"
+				? screen.getByRole("button", { name })
+				: screen.getByRole("link", { name }),
 		);
 
 		expect(closeButton).toHaveFocus();
 		await user.tab();
 		expect(copyButton).toHaveFocus();
+		await user.tab();
+		expect(messageInput).toHaveFocus();
 		for (const link of links) {
 			await user.tab();
 			expect(link).toHaveFocus();

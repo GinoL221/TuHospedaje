@@ -132,13 +132,6 @@ export default function ProductDetail() {
 	return (
 		<main className="page-container product-detail">
 			<div className="detail-header">
-				<button
-					className="back-arrow"
-					onClick={() => navigate(-1)}
-					aria-label="Volver"
-				>
-					<ArrowLeft size={22} />
-				</button>
 				<div className="detail-title-group">
 					<h1>{lodging.name}</h1>
 					<span className="detail-location">
@@ -147,6 +140,13 @@ export default function ProductDetail() {
 				</div>
 				<button className="btn-share" onClick={() => setShowShare(true)}>
 					Compartir
+				</button>
+				<button
+					className="back-arrow"
+					onClick={() => navigate(-1)}
+					aria-label="Volver"
+				>
+					<ArrowLeft size={22} />
 				</button>
 			</div>
 
@@ -357,7 +357,14 @@ export default function ProductDetail() {
 						</button>
 					) : (
 						<p className="login-prompt">
-							<Link to="/login" state={{ from: location }}>
+							<Link
+								to="/login"
+								state={{
+									from: location,
+									message:
+										"Para reservar necesitás iniciar sesión. Si no tenés cuenta, registrate.",
+								}}
+							>
 								Iniciá sesión
 							</Link>{" "}
 							para reservar
