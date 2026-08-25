@@ -469,6 +469,58 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldPersistOrderedImagesWhenCreatingAndUpdatingLodging() throws Exception {
+        Map<String, Object> createRequest = Map.of(
+                "name", "Image order",
+                "description", "Initial images",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "image-order@test.com",
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4,
+                "imageUrls", java.util.List.of("https://example.com/one.jpg", "https://example.com/two.jpg")
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        String createResponse = mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/one.jpg"))
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/two.jpg"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        Long id = objectMapper.readTree(createResponse).get("id").asLong();
+
+        Map<String, Object> updateRequest = new java.util.HashMap<>(createRequest);
+        updateRequest.put("name", "Updated image order");
+        updateRequest.put("imageUrls", java.util.List.of("https://example.com/three.jpg", "https://example.com/four.jpg"));
+
+        csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/lodgings/{id}", id)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/three.jpg"))
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/four.jpg"));
+
+        mockMvc.perform(get("/api/lodgings/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/three.jpg"))
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/four.jpg"))
+                .andExpect(jsonPath("$.imageUrls.length()").value(2));
+    }
+
+    @Test
     void shouldReturnForbiddenWhenUpdatingLodgingWithoutAuth() throws Exception {
         // Keep CSRF valid even without auth, so the 403 is attributable to the missing
         // token, not to a missing CSRF header (design's explicit ordering-trap warning).

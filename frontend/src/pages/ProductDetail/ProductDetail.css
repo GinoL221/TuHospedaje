@@ -166,6 +166,18 @@
   cursor: default;
 }
 
+.gallery-more {
+  margin-top: 8px;
+  min-height: 44px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
 .gallery-thumbs {
   flex: 1;
   display: flex;

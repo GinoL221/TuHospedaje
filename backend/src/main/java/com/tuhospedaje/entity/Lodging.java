@@ -12,8 +12,10 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
@@ -65,7 +67,8 @@ public class Lodging {
     private Set<Feature> features;
 
     @OneToMany(mappedBy = "lodging", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<LodgingImage> images;
+    @OrderBy("id ASC")
+    private List<LodgingImage> images = new ArrayList<>();
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerNight;

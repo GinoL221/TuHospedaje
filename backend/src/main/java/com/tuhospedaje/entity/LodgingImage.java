@@ -17,6 +17,13 @@ import lombok.Setter;
 @Table(name="lodging_images")
 public class LodgingImage {
 
+    public static LodgingImage forLodging(Lodging lodging, String imageUrl) {
+        LodgingImage image = new LodgingImage();
+        image.setLodging(lodging);
+        image.setImageUrl(imageUrl);
+        return image;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
