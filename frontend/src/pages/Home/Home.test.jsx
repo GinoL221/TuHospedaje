@@ -75,6 +75,8 @@ function mockGetDefaults({
 		}
 		if (endpoint.startsWith("/lodgings?category="))
 			return Promise.resolve(categoryLodgings);
+		if (endpoint.startsWith("/lodgings/search"))
+			return Promise.resolve({ lodgings: categoryLodgings, totalItems: categoryLodgings.length, catalogItems: categoryLodgings.length });
 		if (endpoint === "/categories") return Promise.resolve(categories);
 		if (endpoint === "/favorites") return Promise.resolve(favorites);
 		if (endpoint.startsWith("/lodgings/cities")) return Promise.resolve([]);
@@ -87,13 +89,13 @@ function SearchSentinel() {
 	return <div data-testid="search-sentinel">{location.search}</div>;
 }
 
-function renderHome({ authValue } = {}) {
+function renderHome({ authValue, route = "/" } = {}) {
 	return customRender(
 		<Routes>
 			<Route path="/" element={<Home />} />
 			<Route path="/search" element={<SearchSentinel />} />
 		</Routes>,
-		{ authValue, route: "/" },
+		{ authValue, route },
 	);
 }
 
@@ -345,7 +347,7 @@ describe("Home - pending list transition", () => {
 
 		const pending = deferred();
 		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings?category=")) return pending.promise;
+		if (endpoint.startsWith("/lodgings/search")) return pending.promise;
 			if (endpoint.startsWith("/lodgings/recommendations"))
 				return Promise.resolve(recommendationsPage());
 			if (endpoint === "/categories") return Promise.resolve([categoryFixture]);
@@ -355,12 +357,12 @@ describe("Home - pending list transition", () => {
 		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
 
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
-		expect(screen.getByRole("list")).toHaveAttribute("aria-busy", "true");
+		expect(screen.getByRole("list", { name: "Recomendaciones" })).toHaveAttribute("aria-busy", "false");
 
-		pending.resolve([{ ...lodgingFixture, id: 4, name: "Cabaña Filtrada" }]);
+		pending.resolve({ lodgings: [{ ...lodgingFixture, id: 4, name: "Cabaña Filtrada" }], totalItems: 1, catalogItems: 1 });
 
 		expect(await screen.findByText("Cabaña Filtrada")).toBeInTheDocument();
-		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
 	});
 });
 
@@ -470,6 +472,27 @@ describe("Home - explicit refresh and catalog reset", () => {
 });
 
 describe("Home - category filter compatibility", () => {
+	it("searches encoded city, repeated categories, and dates while keeping categories and recommendations visible", async () => {
+		mockGetDefaults({ categories: [categoryFixture, { id: 2, name: "Hotel", icon: "hotel" }] });
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/search")) return Promise.resolve({ lodgings: [], totalItems: 0, catalogItems: 3 });
+			if (endpoint.startsWith("/lodgings/recommendations")) return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([categoryFixture, { id: 2, name: "Hotel", icon: "hotel" }]);
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderHome({ route: "/?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=" });
+
+		expect(await screen.findByText("0 resultados de 3 alojamientos")).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Categorías" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Recomendaciones" })).toBeInTheDocument();
+		expect(get).toHaveBeenCalledWith("/lodgings/search?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=");
+
+		await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		await waitFor(() => expect(get).toHaveBeenCalledWith("/lodgings/search?city=San+Mart%C3%ADn&checkIn=2026-08-01&checkOut="));
+	});
+
 	it("calls the category-filtered endpoint (not recommendations) when a category is clicked", async () => {
 		mockGetDefaults({ categories: [categoryFixture] });
 		const user = userEvent.setup();
@@ -481,14 +504,12 @@ describe("Home - category filter compatibility", () => {
 		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
 
 		await waitFor(() =>
-			expect(get).toHaveBeenCalledWith("/lodgings?category=1"),
+			expect(get).toHaveBeenCalledWith("/lodgings/search?categories=1"),
 		);
-		expect(get).not.toHaveBeenCalledWith(
-			expect.stringContaining("/lodgings/recommendations"),
-		);
+		expect(get).not.toHaveBeenCalledWith(expect.stringContaining("/lodgings/recommendations"));
 	});
 
-	it("shows Mostrar todos when a category is active and hides it after deselection", async () => {
+	it("shows Limpiar filtros when a category is active and hides it after deselection", async () => {
 		mockGetDefaults({ categories: [categoryFixture] });
 		const user = userEvent.setup();
 		renderHome();
@@ -498,13 +519,13 @@ describe("Home - category filter compatibility", () => {
 		const categoryBtn = screen.getByRole("button", { name: /Cabaña/ });
 		await user.click(categoryBtn);
 		expect(
-			await screen.findByRole("button", { name: "Mostrar todos" }),
+			await screen.findByRole("button", { name: "Limpiar filtros" }),
 		).toBeInTheDocument();
 
-		await user.click(categoryBtn);
+		await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
 		await waitFor(() =>
 			expect(
-				screen.queryByRole("button", { name: "Mostrar todos" }),
+				screen.queryByRole("button", { name: "Limpiar filtros" }),
 			).not.toBeInTheDocument(),
 		);
 	});
@@ -526,7 +547,7 @@ describe("Home - category filter compatibility", () => {
 		await user.click(screen.getByRole("button", { name: /Hoteles/ }));
 
 		await waitFor(() =>
-			expect(get).toHaveBeenCalledWith("/lodgings?category=2"),
+			expect(get).toHaveBeenCalledWith("/lodgings/search?categories=2"),
 		);
 	});
 
@@ -751,7 +772,7 @@ describe("Home - search form", () => {
 		);
 	});
 
-	it("navigates to /search with the city query param when submitted", async () => {
+	it("searches on Home with the city query param when submitted", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();
 		renderHome();
@@ -761,9 +782,7 @@ describe("Home - search form", () => {
 		await user.type(screen.getByPlaceholderText("Ciudad"), "Bariloche");
 		await user.click(screen.getByRole("button", { name: "Buscar" }));
 
-		expect(await screen.findByTestId("search-sentinel")).toHaveTextContent(
-			"city=Bariloche",
-		);
+		await waitFor(() => expect(get).toHaveBeenCalledWith("/lodgings/search?city=Bariloche"));
 	});
 
 	it("shows a validation error when checkOut is not after checkIn", async () => {

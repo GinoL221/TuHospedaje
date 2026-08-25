@@ -93,6 +93,7 @@ export default function ProductCard({
 				</div>
 				<div className="hotel-card-body">
 					<h3>{lodging.name}</h3>
+					<p className="rating-summary">{Number(lodging.averageRating ?? 0).toFixed(1)} ({lodging.ratingCount ?? 0} opiniones)</p>
 					<p className="location">
 						{lodging.city}, {lodging.country}
 					</p>

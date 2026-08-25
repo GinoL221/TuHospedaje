@@ -14,7 +14,6 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail/ProductDetail"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
-const SearchResults = lazy(() => import("./pages/SearchResults/SearchResults"));
 const FavoritesPage = lazy(() => import("./pages/Favorites/FavoritesPage"));
 const BookingPage = lazy(() => import("./pages/Booking/BookingPage"));
 const BookingConfirmationPage = lazy(() => import("./pages/Booking/BookingConfirmation"));
@@ -30,7 +29,8 @@ function isAdminPath(pathname) {
 }
 
 function AppLayout() {
-  const { pathname } = useLocation();
+	const location = useLocation();
+	const { pathname } = location;
   const isAdmin = isAdminPath(pathname);
 
   return (
@@ -40,7 +40,7 @@ function AppLayout() {
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/search" element={<SearchResults />} />
+				<Route path="/search" element={<Navigate to={{ pathname: "/", search: location.search }} replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/lodgings/:id" element={<ProductDetail />} />

@@ -19,6 +19,12 @@ function renderProductCard(props = {}, { authValue } = {}) {
 }
 
 describe("ProductCard - rendering lodging data", () => {
+	it("shows explicit zero average and rating count for an unrated lodging", () => {
+		renderProductCard({ lodging: { ...lodgingFixture, ratingCount: 0 } });
+
+		expect(screen.getByText("0.0 (0 opiniones)")).toBeInTheDocument();
+	});
+
   it("renders the lodging name, location, description and image", () => {
     renderProductCard();
 

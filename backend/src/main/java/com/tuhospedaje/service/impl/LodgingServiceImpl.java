@@ -2,6 +2,7 @@ package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.lodging.LodgingSearchResponse;
 import com.tuhospedaje.dto.lodging.RecommendationPageResponse;
 import com.tuhospedaje.dto.reservation.AvailabilityResponse;
 import com.tuhospedaje.dto.reservation.OccupiedRange;
@@ -349,7 +350,7 @@ public class LodgingServiceImpl implements LodgingService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> search(String city, LocalDate checkIn, LocalDate checkOut,
+    public LodgingSearchResponse search(String city, LocalDate checkIn, LocalDate checkOut,
                                       Integer guests, List<Long> categories,
                                       BigDecimal minPrice, BigDecimal maxPrice,
                                       int page, int size) {
@@ -399,12 +400,13 @@ public class LodgingServiceImpl implements LodgingService {
                 .collect(Collectors.toList());
         List<LodgingDTO> lodgings = enrichWithRatings(dtos);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("lodgings", lodgings);
-        response.put("currentPage", resultsPage.getNumber());
-        response.put("totalItems", resultsPage.getTotalElements());
-        response.put("totalPages", resultsPage.getTotalPages());
-        return response;
+        return new LodgingSearchResponse(
+                lodgings,
+                resultsPage.getNumber(),
+                resultsPage.getTotalElements(),
+                resultsPage.getTotalPages(),
+                lodgingRepository.count()
+        );
     }
 
     @Override
