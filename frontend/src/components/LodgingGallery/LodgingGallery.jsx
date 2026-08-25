@@ -120,17 +120,15 @@ export default function LodgingGallery({ images = [], name }) {
 						>
 							<ChevronDown size={20} aria-hidden="true" focusable="false" />
 						</button>
-						{images.length > 5 && (
-							<button
-								className="gallery-more"
-								onClick={() => {
-									setCurrentIndex(0);
-									setIsModalOpen(true);
-								}}
-							>
-								Ver más
-							</button>
-						)}
+						<button
+							className="gallery-more"
+							onClick={() => {
+								setCurrentIndex(0);
+								setIsModalOpen(true);
+							}}
+						>
+							Ver más
+						</button>
 					</div>
 				)}
 			</div>

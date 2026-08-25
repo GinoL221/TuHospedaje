@@ -23,6 +23,6 @@ describe("LodgingGallery", () => {
     render(<LodgingGallery images={images.slice(0, 3)} name="Cabaña del Lago" />);
 
     expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ })).toHaveLength(3);
-    expect(screen.queryByRole("button", { name: "Ver más" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver más" })).toBeInTheDocument();
   });
 });
