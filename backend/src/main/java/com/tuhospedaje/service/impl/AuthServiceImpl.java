@@ -7,6 +7,8 @@ import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
+import com.tuhospedaje.service.EmailOutboxService;
+import com.tuhospedaje.service.EmailOutboxService.WelcomeResendResult;
 import com.tuhospedaje.service.RefreshSessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
@@ -30,21 +33,32 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RegistrationPersistenceService registrationPersistenceService;
+    private final EmailOutboxService emailOutboxService;
     // ObjectProvider, NOT a hard constructor dependency (Design ADR-0): RefreshSessionService
     // has no bean at all when app.session.refresh.enabled=false (RefreshSessionConfiguration
     // is @ConditionalOnProperty). A hard dependency here would break ApplicationContext
     // startup with the flag off, defeating the documented rollback/kill-switch.
     private final ObjectProvider<RefreshSessionService> refreshSessions;
 
+    @Autowired
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
             AuthenticationManager authenticationManager, RegistrationPersistenceService registrationPersistenceService,
+            EmailOutboxService emailOutboxService,
             ObjectProvider<RefreshSessionService> refreshSessions) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
         this.registrationPersistenceService = registrationPersistenceService;
+        this.emailOutboxService = emailOutboxService;
         this.refreshSessions = refreshSessions;
+    }
+
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
+            AuthenticationManager authenticationManager, RegistrationPersistenceService registrationPersistenceService,
+            ObjectProvider<RefreshSessionService> refreshSessions) {
+        this(userRepository, passwordEncoder, jwtService, authenticationManager, registrationPersistenceService,
+                null, refreshSessions);
     }
 
     @Override
@@ -89,6 +103,14 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         return buildAuthResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public WelcomeResendResult resendWelcome(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        return emailOutboxService.resendWelcome(user);
     }
 
     @Override

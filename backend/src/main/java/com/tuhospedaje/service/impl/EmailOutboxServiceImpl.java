@@ -1,6 +1,7 @@
 package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.configuration.WelcomeEmailProperties;
 import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.EmailOutbox;
@@ -8,9 +9,13 @@ import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.service.EmailOutboxService;
+import com.tuhospedaje.service.EmailOutboxService.WelcomeResendResult;
 import com.tuhospedaje.service.WelcomeEmailRenderer;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
 
 @Service
 public class EmailOutboxServiceImpl implements EmailOutboxService {
@@ -21,10 +26,20 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
 
     private final EmailOutboxRepository repository;
     private final WelcomeEmailRenderer welcomeEmailRenderer;
+    private final WelcomeEmailProperties welcomeEmailProperties;
+    private final Clock clock;
 
-    public EmailOutboxServiceImpl(EmailOutboxRepository repository, WelcomeEmailRenderer welcomeEmailRenderer) {
+    @Autowired
+    public EmailOutboxServiceImpl(EmailOutboxRepository repository, WelcomeEmailRenderer welcomeEmailRenderer,
+                                  WelcomeEmailProperties welcomeEmailProperties, Clock clock) {
         this.repository = repository;
         this.welcomeEmailRenderer = welcomeEmailRenderer;
+        this.welcomeEmailProperties = welcomeEmailProperties;
+        this.clock = clock;
+    }
+
+    public EmailOutboxServiceImpl(EmailOutboxRepository repository, WelcomeEmailRenderer welcomeEmailRenderer) {
+        this(repository, welcomeEmailRenderer, new WelcomeEmailProperties(), Clock.systemUTC());
     }
 
     @Override
@@ -32,6 +47,18 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
     public void enqueueWelcome(User user, RegisterRequest request) {
         EmailMessage message = welcomeEmailRenderer.render(user.getId(), request.getEmail(), request.getFirstName());
         enqueue(user, message.emailType(), message.aggregateId(), message.to(), message.subject(), message.htmlBody(), true);
+    }
+
+    @Override
+    @Transactional
+    public WelcomeResendResult resendWelcome(User user) {
+        String aggregateId = user.getId().toString();
+        if (repository.findByEmailTypeAndAggregateId(WELCOME, aggregateId).isEmpty()) {
+            return WelcomeResendResult.COOLDOWN;
+        }
+        int requeued = repository.requeueWelcomeIfTerminalAndCooled(aggregateId,
+                clock.instant().minus(welcomeEmailProperties.getResendCooldown()));
+        return requeued == 1 ? WelcomeResendResult.SCHEDULED : WelcomeResendResult.COOLDOWN;
     }
 
     @Override

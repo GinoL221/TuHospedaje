@@ -18,6 +18,17 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
 
     Optional<EmailOutbox> findByEmailTypeAndAggregateId(String emailType, String aggregateId);
 
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE EmailOutbox o
+            SET o.status = 'PENDING', o.failedAttempts = 0, o.nextAttemptAt = NULL,
+                o.leaseToken = NULL, o.leaseUntil = NULL, o.errorCode = NULL, o.completedAt = NULL
+            WHERE o.emailType = 'WELCOME' AND o.aggregateId = :aggregateId
+              AND o.status IN ('DELIVERED', 'FAILED') AND o.completedAt <= :cooldownCutoff
+            """)
+    int requeueWelcomeIfTerminalAndCooled(@Param("aggregateId") String aggregateId,
+                                          @Param("cooldownCutoff") Instant cooldownCutoff);
+
     @Query("SELECT o FROM EmailOutbox o WHERE o.status = :status AND o.leaseToken = :token ORDER BY o.id ASC")
     List<EmailOutbox> findByStatusAndLeaseToken(@Param("status") EmailOutboxStatus status,
                                                 @Param("token") String token);

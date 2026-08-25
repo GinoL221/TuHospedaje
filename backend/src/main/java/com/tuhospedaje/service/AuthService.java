@@ -3,6 +3,7 @@ package com.tuhospedaje.service;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.service.EmailOutboxService.WelcomeResendResult;
 
 public interface AuthService {
 
@@ -25,6 +26,8 @@ public interface AuthService {
      * (used by {@code GET /api/auth/me}). No token is generated or returned here.
      */
     AuthResponse currentUser(String email);
+
+    WelcomeResendResult resendWelcome(String email);
 
     /**
      * Rotates the caller's refresh credential (Design ADR-2, PR1/WU2) and mints a new

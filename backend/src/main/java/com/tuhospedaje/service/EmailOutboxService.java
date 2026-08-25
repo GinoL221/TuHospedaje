@@ -6,7 +6,14 @@ import com.tuhospedaje.entity.User;
 
 public interface EmailOutboxService {
 
+    enum WelcomeResendResult {
+        SCHEDULED,
+        COOLDOWN
+    }
+
     void enqueueWelcome(User user, RegisterRequest request);
+
+    WelcomeResendResult resendWelcome(User user);
 
     void enqueueReservationConfirmation(User user, ReservationResponse reservation);
 

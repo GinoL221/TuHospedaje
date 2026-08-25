@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 
 @Validated
 @Getter
@@ -18,6 +19,8 @@ public class WelcomeEmailProperties {
 
     @NotBlank
     private String publicBaseUrl;
+
+    private Duration resendCooldown = Duration.ofMinutes(5);
 
     @AssertTrue(message = "public-base-url must be a safe absolute HTTPS public URL")
     public boolean isPublicBaseUrlSafe() {

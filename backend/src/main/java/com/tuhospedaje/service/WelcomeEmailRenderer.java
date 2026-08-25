@@ -18,15 +18,17 @@ public class WelcomeEmailRenderer {
     public EmailMessage render(Long userId, String recipient, String firstName) {
         String loginUrl = properties.getNormalizedPublicBaseUrl() + "/login";
         String escapedName = HtmlUtils.htmlEscape(firstName);
+        String escapedRecipient = HtmlUtils.htmlEscape(recipient);
         String escapedLoginUrl = HtmlUtils.htmlEscape(loginUrl);
         String body = """
                 <html><body style="font-family:sans-serif;color:#222;">
                 <h2 style="color:#c0392b;">¡Bienvenido a TuHospedaje, %s!</h2>
                 <p>Gracias por registrarte. Tu cuenta ya está lista.</p>
+                <p>Tu email de acceso es <strong>%s</strong>.</p>
                 <p><a href="%s">Iniciar sesión</a> para descubrir alojamientos.</p>
                 <hr><p style="font-size:12px;color:#888;">TuHospedaje</p>
                 </body></html>
-                """.formatted(escapedName, escapedLoginUrl);
+                """.formatted(escapedName, escapedRecipient, escapedLoginUrl);
         return new EmailMessage(recipient, SUBJECT, body, WELCOME, userId.toString());
     }
 }
