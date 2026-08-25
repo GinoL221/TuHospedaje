@@ -77,23 +77,22 @@ Los demas los probe y pasaron correctamente
 
 ## TC-FT02: Búsqueda y filtrado
 
-* **Cubre:** `SearchResults`, `Pagination` (PR #17)
+* **Cubre:** `Home`, búsqueda dirigida por URL y filtros de categoría.
 * **Precondiciones:** Al menos 2 categorías con alojamientos asociados en BD.
 
 | Paso | Acción | Resultado Esperado | Estado |
 |------|--------|---------------------|--------|
-| 1 | Buscar una ciudad desde el home | Resultados cargan, un solo request a `/lodgings/search` | |
-| 2 | Seleccionar 2+ categorías en el filtro | Filtrado aplica sin disparar un nuevo request (comportamiento histórico client-side, previo a Sprint 4) | |
-| 3 | Seleccionar UNA sola categoría | Sí dispara un nuevo request, ahora con `category` como query param (filtrado server-side) | |
-| 4 | Quitar el chip de categoría | Resultados vuelven a incluir todas las categorías, un solo request adicional | |
-| 5 | Quitar el chip de fecha | Resultados se recalculan sin el filtro de fecha | |
-| 6 | Quitar el chip de precio | Resultados se recalculan sin el filtro de precio | |
-| 7 | Buscar algo sin resultados | Empty-state visible, sin error en consola | |
-| 8 | Navegar entre páginas con `Pagination` | Botones "Primera"/"Anterior" deshabilitados en la página 1, "Siguiente"/"Última" deshabilitados en la última | |
-| 9 | Ver resultados sin estar logueado | No se dispara ningún request a `/favorites`, y ninguna card muestra el botón de favorito | |
+| 1 | Buscar una ciudad desde Home | La URL cambia con los parámetros de búsqueda y se realiza un request a `/lodgings/search`. | |
+| 2 | Seleccionar una o más categorías en Home | La URL conserva los filtros y los resultados se actualizan para la consulta actual. | |
+| 3 | Quitar una categoría activa | La URL y los resultados se actualizan sin mostrar filtros eliminados. | |
+| 4 | Cambiar la consulta mientras la respuesta anterior está pendiente | La respuesta anterior no se muestra como resultado de la nueva consulta. | |
+| 5 | Quitar todos los parámetros de búsqueda de la URL | La sección de resultados se oculta y no quedan resultados obsoletos visibles. | |
+| 6 | Buscar una consulta sin coincidencias | Se muestra `0 resultados` y no hay errores en consola. | |
+| 7 | Ver las recomendaciones con una búsqueda activa | Las recomendaciones permanecen visibles e independientes de los resultados de búsqueda. | |
+| 8 | Ver resultados sin estar logueado | No se realiza ningún request a `/favorites` y ninguna card muestra el botón de favorito. | |
 
 **Notas de este TC:**
-paso todos, con algunos arreglos que quiero hacerle a la busqueda y a los filtros pero por fuera de estos test
+La búsqueda actual se renderiza en Home y toma la URL como fuente de verdad. Los controles descritos en versiones anteriores de esta guía ya no forman parte del flujo vigente.
 ---
 
 ## TC-FT03: Detalle de alojamiento y reserva

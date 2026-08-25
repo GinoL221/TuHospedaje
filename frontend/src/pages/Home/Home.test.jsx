@@ -1,7 +1,7 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { customRender, screen, waitFor } from "../../test/test-utils";
+import { act, customRender, screen, waitFor } from "../../test/test-utils";
 import Home from "./Home";
 import { get } from "../../services/api";
 
@@ -89,11 +89,39 @@ function SearchSentinel() {
 	return <div data-testid="search-sentinel">{location.search}</div>;
 }
 
+function SearchNavigation() {
+	const navigate = useNavigate();
+
+	return (
+		<nav>
+			<button type="button" onClick={() => navigate("/")}>Remove search query</button>
+			<button type="button" onClick={() => navigate("/?city=Mendoza")}>Change search query</button>
+		</nav>
+	);
+}
+
 function renderHome({ authValue, route = "/" } = {}) {
 	return customRender(
 		<Routes>
 			<Route path="/" element={<Home />} />
 			<Route path="/search" element={<SearchSentinel />} />
+		</Routes>,
+		{ authValue, route },
+	);
+}
+
+function renderHomeWithSearchNavigation({ authValue, route = "/" } = {}) {
+	return customRender(
+		<Routes>
+			<Route
+				path="/"
+				element={
+					<>
+						<SearchNavigation />
+						<Home />
+					</>
+				}
+			/>
 		</Routes>,
 		{ authValue, route },
 	);
@@ -564,6 +592,80 @@ describe("Home - category filter compatibility", () => {
 });
 
 describe("Home - stale response rejection", () => {
+	it("does not show a removed query's response after the request resolves", async () => {
+		const pendingSearch = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/lodgings/search?city=Salta") return pendingSearch.promise;
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHomeWithSearchNavigation({ route: "/?city=Salta" });
+
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith("/lodgings/search?city=Salta"),
+		);
+		await user.click(screen.getByRole("button", { name: "Remove search query" }));
+		await act(async () => {
+			pendingSearch.resolve({
+				lodgings: [{ ...lodgingFixture, id: 9, name: "Resultado anterior" }],
+				totalItems: 1,
+				catalogItems: 1,
+			});
+			await Promise.resolve();
+		});
+
+		await waitFor(() =>
+			expect(screen.queryByText("Resultado anterior")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.queryByRole("heading", { name: "Resultados de búsqueda" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("does not show a prior query's response while the next query is pending", async () => {
+		const pendingSalta = deferred();
+		const pendingMendoza = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/lodgings/search?city=Salta") return pendingSalta.promise;
+			if (endpoint === "/lodgings/search?city=Mendoza") return pendingMendoza.promise;
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHomeWithSearchNavigation({ route: "/?city=Salta" });
+
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith("/lodgings/search?city=Salta"),
+		);
+		await user.click(screen.getByRole("button", { name: "Change search query" }));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith("/lodgings/search?city=Mendoza"),
+		);
+		await act(async () => {
+			pendingSalta.resolve({
+				lodgings: [{ ...lodgingFixture, id: 10, name: "Resultado de Salta" }],
+				totalItems: 1,
+				catalogItems: 1,
+			});
+			await Promise.resolve();
+		});
+		expect(screen.queryByText("Resultado de Salta")).not.toBeInTheDocument();
+		await act(async () => {
+			pendingMendoza.resolve({
+				lodgings: [{ ...lodgingFixture, id: 11, name: "Resultado de Mendoza" }],
+				totalItems: 1,
+				catalogItems: 1,
+			});
+			await Promise.resolve();
+		});
+		expect(await screen.findByText("Resultado de Mendoza")).toBeInTheDocument();
+	});
+
 	it("ignores an out-of-order response from an earlier (page 1) request that resolves after a later (page 0) one", async () => {
 		let resolvePage1;
 		const pendingPage1 = new Promise((resolve) => {

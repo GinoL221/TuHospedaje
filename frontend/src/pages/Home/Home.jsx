@@ -128,12 +128,29 @@ export default function Home() {
 	}, [fetchRecommendations]);
 
 	useEffect(() => {
-		if (!search) {
-			setSearchResults(null);
-			return;
-		}
-		get(`/lodgings/search${search}`).then((data) => setSearchResults(data)).catch(() => setSearchResults({ lodgings: [], totalItems: 0, catalogItems: 0 }));
+		if (!search) return undefined;
+
+		let isCurrentSearch = true;
+		get(`/lodgings/search${search}`)
+			.then((data) => {
+				if (isCurrentSearch) setSearchResults({ query: search, data });
+			})
+			.catch(() => {
+				if (isCurrentSearch) {
+					setSearchResults({
+						query: search,
+						data: { lodgings: [], totalItems: 0, catalogItems: 0 },
+					});
+				}
+			});
+
+		return () => {
+			isCurrentSearch = false;
+		};
 	}, [search]);
+
+	const visibleSearchResults =
+		searchResults?.query === search ? searchResults.data : null;
 
 	const searchParams = new URLSearchParams(search);
 	const selectedCategories = searchParams.getAll("categories");
@@ -386,11 +403,11 @@ export default function Home() {
 					</div>
 				)}
 			</section>
-			{searchResults && (
+			{visibleSearchResults && (
 				<section className="search-results" aria-live="polite">
 					<div className="section-header"><h2>Resultados de búsqueda</h2>{selectedCategories.length > 0 && <button className="btn-clear-filter" onClick={clearCategories}>Limpiar filtros</button>}</div>
-					<p>{searchResults.totalItems ?? 0} resultados de {searchResults.catalogItems ?? 0} alojamientos</p>
-					{searchResults.lodgings?.length > 0 && <div className="hotel-list">{searchResults.lodgings.map((lodging) => <ProductCard key={lodging.id} lodging={lodging} />)}</div>}
+					<p>{visibleSearchResults.totalItems ?? 0} resultados de {visibleSearchResults.catalogItems ?? 0} alojamientos</p>
+					{visibleSearchResults.lodgings?.length > 0 && <div className="hotel-list">{visibleSearchResults.lodgings.map((lodging) => <ProductCard key={lodging.id} lodging={lodging} />)}</div>}
 				</section>
 			)}
 			<section className="recommendations">
