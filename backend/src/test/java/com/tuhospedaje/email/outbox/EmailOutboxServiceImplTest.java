@@ -58,7 +58,7 @@ class EmailOutboxServiceImplTest {
 
     @Test
     void enqueueReservationConfirmationStoresTheRenderedConfirmationMessage() {
-        User user = user(8L, "guest@example.com");
+        User user = user(8L, "registered@example.com");
         ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CONFIRMED);
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
                 .thenReturn(Optional.empty());
@@ -68,7 +68,7 @@ class EmailOutboxServiceImplTest {
         EmailOutbox saved = capturedOutbox();
         assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.RESERVATION_CONFIRMATION.name());
         assertThat(saved.getAggregateId()).isEqualTo("42");
-        assertThat(saved.getRecipient()).isEqualTo("guest@example.com");
+        assertThat(saved.getRecipient()).isEqualTo("registered@example.com");
         assertThat(saved.getSubject()).isEqualTo("Booking confirmed — Hotel Sur");
         assertThat(saved.getHtmlBody()).contains("Your booking is confirmed!")
                 .contains("Hotel Sur")
@@ -77,7 +77,7 @@ class EmailOutboxServiceImplTest {
 
     @Test
     void enqueueReservationCancellationStoresTheRenderedCancellationMessage() {
-        User user = user(8L, "guest@example.com");
+        User user = user(8L, "registered@example.com");
         ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CANCELLED);
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CANCELLATION", "42"))
                 .thenReturn(Optional.empty());
@@ -87,11 +87,13 @@ class EmailOutboxServiceImplTest {
         EmailOutbox saved = capturedOutbox();
         assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.RESERVATION_CANCELLATION.name());
         assertThat(saved.getAggregateId()).isEqualTo("42");
-        assertThat(saved.getRecipient()).isEqualTo("guest@example.com");
+        assertThat(saved.getRecipient()).isEqualTo("registered@example.com");
         assertThat(saved.getSubject()).isEqualTo("Booking cancelled — Hotel Sur");
         assertThat(saved.getHtmlBody()).contains("Your booking was cancelled")
                 .contains("2026-08-20")
-                .contains("2026-08-22");
+                .contains("2026-08-22")
+                .contains("555")
+                .contains("hotel@example.com");
     }
 
     @Test
