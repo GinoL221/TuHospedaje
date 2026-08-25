@@ -87,7 +87,9 @@ test.describe('Home recommendations — stable pagination', () => {
       .waitForRequest((req) => req.url().includes('/lodgings/recommendations'), { timeout: 500 })
       .then(() => true)
       .catch(() => false);
-    const categoryRequest = page.waitForRequest((req) => req.url().includes('/lodgings?category='));
+    const categoryRequest = page.waitForRequest((req) =>
+      req.url().includes('/lodgings/search') && req.url().includes('categories='),
+    );
     await page.locator('.category-tag').first().click();
     await categoryRequest;
     expect(await unexpectedRecommendation).toBe(false);
