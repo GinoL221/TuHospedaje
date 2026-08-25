@@ -3,6 +3,7 @@ package com.tuhospedaje.email.outbox;
 import com.tuhospedaje.service.impl.EmailOutboxDispatcher;
 import com.tuhospedaje.service.impl.EmailOutboxScheduler;
 import com.tuhospedaje.service.impl.EmailOutboxTransactionService;
+import com.tuhospedaje.enums.EmailOutboxType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -25,18 +26,38 @@ class EmailOutboxSchedulerTest {
 
         scheduler.pollWelcome();
 
-        verify(dispatcher).dispatch();
+        verify(dispatcher).dispatch(EmailOutboxType.WELCOME);
+    }
+
+    @Test
+    void givesEverySupportedTypeOneDispatchOpportunityPerPoll() {
+        when(dispatcherProvider.getIfAvailable()).thenReturn(dispatcher);
+
+        scheduler.poll();
+
+        for (EmailOutboxType type : EmailOutboxType.values()) {
+            verify(dispatcher).dispatch(type);
+        }
     }
 
     @Test
     void isolatesCleanupFailureFromLaterDispatches() {
         when(dispatcherProvider.getIfAvailable()).thenReturn(dispatcher);
-        doThrow(new RuntimeException("database unavailable")).when(transactions).cleanupWelcome();
+        doThrow(new RuntimeException("database unavailable")).when(transactions).cleanup(EmailOutboxType.WELCOME);
 
-        assertThatCode(scheduler::cleanupWelcome).doesNotThrowAnyException();
+        assertThatCode(scheduler::cleanup).doesNotThrowAnyException();
         scheduler.pollWelcome();
 
-        verify(dispatcher).dispatch();
+        verify(dispatcher).dispatch(EmailOutboxType.WELCOME);
+    }
+
+    @Test
+    void retainsIndependentCleanupForEverySupportedType() {
+        scheduler.cleanup();
+
+        for (EmailOutboxType type : EmailOutboxType.values()) {
+            verify(transactions).cleanup(type);
+        }
     }
 
     @Test

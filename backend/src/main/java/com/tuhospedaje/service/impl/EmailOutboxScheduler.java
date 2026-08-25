@@ -1,5 +1,6 @@
 package com.tuhospedaje.service.impl;
 
+import com.tuhospedaje.enums.EmailOutboxType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,20 +23,32 @@ public class EmailOutboxScheduler {
     }
 
     @Scheduled(fixedDelayString = "${tuhospedaje.email-outbox.poll-interval}")
-    public void pollWelcome() {
+    public void poll() {
         EmailOutboxDispatcher availableDispatcher = dispatcher.getIfAvailable();
         if (availableDispatcher != null) {
-            availableDispatcher.dispatch();
+            for (EmailOutboxType type : EmailOutboxType.values()) {
+                availableDispatcher.dispatch(type);
+            }
         }
     }
 
+    public void pollWelcome() {
+        poll();
+    }
+
     @Scheduled(fixedDelayString = "${tuhospedaje.email-outbox.cleanup-interval}")
-    public void cleanupWelcome() {
-        try {
-            int deleted = transactions.cleanupWelcome();
-            log.info("event=email_outbox.cleanup_completed email_type=WELCOME deleted_count={}", deleted);
-        } catch (RuntimeException ignored) {
-            log.warn("event=email_outbox.cleanup_failed email_type=WELCOME classification=CLEANUP_FAILED");
+    public void cleanup() {
+        for (EmailOutboxType type : EmailOutboxType.values()) {
+            try {
+                int deleted = transactions.cleanup(type);
+                log.info("event=email_outbox.cleanup_completed email_type={} deleted_count={}", type, deleted);
+            } catch (RuntimeException ignored) {
+                log.warn("event=email_outbox.cleanup_failed email_type={} classification=CLEANUP_FAILED", type);
+            }
         }
+    }
+
+    public void cleanupWelcome() {
+        cleanup();
     }
 }

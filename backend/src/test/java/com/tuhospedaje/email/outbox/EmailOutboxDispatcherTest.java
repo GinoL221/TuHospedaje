@@ -2,6 +2,7 @@ package com.tuhospedaje.email.outbox;
 
 import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.dto.email.EmailMessage;
+import com.tuhospedaje.enums.EmailOutboxType;
 import com.tuhospedaje.service.EmailTransport;
 import com.tuhospedaje.service.EmailTransportFailure;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
@@ -43,6 +44,21 @@ class EmailOutboxDispatcherTest {
 
         verify(transport).submit(stored);
         verify(transactions).markDelivered(7L, "lease-1", clock.instant());
+    }
+
+    @Test
+    void dispatchesEachSupportedTypeWithoutSharingAnotherTypesBatch() {
+        for (EmailOutboxType type : EmailOutboxType.values()) {
+            EmailMessage stored = new EmailMessage("guest@example.com", type.name(), "<p>Stored body</p>", type.name(), "42");
+            when(transactions.claimBatch(type, clock.instant())).thenReturn(List.of(
+                    new EmailOutboxTransactionService.ClaimedEmail(7L, "lease-" + type.name(), 0, stored)));
+
+            dispatcher.dispatch(type);
+
+            verify(transactions).claimBatch(type, clock.instant());
+            verify(transactions).markDelivered(7L, "lease-" + type.name(), clock.instant());
+        }
+        verify(transport, times(EmailOutboxType.values().length)).submit(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
