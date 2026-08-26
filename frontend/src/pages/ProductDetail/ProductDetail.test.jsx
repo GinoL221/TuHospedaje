@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import {
 	customRender,
