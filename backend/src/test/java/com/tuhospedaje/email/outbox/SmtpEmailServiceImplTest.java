@@ -10,6 +10,7 @@ import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.Test;
 import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.util.Properties;
@@ -68,6 +69,32 @@ class SmtpEmailServiceImplTest {
                 .isInstanceOf(EmailTransportFailure.class)
                 .extracting(error -> ((EmailTransportFailure) error).classification())
                 .isEqualTo(EmailTransportFailureClassification.SMTP_AUTHENTICATION_REJECTED);
+    }
+
+    @Test
+    void classifiesGenericMailFailureAsSmtpUnavailable() {
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+        org.mockito.Mockito.doThrow(new MailException("transport unavailable") { })
+                .when(mailSender).send(any(MimeMessage.class));
+
+        assertThatThrownBy(() -> service.submit(new EmailMessage(
+                "ana@example.com", "Stored subject", "<p>Stored body</p>", "WELCOME", "42")))
+                .isInstanceOf(EmailTransportFailure.class)
+                .extracting(error -> ((EmailTransportFailure) error).classification())
+                .isEqualTo(EmailTransportFailureClassification.SMTP_UNAVAILABLE);
+    }
+
+    @Test
+    void rejectsMalformedRecipientWithoutCreatingOrSendingMimeMessage() {
+        EmailMessage stored = new EmailMessage("not-an-email", "Stored subject", "<p>Stored body</p>", "WELCOME", "42");
+
+        assertThatThrownBy(() -> service.submit(stored))
+                .isInstanceOf(EmailTransportFailure.class)
+                .extracting(error -> ((EmailTransportFailure) error).classification())
+                .isEqualTo(EmailTransportFailureClassification.INVALID_STORED_PAYLOAD);
+
+        verify(mailSender, never()).createMimeMessage();
+        verify(mailSender, never()).send(any(MimeMessage.class));
     }
 
     @Test
