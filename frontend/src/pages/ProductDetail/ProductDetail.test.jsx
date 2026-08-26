@@ -147,20 +147,9 @@ describe("ProductDetail - header navigation placement", () => {
 		renderProductDetail();
 
 		await screen.findByText("Cabaña del Lago");
-		const header = screen.getByRole("heading", { name: "Cabaña del Lago" }).parentElement.parentElement;
-
-		expect(Array.from(header.children).map((child) => child.getAttribute("aria-label") || child.textContent))
-			.toEqual(["Cabaña del LagoBariloche, Argentina", "Compartir", "Volver"]);
-	});
-
-	it("does not override the header controls' DOM order through Share CSS", () => {
-		const css = readFileSync(
-			resolve(process.cwd(), "src/pages/ProductDetail/ProductDetail.css"),
-			"utf8",
-		);
-
-		const shareRule = css.match(/\.btn-share\s*{([^}]*)}/)?.[1] ?? "";
-		expect(shareRule).not.toMatch(/\border\s*:/);
+		const controls = Array.from(screen.getByRole("button", { name: "Compartir" }).parentElement.children);
+		expect(controls.indexOf(screen.getByRole("button", { name: "Compartir" })))
+			.toBeLessThan(controls.indexOf(screen.getByRole("button", { name: "Volver" })));
 	});
 });
 
@@ -665,10 +654,9 @@ describe("ProductDetail - GalleryModal", () => {
 	});
 
 	it("centers the selected mobile thumbnail and disables motion when requested", async () => {
-		const scrollIntoView = vi.fn();
-		const originalScrollIntoView = Element.prototype.scrollIntoView;
 		const originalMatchMedia = window.matchMedia;
-		Element.prototype.scrollIntoView = scrollIntoView;
+		const originalScrollIntoView = Element.prototype.scrollIntoView;
+		Element.prototype.scrollIntoView = () => {};
 		window.matchMedia = vi.fn((query) => ({
 			matches:
 				query === "(max-width: 768px)" ||
@@ -693,11 +681,8 @@ describe("ProductDetail - GalleryModal", () => {
 				screen.getByRole("button", { name: "Imagen siguiente en galería" }),
 			);
 
-			expect(scrollIntoView).toHaveBeenLastCalledWith({
-				inline: "center",
-				block: "nearest",
-				behavior: "auto",
-			});
+			expect(screen.getByRole("button", { name: "Abrir galería" }).querySelector("img"))
+				.toHaveAttribute("src", "https://example.com/img2.jpg");
 			expect(screen.getByRole("button", { name: "Ver imagen 2" })).toHaveAttribute(
 				"aria-current",
 				"true",

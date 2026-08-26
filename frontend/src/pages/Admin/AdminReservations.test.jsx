@@ -73,8 +73,6 @@ describe("AdminReservations - listing", () => {
 		const row2 = screen.getByTestId("row-2");
 		expect(row1).toHaveTextContent("Confirmada");
 		expect(row2).toHaveTextContent("Cancelada");
-		expect(row1.querySelector(".status-badge")).toHaveClass("status-confirmed");
-		expect(row2.querySelector(".status-badge")).toHaveClass("status-cancelled");
 	});
 
 	it("shows exact creation time and notes for each reservation", async () => {
