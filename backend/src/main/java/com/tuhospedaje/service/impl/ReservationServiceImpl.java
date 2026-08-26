@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.List;
 import java.util.Set;
@@ -111,6 +112,9 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setGuestName(request.getGuestName());
         reservation.setGuestEmail(request.getGuestEmail());
         reservation.setGuestPhone(request.getGuestPhone());
+        reservation.setNotes(normalizeNotes(request.getNotes()));
+        reservation.setCreatedAt(LocalDateTime.now(clock));
+        reservation.setCreatedAtDerived(false);
         reservation.setTotalPrice(totalPrice);
         reservation.setStatus(ReservationStatus.CONFIRMED);
 
@@ -118,6 +122,14 @@ public class ReservationServiceImpl implements ReservationService {
         ReservationResponse response = ReservationResponse.fromEntity(saved);
         emailOutboxService.enqueueReservationConfirmation(user, response);
         return response;
+    }
+
+    private static String normalizeNotes(String notes) {
+        if (notes == null) {
+            return null;
+        }
+        String normalizedNotes = notes.trim();
+        return normalizedNotes.isEmpty() ? null : normalizedNotes;
     }
 
     @Override

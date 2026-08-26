@@ -41,6 +41,10 @@ public class CreateReservationRequest {
     @Schema(description = "Phone number of the guest", example = "+5491112345678")
     private String guestPhone;
 
+    @Size(max = 1000, message = "Las notas no pueden superar 1000 caracteres")
+    @Schema(description = "Optional notes for the reservation", example = "Late arrival after 22:00")
+    private String notes;
+
     @AssertTrue(message = "La fecha de check-out debe ser posterior al check-in")
     private boolean isCheckOutAfterCheckIn() {
         if (checkIn == null || checkOut == null) return false;

@@ -132,6 +132,51 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldRejectOversizedNotes() throws Exception {
+        Long lodgingId = createTestLodging();
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", LocalDate.now().plusDays(10).toString(),
+                "checkOut", LocalDate.now().plusDays(12).toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455",
+                "notes", "x".repeat(1001)
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/reservations")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectBlankGuestPhone() throws Exception {
+        Long lodgingId = createTestLodging();
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", LocalDate.now().plusDays(10).toString(),
+                "checkOut", LocalDate.now().plusDays(12).toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", ""
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/reservations")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldReturnUserReservationsOrderedByCheckInDesc() throws Exception {
         Long lodgingId = createTestLodging();
 
