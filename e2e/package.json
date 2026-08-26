@@ -8,6 +8,8 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:chrome": "playwright test --project=chromium",
+    "test:readiness": "node --test scripts/local-readiness.test.js",
+    "test:chrome:local": "node scripts/local-readiness.js && playwright test --project=chromium",
     "report": "playwright show-report",
     "clean": "rm -rf test-results playwright-report allure-results allure-report"
   },

@@ -54,7 +54,52 @@ Local uses MariaDB 10.11 on port **3307** so it matches CI/Testcontainers and do
 docker compose up -d db
 ```
 
-The `dev` profile connects to `jdbc:mariadb://localhost:3307/tuhospedaje`.
+The `dev` profile connects to the disposable `jdbc:mariadb://localhost:3307/tuhospedaje_dev` database.
+
+#### Disposable local E2E database
+
+Local Chromium E2E uses only the Compose-managed `tuhospedaje_dev` database and a labeled named
+volume. Before recreating it, inspect its identity; never remove a volume whose label or name has
+not been verified as disposable. This procedure never uses `flyway repair`.
+
+```bash
+docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{end}}{{end}}' tuhospedaje-dev-db
+docker volume inspect <the-volume-name-printed-above>
+docker compose down
+docker volume rm <the-inspected-volume-name> # only after confirming com.tuhospedaje.disposable=true
+docker compose up -d db
+```
+
+Start the backend with the `dev` profile and the frontend, then run the read-only gate before local Chromium:
+
+```bash
+cd e2e
+npm run test:chrome:local
+```
+
+The gate checks the database name, volume label, MariaDB health, successful Flyway history, backend
+health, and frontend reachability. A failed check blocks Chromium and must not trigger repair or any
+deletion of shared or persistent data.
+
+#### Seeded disposable Chromium E2E
+
+Only seed a freshly recreated volume after the inspection above reports
+`com.tuhospedaje.disposable=true`. Start the backend once with the explicit `dev` seed location and
+a bcrypt hash for the existing non-production E2E admin credential supplied through the shell; do
+not save credentials or hashes in `.env`, source files, or shell history:
+
+```bash
+SPRING_PROFILES_ACTIVE=dev \
+SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/dev \
+DEV_ADMIN_PASSWORD_HASH="$DEV_ADMIN_PASSWORD_HASH" \
+./mvnw spring-boot:run
+```
+
+Use the same existing non-production admin credential through `TEST_ADMIN_PASSWORD` when running
+`npm run test:chrome:local`. The readiness gate then validates the database identity, disposable
+volume label, MariaDB health, successful Flyway history, and service reachability. If seeding fails,
+stop the backend and recreate only the already-inspected labeled volume; never use `flyway repair`
+or reset an unlabeled or shared volume.
 
 #### Configurar variables de entorno
 ```bash
