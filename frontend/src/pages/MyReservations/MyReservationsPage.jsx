@@ -138,6 +138,9 @@ export default function MyReservationsPage() {
                     <Phone size={14} />
                     <span>{r.guestPhone}</span>
                   </div>
+                  <div className="reservation-row">
+                    <span>Número de reserva: {r.id}</span>
+                  </div>
                   {createdAtLabel && (
                     <div className="reservation-row">
                       <Calendar size={14} />

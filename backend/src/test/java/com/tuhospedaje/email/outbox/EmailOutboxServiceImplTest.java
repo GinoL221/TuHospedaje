@@ -72,6 +72,8 @@ class EmailOutboxServiceImplTest {
         assertThat(saved.getSubject()).isEqualTo("Booking confirmed — Hotel Sur");
         assertThat(saved.getHtmlBody()).contains("Your booking is confirmed!")
                 .contains("Hotel Sur")
+                .contains("Reservation number")
+                .contains("42")
                 .contains("hotel@example.com");
     }
 
