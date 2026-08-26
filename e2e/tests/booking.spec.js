@@ -80,6 +80,7 @@ test.describe('Booking — happy path', () => {
     await expect(page).toHaveURL(/\/booking\/confirmation/);
     await expect(page.getByRole('heading', { name: '¡Reserva confirmada!' })).toBeVisible();
     await expect(page.getByText(stayLabel)).toBeVisible();
+    await expect(page.getByText(/^Reserva #\d+$/)).toBeVisible();
 
     await page.getByRole('link', { name: 'Ver mis reservas' }).click();
     await expect(page).toHaveURL(/\/my-reservations/);
@@ -87,6 +88,7 @@ test.describe('Booking — happy path', () => {
     const card = page.locator('article.reservation-card', { hasText: stayLabel });
     await expect(card).toBeVisible();
     await expect(card.locator('.reservation-status')).toHaveText('CONFIRMED');
+    await expect(card.getByText(/^Fecha de creación:/)).toBeVisible();
     await expect(card.getByRole('link', { name: /Ver alojamiento/ })).toBeVisible();
   });
 });

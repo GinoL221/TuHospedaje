@@ -107,6 +107,9 @@ describe("AdminDashboard - recent reservations table", () => {
         checkOut: "2026-07-04",
         totalPrice: 300,
         status: "CONFIRMED",
+        createdAt: "2026-06-20T14:30:00",
+        createdAtDerived: false,
+        notes: "Necesito una cuna",
       },
       {
         id: 2,
@@ -124,5 +127,33 @@ describe("AdminDashboard - recent reservations table", () => {
     expect(await screen.findByText("Últimas reservas")).toBeInTheDocument();
     expect(screen.getByText("Confirmada")).toBeInTheDocument();
     expect(screen.getByText("Cancelada")).toBeInTheDocument();
+  });
+
+  it("shows reservation notes and labels derived creation times as estimated", async () => {
+    mockGetDefaults({
+      reservations: [{
+        id: 1, lodgingName: "Cabaña", guestName: "Ana García", checkIn: "2026-07-01",
+        checkOut: "2026-07-04", totalPrice: 300, status: "CONFIRMED",
+        createdAt: "2026-07-01T00:00:00", createdAtDerived: true, notes: "Llegada tarde",
+      }],
+    });
+    render(<AdminDashboard onTabChange={vi.fn()} />);
+
+    expect(await screen.findByText("Fecha estimada: 01/07/2026 00:00")).toBeInTheDocument();
+    expect(screen.getByText("Llegada tarde")).toBeInTheDocument();
+  });
+
+  it("omits empty notes from recent reservations", async () => {
+    mockGetDefaults({
+      reservations: [{
+        id: 1, lodgingName: "Cabaña", guestName: "Ana García", checkIn: "2026-07-01",
+        checkOut: "2026-07-04", totalPrice: 300, status: "CONFIRMED",
+        createdAt: "2026-06-20T14:30:00", createdAtDerived: false, notes: " ",
+      }],
+    });
+    render(<AdminDashboard onTabChange={vi.fn()} />);
+
+    expect(await screen.findByText("Fecha de creación: 20/06/2026 14:30")).toBeInTheDocument();
+    expect(screen.getByText("Fecha de creación: 20/06/2026 14:30").closest("tr")).toHaveTextContent("-");
   });
 });

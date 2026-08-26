@@ -15,7 +15,10 @@ const reservationFixture = (overrides = {}) => ({
 	checkIn: "2026-07-01",
 	checkOut: "2026-07-05",
 	totalPrice: 400,
-	status: "CONFIRMED",
+  status: "CONFIRMED",
+  createdAt: "2026-06-20T14:30:00",
+  createdAtDerived: false,
+  notes: "Necesito una cuna",
 	...overrides,
 });
 
@@ -50,7 +53,7 @@ describe("AdminReservations - listing", () => {
 		expect(await screen.findByText("No hay reservas registradas.")).toBeInTheDocument();
 	});
 
-	it("renders a row per reservation with lodging, guest, dates, total and status", async () => {
+  it("renders a row per reservation with lodging, guest, dates, total and status", async () => {
 		getAdminReservations.mockResolvedValue({
 			items: [
 				reservationFixture({ id: 1, lodgingName: "Cabaña del Lago", status: "CONFIRMED" }),
@@ -72,6 +75,29 @@ describe("AdminReservations - listing", () => {
 		expect(row2).toHaveTextContent("Cancelada");
 		expect(row1.querySelector(".status-badge")).toHaveClass("status-confirmed");
 		expect(row2.querySelector(".status-badge")).toHaveClass("status-cancelled");
+	});
+
+	it("shows exact creation time and notes for each reservation", async () => {
+		getAdminReservations.mockResolvedValue({
+			items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1,
+		});
+		renderAdminReservations();
+
+		const row = await screen.findByTestId("row-1");
+		expect(row).toHaveTextContent("Fecha de creación: 20/06/2026 14:30");
+		expect(row).toHaveTextContent("Necesito una cuna");
+	});
+
+	it("labels derived creation time as estimated and omits blank notes", async () => {
+		getAdminReservations.mockResolvedValue({
+			items: [reservationFixture({ createdAt: "2026-07-01T00:00:00", createdAtDerived: true, notes: " " })],
+			currentPage: 0, totalItems: 1, totalPages: 1,
+		});
+		renderAdminReservations();
+
+		const row = await screen.findByTestId("row-1");
+		expect(row).toHaveTextContent("Fecha estimada: 01/07/2026 00:00");
+		expect(row).toHaveTextContent("-");
 	});
 
 	it("fetches from the admin reservations endpoint on mount", async () => {

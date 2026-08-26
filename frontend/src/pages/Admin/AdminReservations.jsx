@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getAdminReservations } from "../../services/reservationService";
 import SortableTh from "../../components/SortableTh/SortableTh";
 import Pagination from "../../components/Pagination/Pagination";
+import { hasReservationNotes, reservationCreatedAtLabel } from "../../utils/reservationPresentation";
 
 const PAGE_SIZE = 10;
 
@@ -177,6 +178,8 @@ export default function AdminReservations() {
 								</SortableTh>
 								<th>Alojamiento</th>
 								<th>Huésped</th>
+								<th>Creación</th>
+								<th>Notas</th>
 								<SortableTh columnKey="checkIn" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}>
 									Check-in
 								</SortableTh>
@@ -197,6 +200,8 @@ export default function AdminReservations() {
 									<td>{r.id}</td>
 									<td>{r.lodgingName}</td>
 									<td>{r.guestName}</td>
+									<td>{reservationCreatedAtLabel(r)}</td>
+									<td>{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}</td>
 									<td>{r.checkIn}</td>
 									<td>{r.checkOut}</td>
 									<td>${r.totalPrice}</td>

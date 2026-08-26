@@ -76,6 +76,34 @@ class EmailOutboxServiceImplTest {
     }
 
     @Test
+    void enqueueReservationConfirmationEscapesNonEmptyNotes() {
+        User user = user(8L, "registered@example.com");
+        ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CONFIRMED);
+        reservation.setNotes("Late <arrival> & luggage");
+        when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
+                .thenReturn(Optional.empty());
+
+        newService().enqueueReservationConfirmation(user, reservation);
+
+        assertThat(capturedOutbox().getHtmlBody())
+                .contains("Notes")
+                .contains("Late &lt;arrival&gt; &amp; luggage");
+    }
+
+    @Test
+    void enqueueReservationConfirmationOmitsBlankNotes() {
+        User user = user(8L, "registered@example.com");
+        ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CONFIRMED);
+        reservation.setNotes("   ");
+        when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
+                .thenReturn(Optional.empty());
+
+        newService().enqueueReservationConfirmation(user, reservation);
+
+        assertThat(capturedOutbox().getHtmlBody()).doesNotContain("Notes");
+    }
+
+    @Test
     void enqueueReservationCancellationStoresTheRenderedCancellationMessage() {
         User user = user(8L, "registered@example.com");
         ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CANCELLED);

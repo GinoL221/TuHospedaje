@@ -9,6 +9,7 @@ const reservationFixture = {
   guestName: "Juan Perez",
   guestEmail: "juan@test.com",
   totalPrice: 300,
+  notes: "Llegamos después de las 22:00",
 };
 
 const lodgingFixture = {
@@ -59,6 +60,22 @@ describe("BookingConfirmationPage - with valid state", () => {
     renderConfirmation({ state: { reservation: reservationFixture, lodging: lodgingFixture } });
 
     expect(screen.getByText(/email de confirmación/i)).toBeInTheDocument();
+  });
+
+  it("shows the reservation number and non-empty notes", () => {
+    renderConfirmation({ state: { reservation: reservationFixture, lodging: lodgingFixture } });
+
+    expect(screen.getByText("Reserva #99")).toBeInTheDocument();
+    expect(screen.getByText("Notas")).toBeInTheDocument();
+    expect(screen.getByText("Llegamos después de las 22:00")).toBeInTheDocument();
+  });
+
+  it("omits the notes section when notes are blank", () => {
+    renderConfirmation({
+      state: { reservation: { ...reservationFixture, notes: "   " }, lodging: lodgingFixture },
+    });
+
+    expect(screen.queryByText("Notas")).not.toBeInTheDocument();
   });
 });
 
