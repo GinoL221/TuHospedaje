@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { CheckCircle, Mail } from "lucide-react";
+import { hasReservationNotes } from "../../utils/reservationPresentation";
 import "./BookingConfirmation.css";
 
 function fmtDate(str) {
@@ -39,6 +40,10 @@ export default function BookingConfirmationPage() {
 
         <div className="confirmation-rows">
           <div className="confirmation-row">
+            <span className="confirmation-row-label">Reserva</span>
+            <span className="confirmation-row-value">Reserva #{reservation.id}</span>
+          </div>
+          <div className="confirmation-row">
             <span className="confirmation-row-label">Fechas</span>
             <span className="confirmation-row-value">
               {fmtDate(reservation.checkIn)} → {fmtDate(reservation.checkOut)}
@@ -52,6 +57,12 @@ export default function BookingConfirmationPage() {
             <div className="confirmation-row">
               <span className="confirmation-row-label">Email</span>
               <span className="confirmation-row-value">{reservation.guestEmail}</span>
+            </div>
+          )}
+          {hasReservationNotes(reservation.notes) && (
+            <div className="confirmation-row">
+              <span className="confirmation-row-label">Notas</span>
+              <span className="confirmation-row-value">{reservation.notes.trim()}</span>
             </div>
           )}
           <div className="confirmation-row confirmation-total">

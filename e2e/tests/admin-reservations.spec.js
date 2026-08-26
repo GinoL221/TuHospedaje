@@ -66,5 +66,7 @@ test.describe('Admin › Reservations smoke', () => {
       reservationsPage.getTable(),
       'Expected reservations-table to be visible when reservations exist',
     ).toBeVisible();
+    await expect(reservationsPage.getTable().getByRole('columnheader', { name: 'Creación' })).toBeVisible();
+    await expect(reservationsPage.getTable().getByRole('columnheader', { name: 'Notas' })).toBeVisible();
   });
 });

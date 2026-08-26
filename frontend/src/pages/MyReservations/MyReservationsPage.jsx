@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin, User, Mail, Phone, ExternalLink } from "lucide-react";
 import { get } from "../../services/api";
 import { cancelReservation } from "../../services/reservationService";
+import { hasReservationNotes, reservationCreatedAtLabel } from "../../utils/reservationPresentation";
 import "./MyReservationsPage.css";
 
 const BUSINESS_TIME_ZONE = "America/Argentina/Buenos_Aires";
@@ -99,6 +100,7 @@ export default function MyReservationsPage() {
         <div className="reservations-list">
           {reservations.map((r) => {
             const nights = calcNights(r.checkIn, r.checkOut);
+            const createdAtLabel = reservationCreatedAtLabel(r);
             return (
               <article key={r.id} className="reservation-card">
                 <div className="reservation-card-header">
@@ -136,6 +138,17 @@ export default function MyReservationsPage() {
                     <Phone size={14} />
                     <span>{r.guestPhone}</span>
                   </div>
+                  {createdAtLabel && (
+                    <div className="reservation-row">
+                      <Calendar size={14} />
+                      <span>{createdAtLabel}</span>
+                    </div>
+                  )}
+                  {hasReservationNotes(r.notes) && (
+                    <div className="reservation-row">
+                      <span>Notas: {r.notes.trim()}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="reservation-card-footer">

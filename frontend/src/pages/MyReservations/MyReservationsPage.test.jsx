@@ -19,6 +19,9 @@ const reservationFixture = {
   guestEmail: "test@example.com",
   guestPhone: "123456",
   totalPrice: 300,
+  createdAt: "2026-06-20T14:30:00",
+  createdAtDerived: false,
+  notes: "Necesito una cuna",
 };
 
 describe("MyReservationsPage - reservation list", () => {
@@ -49,6 +52,27 @@ describe("MyReservationsPage - reservation list", () => {
 
     expect(await screen.findByText("1 reserva")).toBeInTheDocument();
     expect(screen.getByText("1 noche")).toBeInTheDocument();
+  });
+
+  it("shows exact creation time and non-empty notes", async () => {
+    get.mockResolvedValue([reservationFixture]);
+    customRender(<MyReservationsPage />);
+
+    expect(await screen.findByText("Fecha de creación: 20/06/2026 14:30")).toBeInTheDocument();
+    expect(screen.getByText("Notas: Necesito una cuna")).toBeInTheDocument();
+  });
+
+  it("labels derived creation time as estimated and omits blank notes", async () => {
+    get.mockResolvedValue([{
+      ...reservationFixture,
+      createdAt: "2026-07-01T00:00:00",
+      createdAtDerived: true,
+      notes: " ",
+    }]);
+    customRender(<MyReservationsPage />);
+
+    expect(await screen.findByText("Fecha estimada: 01/07/2026 00:00")).toBeInTheDocument();
+    expect(screen.queryByText(/^Notas:/)).not.toBeInTheDocument();
   });
 
   it("keeps long reservation content visible and addressable", async () => {

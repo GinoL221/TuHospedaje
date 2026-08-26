@@ -75,6 +75,7 @@ public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Check-in</td><td>%s</td></tr>
                   <tr><td style="padding:6px 12px;font-weight:bold;">Check-out</td><td>%s</td></tr>
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Guest</td><td>%s</td></tr>
+                  %s
                   <tr><td style="padding:6px 12px;font-weight:bold;">Phone</td><td>%s</td></tr>
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Total</td><td><strong>$%s</strong></td></tr>
                   <tr><td style="padding:6px 12px;font-weight:bold;">Status</td><td>%s</td></tr>
@@ -90,6 +91,7 @@ public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
                 reservation.getCheckIn(),
                 reservation.getCheckOut(),
                 reservation.getGuestName(),
+                confirmationNotesRow(reservation),
                 reservation.getGuestPhone() != null ? reservation.getGuestPhone() : "-",
                 reservation.getTotalPrice(),
                 reservation.getStatus(),
@@ -143,5 +145,22 @@ public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
 
     private boolean isBlankOrTooLong(String value, int maximumLength) {
         return value == null || value.isBlank() || value.length() > maximumLength;
+    }
+
+    private String confirmationNotesRow(ReservationResponse reservation) {
+        String notes = reservation.getNotes();
+        if (notes == null || notes.isBlank()) {
+            return "";
+        }
+        return "<tr><td style=\"padding:6px 12px;font-weight:bold;\">Notes</td><td>%s</td></tr>"
+                .formatted(escapeHtml(notes.trim()));
+    }
+
+    private String escapeHtml(String value) {
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }

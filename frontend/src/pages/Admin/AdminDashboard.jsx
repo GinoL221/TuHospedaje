@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Building2, Tag, Star, Users, Calendar } from "lucide-react";
 import { get } from "../../services/api";
+import { hasReservationNotes, reservationCreatedAtLabel } from "../../utils/reservationPresentation";
 
 const STATS = [
   { key: "lodgings",   label: "Alojamientos",    icon: Building2, endpoint: "/lodgings",   tab: "lodgings" },
@@ -95,6 +96,8 @@ export default function AdminDashboard({ onTabChange }) {
                   <th>ID</th>
                   <th>Alojamiento</th>
                   <th>Huésped</th>
+                  <th>Creación</th>
+                  <th>Notas</th>
                   <th>Check-in</th>
                   <th>Check-out</th>
                   <th>Total</th>
@@ -107,6 +110,8 @@ export default function AdminDashboard({ onTabChange }) {
                     <td>{r.id}</td>
                     <td>{r.lodgingName}</td>
                     <td>{r.guestName}</td>
+                    <td>{reservationCreatedAtLabel(r)}</td>
+                    <td>{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}</td>
                     <td>{r.checkIn}</td>
                     <td>{r.checkOut}</td>
                     <td>${r.totalPrice}</td>
