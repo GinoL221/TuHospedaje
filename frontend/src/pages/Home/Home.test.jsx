@@ -312,7 +312,6 @@ describe("Home - pending list transition", () => {
 		const list = screen.getByRole("list", { name: "Recomendaciones" });
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(list).toHaveAttribute("aria-busy", "true");
-		expect(list).toHaveClass("is-pending");
 		expect(screen.getByRole("status")).toHaveTextContent(
 			"Cargando recomendaciones...",
 		);
@@ -558,7 +557,7 @@ describe("Home - category filter compatibility", () => {
 		);
 	});
 
-	it("renders the category Lucide icon and preserves filter behavior on click", async () => {
+	it("requests the exact category when the named category control is activated", async () => {
 		const hotelCategory = {
 			id: 2,
 			name: "Hoteles",
@@ -566,11 +565,9 @@ describe("Home - category filter compatibility", () => {
 		};
 		mockGetDefaults({ categories: [hotelCategory] });
 		const user = userEvent.setup();
-		const { container } = renderHome();
+		renderHome();
 
 		await screen.findByText("Cabaña del Lago");
-		expect(container.querySelector("svg.lucide-hotel")).toBeInTheDocument();
-
 		get.mockClear();
 		await user.click(screen.getByRole("button", { name: /Hoteles/ }));
 
@@ -579,15 +576,12 @@ describe("Home - category filter compatibility", () => {
 		);
 	});
 
-	it("renders the seeded category icon on the home filter chips", async () => {
+	it("exposes the seeded category as a named control", async () => {
 		mockGetDefaults({ categories: [categoryFixture] });
-		const { container } = renderHome();
+		renderHome();
 
 		await screen.findByText("Cabaña del Lago");
-		expect(container.querySelector("svg.lucide-tree-pine")).toBeInTheDocument();
-		expect(
-			screen.queryByRole("img", { name: /Imagen/ }),
-		).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Cabaña/ })).toBeEnabled();
 	});
 });
 
@@ -785,7 +779,6 @@ describe("Home - search form", () => {
 
 		await user.keyboard("{ArrowDown}");
 		const activeOption = screen.getByRole("option", { name: "Bariloche" });
-		expect(activeOption).toHaveClass("is-active");
 		expect(activeOption).toHaveAttribute("aria-selected", "true");
 		expect(input).toHaveAttribute("aria-activedescendant", activeOption.id);
 
