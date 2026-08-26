@@ -47,9 +47,14 @@ cd tuhospedaje
 ### Backend (`/backend`)
 
 #### Crear la base de datos
-```sql
-CREATE DATABASE tuhospedaje;
+
+Local uses MariaDB 10.11 on port **3307** so it matches CI/Testcontainers and does not touch a host MariaDB on 3306.
+
+```bash
+docker compose up -d db
 ```
+
+The `dev` profile connects to `jdbc:mariadb://localhost:3307/tuhospedaje`.
 
 #### Configurar variables de entorno
 ```bash

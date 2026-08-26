@@ -1,0 +1,16 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: tuhospedaje-dev-db
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_DATABASE: tuhospedaje
+      MARIADB_USER: tuhospedaje
+      MARIADB_PASSWORD: tuhospedaje123
+      MARIADB_ROOT_PASSWORD: local-dev-root-not-for-production
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
