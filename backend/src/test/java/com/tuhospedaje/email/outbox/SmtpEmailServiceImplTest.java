@@ -81,6 +81,8 @@ class SmtpEmailServiceImplTest {
         assertThat(mimeMessage.getContent())
                 .asString()
                 .contains("Notes")
+                .contains("Reservation number")
+                .contains("42")
                 .contains("Late &lt;arrival&gt; &amp; luggage");
     }
 
@@ -97,6 +99,7 @@ class SmtpEmailServiceImplTest {
     private static ReservationResponse reservation(String notes) {
         ReservationResponse reservation = new ReservationResponse();
         reservation.setLodgingName("Hotel Sur");
+        reservation.setId(42L);
         reservation.setCity("Buenos Aires");
         reservation.setCheckIn(LocalDate.of(2026, 8, 20));
         reservation.setCheckOut(LocalDate.of(2026, 8, 22));

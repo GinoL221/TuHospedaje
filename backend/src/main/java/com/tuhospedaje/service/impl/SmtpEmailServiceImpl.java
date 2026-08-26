@@ -75,6 +75,7 @@ public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Check-in</td><td>%s</td></tr>
                   <tr><td style="padding:6px 12px;font-weight:bold;">Check-out</td><td>%s</td></tr>
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Guest</td><td>%s</td></tr>
+                  <tr><td style="padding:6px 12px;font-weight:bold;">Reservation number</td><td>%s</td></tr>
                   %s
                   <tr><td style="padding:6px 12px;font-weight:bold;">Phone</td><td>%s</td></tr>
                   <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold;">Total</td><td><strong>$%s</strong></td></tr>
@@ -91,6 +92,7 @@ public class SmtpEmailServiceImpl implements EmailService, EmailTransport {
                 reservation.getCheckIn(),
                 reservation.getCheckOut(),
                 reservation.getGuestName(),
+                reservation.getId(),
                 confirmationNotesRow(reservation),
                 reservation.getGuestPhone() != null ? reservation.getGuestPhone() : "-",
                 reservation.getTotalPrice(),

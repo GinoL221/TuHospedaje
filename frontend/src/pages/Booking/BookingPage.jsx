@@ -28,6 +28,7 @@ export default function BookingPage() {
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guestPhone, setGuestPhone] = useState("");
+  const [notes, setNotes] = useState("");
   const [guestDetailsExpanded, setGuestDetailsExpanded] = useState(true);
   const [phoneError, setPhoneError] = useState("");
   const phoneInputRef = useRef(null);
@@ -133,6 +134,7 @@ export default function BookingPage() {
         return;
       }
 
+      const normalizedNotes = notes.trim();
       const reservation = await post("/reservations", {
         lodgingId: Number(lodgingId),
         checkIn: formatDate(checkIn),
@@ -140,6 +142,7 @@ export default function BookingPage() {
         guestName: `${user.firstName} ${user.lastName}`,
         guestEmail: user.email,
         guestPhone,
+        ...(normalizedNotes ? { notes: normalizedNotes } : {}),
       });
 
       navigate("/booking/confirmation", {
@@ -257,6 +260,14 @@ export default function BookingPage() {
               )}
             </section>
           )}
+
+          <label htmlFor="booking-notes">Notas</label>
+          <textarea
+            id="booking-notes"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Indicaciones adicionales para tu reserva"
+          />
 
           {availabilityStatus === "loading" && (
             <p className="availability-status" role="status">

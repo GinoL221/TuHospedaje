@@ -62,6 +62,13 @@ describe("MyReservationsPage - reservation list", () => {
     expect(screen.getByText("Notas: Necesito una cuna")).toBeInTheDocument();
   });
 
+  it("shows the reservation confirmation number", async () => {
+    get.mockResolvedValue([{ ...reservationFixture, id: 842 }]);
+    customRender(<MyReservationsPage />);
+
+    expect(await screen.findByText("Número de reserva: 842")).toBeInTheDocument();
+  });
+
   it("labels derived creation time as estimated and omits blank notes", async () => {
     get.mockResolvedValue([{
       ...reservationFixture,

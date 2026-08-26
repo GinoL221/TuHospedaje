@@ -305,6 +305,54 @@ describe("BookingPage - submit without dates", () => {
 });
 
 describe("BookingPage - successful reservation", () => {
+	it("includes non-empty optional notes in the reservation request", async () => {
+		mockGetDefaults();
+		post.mockResolvedValue({ id: 99 });
+		const authValue = makeAuthValue();
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue,
+			initialEntries: [
+				{
+					pathname: "/booking/1",
+					state: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+				},
+			],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.type(screen.getByLabelText("Notas"), "Llegamos después de las 22");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(post).toHaveBeenCalledWith("/reservations", expect.objectContaining({
+			notes: "Llegamos después de las 22",
+		}));
+	});
+
+	it("omits blank optional notes from the reservation request", async () => {
+		mockGetDefaults();
+		post.mockResolvedValue({ id: 99 });
+		const user = userEvent.setup();
+		renderBookingPage({
+			initialEntries: [
+				{
+					pathname: "/booking/1",
+					state: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+				},
+			],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.type(screen.getByLabelText("Notas"), "   ");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(post).toHaveBeenCalledWith("/reservations", expect.not.objectContaining({
+			notes: expect.anything(),
+		}));
+	});
+
 	it("navigates to /booking/confirmation with reservation and lodging state", async () => {
 		mockGetDefaults();
 		const reservationFixture = {
