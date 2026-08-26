@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('../fixtures/fixtures');
+const AdminReservationsPage = require('../pages/AdminReservationsPage');
 
 const GUEST_PHONE = '+54 11 5555 0199';
 
@@ -53,9 +54,12 @@ async function setDatePickerValue(page, inputId, displayDate) {
 test.describe('Booking — happy path', () => {
   test.skip(!process.env.TEST_USER_EMAIL, 'Set TEST_USER_EMAIL and TEST_USER_PASSWORD in .env');
 
-  test('user books a lodging and sees it in my reservations', async ({ page, authUser }) => {
+  test('user books a lodging and sees the exact confirmation and note in guest and admin views', async ({ page, authUser, isolatedAdminUser }) => {
     const { checkIn, checkOut } = uniqueStay();
     const stayLabel = `${checkIn} → ${checkOut}`;
+    const note = `E2E note ${Date.now()}`;
+
+    await expect(isolatedAdminUser.page.getByTestId('admin-nav-dashboard')).toBeVisible();
 
     await page.goto('/lodgings/1');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -72,6 +76,7 @@ test.describe('Booking — happy path', () => {
 
     await revealGuestPhone(page);
     await page.locator('#booking-phone').fill(GUEST_PHONE);
+    await page.locator('#booking-notes').fill(note);
     await expect(page.locator('#booking-check-in')).toHaveValue(checkIn);
     await expect(page.locator('#booking-check-out')).toHaveValue(checkOut);
 
@@ -80,7 +85,10 @@ test.describe('Booking — happy path', () => {
     await expect(page).toHaveURL(/\/booking\/confirmation/);
     await expect(page.getByRole('heading', { name: '¡Reserva confirmada!' })).toBeVisible();
     await expect(page.getByText(stayLabel)).toBeVisible();
-    await expect(page.getByText(/^Reserva #\d+$/)).toBeVisible();
+    const confirmation = page.getByText(/^Reserva #\d+$/);
+    await expect(confirmation).toBeVisible();
+    const reservationId = (await confirmation.textContent()).replace('Reserva #', '');
+    await expect(page.getByText(note, { exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: 'Ver mis reservas' }).click();
     await expect(page).toHaveURL(/\/my-reservations/);
@@ -88,7 +96,14 @@ test.describe('Booking — happy path', () => {
     const card = page.locator('article.reservation-card', { hasText: stayLabel });
     await expect(card).toBeVisible();
     await expect(card.locator('.reservation-status')).toHaveText('CONFIRMED');
+    await expect(card.getByText(`Notas: ${note}`, { exact: true })).toBeVisible();
     await expect(card.getByText(/^Fecha de creación:/)).toBeVisible();
     await expect(card.getByRole('link', { name: /Ver alojamiento/ })).toBeVisible();
+
+    const reservationsPage = new AdminReservationsPage(isolatedAdminUser.page);
+    await reservationsPage.goto();
+    const row = await reservationsPage.findReservationByEmailAndId(authUser.email, reservationId);
+    await expect(row.getByRole('cell', { name: reservationId, exact: true })).toBeVisible();
+    await expect(row.getByRole('cell', { name: note, exact: true })).toBeVisible();
   });
 });
