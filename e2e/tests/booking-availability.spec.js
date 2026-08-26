@@ -127,6 +127,17 @@ test.describe('BookingPage — preflight and conflict recovery', () => {
   }
 
   /** @param {import('@playwright/test').Page} page */
+  async function revealGuestPhone(page) {
+    const showDetails = page.getByRole('button', { name: 'Mostrar detalles del huésped' });
+    const hideDetails = page.getByRole('button', { name: 'Ocultar detalles del huésped' });
+    await expect(showDetails.or(hideDetails)).toBeVisible();
+    if (await showDetails.isVisible()) {
+      await showDetails.click();
+    }
+    await expect(page.locator('#booking-phone')).toBeVisible();
+  }
+
+  /** @param {import('@playwright/test').Page} page */
   async function pickDates(page) {
     const today = new Date();
     const checkIn = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5);
@@ -153,6 +164,7 @@ test.describe('BookingPage — preflight and conflict recovery', () => {
     await page.goto(`/booking/${LODGING_ID}`);
     const submit = page.getByRole('button', { name: 'Confirmar reserva' });
     await expect(submit).toBeDisabled();
+    await revealGuestPhone(page);
     await page.locator('#booking-phone').fill('+541100000001');
 
     await pickDates(page);
@@ -169,6 +181,7 @@ test.describe('BookingPage — preflight and conflict recovery', () => {
   test('a backend conflict on submit is the final authority and recovers availability for retry', async ({ page, authUser }) => {
     await readyRoute(page);
     await page.goto(`/booking/${LODGING_ID}`);
+    await revealGuestPhone(page);
     await page.locator('#booking-phone').fill('+541100000002');
     await pickDates(page);
     await expect(page.locator('.availability-status[role="status"]')).toHaveText(

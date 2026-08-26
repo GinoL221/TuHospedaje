@@ -120,7 +120,7 @@ describe("BookingPage - loading and summary", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		const image = screen.getByRole("img", { name: "Cabaña del Lago" });
+		const image = screen.getByRole("img", { name: "Cabaña del Lago - 1" });
 		expect(image).toHaveAttribute("src", "https://example.com/img.jpg");
 
 		expect(screen.getByText("WiFi")).toBeInTheDocument();
@@ -154,10 +154,21 @@ describe("BookingPage - guest phone prefill", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		await waitFor(() => {
-			const phoneInput = screen.getByLabelText("Teléfono");
-			expect(phoneInput.value).toBe("222222");
-		});
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", {
+					name: "Mostrar detalles del huésped",
+				}),
+			).toBeInTheDocument(),
+		);
+		await userEvent
+			.setup()
+			.click(
+				screen.getByRole("button", {
+					name: "Mostrar detalles del huésped",
+				}),
+			);
+		expect(screen.getByLabelText("Teléfono")).toHaveValue("222222");
 	});
 
 	it("leaves guestPhone empty when there are no prior reservations", async () => {
@@ -283,6 +294,7 @@ describe("BookingPage - submit without dates", () => {
 		// The submit button is disabled with no dates selected, so we dispatch the
 		// form's submit event directly to exercise the handleSubmit guard clause
 		// (the same code path the spec requires us to characterize).
+		fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123456" } });
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
 		expect(
@@ -350,6 +362,7 @@ describe("BookingPage - reservation submit error", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
+		fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123456" } });
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
 		expect(
@@ -507,6 +520,7 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
+		fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123456" } });
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
 		expect(
@@ -753,5 +767,54 @@ describe("BookingPage - current user via useAuth", () => {
 			authValue.user.lastName,
 		);
 		expect(screen.getByLabelText("Email")).toHaveValue(authValue.user.email);
+	});
+});
+
+describe("BookingPage - guest details disclosure", () => {
+	it("expands missing phone details, keeps identity visible, and focuses the required phone on submit", async () => {
+		mockGetDefaults({ myReservations: [] });
+		const { container } = renderBookingPage({
+			authValue: {
+				...makeAuthValue(),
+				user: {
+					firstName: "Test",
+					lastName: "User",
+					email: "test@example.com",
+					imageUrl: "https://example.com/profile.jpg",
+				},
+			},
+			initialEntries: [
+				{
+					pathname: "/booking/1",
+					state: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+				},
+			],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		expect(screen.getByLabelText("Nombre")).toBeVisible();
+		expect(screen.getByRole("region", { name: "Detalles del huésped" })).toBeVisible();
+		expect(screen.getByRole("img", { name: "Perfil de Test User" })).toHaveAttribute("src", "https://example.com/profile.jpg");
+
+		fireEvent.submit(container.querySelector("form.booking-form"));
+
+		expect(await screen.findByText("Ingresá un teléfono válido.")).toBeInTheDocument();
+		expect(screen.getByLabelText("Teléfono")).toHaveFocus();
+	});
+
+	it("keeps a prefilled phone collapsed and prevents collapsing blank details", async () => {
+		mockGetDefaults({ myReservations: [{ guestPhone: "123456" }] });
+		const user = userEvent.setup();
+		renderBookingPage();
+
+		await screen.findByText("Cabaña del Lago");
+		const toggle = screen.getByRole("button", { name: "Mostrar detalles del huésped" });
+		expect(toggle).toHaveAttribute("aria-expanded", "false");
+		await user.click(toggle);
+		await user.clear(screen.getByLabelText("Teléfono"));
+		await user.click(screen.getByRole("button", { name: "Ocultar detalles del huésped" }));
+
+		expect(screen.getByRole("region", { name: "Detalles del huésped" })).toBeVisible();
+		expect(screen.getByText("Ingresá un teléfono válido.")).toBeInTheDocument();
 	});
 });

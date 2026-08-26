@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { get, post } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -6,6 +6,7 @@ import useAvailability from "../../hooks/useAvailability";
 
 import DatePicker from "react-datepicker";
 import Icon from "../../components/Icons/Icon";
+import LodgingGallery from "../../components/LodgingGallery/LodgingGallery";
 import { minCheckoutDate } from "../../utils/dateRange";
 
 import "./BookingPage.css";
@@ -27,6 +28,9 @@ export default function BookingPage() {
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guestPhone, setGuestPhone] = useState("");
+  const [guestDetailsExpanded, setGuestDetailsExpanded] = useState(true);
+  const [phoneError, setPhoneError] = useState("");
+  const phoneInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const {
@@ -42,11 +46,18 @@ export default function BookingPage() {
         if (Array.isArray(data) && data.length > 0) {
           // data is sorted checkIn DESC — first element is the most recent reservation
           const latest = data[0];
-          if (latest.guestPhone) setGuestPhone(latest.guestPhone);
+          if (latest.guestPhone?.trim()) {
+            setGuestPhone(latest.guestPhone);
+            setGuestDetailsExpanded(false);
+          }
         }
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (phoneError && guestDetailsExpanded) phoneInputRef.current?.focus();
+  }, [guestDetailsExpanded, phoneError]);
 
   function formatDate(date) {
     return date.toISOString().split("T")[0];
@@ -82,6 +93,12 @@ export default function BookingPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+
+    if (!guestPhone.trim()) {
+      setGuestDetailsExpanded(true);
+      setPhoneError("Ingresá un teléfono válido.");
+      return;
+    }
 
     if (!checkIn || !checkOut) {
       setError("Seleccioná un rango de fechas.");
@@ -165,13 +182,7 @@ export default function BookingPage() {
           <p className="booking-price">
             <strong>${lodging.pricePerNight?.toLocaleString()}</strong> / noche
           </p>
-          {lodging.imageUrls?.[0] && (
-            <img
-              src={lodging.imageUrls[0]}
-              alt={lodging.name}
-              className="booking-image"
-            />
-          )}
+          <LodgingGallery images={lodging.imageUrls} name={lodging.name} />
           {lodging.description && (
             <p className="booking-description">{lodging.description}</p>
           )}
@@ -199,14 +210,53 @@ export default function BookingPage() {
           <label htmlFor="booking-email">Email</label>
           <input id="booking-email" value={user.email} readOnly />
 
-          <label htmlFor="booking-phone">Teléfono</label>
-          <input
-            id="booking-phone"
-            value={guestPhone}
-            onChange={(e) => setGuestPhone(e.target.value)}
-            placeholder="Ingresá tu teléfono"
-            required
-          />
+          <button
+            type="button"
+            className="guest-details-toggle"
+            aria-expanded={guestDetailsExpanded}
+            aria-controls="guest-details"
+            onClick={() => {
+              if (guestDetailsExpanded && !guestPhone.trim()) {
+                setPhoneError("Ingresá un teléfono válido.");
+                return;
+              }
+              setGuestDetailsExpanded((expanded) => !expanded);
+            }}
+          >
+            {guestDetailsExpanded
+              ? "Ocultar detalles del huésped"
+              : "Mostrar detalles del huésped"}
+          </button>
+
+          {guestDetailsExpanded && (
+            <section id="guest-details" aria-label="Detalles del huésped">
+              {user.imageUrl && (
+                <img
+                  src={user.imageUrl}
+                  alt={`Perfil de ${user.firstName} ${user.lastName}`}
+                  className="guest-profile-image"
+                />
+              )}
+              <label htmlFor="booking-phone">Teléfono</label>
+              <input
+                id="booking-phone"
+                ref={phoneInputRef}
+                value={guestPhone}
+                onChange={(event) => {
+                  setGuestPhone(event.target.value);
+                  setPhoneError("");
+                }}
+                placeholder="Ingresá tu teléfono"
+                required
+                aria-describedby={phoneError ? "booking-phone-error" : undefined}
+              />
+              {phoneError && (
+                <p id="booking-phone-error" className="error" role="alert">
+                  {phoneError}
+                </p>
+              )}
+            </section>
+          )}
 
           {availabilityStatus === "loading" && (
             <p className="availability-status" role="status">

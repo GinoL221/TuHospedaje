@@ -29,6 +29,19 @@ function uniqueStay() {
  * @param {string} inputId
  * @param {string} displayDate dd/MM/yyyy
  */
+/**
+ * @param {import('@playwright/test').Page} page
+ */
+async function revealGuestPhone(page) {
+  const showDetails = page.getByRole('button', { name: 'Mostrar detalles del huésped' });
+  const hideDetails = page.getByRole('button', { name: 'Ocultar detalles del huésped' });
+  await expect(showDetails.or(hideDetails)).toBeVisible();
+  if (await showDetails.isVisible()) {
+    await showDetails.click();
+  }
+  await expect(page.locator('#booking-phone')).toBeVisible();
+}
+
 async function setDatePickerValue(page, inputId, displayDate) {
   const input = page.locator(`#${inputId}`);
   await input.click();
@@ -57,6 +70,7 @@ test.describe('Booking — happy path', () => {
     await expect(page).toHaveURL(/\/booking\/1/);
     await expect(page.getByRole('heading', { name: 'Confirmar reserva' })).toBeVisible();
 
+    await revealGuestPhone(page);
     await page.locator('#booking-phone').fill(GUEST_PHONE);
     await expect(page.locator('#booking-check-in')).toHaveValue(checkIn);
     await expect(page.locator('#booking-check-out')).toHaveValue(checkOut);
