@@ -4,13 +4,16 @@ import com.tuhospedaje.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicInsert;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
+@DynamicInsert
 @Table(name = "reservations")
 public class Reservation {
 
@@ -40,6 +43,15 @@ public class Reservation {
 
     @Column(nullable = false)
     private String guestPhone;
+
+    @Column(length = 1000)
+    private String notes;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "created_at_derived", nullable = false)
+    private boolean createdAtDerived;
 
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal totalPrice;

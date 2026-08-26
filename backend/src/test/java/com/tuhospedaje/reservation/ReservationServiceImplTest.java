@@ -14,12 +14,16 @@ import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.impl.ReservationServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -106,10 +110,58 @@ class ReservationServiceImplTest {
         saved.setStatus(ReservationStatus.CONFIRMED);
         when(reservationRepository.save(any(Reservation.class))).thenReturn(saved);
 
-        var response = reservationService.createReservation(user, request);
+        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z").createReservation(user, request);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void createReservation_trimsNotesAndSetsExactCreationTimeFromInjectedClock() {
+        User user = buildUser(1L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("150.00"));
+        CreateReservationRequest request = buildRequest(10L);
+        request.setNotes("  Late arrival after 22:00  ");
+        LocalDateTime expectedCreatedAt = LocalDateTime.of(2026, 8, 25, 15, 30, 45);
+
+        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Collections.emptyList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+            Reservation reservation = invocation.getArgument(0);
+            reservation.setId(1L);
+            return reservation;
+        });
+
+        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z")
+                .createReservation(user, request);
+
+        assertThat(response.getNotes()).isEqualTo("Late arrival after 22:00");
+        assertThat(response.getCreatedAt()).isEqualTo(expectedCreatedAt);
+        assertThat(response.isCreatedAtDerived()).isFalse();
+    }
+
+    @Test
+    void createReservation_convertsBlankNotesToNull() {
+        User user = buildUser(1L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("150.00"));
+        CreateReservationRequest request = buildRequest(10L);
+        request.setNotes("   ");
+
+        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Collections.emptyList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+            Reservation reservation = invocation.getArgument(0);
+            reservation.setId(2L);
+            return reservation;
+        });
+
+        ReservationResponse response = serviceAt("2026-08-26T10:00:00Z")
+                .createReservation(user, request);
+
+        assertThat(response.getNotes()).isNull();
+        assertThat(response.isCreatedAtDerived()).isFalse();
     }
 
     // --- getMyReservations ---
@@ -257,5 +309,10 @@ class ReservationServiceImplTest {
         req.setGuestEmail("guest@test.com");
         req.setGuestPhone("111222333");
         return req;
+    }
+
+    private ReservationServiceImpl serviceAt(String instant) {
+        return new ReservationServiceImpl(reservationRepository, lodgingRepository, emailOutboxService,
+                Clock.fixed(Instant.parse(instant), ZoneId.of("America/Argentina/Buenos_Aires")));
     }
 }

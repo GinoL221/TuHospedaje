@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -44,6 +45,15 @@ public class ReservationResponse {
     @Schema(description = "Phone number of the guest", example = "+5491112345678")
     private String guestPhone;
 
+    @Schema(description = "Optional notes for the reservation", example = "Late arrival after 22:00")
+    private String notes;
+
+    @Schema(description = "Reservation creation time in ISO-local format", example = "2026-08-25T15:30:45")
+    private LocalDateTime createdAt;
+
+    @Schema(description = "Whether createdAt was derived from check-in for a legacy reservation", example = "false")
+    private boolean createdAtDerived;
+
     @Schema(description = "Total price for the stay", example = "7500.00")
     private BigDecimal totalPrice;
 
@@ -71,6 +81,9 @@ public class ReservationResponse {
         dto.setGuestName(reservation.getGuestName());
         dto.setGuestEmail(reservation.getGuestEmail());
         dto.setGuestPhone(reservation.getGuestPhone());
+        dto.setNotes(reservation.getNotes());
+        dto.setCreatedAt(reservation.getCreatedAt());
+        dto.setCreatedAtDerived(reservation.isCreatedAtDerived());
         dto.setTotalPrice(reservation.getTotalPrice());
         dto.setStatus(reservation.getStatus());
         dto.setVersion(reservation.getVersion());
