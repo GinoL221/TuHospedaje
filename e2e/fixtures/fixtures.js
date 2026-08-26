@@ -31,6 +31,7 @@ async function runAdminStage(page, stage, action) {
  * @property {RegisterPage} registerPage
  * @property {{ email: string, password: string, name: string }} authUser
  * @property {{ page: import('@playwright/test').Page, email: string, password: string }} adminUser
+ * @property {{ page: import('@playwright/test').Page, email: string, password: string }} isolatedAdminUser
  */
 
 const test = base.extend(/** @type {CustomFixtures} */({
@@ -73,6 +74,29 @@ const test = base.extend(/** @type {CustomFixtures} */({
     });
 
     await use({ page, email, password });
+  },
+  isolatedAdminUser: async ({ browser }, use) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const email = process.env.TEST_ADMIN_EMAIL || 'admin@tuhospedaje.com';
+    const password = process.env.TEST_ADMIN_PASSWORD || 'Admin1';
+    const loginPage = new LoginPage(page);
+
+    await runAdminStage(page, 'isolated-login', async () => {
+      await loginPage.open('/login');
+      await loginPage.login(email, password);
+      await page.waitForURL('/', { timeout: 5000 });
+    });
+    await runAdminStage(page, 'isolated-admin-shell', async () => {
+      await page.goto('/admin');
+      await expect(page.locator('[data-testid="admin-nav-dashboard"]')).toBeVisible();
+    });
+
+    try {
+      await use({ page, email, password });
+    } finally {
+      await context.close();
+    }
   },
 }));
 

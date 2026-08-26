@@ -47,6 +47,29 @@ class AdminReservationsPage extends AdminBasePage {
   getTable() {
     return this.page.locator('[data-testid="reservations-table"]');
   }
+
+  /**
+   * Filters by guest contact, then scans every result page for the exact ID.
+   * @param {string} email
+   * @param {string} reservationId
+   */
+  async findReservationByEmailAndId(email, reservationId) {
+    const search = this.page.getByLabel('Buscar reservas');
+    await search.fill(email);
+    await this.waitForLoad();
+
+    for (;;) {
+      const row = this.page.getByTestId(`row-${reservationId}`);
+      if (await row.count()) return row;
+
+      const next = this.page.getByRole('button', { name: 'Siguiente' });
+      if (!(await next.isVisible().catch(() => false)) || await next.isDisabled()) break;
+      await next.click();
+      await this.waitForLoad();
+    }
+
+    throw new Error(`Reservation ${reservationId} was not found for ${email}.`);
+  }
 }
 
 module.exports = AdminReservationsPage;
