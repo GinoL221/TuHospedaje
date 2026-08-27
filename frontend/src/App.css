@@ -47,11 +47,10 @@
   --accent: #62d5c8;
 }
 
-html, body, #root {
-  height: 100%;
+html,
+body {
+  min-height: 100%;
   margin: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 body {
@@ -63,8 +62,12 @@ body {
   background-color: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  display: flex;
+}
+
+#root {
+  min-height: 100vh;
   flex-direction: column;
+  display: flex;
 }
 
 .page-container {

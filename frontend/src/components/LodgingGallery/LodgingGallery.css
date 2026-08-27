@@ -197,7 +197,10 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
     max-height: none;
   }
 
@@ -240,13 +243,13 @@
   }
 
   .gallery-thumbs {
-    flex: 1;
+    grid-column: 1;
     width: auto;
     max-width: 100%;
     min-width: 0;
     flex-direction: row;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     padding: 4px 2px 8px;
     scroll-behavior: smooth;
     scroll-snap-type: x proximity;
@@ -269,7 +272,7 @@
   }
 
   .gallery-more {
-    align-self: center;
+    grid-column: 2;
     flex: 0 0 auto;
     margin-top: 0;
     white-space: nowrap;
