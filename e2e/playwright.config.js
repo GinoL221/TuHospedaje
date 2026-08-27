@@ -1,6 +1,7 @@
 // @ts-check
 const { defineConfig } = require('@playwright/test');
-require('dotenv').config();
+const disposableBooking = process.env.E2E_DISPOSABLE_BOOKING === '1';
+if (!disposableBooking) require('dotenv').config();
 
 module.exports = defineConfig({
   testDir: './tests',
@@ -12,14 +13,14 @@ module.exports = defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
 
-  reporter: [['list'], ['html']],
+  reporter: disposableBooking ? [['list']] : [['list'], ['html']],
 
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:5173',
     headless: true,
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'on-first-retry',
+    screenshot: disposableBooking ? 'off' : 'only-on-failure',
+    video: disposableBooking ? 'off' : 'retain-on-failure',
+    trace: disposableBooking ? 'off' : 'on-first-retry',
     viewport: { width: 1280, height: 720 },
     animations: 'disabled',
   },

@@ -91,7 +91,10 @@ describe("AdminCategories - create", () => {
   });
 
   it("submits the form and refreshes the list on success", async () => {
-    get.mockResolvedValue([]);
+    let resolveRefresh;
+    get.mockResolvedValueOnce([]).mockImplementationOnce(
+      () => new Promise((resolve) => { resolveRefresh = resolve; })
+    );
     post.mockResolvedValue(categoryFixture());
     const user = userEvent.setup();
     renderAdminCategories();
@@ -102,8 +105,6 @@ describe("AdminCategories - create", () => {
     await user.type(screen.getByTestId("field-name"), "Cabañas");
     await user.type(screen.getByTestId("field-description"), "Alojamientos tipo cabaña.");
     await user.type(screen.getByTestId("field-image-url"), "https://img.example.com/cabanas.jpg");
-
-    get.mockResolvedValue([categoryFixture()]);
 
     await user.click(screen.getByTestId("admin-save-btn"));
 
@@ -119,6 +120,7 @@ describe("AdminCategories - create", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("admin-modal")).not.toBeInTheDocument();
     });
+    resolveRefresh([categoryFixture()]);
     expect(await screen.findByText("Cabañas")).toBeInTheDocument();
   });
 });

@@ -52,7 +52,7 @@ async function setDatePickerValue(page, inputId, displayDate) {
 }
 
 test.describe('Booking — happy path', () => {
-  test.skip(!process.env.TEST_USER_EMAIL, 'Set TEST_USER_EMAIL and TEST_USER_PASSWORD in .env');
+  test.skip(!process.env.TEST_USER_EMAIL, 'Run npm run test:disposable-booking.');
 
   test('user books a lodging and sees the exact confirmation and note in guest and admin views', async ({ page, authUser, isolatedAdminUser }) => {
     const { checkIn, checkOut } = uniqueStay();

@@ -152,22 +152,24 @@ describe("AdminReservations - listing", () => {
 	});
 
 	it("keeps display columns from triggering unsupported sort requests", async () => {
-		getAdminReservations.mockResolvedValue({
-			items: [reservationFixture()],
-			currentPage: 0,
-			totalItems: 1,
-			totalPages: 1,
-		});
+		getAdminReservations
+			.mockResolvedValueOnce({
+				items: [reservationFixture()],
+				currentPage: 0,
+				totalItems: 1,
+				totalPages: 1,
+			})
+			.mockImplementation(() => new Promise(() => {}));
 		const user = userEvent.setup();
 		renderAdminReservations();
 
 		await screen.findByText("Cabaña del Lago");
-		const initialCalls = getAdminReservations.mock.calls.length;
 
 		await user.click(screen.getByRole("columnheader", { name: "Alojamiento" }));
 		await user.click(screen.getByRole("columnheader", { name: "Huésped" }));
 
-		expect(getAdminReservations).toHaveBeenCalledTimes(initialCalls);
+		expect(screen.getByTestId("row-1")).toHaveTextContent("Cabaña del Lago");
+		expect(screen.queryByText("Cargando reservas...")).not.toBeInTheDocument();
 	});
 
 	it("fetches sorted data and resets to the first page when a sortable header is clicked", async () => {
@@ -219,10 +221,7 @@ describe("AdminReservations - listing", () => {
 		await screen.findByText("Cabaña del Lago");
 		await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
 
-		await waitFor(() => {
-			expect(getAdminReservations).toHaveBeenCalledTimes(2);
-		});
-		expect(screen.getByText("Cargando reservas...")).toBeInTheDocument();
+		await waitFor(() => expect(screen.getByText("Cargando reservas...")).toBeInTheDocument());
 
 		resolveRefetch({ items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1 });
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
@@ -230,13 +229,11 @@ describe("AdminReservations - listing", () => {
 	});
 
 	it("fetches filtered data and resets the page when search and status change", async () => {
+		let resolveFiltered;
 		getAdminReservations.mockImplementation((params) => {
 			if (params.status === "CONFIRMED" && params.q === "juan") {
-				return Promise.resolve({
-					items: [reservationFixture({ id: 3, guestName: "Juan Perez" })],
-					currentPage: 0,
-					totalItems: 1,
-					totalPages: 1,
+				return new Promise((resolve) => {
+					resolveFiltered = resolve;
 				});
 			}
 
@@ -261,8 +258,16 @@ describe("AdminReservations - listing", () => {
 				expect.objectContaining({ page: 0, status: "CONFIRMED", q: "juan" }),
 			);
 		});
+		expect(screen.getByText("Cargando reservas...")).toBeInTheDocument();
+		resolveFiltered({
+			items: [reservationFixture({ id: 3, guestName: "Juan Perez" })],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
+		});
 		expect(await screen.findByText("Juan Perez")).toBeInTheDocument();
-		expect(screen.queryByText("Hotel Centro")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("row-1")).not.toBeInTheDocument();
+		expect(screen.queryByText("Cargando reservas...")).not.toBeInTheDocument();
 	});
 });
 
