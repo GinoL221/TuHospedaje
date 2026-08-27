@@ -177,6 +177,18 @@ export default function BookingPage() {
 
   const nights = calcNights();
   const total = lodging.pricePerNight ? nights * lodging.pricePerNight : 0;
+  const hasAvailabilityMessage =
+    availabilityStatus === "loading" ||
+    availabilityStatus === "error" ||
+    availabilityStatus === "stale" ||
+    (availabilityStatus === "ready" && occupiedRanges.length === 0);
+  const availabilityMessageId = hasAvailabilityMessage
+    ? "booking-availability-message"
+    : undefined;
+  const dateFieldsetDescribedBy =
+    [availabilityMessageId, error ? "booking-form-error" : undefined]
+      .filter(Boolean)
+      .join(" ") || undefined;
 
   return (
     <main className="page-container booking-page">
@@ -215,152 +227,258 @@ export default function BookingPage() {
           )}
         </section>
 
-        <form className="booking-form" onSubmit={handleSubmit}>
-          <h2>Datos de la reserva</h2>
+        <form
+          className="booking-form"
+          onSubmit={handleSubmit}
+          aria-labelledby="booking-form-title"
+          aria-describedby={error ? "booking-form-error" : undefined}
+          aria-busy={loading}
+        >
+          <header className="booking-form-header">
+            <h2 id="booking-form-title">Datos de la reserva</h2>
+          </header>
 
-          <label htmlFor="booking-first-name">Nombre</label>
-          <input id="booking-first-name" value={user.firstName} readOnly />
-
-          <label htmlFor="booking-last-name">Apellido</label>
-          <input id="booking-last-name" value={user.lastName} readOnly />
-
-          <label htmlFor="booking-email">Email</label>
-          <input id="booking-email" value={user.email} readOnly />
-
-          <button
-            type="button"
-            className="guest-details-toggle"
-            aria-expanded={guestDetailsExpanded}
-            aria-controls="guest-details"
-            onClick={() => {
-              if (guestDetailsExpanded && !guestPhone.trim()) {
-                setPhoneError("Ingresá un teléfono válido.");
-                return;
-              }
-              setGuestDetailsExpanded((expanded) => !expanded);
-            }}
-          >
-            {guestDetailsExpanded
-              ? "Ocultar detalles del huésped"
-              : "Mostrar detalles del huésped"}
-          </button>
-
-          {guestDetailsExpanded && (
-            <section id="guest-details" aria-label="Detalles del huésped">
-              {user.imageUrl && (
-                <img
-                  src={user.imageUrl}
-                  alt={`Perfil de ${user.firstName} ${user.lastName}`}
-                  className="guest-profile-image"
+          <fieldset className="booking-fieldset booking-identity-fieldset">
+            <legend>Tus datos</legend>
+            <div className="booking-field-grid booking-field-grid--identity">
+              <div className="booking-field">
+                <label htmlFor="booking-first-name">Nombre</label>
+                <input
+                  id="booking-first-name"
+                  value={user.firstName}
+                  readOnly
+                  autoComplete="given-name"
                 />
-              )}
-              <label htmlFor="booking-phone">Teléfono</label>
-              <input
-                id="booking-phone"
-                ref={phoneInputRef}
-                value={guestPhone}
-                onChange={(event) => {
-                  setGuestPhone(event.target.value);
-                  setPhoneError("");
-                }}
-                placeholder="Ingresá tu teléfono"
-                required
-                aria-describedby={phoneError ? "booking-phone-error" : undefined}
-              />
-              {phoneError && (
-                <p id="booking-phone-error" className="error" role="alert">
-                  {phoneError}
+              </div>
+
+              <div className="booking-field">
+                <label htmlFor="booking-last-name">Apellido</label>
+                <input
+                  id="booking-last-name"
+                  value={user.lastName}
+                  readOnly
+                  autoComplete="family-name"
+                />
+              </div>
+
+              <div className="booking-field booking-field--full">
+                <label htmlFor="booking-email">Email</label>
+                <input
+                  id="booking-email"
+                  type="email"
+                  value={user.email}
+                  readOnly
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="booking-fieldset booking-guest-fieldset">
+            <legend>Detalles del huésped</legend>
+            <button
+              type="button"
+              className="guest-details-toggle"
+              aria-expanded={guestDetailsExpanded}
+              aria-controls="guest-details"
+              aria-describedby={phoneError ? "booking-phone-error" : undefined}
+              onClick={() => {
+                if (guestDetailsExpanded && !guestPhone.trim()) {
+                  setPhoneError("Ingresá un teléfono válido.");
+                  return;
+                }
+                setGuestDetailsExpanded((expanded) => !expanded);
+              }}
+            >
+              {guestDetailsExpanded
+                ? "Ocultar detalles del huésped"
+                : "Mostrar detalles del huésped"}
+            </button>
+
+            {guestDetailsExpanded && (
+              <section id="guest-details" aria-label="Detalles del huésped">
+                {user.imageUrl && (
+                  <img
+                    src={user.imageUrl}
+                    alt={`Perfil de ${user.firstName} ${user.lastName}`}
+                    className="guest-profile-image"
+                  />
+                )}
+                <div className="booking-phone-field">
+                  <label htmlFor="booking-phone">Teléfono</label>
+                  <input
+                    id="booking-phone"
+                    ref={phoneInputRef}
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={guestPhone}
+                    onChange={(event) => {
+                      setGuestPhone(event.target.value);
+                      setPhoneError("");
+                    }}
+                    placeholder="Ingresá tu teléfono"
+                    required
+                    aria-invalid={phoneError ? "true" : undefined}
+                    aria-describedby={
+                      phoneError ? "booking-phone-error" : undefined
+                    }
+                  />
+                  {phoneError && (
+                    <p
+                      id="booking-phone-error"
+                      className="error"
+                      role="alert"
+                      aria-live="assertive"
+                    >
+                      {phoneError}
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
+          </fieldset>
+
+          <fieldset
+            className="booking-fieldset booking-date-fieldset"
+            aria-describedby={dateFieldsetDescribedBy}
+          >
+            <legend>Fechas de la estadía</legend>
+
+            <div className="booking-availability">
+              {availabilityStatus === "loading" && (
+                <p
+                  id={availabilityMessageId}
+                  className="availability-status availability-status--loading"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Comprobando disponibilidad...
                 </p>
               )}
-            </section>
-          )}
-
-          <label htmlFor="booking-notes">Notas</label>
-          <textarea
-            id="booking-notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="Indicaciones adicionales para tu reserva"
-          />
-
-          {availabilityStatus === "loading" && (
-            <p className="availability-status" role="status">
-              Comprobando disponibilidad...
-            </p>
-          )}
-          {(availabilityStatus === "error" ||
-            availabilityStatus === "stale") && (
-            <div className="availability-alert" role="alert">
-              <p>
-                {availabilityStatus === "stale"
-                  ? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
-                  : "No pudimos obtener la disponibilidad de este alojamiento."}
-              </p>
-              <button type="button" onClick={retryAvailability}>
-                Reintentar
-              </button>
+              {(availabilityStatus === "error" ||
+                availabilityStatus === "stale") && (
+                <div
+                  id={availabilityMessageId}
+                  className="availability-alert"
+                  role="alert"
+                  aria-live="assertive"
+                  aria-atomic="true"
+                >
+                  <p>
+                    {availabilityStatus === "stale"
+                      ? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
+                      : "No pudimos obtener la disponibilidad de este alojamiento."}
+                  </p>
+                  <button type="button" onClick={retryAvailability}>
+                    Reintentar
+                  </button>
+                </div>
+              )}
+              {availabilityStatus === "ready" && occupiedRanges.length === 0 && (
+                <p
+                  id={availabilityMessageId}
+                  className="availability-status availability-status--ready"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Todas las fechas están disponibles.
+                </p>
+              )}
             </div>
-          )}
-          {availabilityStatus === "ready" && occupiedRanges.length === 0 && (
-            <p className="availability-status" role="status">
-              Todas las fechas están disponibles.
-            </p>
-          )}
 
-          <label htmlFor="booking-check-in">Check-in</label>
-          <DatePicker
-            id="booking-check-in"
-            selected={checkIn}
-            onChange={(date) => setCheckIn(date)}
-            selectsStart
-            startDate={checkIn}
-            endDate={checkOut}
-            minDate={new Date()}
-            filterDate={(date) => !isDateOccupied(date)}
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Check-in"
-            disabled={availabilityStatus === "loading"}
-          />
+            <div className="booking-field-grid booking-field-grid--dates">
+              <div className="booking-field">
+                <label htmlFor="booking-check-in">Check-in</label>
+                <DatePicker
+                  id="booking-check-in"
+                  selected={checkIn}
+                  onChange={(date) => setCheckIn(date)}
+                  selectsStart
+                  startDate={checkIn}
+                  endDate={checkOut}
+                  minDate={new Date()}
+                  filterDate={(date) => !isDateOccupied(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Check-in"
+                  aria-required="true"
+                  aria-describedby={availabilityMessageId}
+                  disabled={availabilityStatus === "loading"}
+                />
+              </div>
 
-          <label htmlFor="booking-check-out">Check-out</label>
-          <DatePicker
-            id="booking-check-out"
-            selected={checkOut}
-            onChange={(date) => setCheckOut(date)}
-            selectsEnd
-            startDate={checkIn}
-            endDate={checkOut}
-            minDate={minCheckoutDate(checkIn)}
-            filterDate={(date) => !isDateOccupied(date)}
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Check-out"
-            disabled={availabilityStatus === "loading"}
-          />
+              <div className="booking-field">
+                <label htmlFor="booking-check-out">Check-out</label>
+                <DatePicker
+                  id="booking-check-out"
+                  selected={checkOut}
+                  onChange={(date) => setCheckOut(date)}
+                  selectsEnd
+                  startDate={checkIn}
+                  endDate={checkOut}
+                  minDate={minCheckoutDate(checkIn)}
+                  filterDate={(date) => !isDateOccupied(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Check-out"
+                  aria-required="true"
+                  aria-describedby={availabilityMessageId}
+                  disabled={availabilityStatus === "loading"}
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="booking-fieldset booking-notes-fieldset">
+            <legend>
+              Notas adicionales <span>(opcional)</span>
+            </legend>
+            <div className="booking-field">
+              <label htmlFor="booking-notes">Notas</label>
+              <textarea
+                id="booking-notes"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Indicaciones adicionales para tu reserva"
+                rows={4}
+              />
+            </div>
+          </fieldset>
 
           {nights > 0 && (
-            <p className="booking-total">
-              {nights} {nights === 1 ? "noche" : "noches"} —{" "}
+            <div className="booking-total" aria-live="polite">
+              <span>
+                {nights} {nights === 1 ? "noche" : "noches"} —{" "}
+              </span>
               <strong>${total.toLocaleString()}</strong>
-            </p>
+            </div>
           )}
 
           {error && (
-            <p className="error" role="alert">
+            <p
+              id="booking-form-error"
+              className="error booking-form-error"
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+            >
               {error}
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={
-              loading ||
-              !checkIn ||
-              !checkOut ||
-              availabilityStatus !== "ready"
-            }
-          >
-            {loading ? "Confirmando..." : "Confirmar reserva"}
-          </button>
+          <div className="booking-form-actions">
+            <button
+              type="submit"
+              disabled={
+                loading ||
+                !checkIn ||
+                !checkOut ||
+                availabilityStatus !== "ready"
+              }
+              aria-busy={loading}
+            >
+              {loading ? "Confirmando..." : "Confirmar reserva"}
+            </button>
+          </div>
         </form>
       </div>
     </main>
