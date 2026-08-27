@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { screen, userEvent, fireEvent } from "../../test/test-utils";
 import { render } from "@testing-library/react";
 import GalleryModal from "./GalleryModal";
@@ -62,5 +64,57 @@ describe("GalleryModal", () => {
     expect(onNavigate).toHaveBeenNthCalledWith(3, 1);
     expect(onNavigate).toHaveBeenNthCalledWith(4, 1);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("focuses close on open, contains Tab navigation, and restores opener focus", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const renderGallery = (show) => (
+      <>
+        <button type="button">Open gallery</button>
+        {show && <GalleryModal images={images} currentIndex={0} onClose={onClose} onNavigate={vi.fn()} />}
+      </>
+    );
+    const { rerender } = render(renderGallery(false));
+    const trigger = screen.getByRole("button", { name: "Open gallery" });
+
+    await user.click(trigger);
+    rerender(renderGallery(true));
+
+    const closeButton = screen.getByRole("button", { name: "Cerrar galería" });
+    const previousButton = screen.getByRole("button", { name: "Imagen anterior" });
+    const nextButton = screen.getByRole("button", { name: "Imagen siguiente" });
+    expect(closeButton).toHaveFocus();
+
+    for (const expectedButton of [previousButton, nextButton, closeButton]) {
+      await user.tab();
+      expect(expectedButton).toHaveFocus();
+    }
+    await user.tab({ shift: true });
+    expect(nextButton).toHaveFocus();
+
+    rerender(renderGallery(false));
+    expect(trigger).toHaveFocus();
+  });
+
+  it("disables modal navigation when there is only one image", () => {
+    renderGalleryModal({ images: [images[0]] });
+
+    expect(screen.getByRole("button", { name: "Imagen anterior" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Imagen siguiente" })).toBeDisabled();
+  });
+
+  it("uses the approved action and focus tokens for modal control states", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "src/components/GalleryModal/GalleryModal.css"),
+      "utf8",
+    );
+
+    expect(css).toMatch(/\.gallery-modal-close,\s*\.gallery-nav[\s\S]*var\(--action-primary-bg\)/);
+    expect(css).toContain(".gallery-modal-close:hover:not(:disabled)");
+    expect(css).toContain(".gallery-nav:disabled");
+    expect(css).toContain("outline: 3px solid var(--action-primary-focus)");
+    expect(css).not.toMatch(/\.gallery-modal-close\s*{[^}]*color:\s*#fff\b/);
+    expect(css).toMatch(/@media \(max-width: 768px\)[\s\S]*width:\s*44px;[\s\S]*min-height:\s*44px;/);
   });
 });
