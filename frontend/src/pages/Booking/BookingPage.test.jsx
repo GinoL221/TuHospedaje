@@ -106,6 +106,8 @@ describe("BookingPage - loading and summary", () => {
 		renderBookingPage();
 
 		expect(screen.getByText("Cargando...")).toBeInTheDocument();
+		expect(screen.getByRole("status")).toHaveTextContent("Cargando...");
+		expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(screen.getByText("Bariloche, Argentina")).toBeInTheDocument();

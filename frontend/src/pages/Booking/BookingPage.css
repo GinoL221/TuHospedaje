@@ -1,53 +1,104 @@
 .booking-page {
-  padding: 32px 24px;
+  box-sizing: border-box;
+  padding: calc(var(--site-header-height) + 24px) clamp(16px, 4vw, 48px)
+    clamp(40px, 6vw, 72px);
+  gap: 0;
 }
 
-.booking-page > h1 {
-  margin-bottom: 0;
+.booking-page-header,
+.booking-layout {
+  width: 100%;
+  max-width: 1180px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.booking-page-header h1 {
+  margin: 0;
+  color: var(--secondary);
+  font-size: var(--type-h1-size);
+  font-weight: var(--type-h1-weight);
+  line-height: var(--type-h1-line-height);
+  overflow-wrap: anywhere;
 }
 
 .booking-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(24px, 4vw, 48px);
   margin-top: 24px;
   align-items: start;
 }
 
-/* --- SUMMARY CARD --- */
+.booking-summary,
+.booking-form {
+  box-sizing: border-box;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid rgba(38, 70, 83, 0.16);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* --- LODGING SUMMARY --- */
 .booking-summary {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: var(--bg);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border-left: 4px solid var(--accent);
-  padding: 28px;
+  gap: 16px;
+  padding: clamp(20px, 3vw, 32px);
+  border-top: 4px solid var(--accent);
+}
+
+.booking-summary-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.booking-section-kicker {
+  margin: 0;
+  color: var(--secondary);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: var(--type-caption-line-height);
+  text-transform: uppercase;
 }
 
 .booking-summary h2 {
-  margin: 0 0 4px;
-  font-size: 1.3rem;
+  margin: 0;
   color: var(--secondary);
+  font-size: var(--type-h2-size);
+  font-weight: var(--type-h2-weight);
+  line-height: var(--type-h2-line-height);
+  overflow-wrap: anywhere;
 }
 
 .booking-summary .booking-location {
-  color: var(--text);
-  opacity: 0.7;
-  font-size: 0.9rem;
   margin: 0;
+  color: var(--secondary);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
+  overflow-wrap: anywhere;
 }
 
 .booking-summary .booking-price {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
   margin: 0;
   color: var(--text);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
 }
 
 .booking-summary .booking-price strong {
-  color: var(--primary);
-  font-size: 1.3rem;
+  color: var(--secondary);
+  font-size: var(--type-h2-size);
+  font-weight: 700;
+  line-height: var(--type-h2-line-height);
+  font-variant-numeric: tabular-nums;
 }
 
 .booking-image {

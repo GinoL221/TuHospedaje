@@ -163,8 +163,14 @@ export default function BookingPage() {
 
   if (!lodging) {
     return (
-      <main className="page-container">
-        <p>Cargando...</p>
+      <main
+        className="page-container booking-page booking-page--loading"
+        aria-busy="true"
+      >
+        <div className="booking-page-state" role="status" aria-live="polite">
+          <span className="booking-state-indicator" aria-hidden="true" />
+          <p>Cargando...</p>
+        </div>
       </main>
     );
   }
@@ -174,11 +180,19 @@ export default function BookingPage() {
 
   return (
     <main className="page-container booking-page">
-      <h1>Confirmar reserva</h1>
+      <header className="booking-page-header">
+        <h1>Confirmar reserva</h1>
+      </header>
 
       <div className="booking-layout">
-        <section className="booking-summary">
-          <h2>{lodging.name}</h2>
+        <section
+          className="booking-summary"
+          aria-labelledby="booking-summary-title"
+        >
+          <div className="booking-summary-header">
+            <p className="booking-section-kicker">Tu alojamiento</p>
+            <h2 id="booking-summary-title">{lodging.name}</h2>
+          </div>
           <p className="booking-location">
             {lodging.city}, {lodging.country}
           </p>
