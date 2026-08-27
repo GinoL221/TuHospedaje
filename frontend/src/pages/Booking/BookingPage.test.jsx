@@ -143,6 +143,31 @@ describe("BookingPage - loading and summary", () => {
 	});
 });
 
+describe("BookingPage - semantic form groups", () => {
+	it("names the form groups and connects availability feedback to date fields", async () => {
+		mockGetDefaults();
+		renderBookingPage();
+
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+
+		expect(
+			screen.getByRole("form", { name: "Datos de la reserva" }),
+		).toHaveAttribute("aria-labelledby", "booking-form-title");
+		expect(screen.getByRole("group", { name: "Tus datos" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("group", { name: "Detalles del huésped" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("group", { name: "Fechas de la estadía" }),
+		).toHaveAttribute("aria-describedby", "booking-availability-message");
+		expect(screen.getByLabelText("Check-in")).toHaveAttribute(
+			"aria-describedby",
+			"booking-availability-message",
+		);
+	});
+});
+
 describe("BookingPage - guest phone prefill", () => {
 	it("prefills guestPhone from the latest prior reservation", async () => {
 		// API returns reservations ordered by checkIn DESC: most recent first
@@ -302,6 +327,15 @@ describe("BookingPage - submit without dates", () => {
 		expect(
 			await screen.findByText("Seleccioná un rango de fechas."),
 		).toBeInTheDocument();
+		expect(
+			screen.getByRole("form", { name: "Datos de la reserva" }),
+		).toHaveAttribute("aria-describedby", "booking-form-error");
+		expect(
+			screen.getByRole("group", { name: "Fechas de la estadía" }),
+		).toHaveAttribute(
+			"aria-describedby",
+			"booking-availability-message booking-form-error",
+		);
 		expect(post).not.toHaveBeenCalled();
 	});
 });
@@ -420,6 +454,9 @@ describe("BookingPage - reservation submit error", () => {
 				"Las fechas seleccionadas ya no están disponibles.",
 			),
 		).toBeInTheDocument();
+		expect(
+			screen.getByRole("form", { name: "Datos de la reserva" }),
+		).toHaveAttribute("aria-describedby", "booking-form-error");
 		expect(
 			screen.getByRole("button", { name: "Confirmar reserva" }),
 		).not.toBeDisabled();
@@ -850,6 +887,11 @@ describe("BookingPage - guest details disclosure", () => {
 
 		expect(await screen.findByText("Ingresá un teléfono válido.")).toBeInTheDocument();
 		expect(screen.getByLabelText("Teléfono")).toHaveFocus();
+		expect(screen.getByLabelText("Teléfono")).toHaveAttribute("aria-invalid", "true");
+		expect(screen.getByLabelText("Teléfono")).toHaveAttribute(
+			"aria-describedby",
+			"booking-phone-error",
+		);
 	});
 
 	it("keeps a prefilled phone collapsed and prevents collapsing blank details", async () => {
