@@ -1,12 +1,30 @@
-/* Hero card — title + actions */
+.product-detail {
+  --product-space-1: 8px;
+  --product-space-2: 16px;
+  --product-space-3: 24px;
+  --product-surface: #fff;
+  --product-danger: #8a1c14;
+  --product-danger-bg: #fff4f2;
+  --product-danger-border: rgba(138, 28, 20, 0.3);
+  box-sizing: border-box;
+  gap: var(--product-space-3);
+  padding: calc(var(--site-header-height) + var(--product-space-3))
+    clamp(var(--product-space-2), 4vw, 48px)
+    clamp(40px, 6vw, 72px);
+  overflow-x: hidden;
+}
+
+/* Page shell — title + actions */
 .detail-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--product-space-1);
+  box-sizing: border-box;
+  min-width: 0;
   background: var(--secondary);
   border-radius: var(--radius-md);
   border-top: 4px solid var(--primary);
-  padding: 20px 24px;
+  padding: var(--product-space-2) var(--product-space-3);
   margin: 0;
   box-shadow: var(--shadow-sm);
 }
@@ -39,7 +57,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -53,26 +71,10 @@
 
 .detail-location {
   color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.btn-share {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-  font-family: inherit;
-  margin-right: 0;
-  flex-shrink: 0;
-  transition: background var(--transition);
-}
-
-.btn-share:hover {
-  background: rgba(255, 255, 255, 0.22);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+  line-height: var(--type-label-line-height);
+  overflow-wrap: anywhere;
 }
 
 .product-detail .description {
@@ -114,12 +116,14 @@
   color: var(--secondary);
 }
 .booking-section {
-  background: #fff;
+  box-sizing: border-box;
+  min-width: 0;
+  background: var(--product-surface);
   border-radius: var(--radius-md);
-  padding: 0 24px 24px;
-  margin: 20px 0;
+  padding: 0 var(--product-space-3) var(--product-space-3);
+  margin: var(--product-space-2) 0;
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  overflow: visible;
 }
 .price-display {
   font-size: 1.3rem;
@@ -133,82 +137,125 @@
   color: var(--primary);
 }
 .availability-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-sizing: border-box;
+  min-width: 0;
   color: var(--text);
-  opacity: 0.75;
-  font-size: 0.9rem;
-  margin: 0 0 12px;
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+  line-height: var(--type-body-line-height);
+  margin: 0 0 var(--product-space-2);
+  padding: 12px 14px;
+  border: 1px solid rgba(42, 157, 143, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(42, 157, 143, 0.08);
+  overflow-wrap: anywhere;
+}
+.availability-status::before {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  content: "";
 }
 .availability-alert {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  margin: 0 0 12px;
+  gap: var(--product-space-2);
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0 0 var(--product-space-2);
   padding: 12px 16px;
-  border: 1px solid var(--primary);
+  border: 1px solid var(--product-danger-border);
+  border-left: 4px solid var(--product-danger);
   border-radius: var(--radius-sm);
-  color: var(--primary);
-  background: rgba(0, 0, 0, 0.03);
+  color: var(--product-danger);
+  background: var(--product-danger-bg);
 }
 .availability-alert p {
+  min-width: 0;
   margin: 0;
   font-weight: 600;
+  line-height: var(--type-body-line-height);
+  overflow-wrap: anywhere;
 }
 .availability-alert button {
-  background: var(--primary);
-  color: #fff;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border: none;
-  padding: 6px 16px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line-height);
   font-family: inherit;
+  touch-action: manipulation;
+  transition: background-color var(--transition), box-shadow var(--transition);
+}
+.availability-alert button:hover {
+  background: var(--action-primary-hover-bg);
 }
 .date-pickers {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--product-space-2);
+  box-sizing: border-box;
+  width: 100%;
+  min-inline-size: 0;
+  margin: 0 0 var(--product-space-2);
+  padding: var(--product-space-2);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow: visible;
 }
 .date-pickers > div {
-  flex: 1;
-  padding: 12px 14px;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
-}
-.date-pickers > div:last-child {
-  border-right: none;
+  min-width: 0;
 }
 .date-pickers label {
   display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: var(--product-space-1);
   color: var(--secondary);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+  line-height: var(--type-label-line-height);
+  overflow-wrap: anywhere;
 }
 /* react-datepicker input wrapper */
 .date-pickers .react-datepicker-wrapper,
 .date-pickers .react-datepicker__input-container {
+  display: block;
   width: 100%;
+  min-width: 0;
 }
 .date-pickers input {
-  width: 100%;
-  padding: 0;
-  border: none;
-  font-size: 1rem;
-  font-weight: 500;
-  font-family: inherit;
-  background: transparent;
-  color: var(--text);
   box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(38, 70, 83, 0.28);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-label-weight);
+  line-height: var(--type-body-line-height);
+  font-family: inherit;
+  background: var(--product-surface);
+  color: var(--text);
   outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition),
+    background-color var(--transition);
 }
 .date-pickers input::placeholder {
-  color: #aaa;
+  color: var(--secondary);
   font-weight: 400;
 }
 .date-pickers input:disabled {
@@ -232,12 +279,13 @@
   color: var(--action-primary-fg);
   border: none;
   box-shadow: inset 0 -3px var(--action-primary-accent);
-  padding: 14px 30px;
+  padding: var(--product-space-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 700;
   font-family: inherit;
-  font-size: 1.1rem;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
   letter-spacing: 0.01em;
   width: 100%;
   transition: background-color var(--transition);
@@ -324,6 +372,7 @@
   opacity: 0.8;
 }
 .btn-share {
+  box-sizing: border-box;
   min-height: 44px;
   background: var(--bg);
   color: var(--secondary);
@@ -334,6 +383,7 @@
   font-weight: 600;
   font-family: inherit;
   margin-right: 10px;
+  flex-shrink: 0;
   transition:
     background-color var(--transition),
     color var(--transition);
@@ -345,4 +395,134 @@
 .btn-share:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
+}
+
+.product-detail .availability-alert button:focus-visible,
+.product-detail .login-prompt a:focus-visible,
+.product-detail .date-pickers input:focus-visible,
+.product-detail .product-datepicker-popper .react-datepicker__navigation:focus-visible,
+.product-detail .product-datepicker-popper .react-datepicker__day:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
+}
+
+.product-detail .date-pickers input:focus-visible {
+  border-color: var(--action-primary-focus);
+  box-shadow: 0 0 0 1px var(--action-primary-focus);
+}
+
+.product-detail .price-display {
+  box-sizing: border-box;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
+  padding: var(--product-space-3);
+  margin: 0 calc(-1 * var(--product-space-3)) var(--product-space-3);
+}
+
+.product-detail .price-display strong {
+  font-size: var(--type-h2-size);
+  line-height: var(--type-h2-line-height);
+}
+
+/* Keep ProductDetail calendar sizing and placement local to this page. */
+.product-detail .product-datepicker-popper {
+  z-index: 20;
+  width: min(320px, 100vw);
+  max-width: 100vw;
+}
+
+.product-detail .product-datepicker-popper .react-datepicker,
+.product-detail .product-datepicker-popper .react-datepicker__month-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.product-detail .product-datepicker-popper .react-datepicker__current-month {
+  min-height: 44px;
+  padding-inline: 44px;
+  color: var(--bg);
+  font-size: var(--type-label-size);
+  font-weight: 700;
+  line-height: var(--type-label-line-height);
+}
+
+.product-detail .product-datepicker-popper .react-datepicker__navigation {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+}
+
+.product-detail .product-datepicker-popper .react-datepicker__day-names,
+.product-detail .product-datepicker-popper .react-datepicker__week {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+}
+
+.product-detail .product-datepicker-popper .react-datepicker__day-name,
+.product-detail .product-datepicker-popper .react-datepicker__day {
+  box-sizing: border-box;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  margin: 0;
+  line-height: 44px;
+}
+
+.product-detail .product-datepicker-popper .react-datepicker__day:hover,
+.product-detail .product-datepicker-popper .react-datepicker__day--keyboard-selected {
+  background: var(--bg);
+  color: var(--secondary);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.product-detail .product-datepicker-popper .react-datepicker__day--selected,
+.product-detail .product-datepicker-popper .react-datepicker__day--range-start,
+.product-detail .product-datepicker-popper .react-datepicker__day--range-end {
+  background: var(--action-primary-bg) !important;
+  color: var(--action-primary-fg) !important;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
+}
+
+@media (max-width: 768px) {
+  .product-detail {
+    padding: var(--product-space-2) var(--product-space-2) 40px;
+  }
+
+  .date-pickers {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .detail-header {
+    flex-wrap: wrap;
+    padding: var(--product-space-2);
+  }
+
+  .detail-title-group {
+    flex: 1 1 100%;
+  }
+
+  .booking-section {
+    padding-inline: var(--product-space-2);
+  }
+
+  .price-display {
+    margin-inline: calc(-1 * var(--product-space-2));
+    padding: var(--product-space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-detail .back-arrow,
+  .product-detail .btn-share,
+  .product-detail .btn-reserve,
+  .product-detail .availability-alert button,
+  .product-detail .date-pickers input {
+    transition: none;
+  }
 }
