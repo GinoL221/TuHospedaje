@@ -515,6 +515,17 @@
     margin-inline: calc(-1 * var(--product-space-2));
     padding: var(--product-space-2);
   }
+
+  .product-detail .product-datepicker-popper {
+    position: fixed !important;
+    top: calc(var(--site-header-height) + var(--product-space-1)) !important;
+    left: 0 !important;
+    transform: none !important;
+    z-index: 1001;
+    max-height: calc(100dvh - var(--site-header-height) - var(--product-space-2));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
