@@ -2,7 +2,7 @@
   --product-space-1: 8px;
   --product-space-2: 16px;
   --product-space-3: 24px;
-  --product-surface: #fff;
+  --product-surface: var(--surface-raised);
   --product-danger: #8a1c14;
   --product-danger-bg: #fff4f2;
   --product-danger-border: rgba(138, 28, 20, 0.3);
@@ -63,7 +63,7 @@
 
 .detail-title-group h1 {
   margin: 0;
-  color: #fff;
+  color: var(--action-primary-fg);
   font-size: var(--type-h1-size);
   font-weight: var(--type-h1-weight);
   line-height: var(--type-h1-line-height);
@@ -80,7 +80,7 @@
 .product-detail .description {
   margin-top: 30px;
   padding: 30px;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
@@ -91,7 +91,7 @@
 .features-section {
   margin-top: 30px;
   padding: 30px;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
@@ -316,7 +316,7 @@
 .policies-section {
   margin-top: 30px;
   padding: 30px;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
