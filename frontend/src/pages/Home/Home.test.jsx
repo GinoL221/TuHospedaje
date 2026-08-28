@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { readFileSync } from "node:fs";
 import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act, customRender, screen, waitFor } from "../../test/test-utils";
@@ -950,5 +951,36 @@ describe("Home - favorites", () => {
 		await screen.findByText("Cabaña del Lago");
 
 		expect(get).not.toHaveBeenCalledWith("/favorites");
+	});
+});
+
+describe("Home - visitor accessibility contract", () => {
+	it("announces an invalid date range as an accessible error", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+		fireEvent.change(screen.getByTestId("datepicker-Check-in"), {
+			target: { value: "2026-07-10" },
+		});
+		fireEvent.change(screen.getByTestId("datepicker-Check-out"), {
+			target: { value: "2026-07-05" },
+		});
+
+		await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"La fecha de check-out debe ser posterior al check-in",
+		);
+	});
+
+	it("defines a tokenized, narrow-viewport search surface with visible focus", () => {
+		const css = readFileSync("src/pages/Home/Home.css", "utf8");
+
+		expect(css).toMatch(/--home-search-surface:/);
+		expect(css).toMatch(/\.search-card input:focus-visible/);
+		expect(css).toMatch(/@media \(max-width: 360px\)/);
+		expect(css).toMatch(/\.search-card input[\s\S]*?min-height: 48px/);
 	});
 });

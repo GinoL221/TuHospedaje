@@ -58,9 +58,10 @@ export default function ProductCard({
 					/>
 					{user && showFavoriteButton && (
 						<button
-							className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
-							onClick={toggleFavorite}
-							disabled={pending}
+								className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
+								onClick={toggleFavorite}
+								disabled={pending}
+								aria-busy={pending}
 							aria-label={
 								isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
 							}

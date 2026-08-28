@@ -1,4 +1,5 @@
 import { customRender, screen, userEvent, makeAuthValue, fireEvent } from "../../test/test-utils";
+import { readFileSync } from "node:fs";
 import ProductCard from "./ProductCard";
 import { post, del } from "../../services/api";
 
@@ -170,5 +171,39 @@ describe("ProductCard - useAuth integration", () => {
     renderProductCard({}, { authValue });
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
-  });
+	});
+});
+
+describe("ProductCard - visitor accessibility contract", () => {
+	it("reports an idle favorite action as not busy", () => {
+		renderProductCard({}, { authValue: makeAuthValue() });
+
+		expect(screen.getByRole("button", { name: "Agregar a favoritos" })).toHaveAttribute(
+			"aria-busy",
+			"false",
+		);
+	});
+
+	it("announces pending favorite persistence without blocking card navigation", async () => {
+		post.mockReturnValue(new Promise(() => {}));
+		const user = userEvent.setup();
+		renderProductCard({}, { authValue: makeAuthValue() });
+
+		await user.click(screen.getByRole("button", { name: "Agregar a favoritos" }));
+
+		expect(screen.getByRole("button", { name: "Quitar de favoritos" })).toHaveAttribute(
+			"aria-busy",
+			"true",
+		);
+		expect(screen.getByRole("link")).toHaveAttribute("href", "/lodgings/1");
+	});
+
+	it("defines tokenized focus, touch-target, and narrow-screen card rules", () => {
+		const css = readFileSync("src/components/ProductCard/ProductCard.css", "utf8");
+
+		expect(css).toMatch(/--product-card-surface:/);
+		expect(css).toMatch(/\.hotel-card-link:focus-visible/);
+		expect(css).toMatch(/\.fav-btn[\s\S]*?min-width: 44px/);
+		expect(css).toMatch(/@media \(max-width: 360px\)/);
+	});
 });
