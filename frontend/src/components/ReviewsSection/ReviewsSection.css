@@ -4,6 +4,7 @@
   --review-error-bg: var(--product-danger-bg, color-mix(in srgb, var(--secondary) 6%, var(--bg)));
   --review-error-border: var(--product-danger-border, color-mix(in srgb, var(--secondary) 28%, transparent));
   box-sizing: border-box; min-width: 0;
+  scroll-margin-top: calc(var(--site-header-height) + var(--review-space-3));
   margin-top: var(--review-space-3); padding: var(--review-space-3);
   background: var(--review-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
 }
