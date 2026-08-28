@@ -206,4 +206,16 @@ describe("ProductCard - visitor accessibility contract", () => {
 		expect(css).toMatch(/\.fav-btn[\s\S]*?min-width: 44px/);
 		expect(css).toMatch(/@media \(max-width: 360px\)/);
 	});
+
+	it("pins the mobile title minimum and favorite hit target", () => {
+		const css = readFileSync("src/components/ProductCard/ProductCard.css", "utf8");
+		const narrowRules = css.match(
+			/@media \(max-width: 360px\)\s*\{([\s\S]*)\}\s*$/,
+		)?.[1] ?? "";
+
+		expect(narrowRules).toMatch(
+			/\.hotel-card-body h3[\s\S]*?font-size:\s*max\(16px,\s*var\(--type-body-size\)\)/,
+		);
+		expect(narrowRules).toMatch(/\.fav-btn[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/);
+	});
 });
