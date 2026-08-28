@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
@@ -6,11 +6,37 @@ import { useAuth } from "../../hooks/useAuth";
 import logo from "../../assets/images/TuHospedaje_Isologotipo.png";
 
 export default function Header() {
-	  const { user, logout, logoutError } = useAuth();
+	const { user, logout, logoutError } = useAuth();
 	const [menuOpen, setMenuOpen] = useState(false);
+	const headerRef = useRef(null);
+
+	useLayoutEffect(() => {
+		const header = headerRef.current;
+		if (!header) return undefined;
+
+		const publishClearance = () => {
+			const height = Math.ceil(header.getBoundingClientRect().height);
+			if (!height) return;
+			document.documentElement.style.setProperty("--site-header-height", `${height}px`);
+			document.documentElement.style.setProperty(
+				"--site-scroll-clearance",
+				`calc(${height}px + var(--site-scroll-gap))`,
+			);
+		};
+
+		publishClearance();
+		const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(publishClearance);
+		observer?.observe(header);
+
+		return () => {
+			observer?.disconnect();
+			document.documentElement.style.removeProperty("--site-header-height");
+			document.documentElement.style.removeProperty("--site-scroll-clearance");
+		};
+	}, [menuOpen]);
 
   return (
-    <header className="site-header">
+    <header ref={headerRef} className="site-header">
       <nav className="page-container">
         <div className="logo-container">
           <Link to="/" className="brand-link">

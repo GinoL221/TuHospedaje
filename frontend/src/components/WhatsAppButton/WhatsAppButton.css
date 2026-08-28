@@ -2,7 +2,7 @@
   position: fixed;
   right: max(24px, env(safe-area-inset-right));
   bottom: max(24px, env(safe-area-inset-bottom));
-  z-index: 1000;
+  z-index: var(--layer-floating);
   display: flex;
   flex-direction: column;
   align-items: flex-end;

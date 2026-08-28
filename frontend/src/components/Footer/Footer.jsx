@@ -3,7 +3,7 @@ import WhatsAppButton from "../WhatsAppButton/WhatsAppButton";
 
 export default function Footer() {
   return (
-    <footer>
+    <footer className="site-footer">
       <div className="page-container">
         <section className="footer-left">
           <span className="footer-brand">
@@ -11,14 +11,14 @@ export default function Footer() {
           </span>
           <p>© 2026 TuHospedaje. Todos los derechos reservados.</p>
         </section>
-        <section className="footer-right">
+        <nav className="footer-right" aria-label="Redes sociales">
           <a href="https://facebook.com" target="_blank" rel="noreferrer">
             <img src="https://img.icons8.com/ios-filled/50/ffffff/facebook.png" alt="Facebook" />
           </a>
           <a href="https://instagram.com" target="_blank" rel="noreferrer">
             <img src="https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png" alt="Instagram" />
           </a>
-        </section>
+        </nav>
         <WhatsAppButton />
       </div>
     </footer>

@@ -7,6 +7,34 @@ import {
 } from "../../test/test-utils";
 import Header from "./Header";
 
+let observers = [];
+let headerHeight = 72;
+
+class ResizeObserverMock {
+	constructor(callback) {
+		this.callback = callback;
+		observers.push(this);
+	}
+
+	observe() {}
+	disconnect = vi.fn();
+}
+
+beforeEach(() => {
+	observers = [];
+	headerHeight = 72;
+	vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+	vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
+		height: headerHeight,
+	}));
+});
+
+afterEach(() => {
+	document.documentElement.style.removeProperty("--site-header-height");
+	document.documentElement.style.removeProperty("--site-scroll-clearance");
+	vi.restoreAllMocks();
+});
+
 describe("Header - authenticated user", () => {
 	it("uses the official isologotype as the accessible home link", () => {
 		customRender(<Header />);
@@ -88,6 +116,25 @@ describe("Header - authenticated user", () => {
 });
 
 describe("Header - unauthenticated user", () => {
+	it("publishes and cleans up current header clearance when the menu changes", async () => {
+		const user = userEvent.setup();
+		const { unmount } = customRender(<Header />, { authValue: null });
+
+		expect(document.documentElement.style.getPropertyValue("--site-header-height")).toBe("72px");
+		expect(document.documentElement.style.getPropertyValue("--site-scroll-clearance")).toBe("calc(72px + var(--site-scroll-gap))");
+
+		headerHeight = 184;
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		observers.at(-1).callback();
+
+		expect(document.documentElement.style.getPropertyValue("--site-header-height")).toBe("184px");
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute("aria-expanded", "true");
+
+		unmount();
+		expect(document.documentElement.style.getPropertyValue("--site-header-height")).toBe("");
+		expect(observers.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
+	});
+
 	it("opens and closes the mobile menu from the hamburger button", async () => {
 		const user = userEvent.setup();
 		customRender(<Header />, { authValue: null });

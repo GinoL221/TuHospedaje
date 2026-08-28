@@ -1,6 +1,12 @@
 /* HEADER */
 :root {
   --site-header-height: 120px;
+  --site-scroll-gap: 16px;
+  --site-scroll-clearance: calc(var(--site-header-height) + var(--site-scroll-gap));
+}
+
+html {
+  scroll-padding-top: var(--site-scroll-clearance);
 }
 
 .site-header {
@@ -9,7 +15,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: var(--layer-header);
   background-color: var(--secondary);
   box-shadow: var(--shadow-md);
 }
@@ -172,7 +178,8 @@
 /* MAIN */
 main {
   flex: 1 0 auto;
-  padding: calc(var(--site-header-height) + 24px) 20px 48px;
+  padding: 24px 20px 48px;
+  padding-top: var(--site-scroll-clearance);
   background-color: var(--bg);
   display: flex;
   flex-direction: column;
@@ -316,6 +323,7 @@ footer .page-container {
 
   main {
     padding: 16px 16px 40px;
+    padding-top: var(--site-scroll-clearance);
     gap: 28px;
   }
 
