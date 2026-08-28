@@ -5,7 +5,7 @@ const read = (path) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 function rule(css, selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1];
+  return css.match(new RegExp(`(?:^|})\\s*${escaped}\\s*\\{([^{}]*)\\}`))?.[1];
 }
 
 describe("semantic typography contract", () => {
