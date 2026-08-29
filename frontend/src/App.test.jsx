@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import { act, render, screen } from "@testing-library/react";
+import { useLocation } from "react-router-dom";
 
 const authState = vi.hoisted(() => ({ value: { user: null, loading: false } }));
 
@@ -159,6 +160,56 @@ describe("App protected route authorization", () => {
   });
 });
 
+describe("App favorites route authorization", () => {
+  it("redirects an unauthenticated visitor to /login before the deferred page resolves", async () => {
+    const favorites = deferred();
+    await renderAppAt({
+      path: "/favorites",
+      authValue: UNAUTHENTICATED,
+      pages: { "./pages/Favorites/FavoritesPage": favorites.promise },
+    });
+
+    await act(async () => {});
+
+    expect(window.location.pathname).toBe("/login");
+    expect(screen.queryByText("Favorites resolved")).not.toBeInTheDocument();
+  });
+
+  it("renders the authorized destination once an authenticated user's page resolves", async () => {
+    const favorites = deferred();
+    await renderAppAt({
+      path: "/favorites",
+      authValue: AUTHENTICATED_USER,
+      pages: { "./pages/Favorites/FavoritesPage": favorites.promise },
+    });
+
+    expect(screen.getByText("Header shell")).toBeInTheDocument();
+    await act(async () => favorites.resolve({ default: () => <main>Favorites resolved</main> }));
+
+    expect(screen.getByText("Favorites resolved")).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/favorites");
+  });
+
+  it("returns to /favorites after login once the user authenticates", async () => {
+    await renderAppAt({
+      path: "/favorites",
+      authValue: UNAUTHENTICATED,
+      pages: {
+        "./pages/LoginPage": {
+          default: function LoginRedirectSentinel() {
+            const location = useLocation();
+            return <main>{location.state?.from?.pathname}</main>;
+          },
+        },
+      },
+    });
+
+    await act(async () => {});
+
+    expect(screen.getByText("/favorites")).toBeInTheDocument();
+  });
+});
+
 describe("App admin route authorization", () => {
   it("denies an anonymous visitor requesting /administración by redirecting to /login", async () => {
     const admin = deferred();
@@ -304,6 +355,8 @@ describe("App auth loading state", () => {
 
     expect(window.location.pathname).toBe("/my-reservations");
     expect(screen.queryByText("Reservations resolved")).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(150));
+    expect(screen.getAllByRole("status")).toHaveLength(1);
     unmount();
 
     const admin = deferred();

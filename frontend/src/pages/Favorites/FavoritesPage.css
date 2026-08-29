@@ -47,3 +47,9 @@
 .empty-state.error {
   color: var(--favorites-danger);
 }
+
+.favorite-remove-error {
+  color: var(--primary);
+  font-size: var(--type-caption-size);
+  margin: 0;
+}
