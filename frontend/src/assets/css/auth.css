@@ -1,5 +1,15 @@
 /* Auth Pages */
 .login-container {
+  --auth-surface: var(--surface-raised);
+  --auth-card-border: color-mix(in srgb, var(--secondary) 10%, transparent);
+  --auth-input-border: color-mix(in srgb, var(--secondary) 22%, transparent);
+  --auth-danger: #d32f2f;
+  --auth-danger-bg: #fce4e4;
+  --auth-danger-border: #f5c6c6;
+  --auth-danger-ring: rgba(211, 47, 47, 0.15);
+  --auth-success: #2e7d32;
+  --auth-success-ring: rgba(46, 125, 50, 0.15);
+  --auth-neutral-muted: #999;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -11,11 +21,11 @@
 
 .login-box,
 .register-box {
-  background-color: var(--bg);
+  background-color: var(--auth-surface);
   padding: 35px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--auth-card-border);
 }
 
 .login-box {
@@ -56,7 +66,7 @@
 .register-box input {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--auth-input-border);
   border-radius: var(--radius-sm);
   box-sizing: border-box;
   font-size: 1rem;
@@ -76,24 +86,24 @@
 
 .login-box input.input-error,
 .register-box input.input-error {
-  border-color: #d32f2f;
+  border-color: var(--auth-danger);
 }
 
 .login-box input.input-error:focus,
 .register-box input.input-error:focus {
-  border-color: #d32f2f;
-  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
+  border-color: var(--auth-danger);
+  box-shadow: 0 0 0 3px var(--auth-danger-ring);
 }
 
 .login-box input.input-valid,
 .register-box input.input-valid {
-  border-color: #2e7d32;
+  border-color: var(--auth-success);
 }
 
 .login-box input.input-valid:focus,
 .register-box input.input-valid:focus {
-  border-color: #2e7d32;
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+  border-color: var(--auth-success);
+  box-shadow: 0 0 0 3px var(--auth-success-ring);
 }
 
 .login-box .field-hint,
@@ -120,13 +130,13 @@
   transform: translateY(-50%);
   font-size: 1rem;
   line-height: 1;
-  color: #2e7d32;
+  color: var(--auth-success);
   font-weight: 700;
   pointer-events: none;
 }
 
 .input-wrap .input-check.check-fail {
-  color: #d32f2f;
+  color: var(--auth-danger);
 }
 
 .login-box button,
@@ -181,7 +191,7 @@
 
 .login-box a,
 .register-box a {
-  color: var(--primary);
+  color: var(--secondary);
   text-decoration: none;
   font-weight: 600;
 }
@@ -194,19 +204,19 @@
 
 .login-box .error,
 .register-box .error {
-  color: #d32f2f;
+  color: var(--auth-danger);
   font-weight: 600;
   text-align: center;
   font-size: 0.9rem;
   padding: 10px 12px;
-  background-color: #fce4e4;
-  border: 1px solid #f5c6c6;
+  background-color: var(--auth-danger-bg);
+  border: 1px solid var(--auth-danger-border);
   border-radius: 4px;
 }
 
 .login-box .field-error,
 .register-box .field-error {
-  color: #d32f2f;
+  color: var(--auth-danger);
   font-size: 0.75rem;
   margin-top: -12px;
   margin-bottom: 0;
@@ -231,11 +241,11 @@
 }
 
 .pw-check-ok {
-  color: #2e7d32;
+  color: var(--auth-success);
 }
 
 .pw-check-fail {
-  color: #999;
+  color: var(--auth-neutral-muted);
 }
 
 /* Responsive */
