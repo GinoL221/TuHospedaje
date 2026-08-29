@@ -1,4 +1,5 @@
 .confirmation-page {
+  --confirmation-surface: var(--surface-raised);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -41,7 +42,8 @@
 
 /* --- CARD --- */
 .confirmation-card {
-  background: var(--bg);
+  box-sizing: border-box;
+  background: var(--confirmation-surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border-left: 4px solid var(--accent);
@@ -90,6 +92,8 @@
 }
 
 .confirmation-row-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--secondary);
   font-weight: 600;
   text-align: right;
@@ -168,7 +172,7 @@
 
 .confirmation-actions .btn-ghost:hover {
   background: var(--secondary);
-  color: #fff;
+  color: var(--action-primary-fg);
 }
 
 @media (max-width: 480px) {

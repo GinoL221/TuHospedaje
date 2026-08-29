@@ -34,7 +34,7 @@
 .booking-form {
   box-sizing: border-box;
   min-width: 0;
-  background: #fff;
+  background: var(--surface-raised);
   border: 1px solid rgba(38, 70, 83, 0.16);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -225,7 +225,7 @@
   padding: 12px 14px;
   border: 1px solid rgba(38, 70, 83, 0.28);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--text);
   font-family: inherit;
   font-size: var(--type-body-size);
@@ -429,7 +429,7 @@
 .booking-form .react-datepicker {
   max-width: 100%;
   border-radius: var(--radius-md);
-  background: #fff;
+  background: var(--surface-raised);
 }
 
 .booking-form .react-datepicker__header {
