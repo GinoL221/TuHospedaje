@@ -49,7 +49,7 @@
 }
 
 .favorite-remove-error {
-  color: var(--primary);
+  color: var(--favorites-danger);
   font-size: var(--type-caption-size);
   margin: 0;
 }

@@ -315,3 +315,16 @@ describe("LodgingFormModal - ImageUpload failure handling", () => {
     expect(props.onSaved).toHaveBeenCalled();
   });
 });
+
+describe("LodgingFormModal - invalid-field focus timeout cleanup", () => {
+  it("clears the pending focus timeout on unmount so it never fires after teardown", () => {
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+    const { unmount } = renderModal();
+
+    fireEvent.click(screen.getByTestId("admin-save-btn"));
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+});
