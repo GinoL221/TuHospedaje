@@ -1,3 +1,9 @@
+.my-reservations {
+  --reservation-success: #1a7a4a;
+  --reservation-warning: #b07d00;
+  --reservation-danger: #c0392b;
+}
+
 /* --- PAGE HEADER --- */
 .reservations-header {
   display: flex;
@@ -80,9 +86,9 @@
   flex-shrink: 0;
 }
 
-.reservation-status.confirmed { background: #e6f9f0; color: #1a7a4a; }
-.reservation-status.pending   { background: #fff7e6; color: #b07d00; }
-.reservation-status.cancelled { background: #fde8e8; color: #c0392b; }
+.reservation-status.confirmed { background: #e6f9f0; color: var(--reservation-success); }
+.reservation-status.pending   { background: #fff7e6; color: var(--reservation-warning); }
+.reservation-status.cancelled { background: #fde8e8; color: var(--reservation-danger); }
 
 /* BODY */
 .reservation-card-body {
@@ -142,7 +148,7 @@
   gap: 4px;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--secondary);
   text-decoration: none;
   transition: opacity var(--transition);
 }
@@ -157,10 +163,10 @@
 }
 
 .reservation-cancel {
-  border: 1px solid #c0392b;
+  border: 1px solid var(--reservation-danger);
   border-radius: var(--radius-sm);
   background: transparent;
-  color: #c0392b;
+  color: var(--reservation-danger);
   cursor: pointer;
   font: inherit;
   font-size: 0.82rem;
@@ -174,7 +180,7 @@
 }
 
 .reservation-cancel-error {
-  color: #c0392b;
+  color: var(--reservation-danger);
   font-size: 0.82rem;
   margin: 8px 0 0;
 }
@@ -188,7 +194,7 @@
   padding: 60px 20px;
   background: var(--bg);
   border-radius: var(--radius-md);
-  border: 1px dashed #ccc;
+  border: 1px dashed var(--empty-state-border);
   color: var(--text);
   max-width: 720px;
 }
@@ -222,7 +228,7 @@
 }
 
 .error {
-  color: #c0392b;
+  color: var(--reservation-danger);
   font-size: 0.9rem;
 }
 

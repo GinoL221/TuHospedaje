@@ -1,4 +1,5 @@
 .favorites-page {
+  --favorites-danger: #d32f2f;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -26,8 +27,8 @@
 
 .btn-remove-fav {
   background: none;
-  border: 1px solid var(--primary);
-  color: var(--primary);
+  border: 1px solid var(--secondary);
+  color: var(--secondary);
   padding: 8px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -40,9 +41,9 @@
 .btn-remove-fav:hover {
   background: var(--secondary);
   border-color: var(--secondary);
-  color: var(--bg);
+  color: var(--action-primary-fg);
 }
 
 .empty-state.error {
-  color: var(--primary);
+  color: var(--favorites-danger);
 }
