@@ -142,6 +142,7 @@ describe("App protected route authorization", () => {
 
     expect(window.location.pathname).toBe("/login");
     expect(screen.queryByText("Reservations resolved")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("renders the authorized destination once an authenticated user's page resolves", async () => {
@@ -173,6 +174,7 @@ describe("App favorites route authorization", () => {
 
     expect(window.location.pathname).toBe("/login");
     expect(screen.queryByText("Favorites resolved")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("renders the authorized destination once an authenticated user's page resolves", async () => {
