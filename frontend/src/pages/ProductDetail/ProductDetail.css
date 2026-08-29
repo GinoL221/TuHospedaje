@@ -498,6 +498,10 @@
 }
 
 @media (max-width: 480px) {
+	.policies-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
   .detail-header {
     flex-wrap: wrap;
     padding: var(--product-space-2);

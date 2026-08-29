@@ -28,4 +28,32 @@ describe("reservation path visual contract", () => {
 		expect(confirmation).toContain("var(--surface-raised)");
 		expect(reviews).toContain("var(--surface-raised)");
 	});
+
+	it("contains reservation cards within a narrow mobile viewport", () => {
+		const product = readSource("pages/ProductDetail/ProductDetail.css");
+		const confirmation = readSource("pages/Booking/BookingConfirmation.css");
+
+		expect(confirmation).toMatch(
+			/\.confirmation-card\s*\{[^}]*box-sizing:\s*border-box;/s,
+		);
+		expect(product).toMatch(
+			/@media \(max-width: 480px\)\s*\{[\s\S]*?\.policies-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\);/,
+		);
+	});
+
+	it("allows confirmation row values to shrink beside their labels", () => {
+		const confirmation = readSource("pages/Booking/BookingConfirmation.css");
+
+		expect(confirmation).toMatch(
+			/\.confirmation-row-value\s*\{[^}]*min-width:\s*0;/s,
+		);
+	});
+
+	it("wraps unbroken confirmation values within the card", () => {
+		const confirmation = readSource("pages/Booking/BookingConfirmation.css");
+
+		expect(confirmation).toMatch(
+			/\.confirmation-row-value\s*\{[^}]*overflow-wrap:\s*anywhere;/s,
+		);
+	});
 });
