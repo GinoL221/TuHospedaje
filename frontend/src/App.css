@@ -4,6 +4,20 @@
   --primary: #ff6b35;
   --secondary: #264653;
   --accent: #2a9d8f;
+  --surface-page: var(--bg);
+  --surface-raised: #fff;
+  --content-primary: var(--text);
+  --content-strong: var(--secondary);
+
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --layer-content: 0;
+  --layer-header: 100;
+  --layer-floating: 200;
 
   --action-primary-bg: var(--secondary);
   --action-primary-fg: var(--bg);
@@ -47,11 +61,10 @@
   --accent: #62d5c8;
 }
 
-html, body, #root {
-  height: 100%;
+html,
+body {
+  min-height: 100%;
   margin: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 body {
@@ -63,8 +76,12 @@ body {
   background-color: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  display: flex;
+}
+
+#root {
+  min-height: 100vh;
   flex-direction: column;
+  display: flex;
 }
 
 .page-container {

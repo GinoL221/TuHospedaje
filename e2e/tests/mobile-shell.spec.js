@@ -95,6 +95,41 @@ test.describe('Mobile shell — WhatsApp placement', () => {
   });
 });
 
+test.describe('Mobile shell — Reviews clearance', () => {
+  for (const viewport of [
+    { width: 375, height: 812 },
+    { width: 320, height: 844 },
+  ]) {
+    test(`keeps fragment and programmatic review targets below the open Header at ${viewport.width}px`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto('/lodgings/1#reviews-1');
+
+      const header = page.locator('.site-header');
+      const reviews = page.getByRole('heading', { name: 'Reseñas' });
+      await expect(reviews).toBeVisible();
+      const [closedHeaderBox, fragmentBox] = await Promise.all([
+        header.boundingBox(),
+        reviews.boundingBox(),
+      ]);
+      expect(closedHeaderBox).not.toBeNull();
+      expect(fragmentBox).not.toBeNull();
+      expect(fragmentBox.y).toBeGreaterThanOrEqual(closedHeaderBox.y + closedHeaderBox.height);
+
+      await page.getByRole('button', { name: 'Abrir menú' }).click();
+      await reviews.evaluate((element) => element.scrollIntoView({ block: 'start' }));
+
+      const [headerBox, reviewsBox] = await Promise.all([
+        header.boundingBox(),
+        reviews.boundingBox(),
+      ]);
+      expect(headerBox).not.toBeNull();
+      expect(reviewsBox).not.toBeNull();
+      expect(reviewsBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+});
+
 // WU3/US-9.2-S3: the mobile/touch admin-unavailable state must appear
 // (instead of a broken/partial admin layout) at narrow, touch-capable
 // viewports, and must be accessible for a direct/deep-link visit.

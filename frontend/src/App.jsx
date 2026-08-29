@@ -35,7 +35,11 @@ function AppLayout() {
 
   return (
     <>
-      {!isAdmin && <Header />}
+      {!isAdmin && (
+        <div className="public-shell">
+          <Header />
+        </div>
+      )}
       <RouteChunkErrorBoundary resetKey={pathname}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
@@ -63,7 +67,11 @@ function AppLayout() {
           </Routes>
         </Suspense>
       </RouteChunkErrorBoundary>
-      {!isAdmin && <Footer />}
+      {!isAdmin && (
+        <div className="public-shell">
+          <Footer />
+        </div>
+      )}
     </>
   );
 }

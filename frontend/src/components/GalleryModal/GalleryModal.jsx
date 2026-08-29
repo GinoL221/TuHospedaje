@@ -1,29 +1,92 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import "./GalleryModal.css";
 
-export default function GalleryModal({ images, currentIndex, onClose, onNavigate }) {
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (e.key === "Escape") {
-        onClose();
-      } else if (e.key === "ArrowLeft") {
-        onNavigate((currentIndex - 1 + images.length) % images.length);
-      } else if (e.key === "ArrowRight") {
-        onNavigate((currentIndex + 1) % images.length);
-      }
-    },
-    [currentIndex, images.length, onClose, onNavigate],
-  );
+const FOCUSABLE_SELECTOR = [
+	"button:not([disabled])",
+	"[href]",
+	"input:not([disabled])",
+	"select:not([disabled])",
+	"textarea:not([disabled])",
+	'[tabindex]:not([tabindex="-1"])',
+].join(",");
 
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [handleKeyDown]);
+export default function GalleryModal({ images, currentIndex, onClose, onNavigate }) {
+	const dialogRef = useRef(null);
+	const closeButtonRef = useRef(null);
+	const previousFocusRef = useRef(null);
+
+	useEffect(() => {
+		previousFocusRef.current = document.activeElement;
+		closeButtonRef.current?.focus();
+
+		return () => {
+			const previousFocus = previousFocusRef.current;
+			if (
+				previousFocus?.isConnected &&
+				previousFocus.matches(FOCUSABLE_SELECTOR)
+			) {
+				previousFocus.focus();
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		const handleKeyDown = (event) => {
+			if (event.key === "Escape") {
+				event.preventDefault();
+				onClose();
+				return;
+			}
+
+			if (images.length > 1 && event.key === "ArrowLeft") {
+				event.preventDefault();
+				onNavigate((currentIndex - 1 + images.length) % images.length);
+				return;
+			}
+
+			if (images.length > 1 && event.key === "ArrowRight") {
+				event.preventDefault();
+				onNavigate((currentIndex + 1) % images.length);
+				return;
+			}
+
+			if (event.key !== "Tab") return;
+
+			const focusableElements = Array.from(
+				dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [],
+			);
+			if (focusableElements.length === 0) {
+				event.preventDefault();
+				return;
+			}
+
+			const firstElement = focusableElements[0];
+			const lastElement = focusableElements.at(-1);
+			if (!dialogRef.current?.contains(document.activeElement)) {
+				event.preventDefault();
+				firstElement.focus();
+			} else if (event.shiftKey && document.activeElement === firstElement) {
+				event.preventDefault();
+				lastElement.focus();
+			} else if (!event.shiftKey && document.activeElement === lastElement) {
+				event.preventDefault();
+				firstElement.focus();
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [currentIndex, images.length, onClose, onNavigate]);
+
+	useEffect(() => {
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, []);
 
   function handleOverlayClick(e) {
     if (e.target === e.currentTarget) {
@@ -31,11 +94,13 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
     }
   }
 
-  function prev() {
+	function prev() {
+    if (images.length <= 1) return;
     onNavigate((currentIndex - 1 + images.length) % images.length);
   }
 
   function next() {
+    if (images.length <= 1) return;
     onNavigate((currentIndex + 1) % images.length);
   }
 
@@ -43,6 +108,7 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
 
   return (
     <div
+      ref={dialogRef}
       className="gallery-modal-overlay"
       onClick={handleOverlayClick}
       role="dialog"
@@ -50,6 +116,8 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
       aria-modal="true"
     >
       <button
+        type="button"
+        ref={closeButtonRef}
         className="gallery-modal-close"
         onClick={onClose}
         aria-label="Cerrar galería"
@@ -58,8 +126,10 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
       </button>
 
       <button
+        type="button"
         className="gallery-nav gallery-nav--prev"
         onClick={prev}
+        disabled={images.length <= 1}
         aria-label="Imagen anterior"
       >
         <ChevronLeft size={24} aria-hidden="true" focusable="false" />
@@ -70,14 +140,16 @@ export default function GalleryModal({ images, currentIndex, onClose, onNavigate
           src={images[currentIndex]}
           alt={`${currentIndex + 1} de ${images.length}`}
           onError={(e) => {
-            e.target.src = fallback;
+            e.currentTarget.src = fallback;
           }}
         />
       </div>
 
       <button
+        type="button"
         className="gallery-nav gallery-nav--next"
         onClick={next}
+        disabled={images.length <= 1}
         aria-label="Imagen siguiente"
       >
         <ChevronRight size={24} aria-hidden="true" focusable="false" />

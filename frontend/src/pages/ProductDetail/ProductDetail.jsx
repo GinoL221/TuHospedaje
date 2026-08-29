@@ -89,12 +89,24 @@ export default function ProductDetail() {
 
 	const nights = calcNights();
 	const total = lodging.pricePerNight ? nights * lodging.pricePerNight : 0;
+	const availabilityMessageId =
+		availabilityStatus === "loading" ||
+		(availabilityStatus === "ready" && occupiedRanges.length === 0)
+			? "product-availability-status"
+			: availabilityStatus === "error" || availabilityStatus === "stale"
+				? "product-availability-alert"
+				: selectionConflict.visible
+					? "product-selection-conflict"
+					: undefined;
 
 	return (
-		<main className="page-container product-detail">
-			<div className="detail-header">
+		<main
+			className="page-container product-detail"
+			aria-labelledby="product-detail-title"
+		>
+			<header className="detail-header">
 				<div className="detail-title-group">
-					<h1>{lodging.name}</h1>
+					<h1 id="product-detail-title">{lodging.name}</h1>
 					<span className="detail-location">
 						{lodging.city}, {lodging.country}
 					</span>
@@ -107,25 +119,28 @@ export default function ProductDetail() {
 					onClick={() => navigate(-1)}
 					aria-label="Volver"
 				>
-					<ArrowLeft size={22} />
+					<ArrowLeft size={22} aria-hidden="true" focusable="false" />
 				</button>
-			</div>
+			</header>
 
-				<LodgingGallery images={lodging.imageUrls} name={lodging.name} />
+			<LodgingGallery images={lodging.imageUrls} name={lodging.name} />
 
 			{lodging.pricePerNight && (
-				<section className="booking-section">
+				<section
+					className="booking-section"
+					aria-label="Reservar este alojamiento"
+				>
 					<div className="price-display">
 						<strong>${lodging.pricePerNight.toLocaleString()}</strong> / noche
 					</div>
 
 					{availabilityStatus === "loading" && (
-						<p className="availability-status" role="status">
+						<p id={availabilityMessageId} className="availability-status" role="status" aria-live="polite">
 							Comprobando disponibilidad...
 						</p>
 					)}
 					{(availabilityStatus === "error" || availabilityStatus === "stale") && (
-						<div className="availability-alert" role="alert">
+						<div id={availabilityMessageId} className="availability-alert" role="alert" aria-live="assertive" aria-atomic="true">
 							<p>
 								{availabilityStatus === "stale"
 									? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
@@ -137,18 +152,18 @@ export default function ProductDetail() {
 						</div>
 					)}
 					{availabilityStatus === "ready" && occupiedRanges.length === 0 && (
-						<p className="availability-status" role="status">
+						<p id={availabilityMessageId} className="availability-status" role="status" aria-live="polite">
 							Todas las fechas están disponibles.
 						</p>
 					)}
 					{selectionConflict.visible && (
-						<p className="availability-alert" role="alert">
+						<p id={availabilityMessageId} className="availability-alert" role="alert" aria-live="assertive" aria-atomic="true">
 							Las fechas seleccionadas ya no están disponibles. Elegí otro
 							rango.
 						</p>
 					)}
 
-					<div className="date-pickers">
+					<div className="date-pickers" role="group" aria-label="Fechas de la estadía" aria-describedby={availabilityMessageId}>
 						<div>
 							<label htmlFor="product-check-in">Check-in</label>
 							<DatePicker
@@ -165,6 +180,11 @@ export default function ProductDetail() {
 								filterDate={(date) => !isDateOccupied(date)}
 								placeholderText="Check-in"
 								dateFormat="dd/MM/yyyy"
+								popperClassName="product-datepicker-popper"
+								required
+								aria-required="true"
+								aria-invalid={selectionConflict.visible ? "true" : undefined}
+								aria-describedby={availabilityMessageId}
 								disabled={availabilityStatus !== "ready"}
 							/>
 						</div>
@@ -184,6 +204,11 @@ export default function ProductDetail() {
 								filterDate={(date) => !isDateOccupied(date)}
 								placeholderText="Check-out"
 								dateFormat="dd/MM/yyyy"
+								popperClassName="product-datepicker-popper"
+								required
+								aria-required="true"
+								aria-invalid={selectionConflict.visible ? "true" : undefined}
+								aria-describedby={availabilityMessageId}
 								disabled={availabilityStatus !== "ready"}
 							/>
 						</div>
@@ -229,14 +254,17 @@ export default function ProductDetail() {
 				</section>
 			)}
 
-			<section className="description">
-				<h2>Descripción</h2>
+			<section className="description" aria-labelledby="product-description-title">
+				<h2 id="product-description-title">Descripción</h2>
 				<p>{lodging.description}</p>
 			</section>
 
 			{lodging.features && lodging.features.length > 0 && (
-				<section className="features-section">
-					<h2>Características</h2>
+				<section
+					className="features-section"
+					aria-labelledby="product-features-title"
+				>
+					<h2 id="product-features-title">Características</h2>
 					<div className="features-grid">
 						{lodging.features.map((f) => (
 							<div key={f.id} className="feature-item">
@@ -251,8 +279,13 @@ export default function ProductDetail() {
 			)}
 
 			{lodging.policies && lodging.policies.length > 0 && (
-				<section className="policies-section">
-					<h2 className="policies-title">Políticas</h2>
+				<section
+					className="policies-section"
+					aria-labelledby="product-policies-title"
+				>
+					<h2 className="policies-title" id="product-policies-title">
+						Políticas
+					</h2>
 					<div className="policies-grid">
 						{lodging.policies.map((p) => (
 							<div key={p.id} className="policy-item">

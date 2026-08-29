@@ -153,6 +153,9 @@ describe("ProductDetail - header navigation placement", () => {
 
 		expect(Array.from(header.children).map((child) => child.getAttribute("aria-label") || child.textContent))
 			.toEqual(["Cabaña del LagoBariloche, Argentina", "Compartir", "Volver"]);
+		expect(screen.getByRole("main", { name: "Cabaña del Lago" })).toHaveAttribute("aria-labelledby", "product-detail-title");
+		expect(screen.getByRole("region", { name: "Reservar este alojamiento" })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Volver" }).querySelector("svg")).toHaveAttribute("aria-hidden", "true");
 	});
 
 	it("does not override the header controls' DOM order through Share CSS", () => {
@@ -163,6 +166,11 @@ describe("ProductDetail - header navigation placement", () => {
 
 		const shareRule = css.match(/\.btn-share\s*{([^}]*)}/)?.[1] ?? "";
 		expect(shareRule).not.toMatch(/\border\s*:/);
+		expect(css.match(/\.btn-share\s*\{/g)).toHaveLength(1);
+		expect(css).toMatch(/\.product-detail\s*\{[^}]*overflow-x:\s*hidden/);
+		expect(css).toMatch(/\.product-detail \.product-datepicker-popper[^}]*width:\s*min\(320px, 100vw\)/);
+		expect(css).toMatch(/@media \(max-width: 768px\)[\s\S]*\.date-pickers[^}]*grid-template-columns:\s*1fr/);
+		expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
 	});
 });
 
@@ -333,6 +341,14 @@ describe("ProductDetail - availability state machine", () => {
 		expect(
 			await screen.findByText("Todas las fechas están disponibles."),
 		).toHaveAttribute("role", "status");
+		expect(screen.getByText("Todas las fechas están disponibles.")).toHaveAttribute("id", "product-availability-status");
+		expect(screen.getByRole("group", { name: "Fechas de la estadía" })).toHaveAttribute("aria-describedby", "product-availability-status");
+		for (const label of ["Check-in", "Check-out"]) {
+			const input = screen.getByLabelText(label);
+			expect(input).toBeRequired();
+			expect(input).toHaveAttribute("aria-required", "true");
+			expect(input).toHaveAttribute("aria-describedby", "product-availability-status");
+		}
 	});
 
 	it("disables occupied dates in the check-in calendar and blocks their selection", async () => {
@@ -366,6 +382,8 @@ describe("ProductDetail - availability state machine", () => {
 
 		const alert = await screen.findByRole("alert");
 		expect(alert).toHaveTextContent("No pudimos obtener la disponibilidad");
+		expect(alert).toHaveAttribute("id", "product-availability-alert");
+		expect(screen.getByLabelText("Check-in")).toHaveAttribute("aria-describedby", "product-availability-alert");
 		expect(screen.getByLabelText("Check-in")).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
 	});

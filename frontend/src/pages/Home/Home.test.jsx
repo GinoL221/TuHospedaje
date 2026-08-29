@@ -5,7 +5,9 @@ import { act, customRender, screen, waitFor } from "../../test/test-utils";
 import Home from "./Home";
 import { get } from "../../services/api";
 
-vi.mock("../../services/api");
+vi.mock("../../services/api", () => ({
+	get: vi.fn(),
+}));
 
 const { registerLocaleMock } = vi.hoisted(() => ({
 	registerLocaleMock: vi.fn(),
@@ -129,6 +131,7 @@ function renderHomeWithSearchNavigation({ authValue, route = "/" } = {}) {
 
 beforeEach(() => {
 	sessionStorage.clear();
+	get.mockReset();
 	vi.spyOn(crypto, "randomUUID").mockReturnValue(FIXED_SEED);
 });
 

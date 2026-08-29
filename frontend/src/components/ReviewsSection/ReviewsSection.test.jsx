@@ -50,6 +50,8 @@ describe("ReviewsSection - reviews listing", () => {
     expect(get).toHaveBeenCalledWith("/ratings/lodging/1");
     expect(await screen.findByText("4.5")).toBeInTheDocument();
     expect(screen.getByText("(2 reseñas)")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Puntaje promedio 4.5 de 5 estrellas; 2 reseñas" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Opiniones de huéspedes" })).toBeInTheDocument();
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("Excelente lugar")).toBeInTheDocument();
     expect(screen.getByText("Beto")).toBeInTheDocument();
@@ -63,6 +65,24 @@ describe("ReviewsSection - empty state", () => {
 
     expect(await screen.findByText("0.0")).toBeInTheDocument();
     expect(screen.getByText("(0 reseñas)")).toBeInTheDocument();
+    expect(screen.getByText("Todavía no hay reseñas para este alojamiento.")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Opiniones de huéspedes" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ReviewsSection - ratings loading and recovery", () => {
+  it("shows an accessible ratings error and retries the initial request", async () => {
+    const ratingsResponses = [Promise.reject(new Error("network")), Promise.resolve(ratingsFixture)];
+    get.mockImplementation((endpoint) => endpoint === "/ratings/lodging/1" ? ratingsResponses.shift() : Promise.resolve(null));
+    const user = userEvent.setup();
+    render(<ReviewsSection lodgingId="1" user={null} />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("No pudimos cargar las reseñas.");
+    await user.click(within(alert).getByRole("button", { name: "Reintentar" }));
+
+    expect(await screen.findByText("4.5")).toBeInTheDocument();
+    expect(ratingsResponses).toHaveLength(0);
   });
 });
 
@@ -168,6 +188,25 @@ describe("ReviewsSection - eligible submission form", () => {
     ]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
+    expect(screen.getByRole("group", { name: "Puntaje" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Comentario")).toBeInTheDocument();
+  });
+
+  it("shows a pending label and prevents duplicate submits while the request is in flight", async () => {
+    const submission = deferred();
+    get.mockImplementation(makeGetMock()); post.mockReturnValue(submission.promise); const user = userEvent.setup();
+    render(<ReviewsSection lodgingId="1" user={loggedUser} />);
+
+    await screen.findByText("4.5");
+    await user.click(await screen.findByRole("button", { name: "1 estrella" }));
+    const submit = screen.getByRole("button", { name: "Enviar reseña" });
+    await user.click(submit);
+
+    expect(screen.getByRole("button", { name: "Enviando..." })).toBeDisabled(); await user.click(submit);
+    expect(post).toHaveBeenCalledTimes(1);
+
+    submission.resolve(undefined);
+    expect(await screen.findByRole("button", { name: "Enviar reseña" })).toBeDisabled();
   });
 });
 
@@ -233,7 +272,7 @@ describe("ReviewsSection - failed submission", () => {
     await screen.findByText("4.5");
     await user.click(await screen.findByRole("button", { name: "2 estrellas" }));
 
-    const textarea = screen.getByPlaceholderText("Contá tu experiencia...");
+    const textarea = screen.getByLabelText("Comentario");
     await user.type(textarea, "Mal");
 
     await user.click(screen.getByRole("button", { name: "Enviar reseña" }));
@@ -242,6 +281,8 @@ describe("ReviewsSection - failed submission", () => {
       "Ya calificaste este alojamiento",
     );
     expect(textarea.value).toBe("Mal");
+    expect(textarea).toHaveAttribute("aria-invalid", "true");
+    expect(textarea).toHaveAttribute("aria-describedby", "reviews-1-submit-error");
     expect(screen.getByRole("button", { name: "2 estrellas" })).toHaveAttribute(
       "aria-pressed",
       "true",
