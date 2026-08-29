@@ -1,4 +1,11 @@
 /* DatePicker wrapper inside search form */
+.home {
+  --home-search-surface: var(--content-strong);
+  --home-search-foreground: var(--surface-page);
+  --home-search-border: var(--action-primary-focus);
+  --home-search-error-surface: var(--surface-raised);
+}
+
 .search-card .react-datepicker-wrapper,
 .search-card .react-datepicker__input-container {
   width: 100%;
@@ -24,9 +31,9 @@
   align-items: center;
   min-width: 0;
   min-height: 100px;
-  background-color: var(--primary);
-  border-radius: 8px;
-  color: var(--bg);
+  background-color: var(--home-search-surface);
+  border-radius: var(--radius-lg);
+  color: var(--home-search-foreground);
 }
 .search-card {
   box-sizing: border-box;
@@ -38,7 +45,7 @@
   margin: 0 auto;
 }
 .search-card h2 {
-  color: var(--bg);
+  color: var(--home-search-foreground);
   margin-bottom: 20px;
 }
 .search-card form {
@@ -63,6 +70,10 @@
   color: var(--text);
   width: 100%;
   box-sizing: border-box;
+}
+.search-card input:focus-visible {
+  outline: 3px solid var(--home-search-border);
+  outline-offset: 3px;
 }
 .search-card form > div > input {
   flex: 1;
@@ -305,9 +316,13 @@
   opacity: 0.55;
 }
 .search-error {
-  color: var(--primary);
-  margin-top: 10px;
-  font-size: 0.9rem;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--home-search-error-surface);
+  color: var(--content-strong);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
 }
 .category-tag.active {
   background: var(--accent);
@@ -329,6 +344,7 @@
   background: transparent;
   border: 1px solid var(--accent);
   color: var(--accent);
+  min-height: 44px;
   padding: 6px 16px;
   border-radius: 20px;
   cursor: pointer;
@@ -345,6 +361,7 @@
   background: transparent;
   border: 1px solid var(--secondary);
   color: var(--secondary);
+  min-height: 44px;
   padding: 6px 16px;
   border-radius: 20px;
   cursor: pointer;

@@ -383,7 +383,7 @@ export default function Home() {
 							Buscar
 						</button>
 					</form>
-					{searchError && <p className="search-error">{searchError}</p>}
+					{searchError && <p className="search-error" role="alert">{searchError}</p>}
 				</div>
 			</section>
 			<section className="categories">

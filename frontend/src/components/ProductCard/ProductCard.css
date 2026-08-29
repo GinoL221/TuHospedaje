@@ -1,7 +1,14 @@
 .hotel-card {
+  --product-card-surface: var(--surface-raised);
+  --product-card-border: color-mix(in srgb, var(--content-strong) 16%, transparent);
+  --product-card-focus: var(--action-primary-focus);
+  --product-card-overlay: color-mix(in srgb, var(--content-strong) 88%, transparent);
+  --product-card-rating-filled: var(--action-primary-accent);
+  --product-card-rating-empty: color-mix(in srgb, var(--surface-page) 45%, transparent);
+  --product-card-favorite-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
   box-sizing: border-box;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--product-card-surface);
+  border: 1px solid var(--product-card-border);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -38,21 +45,21 @@
 
 .hotel-card-body h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--type-body-size);
   font-weight: 700;
   color: var(--secondary);
   line-height: 1.3;
 }
 
 .hotel-card-body .location {
-  font-size: 0.82rem;
+  font-size: var(--type-label-size);
   font-weight: 500;
   color: var(--accent);
   margin: 0;
 }
 
 .hotel-card-body .description {
-  font-size: 0.83rem;
+  font-size: var(--type-body-size);
   color: var(--text);
   opacity: 0.75;
   margin: 4px 0 0;
@@ -68,8 +75,8 @@
   position: absolute;
   bottom: 8px;
   right: 8px;
-  background: rgba(0, 0, 0, 0.52);
-  color: #fff;
+  background: var(--product-card-overlay);
+  color: var(--surface-page);
   padding: 3px 8px;
   border-radius: 20px;
   font-size: 0.78rem;
@@ -82,15 +89,15 @@
 }
 
 .ov-star-full {
-  color: #f5b342;
+  color: var(--product-card-rating-filled);
 }
 
 .ov-star-empty {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--product-card-rating-empty);
 }
 
 .ov-star-half {
-  background: linear-gradient(to right, #f5b342 50%, rgba(255, 255, 255, 0.35) 50%);
+  background: linear-gradient(to right, var(--product-card-rating-filled) 50%, var(--product-card-rating-empty) 50%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -100,11 +107,11 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--product-card-favorite-surface);
   border: none;
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
+  min-width: 44px;
+  min-height: 44px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -115,6 +122,12 @@
 
 .fav-btn:hover {
   transform: scale(1.15);
+}
+
+.fav-btn:focus-visible,
+.hotel-card-link:focus-visible {
+  outline: 3px solid var(--product-card-focus);
+  outline-offset: 3px;
 }
 
 .fav-active {
@@ -137,6 +150,21 @@
   }
 
   .hotel-card-body h3 {
-    font-size: 0.95rem;
+    font-size: var(--type-body-size);
+  }
+}
+
+@media (max-width: 360px) {
+  .hotel-card-body {
+    padding: var(--space-3);
+  }
+
+  .hotel-card-body h3 {
+    font-size: max(16px, var(--type-body-size));
+  }
+
+  .fav-btn {
+    width: 44px;
+    height: 44px;
   }
 }
