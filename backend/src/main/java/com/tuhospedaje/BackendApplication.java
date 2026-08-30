@@ -2,6 +2,7 @@ package com.tuhospedaje;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.tuhospedaje.configuration.AuthRateLimitProperties;
 import com.tuhospedaje.configuration.CookieProperties;
 import com.tuhospedaje.configuration.CanonicalAssetsProperties;
 import com.tuhospedaje.configuration.CorsProperties;
@@ -11,7 +12,7 @@ import com.tuhospedaje.configuration.WelcomeEmailProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({CookieProperties.class, CanonicalAssetsProperties.class, CorsProperties.class, SessionProperties.class, EmailOutboxProperties.class, WelcomeEmailProperties.class})
+@EnableConfigurationProperties({CookieProperties.class, CanonicalAssetsProperties.class, CorsProperties.class, SessionProperties.class, EmailOutboxProperties.class, WelcomeEmailProperties.class, AuthRateLimitProperties.class})
 public class BackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
