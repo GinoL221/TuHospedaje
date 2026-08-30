@@ -8,6 +8,7 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [removalErrors, setRemovalErrors] = useState({});
 
   useEffect(() => {
     get("/favorites")
@@ -22,11 +23,15 @@ export default function FavoritesPage() {
   }, []);
 
   async function removeFavorite(id) {
+    setRemovalErrors((current) => ({ ...current, [id]: "" }));
     try {
       await del(`/favorites/${id}`);
       setFavorites((prev) => prev.filter((l) => l.id !== id));
     } catch (err) {
-      console.error(err);
+      setRemovalErrors((current) => ({
+        ...current,
+        [id]: err.message || "No se pudo quitar de favoritos. Intentá nuevamente.",
+      }));
     }
   }
 
@@ -55,6 +60,11 @@ export default function FavoritesPage() {
               >
                 Quitar de favoritos
               </button>
+              {removalErrors[lodging.id] && (
+                <p className="favorite-remove-error" role="alert">
+                  {removalErrors[lodging.id]}
+                </p>
+              )}
             </div>
           ))}
         </div>

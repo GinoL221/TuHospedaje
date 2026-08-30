@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+import { act } from "@testing-library/react";
 import { customRender, screen, makeAuthValue, mockAdmin } from "../test/test-utils";
 import RequireAdmin from "./RequireAdmin";
 
@@ -67,9 +68,27 @@ describe("RequireAdmin - authenticated admin user", () => {
 });
 
 describe("RequireAdmin - session bootstrap still in flight (loading=true, user=null)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("does not redirect to /login while loading, even though user is still null", () => {
     renderGuardedRoute({ authValue: makeAuthValue({ user: null, loading: true }) });
 
+    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
+  });
+
+  it("renders an accessible loading indicator while loading", () => {
+    renderGuardedRoute({ authValue: makeAuthValue({ user: null, loading: true }) });
+
+    act(() => vi.advanceTimersByTime(150));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando página…");
     expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
     expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
   });

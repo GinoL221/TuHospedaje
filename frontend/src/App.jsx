@@ -48,13 +48,13 @@ function AppLayout() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/lodgings/:id" element={<ProductDetail />} />
-            <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
 
             <Route element={<RequireAuth />}>
               <Route path="/booking/:lodgingId" element={<BookingPage />} />
               <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
               <Route path="/my-reservations" element={<MyReservationsPage />} />
+              <Route path="/favorites" element={<FavoritesPage />} />
             </Route>
 
             <Route element={<RequireAdmin />}>

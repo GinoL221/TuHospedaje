@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { get, post, put, del } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
@@ -17,9 +17,14 @@ export default function AdminPolicies() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const focusInvalidFieldTimeoutRef = useRef(null);
 
   const resetForm = () => setForm({ name: "", description: "", icon: "" });
   const cancel = useConfirmCancel(form.name || form.description || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+
+  useEffect(() => {
+    return () => clearTimeout(focusInvalidFieldTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +74,10 @@ export default function AdminPolicies() {
     const errs = validate();
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) {
-      setTimeout(() => document.querySelector(".input-error")?.focus(), 100);
+      focusInvalidFieldTimeoutRef.current = setTimeout(
+        () => document.querySelector(".input-error")?.focus(),
+        100,
+      );
       return;
     }
 

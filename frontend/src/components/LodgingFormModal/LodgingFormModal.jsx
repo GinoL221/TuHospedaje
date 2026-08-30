@@ -34,8 +34,13 @@ export default function LodgingFormModal({
   const previousFocusRef = useRef(document.activeElement);
   const submittingRef = useRef(false);
   const uploadingRef = useRef(false);
+  const focusInvalidFieldTimeoutRef = useRef(null);
   const titleId = useId();
   const descriptionId = useId();
+
+  useEffect(() => {
+    return () => clearTimeout(focusInvalidFieldTimeoutRef.current);
+  }, []);
 
   const [form, setForm] = useState({
     name: lodging?.name ?? "",
@@ -177,7 +182,10 @@ export default function LodgingFormModal({
     const errs = validate();
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) {
-      setTimeout(() => document.querySelector(".input-error")?.focus(), 100);
+      focusInvalidFieldTimeoutRef.current = setTimeout(
+        () => document.querySelector(".input-error")?.focus(),
+        100,
+      );
       return;
     }
     const payload = {

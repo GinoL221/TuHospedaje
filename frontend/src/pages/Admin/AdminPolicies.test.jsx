@@ -1,4 +1,4 @@
-import { customRender, screen, userEvent, waitFor } from "../../test/test-utils";
+import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
 import AdminPolicies from "./AdminPolicies";
 import { get, post, put, del } from "../../services/api";
 
@@ -237,5 +237,23 @@ describe("AdminPolicies - delete", () => {
     await user.click(screen.getByTestId("row-2").querySelector("[data-testid='row-delete-btn']"));
     expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar política "No mascotas"?');
     expect(del).not.toHaveBeenCalled();
+  });
+});
+
+describe("AdminPolicies - invalid-field focus timeout cleanup", () => {
+  it("clears the pending focus timeout on unmount so it never fires after teardown", async () => {
+    get.mockResolvedValue([]);
+    const user = userEvent.setup();
+    const { unmount } = renderAdminPolicies();
+
+    await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!");
+    await user.click(screen.getByTestId("admin-add-btn"));
+
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+    fireEvent.click(screen.getByTestId("admin-save-btn"));
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
   });
 });

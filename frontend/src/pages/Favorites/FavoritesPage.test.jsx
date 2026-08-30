@@ -64,25 +64,64 @@ describe("FavoritesPage - removing a favorite", () => {
     });
   });
 
-  it("leaves the item rendered when the delete request fails", async () => {
+  it("leaves the item rendered and shows a per-item alert when the delete request fails", async () => {
     get.mockResolvedValue([favoriteFixture]);
     del.mockRejectedValue(new Error("network error"));
     const user = userEvent.setup();
-    // FavoritesPage's removeFavorite catch block only logs the error
-    // (console.error) instead of surfacing UI error state — characterized
-    // as-is per spec Risks policy, not fixed here.
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     customRender(<FavoritesPage />);
 
     await screen.findByText("Cabaña del Lago");
 
     await user.click(screen.getByRole("button", { name: "Quitar de favoritos" }));
 
-    await waitFor(() => {
-      expect(del).toHaveBeenCalledWith("/favorites/1");
-    });
+    expect(await screen.findByRole("alert")).toHaveTextContent("network error");
     expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Quitar de favoritos" })).toBeEnabled();
+  });
 
-    consoleErrorSpy.mockRestore();
+  it("scopes the removal error to the failing item only", async () => {
+    const secondFixture = {
+      ...favoriteFixture,
+      id: 2,
+      name: "Departamento Centro",
+    };
+    get.mockResolvedValue([favoriteFixture, secondFixture]);
+    del.mockImplementation((path) =>
+      path === "/favorites/1"
+        ? Promise.reject(new Error("network error"))
+        : Promise.resolve(undefined)
+    );
+    const user = userEvent.setup();
+    customRender(<FavoritesPage />);
+
+    await screen.findByText("Cabaña del Lago");
+
+    const removeButtons = screen.getAllByRole("button", { name: "Quitar de favoritos" });
+    await user.click(removeButtons[0]);
+
+    const alerts = await screen.findAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].closest(".favorite-item")).toHaveTextContent("Cabaña del Lago");
+  });
+
+  it("clears the error and removes the item on a successful retry", async () => {
+    get.mockResolvedValue([favoriteFixture]);
+    del.mockRejectedValueOnce(new Error("network error"));
+    del.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    customRender(<FavoritesPage />);
+
+    await screen.findByText("Cabaña del Lago");
+
+    const removeButton = screen.getByRole("button", { name: "Quitar de favoritos" });
+    await user.click(removeButton);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+    await user.click(removeButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
