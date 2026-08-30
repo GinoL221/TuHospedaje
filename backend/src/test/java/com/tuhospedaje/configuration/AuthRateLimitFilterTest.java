@@ -336,4 +336,47 @@ class AuthRateLimitFilterTest {
 
         assertThat(second.getStatus()).isEqualTo(429);
     }
+
+    // --- Task 2.13: bounded eviction sweep (design "no scheduler" decision) ---
+    // sdd-verify (Engram #6919) found this shipped GREEN with no RED and zero Jacoco
+    // coverage. This test drives real key growth past MAX_TRACKED_KEYS (10_000) with a
+    // stale clock, then advances the clock by one minute and confirms the very next
+    // request triggers an inline sweep that evicts every stale bucket — proving the
+    // "no scheduler" design decision actually bounds memory instead of growing forever.
+
+    @SuppressWarnings("unchecked")
+    private java.util.concurrent.ConcurrentHashMap<String, Object> bucketsOf(AuthRateLimitFilter filter) throws Exception {
+        java.lang.reflect.Field field = AuthRateLimitFilter.class.getDeclaredField("buckets");
+        field.setAccessible(true);
+        return (java.util.concurrent.ConcurrentHashMap<String, Object>) field.get(filter);
+    }
+
+    @Test
+    void sweepEvictsStaleBucketsOnceTrackedKeysExceedTheBoundAfterTheWindowRolls() throws Exception {
+        AtomicReference<Clock> clockHolder = new AtomicReference<>(fixedClockAt(0L));
+        AuthRateLimitFilter filter = newFilterWithMutableClock(GENEROUS, clockHolder);
+        FilterChain chain = (req, res) -> { };
+
+        // 10_001 distinct IP-only keys (no "email" field) at minute 0 — one over the
+        // 10_000 sweep threshold, all now-stale once the clock advances.
+        for (int i = 0; i <= 10_000; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+            request.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            request.setContentType("application/json");
+            request.setRemoteAddr("10.0." + (i / 256) + "." + (i % 256));
+            filter.doFilter(request, new MockHttpServletResponse(), chain);
+        }
+        assertThat(bucketsOf(filter)).hasSizeGreaterThan(10_000);
+
+        clockHolder.set(fixedClockAt(61L));
+        MockHttpServletRequest triggering = new MockHttpServletRequest("POST", "/api/auth/login");
+        triggering.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        triggering.setContentType("application/json");
+        triggering.setRemoteAddr("10.99.99.99");
+        filter.doFilter(triggering, new MockHttpServletResponse(), chain);
+
+        assertThat(bucketsOf(filter))
+                .as("the sweep triggered by exceeding MAX_TRACKED_KEYS must evict every stale (minute 0) bucket")
+                .hasSizeLessThan(10);
+    }
 }
