@@ -47,7 +47,7 @@ En el backend, se corrigió el endpoint de disponibilidad para retornar los rang
 
 Como mejora complementaria al panel de administración, se extendió `LodgingFormModal` con soporte de edición (prop `lodging` opcional + `PUT`) y se incorporaron los botones "Editar" por fila en la tabla de alojamientos.
 
-Adicionalmente, como agregado por iniciativa del equipo fuera del alcance original del sprint, se incorporó una suite de pruebas end-to-end con Playwright (carpeta `e2e/`), que valida los flujos críticos de la aplicación en Chromium y Firefox e introduce pruebas de regresión visual con capturas de referencia.
+Adicionalmente, como agregado por iniciativa del equipo fuera del alcance original del sprint, se incorporó una suite de pruebas end-to-end con Playwright (carpeta `e2e/`), que valida los flujos críticos de la aplicación en Chromium y Firefox.
 
 ### 1.2. Incremento 2 — Tablas Uniformes y Dashboard de Reservas
 
