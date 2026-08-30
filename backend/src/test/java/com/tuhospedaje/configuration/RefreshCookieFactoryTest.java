@@ -25,7 +25,7 @@ class RefreshCookieFactoryTest {
                 Duration.ofMinutes(15),
                 new SessionProperties.RefreshProperties(true, Duration.ofDays(30), Duration.ofSeconds(5)),
                 new SessionProperties.CleanupProperties(Duration.ofDays(1), 100),
-                new SessionProperties.RateLimitProperties(10, 60));
+                new SessionProperties.RateLimitProperties(true, 10, 60));
         refreshCookieFactory = new RefreshCookieFactory(cookieProperties, sessionProperties);
     }
 

@@ -144,7 +144,8 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Refresh succeeded; both cookies rotated",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Missing, invalid, expired, or reused refresh credential", content = @Content)
+            @ApiResponse(responseCode = "401", description = "Missing, invalid, expired, or reused refresh credential", content = @Content),
+            @ApiResponse(responseCode = "429", description = "IP or family refresh rate limit exceeded", content = @Content)
     })
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(HttpServletRequest httpRequest) {
