@@ -203,6 +203,34 @@ describe("api service - non-OK HTTP errors", () => {
 
     await expect(post("/reservations", {})).rejects.toThrow("Error de validación");
   });
+
+  it("attaches errorData.code onto the thrown error when the server sends one", async () => {
+    const fetchMock = mockFetchResolved({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "Ese email ya está registrado", status: 400, code: "duplicate_email" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect.assertions(1);
+    await post("/auth/register", {}).catch((err) => {
+      expect(err.code).toBe("duplicate_email");
+    });
+  });
+
+  it("leaves error.code undefined when the server does not send one (no regression)", async () => {
+    const fetchMock = mockFetchResolved({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: "Error de validación", status: 400 }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect.assertions(1);
+    await post("/reservations", {}).catch((err) => {
+      expect(err.code).toBeUndefined();
+    });
+  });
 });
 
 describe("api service - credentials", () => {

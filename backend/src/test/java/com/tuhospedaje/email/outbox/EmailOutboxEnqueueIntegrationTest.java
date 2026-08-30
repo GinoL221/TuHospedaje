@@ -7,6 +7,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.EmailOutboxStatus;
+import com.tuhospedaje.exception.DuplicateEmailException;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.EmailOutboxRepository;
@@ -203,8 +204,8 @@ class EmailOutboxEnqueueIntegrationTest {
             List<Object> outcomes = List.of(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
 
             assertThat(outcomes.stream().filter(AuthService.AuthResult.class::isInstance)).hasSize(1);
-            assertThat(outcomes.stream().filter(IllegalArgumentException.class::isInstance)
-                    .map(IllegalArgumentException.class::cast)
+            assertThat(outcomes.stream().filter(DuplicateEmailException.class::isInstance)
+                    .map(DuplicateEmailException.class::cast)
                     .map(Throwable::getMessage))
                     .containsExactly("El email ya está registrado");
         } finally {

@@ -125,13 +125,19 @@ describe("RegisterPage - mismatched confirm password", () => {
   });
 });
 
+function duplicateEmailError(message) {
+  const error = new Error(message);
+  error.code = "duplicate_email";
+  return error;
+}
+
 describe("RegisterPage - duplicate email error", () => {
   it("attaches the error to the email field, not the generic banner", async () => {
     const user = userEvent.setup();
     const authValue = makeAuthValue({
       register: vi
         .fn()
-        .mockRejectedValue(new Error("Ese email ya está registrado")),
+        .mockRejectedValue(duplicateEmailError("Ese email ya está registrado")),
     });
     renderRegisterPage({ authValue });
 

@@ -79,7 +79,7 @@ export default function RegisterPage() {
       await register(form.firstName, form.lastName, form.email, form.password);
       navigate("/");
     } catch (err) {
-      if (err.message.includes("email ya está registrado")) {
+      if (err.code === "duplicate_email") {
         setFieldErrors((prev) => ({ ...prev, email: err.message }));
       } else {
         setError(err.message);
