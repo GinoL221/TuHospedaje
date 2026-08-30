@@ -351,32 +351,45 @@ class AuthRateLimitFilterTest {
         return (java.util.concurrent.ConcurrentHashMap<String, Object>) field.get(filter);
     }
 
+    private void loginFrom(AuthRateLimitFilter filter, FilterChain chain, String ip) throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        request.setContentType("application/json");
+        request.setRemoteAddr(ip);
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
+    }
+
     @Test
-    void sweepEvictsStaleBucketsOnceTrackedKeysExceedTheBoundAfterTheWindowRolls() throws Exception {
+    void sweepEvictsStaleBucketsButRetainsCurrentMinuteBucketsAfterTheWindowRolls() throws Exception {
         AtomicReference<Clock> clockHolder = new AtomicReference<>(fixedClockAt(0L));
         AuthRateLimitFilter filter = newFilterWithMutableClock(GENEROUS, clockHolder);
         FilterChain chain = (req, res) -> { };
 
-        // 10_001 distinct IP-only keys (no "email" field) at minute 0 — one over the
-        // 10_000 sweep threshold, all now-stale once the clock advances.
-        for (int i = 0; i <= 10_000; i++) {
-            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
-            request.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            request.setContentType("application/json");
-            request.setRemoteAddr("10.0." + (i / 256) + "." + (i % 256));
-            filter.doFilter(request, new MockHttpServletResponse(), chain);
+        // Exactly MAX_TRACKED_KEYS (10_000) distinct IP-only keys (no "email" field) at
+        // minute 0 — right at the sweep threshold, not yet over it, all now-stale once
+        // the clock advances.
+        for (int i = 0; i < 10_000; i++) {
+            loginFrom(filter, chain, "10.0." + (i / 256) + "." + (i % 256));
         }
-        assertThat(bucketsOf(filter)).hasSizeGreaterThan(10_000);
+        assertThat(bucketsOf(filter)).hasSize(10_000);
 
         clockHolder.set(fixedClockAt(61L));
-        MockHttpServletRequest triggering = new MockHttpServletRequest("POST", "/api/auth/login");
-        triggering.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        triggering.setContentType("application/json");
-        triggering.setRemoteAddr("10.99.99.99");
-        filter.doFilter(triggering, new MockHttpServletResponse(), chain);
+
+        // A live bucket at the CURRENT minute, seeded before the map crosses the sweep
+        // threshold: this request's own maybeSweep still sees size == 10_000 (not yet
+        // "> 10_000"), so no sweep runs here — it only adds this one live entry.
+        loginFrom(filter, chain, "10.55.55.55");
+        assertThat(bucketsOf(filter)).hasSize(10_001);
+
+        // This second, distinct request is the one whose maybeSweep sees 10_001 > 10_000
+        // and actually triggers the sweep.
+        loginFrom(filter, chain, "10.99.99.99");
 
         assertThat(bucketsOf(filter))
-                .as("the sweep triggered by exceeding MAX_TRACKED_KEYS must evict every stale (minute 0) bucket")
-                .hasSizeLessThan(10);
+                .as("the sweep must evict every stale (minute 0) bucket, but a naive "
+                        + "`removeIf(true)` or off-by-one predicate would also delete the "
+                        + "current-minute live bucket seeded above")
+                .hasSizeLessThan(10)
+                .containsKey("login:ip:10.55.55.55");
     }
 }
