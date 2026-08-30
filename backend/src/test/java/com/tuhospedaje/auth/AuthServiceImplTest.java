@@ -4,6 +4,7 @@ import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.exception.DuplicateEmailException;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.AuthService.AuthResult;
 import com.tuhospedaje.service.EmailOutboxService;
@@ -47,7 +48,7 @@ class AuthServiceImplTest {
     void shouldThrowOnDuplicateEmail() {
         RegisterRequest request = new RegisterRequest("Juan", " Pérez", "juan@test.com", "123456");
         authService.register(request);
-        assertThrows(IllegalArgumentException.class, () -> authService.register(request));
+        assertThrows(DuplicateEmailException.class, () -> authService.register(request));
     }
     @Test
     void shouldLoginSuccessfully() {

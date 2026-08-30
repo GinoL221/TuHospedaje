@@ -64,6 +64,22 @@ public class GlobalExceptionHandler {
      * today, regardless of {@code Accept-Language}. This is documented, accepted
      * behavior, not a regression: converting those 13 sites to keys is out of scope.
      */
+    /**
+     * Kept distinct from {@link #handleIllegalArgument} so this response body can carry
+     * a stable {@code code} the frontend discriminates on ({@code err.code}), instead of
+     * parsing the localized {@code error} message text as {@code RegisterPage.jsx} used
+     * to. Resolved via a fixed message key ({@code error.auth.duplicate_email}), not the
+     * exception's own message — same pattern as {@link #handleAuthError}.
+     */
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateEmail(DuplicateEmailException ex, Locale locale) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "error", resolveMessage("error.auth.duplicate_email", locale),
+                        "status", 400,
+                        "code", DuplicateEmailException.ERROR_CODE));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex, Locale locale) {
         String resolvedMsg;

@@ -5,6 +5,7 @@ import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.exception.DuplicateEmailException;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.EmailOutboxService;
@@ -64,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResult register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("El email ya está registrado");
+            throw new DuplicateEmailException("El email ya está registrado");
         }
 
         try {
@@ -72,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
             return buildAuthResult(user);
         } catch (RuntimeException exception) {
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new IllegalArgumentException("El email ya está registrado");
+                throw new DuplicateEmailException("El email ya está registrado");
             }
             throw exception;
         }

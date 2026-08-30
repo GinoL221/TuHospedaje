@@ -66,6 +66,24 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturn400WithDuplicateEmailCodeWhenEmailAlreadyRegistered() throws Exception {
+        RegisterRequest first = new RegisterRequest("Juan", "Pérez", "duplicate@test.com", "123456");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(first)))
+                .andExpect(status().isCreated());
+
+        RegisterRequest again = new RegisterRequest("Otro", "Nombre", "duplicate@test.com", "abcdef");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(again)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("duplicate_email"))
+                .andExpect(jsonPath("$.error").isNotEmpty());
+    }
+
+    @Test
     void shouldReturn400OnInvalidFields() throws Exception {
         RegisterRequest request = new RegisterRequest("", "", "email-invalido", "1234");
 

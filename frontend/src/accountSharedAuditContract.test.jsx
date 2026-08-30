@@ -67,9 +67,7 @@ describe("account and shared surfaces visual contract", () => {
 		const unauthorized = readSource("pages/Unauthorized/Unauthorized.jsx");
 
 		expect(login).toContain("navigate(from, { replace: true })");
-		expect(register).toContain(
-			'err.message.includes("email ya está registrado")',
-		);
+		expect(register).toContain('err.code === "duplicate_email"');
 		expect(favorites).toContain("await del(`/favorites/${id}`)");
 		expect(reservations).toContain('reservation.status === "CONFIRMED"');
 		expect(unauthorized).toContain(

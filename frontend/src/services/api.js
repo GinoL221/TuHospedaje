@@ -75,7 +75,9 @@ async function request(method, endpoint, data, alreadyRetried = false) {
       errorData.fields && Object.keys(errorData.fields).length > 0
         ? Object.values(errorData.fields).join(" ")
         : null;
-    throw new Error(fieldMessages || errorData.error || `Error ${res.status}`);
+    const error = new Error(fieldMessages || errorData.error || `Error ${res.status}`);
+    error.code = errorData.code;
+    throw error;
   }
 
   if (res.status === 204) return null;
