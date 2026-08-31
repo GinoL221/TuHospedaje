@@ -148,6 +148,31 @@ class RefreshRateLimitIntegrationTest extends AbstractIntegrationTest {
         assertThat(body.has("error")).isTrue();
     }
 
+    // Closes the sdd-verify BLOCKER: I-1 above only ever drives the IP ceiling with a
+    // garbage credential, leaving "identical IP-limit behavior regardless of token
+    // validity" half-proven. Each iteration here is a genuinely valid, distinct family
+    // (fresh register+login), rotated exactly once — well under FAMILY_LIMIT=3 for any
+    // single family — so only the IP counter, not the family counter, can plausibly trip.
+    @Test
+    void ipCeilingExceededWithValidCredentialsAlsoReturns429WithRetryAfter() throws Exception {
+        String ip = "10.2.1.9";
+        MvcResult blocked = null;
+        for (int i = 1; i <= IP_LIMIT + 1; i++) {
+            Cookie refreshTokenCookie = loginAndGetCookies(ip, "i1b-valid-" + i + "@test.com")[1];
+            MvcResult result = refresh(ip, refreshTokenCookie);
+            if (result.getResponse().getStatus() == 429) {
+                blocked = result;
+                break;
+            }
+        }
+        assertThat(blocked).as("IP ceiling of " + IP_LIMIT + " never tripped with valid credentials").isNotNull();
+
+        assertThat(blocked.getResponse().getHeader(HttpHeaders.RETRY_AFTER)).isNotNull();
+        JsonNode body = objectMapper.readTree(blocked.getResponse().getContentAsString());
+        assertThat(body.get("status").asInt()).isEqualTo(429);
+        assertThat(body.has("error")).isTrue();
+    }
+
     // --- I-2: over-limit refresh returns 429 for the family dimension ---
 
     @Test
