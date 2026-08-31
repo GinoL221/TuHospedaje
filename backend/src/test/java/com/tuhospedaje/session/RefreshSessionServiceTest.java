@@ -580,6 +580,30 @@ class RefreshSessionServiceTest {
         assertThat(events.countByFamilyId(issued.familyId())).isEqualTo(1);
     }
 
+    // Pins the fix for the sdd-verify WARNING-1 finding: the family rate-limit check
+    // must run AFTER isEligibleForRotation, so a token that resolves but belongs to an
+    // ineligible session (here, a disabled user) always gets its ordinary Rejected/401
+    // even when the family is already over its rate-limit ceiling — never a 429, which
+    // would both waste family quota on dead credentials and leak whether a dead family
+    // happens to be currently rate-limited.
+    @Test
+    void ineligibleRotationOnAnOverLimitFamilyStillRejectsNotRateLimits() {
+        setClock(ISSUED_AT);
+        User user = user("family-limit-s7@example.test");
+        var issued = sessions.issue(user);
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        user.setEnabled(false);
+        users.save(user);
+
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RefreshSessionService.Rejected.class)
+                .isNotInstanceOf(RateLimitExceededException.class);
+    }
+
     @Test
     void twoDistinctFamiliesRateLimitIndependently() {
         setClock(ISSUED_AT);

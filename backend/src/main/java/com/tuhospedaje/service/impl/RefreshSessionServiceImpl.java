@@ -106,18 +106,23 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
             revokeFamily(family, now, FamilyRevocation.REUSE);
             throw new Rejected();
         }
+        if (!isEligibleForRotation(token, family, now)) {
+            throw new Rejected();
+        }
         // Design "Reuse Detection Precedes Rate Limiting": reuse (above) is already
         // excluded by this point, so this is a live credential asking for a real
         // rotation — the family ceiling applies before any state changes. Never move
         // this ahead of the reuse branch: throttling must never mask a theft signal.
+        // Also placed AFTER isEligibleForRotation (a pure, side-effect-free check): a
+        // token that resolves but belongs to a revoked/expired family, an expired/old
+        // generation, or a disabled user must still get its ordinary 401 Rejected, never
+        // a 429 — otherwise an ineligible credential could consume family quota and leak
+        // whether a dead family happens to be over its rate-limit window.
         if (familyLimiter.exceeds("family:" + family.getId(), now,
                 properties.rateLimit().refreshPerFamilyPerMinute())) {
             log.warn("event=refresh_session.family_rate_limited family_id={} user_id={} limit={}",
                     family.getId(), family.getUser().getId(), properties.rateLimit().refreshPerFamilyPerMinute());
             throw new RateLimitExceededException(FixedWindowRateLimiter.retryAfterSeconds(now));
-        }
-        if (!isEligibleForRotation(token, family, now)) {
-            throw new Rejected();
         }
         long generation = family.getCurrentGeneration() + 1;
         RefreshTokenHasher.GeneratedCredential successor = hasher.deriveSuccessor(
