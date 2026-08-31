@@ -58,6 +58,7 @@ async function renderAppAt({ path, authValue = UNAUTHENTICATED, pages = {} } = {
   const defaultPages = {
     "./pages/Home/Home": { default: () => <main>Home shell</main> },
     "./pages/Unauthorized/Unauthorized": { default: () => <main>Unauthorized shell</main> },
+    "./pages/NotFound/NotFound": { default: () => <main>NotFound shell</main> },
   };
   for (const [pagePath, moduleOrPromise] of Object.entries({ ...defaultPages, ...pages })) {
     vi.doMock(pagePath, () => moduleOrPromise);
@@ -126,6 +127,15 @@ describe("App legacy search route", () => {
 		expect(window.location.pathname).toBe("/");
 		expect(window.location.search).toBe("?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=");
 		expect(screen.getByText("Home shell")).toBeInTheDocument();
+	});
+});
+
+describe("App unknown route", () => {
+	it("renders NotFound for a path that matches no route, instead of a blank page", async () => {
+		await renderAppAt({ path: "/product/1" });
+		await act(async () => {});
+
+		expect(screen.getByText("NotFound shell")).toBeInTheDocument();
 	});
 });
 

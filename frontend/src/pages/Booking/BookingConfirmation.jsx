@@ -75,7 +75,7 @@ export default function BookingConfirmationPage() {
 
         <p className="confirmation-email-note">
           <Mail size={14} />
-          Te enviamos un email de confirmación.
+          Te enviaremos un email de confirmación en breve.
         </p>
       </div>
 
