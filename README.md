@@ -54,7 +54,9 @@ Local uses MariaDB 10.11 on port **3307** so it matches CI/Testcontainers and do
 docker compose up -d db
 ```
 
-The `dev` profile connects to `jdbc:mariadb://localhost:3307/tuhospedaje`.
+The `dev` profile connects to `jdbc:mariadb://localhost:3307/tuhospedaje_dev`. The
+database name must contain a standalone `dev` or `test` segment — it gates the demo
+seed below.
 
 #### Configurar variables de entorno
 ```bash
@@ -100,6 +102,26 @@ TUHOSPEDAJE_CANONICAL_ASSETS_ROOT=/home/your-user/TuHospedajeAssets/canonical-lo
 > locales y conserva los binarios fuera del repositorio. El root por defecto es
 > `~/TuHospedajeAssets/canonical-lodging-images`; podés cambiarlo con
 > `TUHOSPEDAJE_CANONICAL_ASSETS_ROOT`.
+
+#### Datos de demo (opcional)
+
+Con el schema solo (sección anterior), el catálogo arranca vacío. Para cargar el seed
+de demostración (38 alojamientos, 6 categorías, 8 características, 6 políticas y un
+usuario admin) hay que habilitar explícitamente la migración de desarrollo y generar
+el hash bcrypt del admin — nunca se commitea en texto plano:
+
+```bash
+python3 -m pip install --quiet bcrypt
+export DEV_ADMIN_PASSWORD_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")
+export SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/dev
+```
+
+Con esas dos variables exportadas, corré el backend normalmente (paso siguiente). El
+seed se aplica una sola vez; si falla a mitad de camino o cambia de versión, hay que
+recrear la base (`docker compose down -v && docker compose up -d db`) antes de
+reintentar — las migraciones de `db/dev` no son transaccionales en MariaDB.
+
+Credencial del admin demo: **`admin@tuhospedaje.com`** / **`Admin1`**.
 
 #### Correr el backend
 ```bash

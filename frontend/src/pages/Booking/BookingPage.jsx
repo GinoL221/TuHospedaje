@@ -318,7 +318,7 @@ export default function BookingPage() {
                       setPhoneError("");
                     }}
                     placeholder="Ingresá tu teléfono"
-                    required
+                    aria-required="true"
                     aria-invalid={phoneError ? "true" : undefined}
                     aria-describedby={
                       phoneError ? "booking-phone-error" : undefined

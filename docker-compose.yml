@@ -5,7 +5,7 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MARIADB_DATABASE: tuhospedaje
+      MARIADB_DATABASE: tuhospedaje_dev
       MARIADB_USER: tuhospedaje
       MARIADB_PASSWORD: tuhospedaje123
       MARIADB_ROOT_PASSWORD: local-dev-root-not-for-production
