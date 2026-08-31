@@ -31,6 +31,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
+    private final RefreshRateLimitFilter refreshRateLimitFilter;
     private final CorsProperties corsProperties;
 
     @Bean
@@ -115,6 +116,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(refreshRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         return http.build();

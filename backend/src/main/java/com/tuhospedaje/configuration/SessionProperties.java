@@ -26,6 +26,9 @@ public record SessionProperties(
     public record CleanupProperties(@NotNull @DurationMin(seconds = 1) Duration interval, @Positive int batchSize) {
     }
 
-    public record RateLimitProperties(@Positive int refreshPerFamilyPerMinute, @Positive int refreshPerIpPerMinute) {
+    public record RateLimitProperties(
+            boolean enabled,
+            @Positive int refreshPerFamilyPerMinute,
+            @Positive int refreshPerIpPerMinute) {
     }
 }
