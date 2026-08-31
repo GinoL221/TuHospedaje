@@ -894,6 +894,35 @@ describe("BookingPage - guest details disclosure", () => {
 		);
 	});
 
+	it("shows the Spanish phone error on a real submit-button click, not just a synthetic form submit", async () => {
+		mockGetDefaults({ myReservations: [] });
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue: {
+				...makeAuthValue(),
+				user: {
+					firstName: "Test",
+					lastName: "User",
+					email: "test@example.com",
+				},
+			},
+			initialEntries: [
+				{
+					pathname: "/booking/1",
+					state: { checkIn: "2026-07-01", checkOut: "2026-07-04" },
+				},
+			],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(
+			await screen.findByText("Ingresá un teléfono válido."),
+		).toBeInTheDocument();
+		expect(post).not.toHaveBeenCalled();
+	});
+
 	it("keeps a prefilled phone collapsed and prevents collapsing blank details", async () => {
 		mockGetDefaults({ myReservations: [{ guestPhone: "123456" }] });
 		const user = userEvent.setup();
