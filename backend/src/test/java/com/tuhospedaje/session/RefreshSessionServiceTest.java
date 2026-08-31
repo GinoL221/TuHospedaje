@@ -9,6 +9,7 @@ import com.tuhospedaje.entity.RefreshToken;
 import com.tuhospedaje.entity.RefreshTokenFamily;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.RateLimitExceededException;
 import com.tuhospedaje.repository.RefreshTokenFamilyRepository;
 import com.tuhospedaje.repository.RefreshTokenRepository;
 import com.tuhospedaje.repository.SessionSecurityEventRepository;
@@ -527,6 +528,149 @@ class RefreshSessionServiceTest {
             releaseLock.countDown();
             executor.shutdownNow();
         }
+    }
+
+    // --- Phase 6: per-family rate limit in rotate() (Design Block B) ---
+    //
+    // `app.session.rate-limit.refresh-per-family-per-minute` is 10 in this class's test
+    // properties (shared with every other method above, which never comes close: worst
+    // case is 4 hits — see design's "RefreshSessionServiceTest regression" note). Each
+    // method below issues its own fresh family (IDENTITY id), so `"family:" + id` keys
+    // never collide with any other test method in this class.
+    private static final int FAMILY_LIMIT = 10;
+
+    /** Chains N successful rotations from `issued`, returning the final Session. */
+    private RefreshSessionService.Session rotateNTimes(RefreshSessionService.Session issued, int times) {
+        var current = issued;
+        for (int i = 0; i < times; i++) {
+            current = sessions.rotate(current.refreshCredential());
+        }
+        return current;
+    }
+
+    @Test
+    void rotationNPlusOneOnOneFamilyThrowsRateLimitExceededNotRejected() {
+        setClock(ISSUED_AT);
+        var issued = sessions.issue(user("family-limit-s1@example.test"));
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class)
+                .isNotInstanceOf(RefreshSessionService.Rejected.class);
+    }
+
+    // S-2: ordering proof (pins Delta Spec "Reuse Detection Precedes Rate Limiting" and
+    // the design's decision to place Block B strictly after the reuse branch).
+    @Test
+    void replayedTokenOnAnOverLimitFamilyStillRejectsAsReuseNotRateLimit() {
+        setClock(ISSUED_AT);
+        var issued = sessions.issue(user("family-limit-s2@example.test"));
+        String firstCredential = issued.refreshCredential();
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        assertThatThrownBy(() -> sessions.rotate(firstCredential))
+                .isInstanceOf(RefreshSessionService.Rejected.class);
+
+        RefreshTokenFamily family = families.findById(issued.familyId()).orElseThrow();
+        assertThat(family.getRevocationReason()).isEqualTo("REUSE");
+        assertThat(events.countByFamilyId(issued.familyId())).isEqualTo(1);
+    }
+
+    // Pins the fix for the sdd-verify WARNING-1 finding: the family rate-limit check
+    // must run AFTER isEligibleForRotation, so a token that resolves but belongs to an
+    // ineligible session (here, a disabled user) always gets its ordinary Rejected/401
+    // even when the family is already over its rate-limit ceiling — never a 429, which
+    // would both waste family quota on dead credentials and leak whether a dead family
+    // happens to be currently rate-limited.
+    @Test
+    void ineligibleRotationOnAnOverLimitFamilyStillRejectsNotRateLimits() {
+        setClock(ISSUED_AT);
+        User user = user("family-limit-s7@example.test");
+        var issued = sessions.issue(user);
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        user.setEnabled(false);
+        users.save(user);
+
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RefreshSessionService.Rejected.class)
+                .isNotInstanceOf(RateLimitExceededException.class);
+    }
+
+    @Test
+    void twoDistinctFamiliesRateLimitIndependently() {
+        setClock(ISSUED_AT);
+        User user = user("family-limit-s3@example.test");
+        var familyA = sessions.issue(user);
+        var familyB = sessions.issue(user);
+        var familyAAtCeiling = rotateNTimes(familyA, FAMILY_LIMIT);
+        String familyAOverLimitCredential = familyAAtCeiling.refreshCredential();
+        assertThatThrownBy(() -> sessions.rotate(familyAOverLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        var rotatedB = sessions.rotate(familyB.refreshCredential());
+
+        assertThat(rotatedB.familyId()).isEqualTo(familyB.familyId());
+    }
+
+    @Test
+    void clockRolloverToANewMinuteClearsTheFamilyCeiling() {
+        setClock(ISSUED_AT);
+        var issued = sessions.issue(user("family-limit-s4@example.test"));
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        setClock(ISSUED_AT.plus(1, ChronoUnit.MINUTES));
+        var rotatedAfterRollover = sessions.rotate(overLimitCredential);
+
+        assertThat(rotatedAfterRollover.familyId()).isEqualTo(issued.familyId());
+    }
+
+    @Test
+    void logsFamilyRateLimitedOnceWithoutCredentialOrEmail() {
+        setClock(ISSUED_AT);
+        User user = user("family-limit-s5-secret@example.test");
+        var issued = sessions.issue(user);
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+        serviceLogs.list.clear();
+
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        assertThat(serviceLogs.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.WARN);
+            assertThat(event.getFormattedMessage()).isEqualTo(
+                    "event=refresh_session.family_rate_limited family_id=" + issued.familyId()
+                            + " user_id=" + user.getId() + " limit=" + FAMILY_LIMIT);
+            assertThat(event.getFormattedMessage())
+                    .doesNotContain(overLimitCredential, "family-limit-s5-secret@example.test", "secret");
+        });
+    }
+
+    @Test
+    void throttledAttemptPersistsNothingBeyondTheCounterHit() {
+        setClock(ISSUED_AT);
+        var issued = sessions.issue(user("family-limit-s6@example.test"));
+        var atCeiling = rotateNTimes(issued, FAMILY_LIMIT);
+        String overLimitCredential = atCeiling.refreshCredential();
+        long generationBefore = families.findById(issued.familyId()).orElseThrow().getCurrentGeneration();
+        int tokenCountBefore = tokensFor(issued.familyId()).size();
+
+        assertThatThrownBy(() -> sessions.rotate(overLimitCredential))
+                .isInstanceOf(RateLimitExceededException.class);
+
+        assertThat(families.findById(issued.familyId()).orElseThrow().getCurrentGeneration()).isEqualTo(generationBefore);
+        assertThat(tokensFor(issued.familyId())).hasSize(tokenCountBefore);
     }
 
     private boolean attempt(String credential) {

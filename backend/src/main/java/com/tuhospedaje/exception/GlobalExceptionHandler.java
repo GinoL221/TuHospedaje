@@ -9,6 +9,7 @@ import org.springframework.context.NoSuchMessageException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -78,6 +79,23 @@ public class GlobalExceptionHandler {
                         "error", resolveMessage("error.auth.duplicate_email", locale),
                         "status", 400,
                         "code", DuplicateEmailException.ERROR_CODE));
+    }
+
+    /**
+     * Design "Family 429 handled in GlobalExceptionHandler, not in AuthController":
+     * {@code AuthController}'s local {@code handleRefreshRejected} clears the
+     * REFRESH_TOKEN cookie, which is correct for a dead credential and WRONG for a
+     * throttled one — the credential is still valid and must survive the cooldown. This
+     * global handler also keeps the 429 body byte-identical to {@code
+     * RefreshRateLimitFilter}'s self-serialized 429 (both resolve {@code
+     * error.rate_limit} via the same fixed key and emit the same {@code {error,status}}
+     * shape).
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitExceeded(RateLimitExceededException ex, Locale locale) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(Map.of("error", resolveMessage("error.rate_limit", locale), "status", 429));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

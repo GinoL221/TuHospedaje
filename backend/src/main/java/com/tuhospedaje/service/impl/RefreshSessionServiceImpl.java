@@ -5,9 +5,11 @@ import com.tuhospedaje.entity.RefreshToken;
 import com.tuhospedaje.entity.RefreshTokenFamily;
 import com.tuhospedaje.entity.SessionSecurityEvent;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.exception.RateLimitExceededException;
 import com.tuhospedaje.repository.RefreshTokenFamilyRepository;
 import com.tuhospedaje.repository.RefreshTokenRepository;
 import com.tuhospedaje.repository.SessionSecurityEventRepository;
+import com.tuhospedaje.security.FixedWindowRateLimiter;
 import com.tuhospedaje.security.RefreshTokenHasher;
 import com.tuhospedaje.service.RefreshSessionService;
 import jakarta.persistence.EntityManager;
@@ -32,6 +34,13 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
     private final SessionProperties properties;
     private final Supplier<Clock> clock;
     private final EntityManager entityManager;
+
+    // Design "Family counter is a private field, not a collaborator bean": the
+    // constructor already carries the injected `properties`/`clock` this limiter needs,
+    // so no `RefreshSessionConfiguration` edit or extra constructor param is required.
+    // The whole bean (and this field with it) is compiled out when refresh is disabled
+    // (`RefreshSessionConfiguration`'s `@ConditionalOnProperty`) — its own kill switch.
+    private final FixedWindowRateLimiter familyLimiter = new FixedWindowRateLimiter();
 
     public RefreshSessionServiceImpl(RefreshTokenFamilyRepository families, RefreshTokenRepository tokens,
                                      SessionSecurityEventRepository events, RefreshTokenHasher hasher,
@@ -99,6 +108,21 @@ public class RefreshSessionServiceImpl implements RefreshSessionService {
         }
         if (!isEligibleForRotation(token, family, now)) {
             throw new Rejected();
+        }
+        // Design "Reuse Detection Precedes Rate Limiting": reuse (above) is already
+        // excluded by this point, so this is a live credential asking for a real
+        // rotation — the family ceiling applies before any state changes. Never move
+        // this ahead of the reuse branch: throttling must never mask a theft signal.
+        // Also placed AFTER isEligibleForRotation (a pure, side-effect-free check): a
+        // token that resolves but belongs to a revoked/expired family, an expired/old
+        // generation, or a disabled user must still get its ordinary 401 Rejected, never
+        // a 429 — otherwise an ineligible credential could consume family quota and leak
+        // whether a dead family happens to be over its rate-limit window.
+        if (familyLimiter.exceeds("family:" + family.getId(), now,
+                properties.rateLimit().refreshPerFamilyPerMinute())) {
+            log.warn("event=refresh_session.family_rate_limited family_id={} user_id={} limit={}",
+                    family.getId(), family.getUser().getId(), properties.rateLimit().refreshPerFamilyPerMinute());
+            throw new RateLimitExceededException(FixedWindowRateLimiter.retryAfterSeconds(now));
         }
         long generation = family.getCurrentGeneration() + 1;
         RefreshTokenHasher.GeneratedCredential successor = hasher.deriveSuccessor(

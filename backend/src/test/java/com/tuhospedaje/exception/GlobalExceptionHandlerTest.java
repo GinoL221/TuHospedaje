@@ -203,6 +203,26 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
     }
 
     /**
+     * Design "Family 429 handled in GlobalExceptionHandler, not in AuthController": a
+     * dedicated handler, distinct from {@code AuthController.handleRefreshRejected}
+     * (which clears the REFRESH_TOKEN cookie — wrong for a throttled-but-valid
+     * credential). Direct unit style, mirroring {@link
+     * #standardHandlers_resolveMessagesViaAcceptLanguageLocale()} above.
+     */
+    @Test
+    void rateLimitExceeded_returns429WithRetryAfterHeaderAndErrorBody() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleRateLimitExceeded(new RateLimitExceededException(42), Locale.ENGLISH);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(429);
+        assertThat(response.getHeaders().getFirst(org.springframework.http.HttpHeaders.RETRY_AFTER)).isEqualTo("42");
+        assertThat(response.getBody()).containsExactlyInAnyOrderEntriesOf(
+                Map.of("error", "Too many attempts. Try again later.", "status", 429));
+    }
+
+    /**
      * i18n scope note: the 13 real {@link IllegalArgumentException} throw sites in this
      * codebase all use hardcoded literal Spanish text (e.g. {@code AuthServiceImpl},
      * {@code LodgingServiceImpl}), not message keys. {@code handleIllegalArgument} tries
