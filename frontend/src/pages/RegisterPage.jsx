@@ -90,7 +90,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="login-container">
+    <main className="login-container">
       <div className="register-box">
         <h2>Crear cuenta</h2>
         {error && <p className="error">{error}</p>}
@@ -188,6 +188,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

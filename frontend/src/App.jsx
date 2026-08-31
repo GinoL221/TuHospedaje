@@ -19,6 +19,7 @@ const BookingPage = lazy(() => import("./pages/Booking/BookingPage"));
 const BookingConfirmationPage = lazy(() => import("./pages/Booking/BookingConfirmation"));
 const MyReservationsPage = lazy(() => import("./pages/MyReservations/MyReservationsPage"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized/Unauthorized"));
+const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 
 // Canonical administration route plus its compatibility alias. Both are
 // checked so the shell suppressor never flashes Header/Footer while the
@@ -64,6 +65,8 @@ function AppLayout() {
                 element={<Navigate to="/administración" replace />}
               />
             </Route>
+
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </RouteChunkErrorBoundary>

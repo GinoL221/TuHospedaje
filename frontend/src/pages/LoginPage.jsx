@@ -60,7 +60,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-container">
+    <main className="login-container">
       <div className="login-box">
         <h2>Iniciar sesión</h2>
         {message && <p className="error">{message}</p>}
@@ -100,6 +100,6 @@ export default function LoginPage() {
           ¿No tenés cuenta? <Link to="/register">Crear cuenta</Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
