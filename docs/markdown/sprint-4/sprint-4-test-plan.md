@@ -179,7 +179,6 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 | `auth.spec.js` | 5 | Login válido (nombre en header), login con contraseña incorrecta (error visible), logout con redirección a home, token expirado en endpoint protegido, registro exitoso (Inc. 4 — actualizado para el flujo cookie + CSRF) | ✔ Pasa |
 | `search.spec.js` | 2 | Búsqueda por ciudad navega a `/search`, página de resultados renderiza encabezado | ✔ Pasa |
 | `reservations.spec.js` | 2 | Historial de reservas carga para usuario autenticado, usuario anónimo es redirigido por `RequireAuth` | ✔ Pasa |
-| `visual.spec.js` | 6 | Regresión visual contra capturas de referencia: home, login, registro, resultados de búsqueda, detalle de alojamiento y mis reservas | ✔ Pasa |
 | `admin-smoke.spec.js` | 2 | Login ADMIN carga `/admin` con todas las pestañas de navegación visibles; cada pestaña de entidad es alcanzable | ✔ Pasa |
 | `admin-categories.spec.js` | 4 | CRUD de categorías desde el panel: alta, edición, baja vía `ConfirmDialog`, validación de nombre vacío | ✔ Pasa |
 | `admin-features.spec.js` | 4 | CRUD de características: alta, edición, baja vía `window.confirm`, validación de nombre vacío | ✔ Pasa |
@@ -410,7 +409,7 @@ La cobertura actual de sesiones renovables incluye `POST /api/auth/refresh`, `PO
 |------------|-----------|
 | JUnit 5 + Mockito | Tests unitarios de servicios |
 | MockMvc + Testcontainers | Tests de integración con MariaDB efímera |
-| Playwright | Tests E2E y regresión visual en Chromium y Firefox |
+| Playwright | Tests E2E en Chromium y Firefox |
 | Postman | Pruebas manuales de API |
 | Mailtrap (SMTP sandbox) | Verificación de emails de confirmación |
 | Navegador (Chrome) | Verificación de UI |
