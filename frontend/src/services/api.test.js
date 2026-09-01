@@ -452,3 +452,68 @@ describe("api service - ok response with unparseable body", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("api service - request timeout", () => {
+  /**
+   * A backend that accepts the connection and never answers leaves fetch pending
+   * forever. Without a deadline the caller's loading state never resolves, so the UI
+   * shows a spinner with no way out and no error to render.
+   */
+  function neverAnswers() {
+    return vi.fn((url, config) =>
+      new Promise((_resolve, reject) => {
+        config.signal?.addEventListener("abort", () => {
+          const aborted = new Error("The operation was aborted.");
+          aborted.name = "AbortError";
+          reject(aborted);
+        });
+      })
+    );
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("passes an abort signal to fetch", async () => {
+    const fetchMock = mockFetchResolved();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await get("/lodgings");
+
+    const [, config] = fetchMock.mock.calls[0];
+    expect(config.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("rejects with a user-facing message when the backend never answers", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", neverAnswers());
+
+    const pending = get("/lodgings");
+    const assertion = expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    await assertion;
+  });
+
+  it("does not surface the raw AbortError name to the caller", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", neverAnswers());
+
+    const pending = get("/lodgings");
+    const assertion = expect(pending).rejects.not.toThrow(/abort/i);
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    await assertion;
+  });
+
+  /** The deadline must be cleared on a normal response, not left armed. */
+  it("leaves a request that answered in time untouched when the deadline would have fired", async () => {
+    vi.useFakeTimers();
+    const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(get("/lodgings")).resolves.toEqual({ data: 1 });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
