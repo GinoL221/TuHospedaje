@@ -1,6 +1,28 @@
 import { useState } from "react";
 import { getCsrfToken } from "../../services/api";
 
+const GENERIC_UPLOAD_ERROR = "No se pudo subir la imagen. Intentá de nuevo.";
+
+/**
+ * A 4xx from /upload is the admin's own input — an unsupported format, an empty
+ * part, a file over the size ceiling — and the backend already localized that
+ * reason. Showing "Intentá de nuevo" instead tells them to repeat the exact
+ * action that just failed.
+ *
+ * A 5xx is a server fault they cannot act on, and its body carries the
+ * deliberately non-disclosing "Internal server error.", so the generic message
+ * stays. Same for an unparseable body: there is no reason to relay.
+ */
+async function clientErrorMessage(res) {
+  if (res.status < 400 || res.status >= 500) return GENERIC_UPLOAD_ERROR;
+  try {
+    const body = await res.json();
+    return body?.error || GENERIC_UPLOAD_ERROR;
+  } catch {
+    return GENERIC_UPLOAD_ERROR;
+  }
+}
+
 export default function ImageUpload({
   urls,
   onUrlsChange,
@@ -26,13 +48,16 @@ export default function ImageUpload({
         body: formData,
       });
       if (!res.ok) {
-        throw new Error("No se pudo subir la imagen. Intentá de nuevo.");
+        setError(await clientErrorMessage(res));
+        return;
       }
       const data = await res.json();
       onUrlsChange([...urls, data.url]);
     } catch (err) {
+      // fetch itself rejected (network/CORS): err.message is raw browser text,
+      // never fit to show a user.
       console.error(err);
-      setError("No se pudo subir la imagen. Intentá de nuevo.");
+      setError(GENERIC_UPLOAD_ERROR);
     } finally {
       setUploading(false);
       onUploadingChange?.(false);
