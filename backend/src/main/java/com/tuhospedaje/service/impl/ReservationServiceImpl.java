@@ -155,15 +155,6 @@ public class ReservationServiceImpl implements ReservationService {
                 .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ReservationResponse> getAllReservations() {
-        return reservationRepository.findAllByOrderByIdDesc()
-                .stream()
-                .map(ReservationResponse::fromEntity)
-                .toList();
-    }
-
     private static final Set<String> ADMIN_SORT_FIELDS = Set.of(
             "id", "checkIn", "checkOut", "status", "totalPrice"
     );

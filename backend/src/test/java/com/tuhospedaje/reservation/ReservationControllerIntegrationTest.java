@@ -264,10 +264,6 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                         .cookie(accessCookie(adminAuth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
-        mockMvc.perform(get("/api/reservations")
-                        .cookie(accessCookie(adminAuth)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("CANCELLED"));
         mockMvc.perform(get("/api/reservations/admin")
                         .cookie(accessCookie(adminAuth)))
                 .andExpect(status().isOk())
@@ -386,25 +382,28 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
         createReservation(lodgingId, LocalDate.now().plusDays(20), LocalDate.now().plusDays(22));
 
-        mockMvc.perform(get("/api/reservations")
-                        .cookie(accessCookie(adminAuth)))
+        mockMvc.perform(get("/api/reservations/admin")
+                        .cookie(accessCookie(adminAuth))
+                        .param("sort", "id")
+                        .param("direction", "desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
-                .andExpect(jsonPath("$[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
+                .andExpect(jsonPath("$.items").isArray())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.totalItems").value(2))
+                .andExpect(jsonPath("$.items[0].checkIn").value(LocalDate.now().plusDays(20).toString()))
+                .andExpect(jsonPath("$.items[1].checkIn").value(LocalDate.now().plusDays(10).toString()));
     }
 
     @Test
-    void shouldReturnForbiddenWhenGettingAllReservationsAsNormalUser() throws Exception {
-        mockMvc.perform(get("/api/reservations")
+    void shouldReturnForbiddenWhenGettingAdminReservationsAsNormalUser() throws Exception {
+        mockMvc.perform(get("/api/reservations/admin")
                         .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenGettingAllReservationsWithoutAuth() throws Exception {
-        mockMvc.perform(get("/api/reservations"))
+    void shouldReturnUnauthorizedWhenGettingAdminReservationsWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/reservations/admin"))
                 .andExpect(status().isUnauthorized());
     }
 
