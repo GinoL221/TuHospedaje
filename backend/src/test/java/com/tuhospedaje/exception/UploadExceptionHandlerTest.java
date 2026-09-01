@@ -93,4 +93,50 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
                         org.hamcrest.Matchers.not(
                                 org.hamcrest.Matchers.containsString("Cloudinary API key invalid"))));
     }
+
+    /**
+     * A rejected file is the caller's input, so it must be 400 — not the 502 that a
+     * Cloudinary round-trip would produce. Unlike the codebase's older
+     * IllegalArgumentException throw sites (hardcoded literals that fall back verbatim),
+     * the upload guards throw MessageSource keys, so this also proves the key branch of
+     * handleIllegalArgument actually resolves instead of echoing "error.upload.invalid_type".
+     */
+    @Test
+    void rejectedFileType_returns400WithResolvedMessage() throws Exception {
+        when(cloudinaryService.uploadImage(any()))
+                .thenThrow(new IllegalArgumentException("error.upload.invalid_type"));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "payload.pdf", "application/pdf", "not-an-image".getBytes());
+
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(multipart("/api/upload")
+                        .file(file)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Only JPEG, PNG, WebP and GIF images are allowed."));
+    }
+
+    /** Same guard, empty part: still the caller's input, still 400. */
+    @Test
+    void emptyFile_returns400WithResolvedMessage() throws Exception {
+        when(cloudinaryService.uploadImage(any()))
+                .thenThrow(new IllegalArgumentException("error.upload.empty"));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "empty.jpg", "image/jpeg", new byte[0]);
+
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(multipart("/api/upload")
+                        .file(file)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("The uploaded file is empty."));
+    }
 }
