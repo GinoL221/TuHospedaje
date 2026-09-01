@@ -33,13 +33,15 @@ public class UploadController {
     @Operation(
             summary = "Upload an image",
             description = "Uploads an image file to Cloudinary and returns the public URL and asset ID. " +
-                          "Accepts multipart/form-data with a 'file' part. Requires ADMIN role."
+                          "Accepts multipart/form-data with a 'file' part holding a JPEG, PNG, WebP or " +
+                          "GIF image of at most 5MB. Requires ADMIN role."
     )
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Image uploaded successfully — returns Cloudinary URL and public ID"),
-            @ApiResponse(responseCode = "400", description = "Missing or invalid file", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Empty file, or a content type outside JPEG/PNG/WebP/GIF", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "413", description = "File exceeds spring.servlet.multipart.max-file-size", content = @Content),
             @ApiResponse(responseCode = "502", description = "Cloudinary upload failed", content = @Content),
     })
     public ResponseEntity<UploadResult> upload(@RequestParam("file") MultipartFile file) {

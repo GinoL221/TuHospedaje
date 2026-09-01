@@ -28,6 +28,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -276,5 +277,37 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(response.getBody().get("error")).isEqualTo("El tamaño debe ser mayor a cero.");
+    }
+
+    /**
+     * Spring aborts multipart parsing with MaxUploadSizeExceededException once a part
+     * crosses spring.servlet.multipart.max-file-size. Without a dedicated handler it
+     * lands on the {@code Exception} catch-all and the client sees a 500 — an oversized
+     * upload is the caller's input, not a server fault, so it must be 413.
+     * <p>
+     * Direct unit style: MockMvc's MockMultipartFile bypasses the real multipart parser,
+     * so the size limit can never fire through the servlet stack in a MockMvc test.
+     */
+    @Test
+    void maxUploadSizeExceeded_returns413() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleMaxUploadSizeExceeded(new MaxUploadSizeExceededException(5_242_880L), Locale.ENGLISH);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(413);
+        assertThat(response.getBody()).containsExactlyInAnyOrderEntriesOf(
+                Map.of("error", "The image exceeds the maximum allowed size.", "status", 413));
+    }
+
+    /** The same handler localizes, so the Spanish bundle is what an es client receives. */
+    @Test
+    void maxUploadSizeExceeded_resolvesMessageForSpanishLocale() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleMaxUploadSizeExceeded(new MaxUploadSizeExceededException(5_242_880L), new Locale("es"));
+
+        assertThat(response.getBody().get("error")).isEqualTo("La imagen supera el tamaño máximo permitido.");
     }
 }
