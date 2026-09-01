@@ -115,21 +115,6 @@ public class ReservationController {
         return ResponseEntity.ok(reservationService.getMyReservations(user));
     }
 
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(
-            summary = "List all reservations",
-            description = "Returns all reservations across all users, ordered by ID descending. Requires ADMIN role."
-    )
-    @SecurityRequirement(name = "csrfToken")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "All reservations retrieved successfully"),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
-    })
-    public ResponseEntity<List<ReservationResponse>> getAllReservations() {
-        return ResponseEntity.ok(reservationService.getAllReservations());
-    }
-
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
