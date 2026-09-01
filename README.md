@@ -111,10 +111,14 @@ usuario admin) hay que habilitar explícitamente la migración de desarrollo y g
 el hash bcrypt del admin — nunca se commitea en texto plano:
 
 ```bash
-python3 -m pip install --quiet bcrypt
-export DEV_ADMIN_PASSWORD_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")
+python3 -m venv /tmp/bcrypt-venv && /tmp/bcrypt-venv/bin/pip install --quiet bcrypt
+export DEV_ADMIN_PASSWORD_HASH=$(/tmp/bcrypt-venv/bin/python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")
 export SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/dev
 ```
+
+> A plain `pip install bcrypt` fails on distros that mark the system Python as
+> externally managed (PEP 668, e.g. current Debian/Ubuntu). The disposable venv
+> above avoids that regardless of how the OS packages Python.
 
 Con esas dos variables exportadas, corré el backend normalmente (paso siguiente). El
 seed se aplica una sola vez; si falla a mitad de camino o cambia de versión, hay que
