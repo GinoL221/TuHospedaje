@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback, startTransition } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
 import { get } from "../../services/api";
-import { getRecommendations } from "../../services/lodgingService";
 import { useAuth } from "../../hooks/useAuth";
+import useHomeRecommendations from "../../hooks/useHomeRecommendations";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
@@ -12,47 +12,10 @@ import "./Home.css";
 
 registerLocale("es", es);
 
-// Tab-scoped snapshot key (see design.md §1): a seed is generated once per
-// browser tab via crypto.randomUUID and reused across reload/back/forward;
-// closing the tab ends the session because sessionStorage is tab-scoped.
-const RECOMMENDATIONS_STORAGE_KEY = "tuhospedaje.recommendations.v1";
-
-function createRecommendationSeed() {
-	try {
-		return crypto.randomUUID();
-	} catch {
-		return `fallback-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-seed`.slice(
-			0,
-			64,
-		);
-	}
-}
-
-function readStoredRecommendationSession() {
-	try {
-		const raw = sessionStorage.getItem(RECOMMENDATIONS_STORAGE_KEY);
-		if (!raw) return null;
-		const parsed = JSON.parse(raw);
-		return parsed && typeof parsed.seed === "string" ? parsed : null;
-	} catch {
-		return null;
-	}
-}
-
-function writeStoredRecommendationSession(session) {
-	try {
-		sessionStorage.setItem(RECOMMENDATIONS_STORAGE_KEY, JSON.stringify(session));
-	} catch {
-		// sessionStorage may be unavailable (e.g. private mode); the
-		// recommendation session then simply lives only in memory.
-	}
-}
-
 export default function Home() {
 	const navigate = useNavigate();
 	const { search } = useLocation();
 	const { user } = useAuth();
-	const [lodgings, setLodgings] = useState([]);
 	const [categories, setCategories] = useState([]);
 	const [searchResults, setSearchResults] = useState(null);
 	const [city, setCity] = useState("");
@@ -63,69 +26,19 @@ export default function Home() {
 	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 	const [loadingCities, setLoadingCities] = useState(false);
 	const [searchError, setSearchError] = useState("");
-	const [page, setPage] = useState(0);
-	const [totalPages, setTotalPages] = useState(1);
 	const [favoriteIds, setFavoriteIds] = useState(new Set());
 	const debounceRef = useRef();
-
-	// Recommendation snapshot: seed is created once (or reused from
-	// sessionStorage) and only replaced on an explicit refresh. Revision
-	// lives in a ref because updating it from a response must not itself
-	// re-trigger a fetch (see design.md §1, item 6-8).
-	const [recSeed, setRecSeed] = useState(
-		() => readStoredRecommendationSession()?.seed ?? createRecommendationSeed(),
-	);
-	const revisionRef = useRef(readStoredRecommendationSession()?.revision ?? null);
-	const [recStatus, setRecStatus] = useState("idle"); // idle | loading | error
-	const [listBusy, setListBusy] = useState(false);
-	const [listGeneration, setListGeneration] = useState(0);
-	const requestIdRef = useRef(0);
-	const skipResetPageFetchRef = useRef(false);
-
-	useEffect(() => {
-		writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
-	}, [recSeed]);
-
-	const fetchRecommendations = useCallback(() => {
-		const requestId = ++requestIdRef.current;
-		// Matches the SearchResults.jsx convention for setState called
-		// synchronously from inside an effect (see runSearch).
-		startTransition(() => {
-			setRecStatus("loading");
-			setListBusy(true);
-		});
-
-		getRecommendations({ seed: recSeed, page, revision: revisionRef.current ?? undefined })
-			.then((data) => {
-				if (requestId !== requestIdRef.current) return; // stale/out-of-order response
-				revisionRef.current = data.revision ?? revisionRef.current;
-				writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
-				setLodgings(data.lodgings || []);
-				setTotalPages(data.totalPages || 1);
-				setListGeneration((generation) => generation + 1);
-				setListBusy(false);
-				setRecStatus("idle");
-				setPage((prev) => {
-					const actualPage =
-						typeof data.currentPage === "number" ? data.currentPage : prev;
-					if (data.reset && prev !== actualPage) skipResetPageFetchRef.current = true;
-					return prev === actualPage ? prev : actualPage;
-				});
-			})
-			.catch(() => {
-				if (requestId !== requestIdRef.current) return;
-				setListBusy(false);
-				setRecStatus("error");
-			});
-	}, [recSeed, page]);
-
-	useEffect(() => {
-		if (skipResetPageFetchRef.current) {
-			skipResetPageFetchRef.current = false;
-		} else {
-			fetchRecommendations();
-		}
-	}, [fetchRecommendations]);
+	const {
+		lodgings,
+		status: recStatus,
+		listBusy,
+		listGeneration,
+		page,
+		totalPages,
+		setPage,
+		refresh: handleRefreshRecommendations,
+		retry: fetchRecommendations,
+	} = useHomeRecommendations();
 
 	useEffect(() => {
 		if (!search) return undefined;
@@ -166,12 +79,6 @@ export default function Home() {
 		const next = new URLSearchParams(search);
 		next.delete("categories");
 		navigate(next.toString() ? `/?${next.toString()}` : "/");
-	}
-
-	function handleRefreshRecommendations() {
-		revisionRef.current = null;
-		setPage(0);
-		setRecSeed(createRecommendationSeed());
 	}
 
 	useEffect(() => {
