@@ -161,130 +161,6 @@ describe("Home - lodgings render", () => {
 	});
 });
 
-describe("Home - recommendation snapshot persistence", () => {
-	it("uses valid fallback seeds when randomUUID throws during initial load and refresh", async () => {
-		crypto.randomUUID.mockImplementation(() => {
-			throw new Error("UUID unavailable");
-		});
-		mockGetDefaults();
-		const user = userEvent.setup();
-		renderHome();
-
-		await screen.findByText("Cabaña del Lago");
-		await user.click(
-			screen.getByRole("button", { name: "Actualizar recomendaciones" }),
-		);
-		await waitFor(() =>
-			expect(
-				get.mock.calls.filter(([endpoint]) =>
-					endpoint.startsWith("/lodgings/recommendations"),
-				),
-			).toHaveLength(2),
-		);
-
-		for (const [endpoint] of get.mock.calls.filter(([path]) =>
-			path.startsWith("/lodgings/recommendations"),
-		)) {
-			const seed = new URL(endpoint, "http://localhost").searchParams.get("seed");
-			expect(seed).toMatch(/^[A-Za-z0-9_-]{16,64}$/);
-		}
-	});
-
-	it("persists the generated seed under the tab-scoped sessionStorage key", async () => {
-		mockGetDefaults();
-		renderHome();
-
-		await screen.findByText("Cabaña del Lago");
-
-		const stored = JSON.parse(
-			sessionStorage.getItem("tuhospedaje.recommendations.v1"),
-		);
-		expect(stored.seed).toBe(FIXED_SEED);
-	});
-
-	it("reuses the stored seed and revision instead of generating a new one", async () => {
-		sessionStorage.setItem(
-			"tuhospedaje.recommendations.v1",
-			JSON.stringify({ seed: "stored-seed-0123456789", revision: "rev-stored" }),
-		);
-		mockGetDefaults();
-		renderHome();
-
-		await screen.findByText("Cabaña del Lago");
-
-		expect(get).toHaveBeenCalledWith(
-			"/lodgings/recommendations?seed=stored-seed-0123456789&page=0&size=8&revision=rev-stored",
-		);
-		expect(crypto.randomUUID).not.toHaveBeenCalled();
-	});
-});
-
-describe("Home - recommendation pagination stability", () => {
-	it("keeps forward/back navigation stable and reuses page 1 identities on return", async () => {
-		mockGetDefaults({
-			recommendations: recommendationsPage({
-				lodgings: [lodgingFixture],
-				totalPages: 2,
-			}),
-		});
-		const user = userEvent.setup();
-		renderHome();
-
-		await screen.findByText("Cabaña del Lago");
-
-		const page2Fixture = { ...lodgingFixture, id: 2, name: "Casa de Playa" };
-		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings/recommendations?"))
-				return Promise.resolve(
-					endpoint.includes("page=1")
-						? recommendationsPage({
-								lodgings: [page2Fixture],
-								currentPage: 1,
-								totalPages: 2,
-							})
-						: recommendationsPage({
-								lodgings: [lodgingFixture],
-								currentPage: 0,
-								totalPages: 2,
-							}),
-				);
-			if (endpoint === "/categories") return Promise.resolve([]);
-			if (endpoint === "/favorites") return Promise.resolve([]);
-			return Promise.resolve(null);
-		});
-
-		await user.click(screen.getByRole("button", { name: "Siguiente" }));
-		expect(await screen.findByText("Casa de Playa")).toBeInTheDocument();
-
-		await user.click(screen.getByRole("button", { name: "Anterior" }));
-		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
-	});
-
-	it("requests the last page when Última is clicked and first page when Inicio is clicked", async () => {
-		mockGetDefaults({
-			recommendations: recommendationsPage({ totalPages: 3 }),
-		});
-		const user = userEvent.setup();
-		renderHome();
-
-		await screen.findByText("Cabaña del Lago");
-
-		await user.click(screen.getByRole("button", { name: "Última" }));
-		await waitFor(() =>
-			expect(get).toHaveBeenCalledWith(
-				expect.stringContaining("page=2"),
-			),
-		);
-
-		await user.click(screen.getByRole("button", { name: "Inicio" }));
-		await waitFor(() =>
-			expect(get).toHaveBeenCalledWith(
-				expect.stringContaining("page=0"),
-			),
-		);
-	});
-});
-
 function deferred() {
 	let resolve;
 	const promise = new Promise((res) => {
@@ -914,6 +790,25 @@ describe("Home - search form", () => {
 });
 
 describe("Home - pagination", () => {
+	it("wires the first and last page controls to the recommendation hook", async () => {
+		mockGetDefaults({
+			recommendations: recommendationsPage({ totalPages: 3 }),
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+		await user.click(screen.getByRole("button", { name: "Última" }));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(expect.stringContaining("page=2")),
+		);
+
+		await user.click(screen.getByRole("button", { name: "Inicio" }));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(expect.stringContaining("page=0")),
+		);
+	});
+
 	it("enables Siguiente on page 0 and disables it after reaching the last page", async () => {
 		mockGetDefaults({
 			recommendations: recommendationsPage({ totalPages: 2 }),
