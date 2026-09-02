@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
@@ -6,6 +6,7 @@ import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import useHomeRecommendations from "../../hooks/useHomeRecommendations";
 import useHomeSearchResults from "../../hooks/useHomeSearchResults";
+import useCityAutocomplete from "../../hooks/useCityAutocomplete";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
@@ -18,16 +19,10 @@ export default function Home() {
 	const { search } = useLocation();
 	const { user } = useAuth();
 	const [categories, setCategories] = useState([]);
-	const [city, setCity] = useState("");
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
-	const [suggestions, setSuggestions] = useState([]);
-	const [showSuggestions, setShowSuggestions] = useState(false);
-	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
-	const [loadingCities, setLoadingCities] = useState(false);
 	const [searchError, setSearchError] = useState("");
 	const [favoriteIds, setFavoriteIds] = useState(new Set());
-	const debounceRef = useRef();
 	const {
 		lodgings,
 		status: recStatus,
@@ -72,28 +67,19 @@ export default function Home() {
 			.catch(() => {});
 	}, [user]);
 
-	useEffect(() => {
-		if (city.length < 2) return;
-
-		clearTimeout(debounceRef.current);
-		debounceRef.current = setTimeout(() => {
-			setLoadingCities(true);
-			setShowSuggestions(true);
-			get(`/lodgings/cities?q=${encodeURIComponent(city)}`)
-				.then((data) => {
-					setSuggestions(Array.isArray(data) ? data : []);
-					setActiveSuggestionIndex(-1);
-					setLoadingCities(false);
-				})
-				.catch(() => {
-					setSuggestions([]);
-					setActiveSuggestionIndex(-1);
-					setLoadingCities(false);
-				});
-		}, 200);
-
-		return () => clearTimeout(debounceRef.current);
-	}, [city]);
+	const {
+		city,
+		suggestions,
+		showSuggestions,
+		activeSuggestionIndex,
+		loadingCities,
+		handleCityChange,
+		handleCityFocus,
+		handleCityBlur,
+		handleCityKeyDown,
+		activateSuggestion,
+		selectCity,
+	} = useCityAutocomplete();
 
 	function formatDate(date) {
 		return date ? date.toISOString().split("T")[0] : "";
@@ -125,51 +111,6 @@ export default function Home() {
 		});
 	}
 
-	function handleCityChange(value) {
-		setCity(value);
-		setActiveSuggestionIndex(-1);
-		if (value.length < 2) {
-			setSuggestions([]);
-			setShowSuggestions(false);
-			setLoadingCities(false);
-		}
-	}
-
-	function selectCity(value) {
-		setCity(value);
-		setShowSuggestions(false);
-		setActiveSuggestionIndex(-1);
-	}
-
-	function handleCityKeyDown(event) {
-		if (event.key === "Escape") {
-			setShowSuggestions(false);
-			setActiveSuggestionIndex(-1);
-			return;
-		}
-
-		if (suggestions.length === 0) return;
-
-		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-			event.preventDefault();
-			setShowSuggestions(true);
-			setActiveSuggestionIndex((current) => {
-				if (event.key === "ArrowDown") return (current + 1) % suggestions.length;
-				return current <= 0 ? suggestions.length - 1 : current - 1;
-			});
-			return;
-		}
-
-		if (
-			event.key === "Enter" &&
-			showSuggestions &&
-			activeSuggestionIndex >= 0
-		) {
-			event.preventDefault();
-			selectCity(suggestions[activeSuggestionIndex]);
-		}
-	}
-
 	return (
 		<main className="home page-container">
 			<section className="search">
@@ -182,8 +123,8 @@ export default function Home() {
 								placeholder="Ciudad"
 									value={city}
 									onChange={(e) => handleCityChange(e.target.value)}
-									onFocus={() => setShowSuggestions(city.length >= 2)}
-									onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
+								onFocus={handleCityFocus}
+								onBlur={handleCityBlur}
 									onKeyDown={handleCityKeyDown}
 									role="combobox"
 									aria-autocomplete="list"
@@ -225,7 +166,7 @@ export default function Home() {
 													className={
 														activeSuggestionIndex === index ? "is-active" : undefined
 													}
-													onMouseEnter={() => setActiveSuggestionIndex(index)}
+											onMouseEnter={() => activateSuggestion(index)}
 													onMouseDown={() => selectCity(c)}
 											>
 												{c}

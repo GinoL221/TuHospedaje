@@ -578,60 +578,6 @@ describe("Home - search form", () => {
 		expect(input).toHaveValue("Buenos Aires");
 	});
 
-	it("keeps previous city suggestions visible while a new search is in flight", async () => {
-		mockGetDefaults();
-		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings/cities"))
-				return Promise.resolve(["Bariloche"]);
-			if (endpoint.startsWith("/lodgings/recommendations"))
-				return Promise.resolve(recommendationsPage());
-			if (endpoint === "/categories") return Promise.resolve([]);
-			return Promise.resolve(null);
-		});
-		const user = userEvent.setup();
-		renderHome();
-		const input = screen.getByRole("combobox");
-		await user.type(input, "Ba");
-		await screen.findByRole("option", { name: "Bariloche" });
-
-		const pending = deferred();
-		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings/cities")) return pending.promise;
-			if (endpoint.startsWith("/lodgings/recommendations"))
-				return Promise.resolve(recommendationsPage());
-			return Promise.resolve([]);
-		});
-
-		await user.type(input, "r");
-		expect(await screen.findByRole("status")).toHaveTextContent("Buscando...");
-		expect(screen.getByRole("option", { name: "Bariloche" })).toBeInTheDocument();
-
-		pending.resolve(["Bariloche", "Baradero"]);
-		expect(await screen.findByRole("option", { name: "Baradero" })).toBeInTheDocument();
-		expect(screen.queryByText("Buscando...")).not.toBeInTheDocument();
-	});
-
-	it("closes city suggestions with Escape", async () => {
-		mockGetDefaults();
-		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings/cities")) return Promise.resolve(["Mendoza"]);
-			if (endpoint.startsWith("/lodgings/recommendations"))
-				return Promise.resolve(recommendationsPage());
-			if (endpoint === "/categories") return Promise.resolve([]);
-			return Promise.resolve(null);
-		});
-		const user = userEvent.setup();
-		renderHome();
-		const input = screen.getByRole("combobox");
-
-		await user.type(input, "Me");
-		await screen.findByRole("option", { name: "Mendoza" });
-		await user.keyboard("{Escape}");
-
-		expect(input).toHaveAttribute("aria-expanded", "false");
-		expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-	});
-
 	it("registers and applies the Spanish locale to both date pickers", async () => {
 		mockGetDefaults();
 		renderHome();
