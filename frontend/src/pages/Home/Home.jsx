@@ -123,8 +123,8 @@ export default function Home() {
 								placeholder="Ciudad"
 									value={city}
 									onChange={(e) => handleCityChange(e.target.value)}
-								onFocus={handleCityFocus}
-								onBlur={handleCityBlur}
+									onFocus={handleCityFocus}
+									onBlur={handleCityBlur}
 									onKeyDown={handleCityKeyDown}
 									role="combobox"
 									aria-autocomplete="list"
@@ -166,7 +166,7 @@ export default function Home() {
 													className={
 														activeSuggestionIndex === index ? "is-active" : undefined
 													}
-											onMouseEnter={() => activateSuggestion(index)}
+												onMouseEnter={() => activateSuggestion(index)}
 													onMouseDown={() => selectCity(c)}
 											>
 												{c}
