@@ -5,6 +5,7 @@ import { es } from "date-fns/locale/es";
 import { get } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import useHomeRecommendations from "../../hooks/useHomeRecommendations";
+import useHomeSearchResults from "../../hooks/useHomeSearchResults";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
@@ -17,7 +18,6 @@ export default function Home() {
 	const { search } = useLocation();
 	const { user } = useAuth();
 	const [categories, setCategories] = useState([]);
-	const [searchResults, setSearchResults] = useState(null);
 	const [city, setCity] = useState("");
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
@@ -39,31 +39,7 @@ export default function Home() {
 		refresh: handleRefreshRecommendations,
 		retry: fetchRecommendations,
 	} = useHomeRecommendations();
-
-	useEffect(() => {
-		if (!search) return undefined;
-
-		let isCurrentSearch = true;
-		get(`/lodgings/search${search}`)
-			.then((data) => {
-				if (isCurrentSearch) setSearchResults({ query: search, data });
-			})
-			.catch(() => {
-				if (isCurrentSearch) {
-					setSearchResults({
-						query: search,
-						data: { lodgings: [], totalItems: 0, catalogItems: 0 },
-					});
-				}
-			});
-
-		return () => {
-			isCurrentSearch = false;
-		};
-	}, [search]);
-
-	const visibleSearchResults =
-		searchResults?.query === search ? searchResults.data : null;
+	const { searchResults: visibleSearchResults } = useHomeSearchResults(search);
 
 	const searchParams = new URLSearchParams(search);
 	const selectedCategories = searchParams.getAll("categories");
