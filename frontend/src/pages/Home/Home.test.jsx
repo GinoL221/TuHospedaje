@@ -30,8 +30,19 @@ vi.mock("react-datepicker", () => ({
 }));
 
 vi.mock("../../components/ProductCard/ProductCard", () => ({
-	default: ({ lodging }) => (
-		<div data-testid="product-card">{lodging.name}</div>
+	default: ({ lodging, defaultFavorite = false, onFavoriteToggle }) => (
+		<div data-testid="product-card" data-favorite={defaultFavorite}>
+			{lodging.name}
+			{onFavoriteToggle && (
+				<button
+					type="button"
+					aria-label="Toggle favorite"
+					onClick={() => onFavoriteToggle(lodging.id, !defaultFavorite)}
+				>
+					Toggle favorite
+				</button>
+			)}
+		</div>
 	),
 }));
 
@@ -540,6 +551,31 @@ describe("Home - loading failure, retry, and repeated failure", () => {
 });
 
 describe("Home - search form", () => {
+	it("renders autocomplete loading and empty statuses from the hook state", async () => {
+		mockGetDefaults();
+		const pendingCities = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/cities")) return pendingCities.promise;
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		await user.type(screen.getByRole("combobox"), "Ba");
+		const listbox = await screen.findByRole("listbox", {
+			name: "Sugerencias de ciudades",
+		});
+		expect(listbox).toHaveAttribute("aria-busy", "true");
+		expect(screen.getByRole("status")).toHaveTextContent("Buscando...");
+
+		pendingCities.resolve([]);
+		expect(await screen.findByText("Sin resultados")).toBeInTheDocument();
+		expect(listbox).toHaveAttribute("aria-busy", "false");
+	});
+
 	it("supports mouse and keyboard selection with listbox semantics", async () => {
 		mockGetDefaults();
 		get.mockImplementation((endpoint) => {
@@ -561,13 +597,18 @@ describe("Home - search form", () => {
 		expect(input).toHaveAttribute("aria-expanded", "true");
 		expect(input).toHaveAttribute("aria-controls", listbox.id);
 
-		await user.keyboard("{ArrowDown}");
 		const activeOption = screen.getByRole("option", { name: "Bariloche" });
-		expect(activeOption).toHaveClass("is-active");
+		fireEvent.mouseEnter(activeOption);
 		expect(activeOption).toHaveAttribute("aria-selected", "true");
 		expect(input).toHaveAttribute("aria-activedescendant", activeOption.id);
 
-		await user.keyboard("{ArrowDown}{ArrowUp}{Enter}");
+		await user.keyboard("{ArrowDown}");
+		expect(screen.getByRole("option", { name: "Buenos Aires" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+
+		await user.keyboard("{ArrowUp}{Enter}");
 		expect(input).toHaveValue("Bariloche");
 		expect(input).toHaveAttribute("aria-expanded", "false");
 
@@ -598,7 +639,7 @@ describe("Home - search form", () => {
 		);
 	});
 
-	it("searches on Home with the city query param when submitted", async () => {
+	it("searches on Home with the city and selected date query params when submitted", async () => {
 		mockGetDefaults();
 		const user = userEvent.setup();
 		renderHome();
@@ -606,9 +647,19 @@ describe("Home - search form", () => {
 		await screen.findByText("Cabaña del Lago");
 
 		await user.type(screen.getByPlaceholderText("Ciudad"), "Bariloche");
+		fireEvent.change(screen.getByTestId("datepicker-Check-in"), {
+			target: { value: "2026-07-10" },
+		});
+		fireEvent.change(screen.getByTestId("datepicker-Check-out"), {
+			target: { value: "2026-07-15" },
+		});
 		await user.click(screen.getByRole("button", { name: "Buscar" }));
 
-		await waitFor(() => expect(get).toHaveBeenCalledWith("/lodgings/search?city=Bariloche"));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(
+				"/lodgings/search?city=Bariloche&checkIn=2026-07-10&checkOut=2026-07-15",
+			),
+		);
 	});
 
 	it("shows a validation error when checkOut is not after checkIn", async () => {
@@ -690,6 +741,23 @@ describe("Home - favorites", () => {
 		await screen.findByText("Cabaña del Lago");
 
 		expect(get).not.toHaveBeenCalledWith("/favorites");
+	});
+
+	it("wires loaded favorite state and card toggle callbacks", async () => {
+		mockGetDefaults({ favorites: [lodgingFixture] });
+		const user = userEvent.setup();
+		renderHome();
+
+		const card = await screen.findByTestId("product-card");
+		await waitFor(() => expect(card).toHaveAttribute("data-favorite", "true"));
+
+		await user.click(
+			screen.getByRole("button", { name: "Toggle favorite" }),
+		);
+
+		expect(card).toHaveAttribute("data-favorite", "false");
+		await user.click(screen.getByRole("button", { name: "Toggle favorite" }));
+		expect(card).toHaveAttribute("data-favorite", "true");
 	});
 });
 
