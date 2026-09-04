@@ -1,6 +1,7 @@
 package com.tuhospedaje.reservation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
@@ -308,15 +309,41 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                         .cookie(accessCookie(otherToken)).cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
-        String missingBody = mockMvc.perform(patch("/api/reservations/999999/cancel")
+        JsonNode nonOwnerResponse = objectMapper.readTree(nonOwnerBody);
+        assertThat(nonOwnerResponse.get("status").asInt()).isEqualTo(404);
+        assertThat(nonOwnerResponse.get("error").isTextual()).isTrue();
+        assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+
+        reservationRepository.deleteById(reservation.getId());
+        reservationRepository.flush();
+
+        String missingBody = mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
                         .cookie(accessCookie(otherToken)).cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
 
-        assertThat(objectMapper.readTree(nonOwnerBody).get("status").asInt()).isEqualTo(404);
-        assertThat(objectMapper.readTree(missingBody).get("status").asInt()).isEqualTo(404);
-        assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
-                .isEqualTo(ReservationStatus.CONFIRMED);
+        JsonNode missingResponse = objectMapper.readTree(missingBody);
+        assertThat(missingResponse.get("status").asInt()).isEqualTo(404);
+        assertThat(missingResponse.get("error").isTextual()).isTrue();
+        assertThat(nonOwnerResponse.get("status")).isEqualTo(missingResponse.get("status"));
+        assertThat(nonOwnerResponse.get("error")).isEqualTo(missingResponse.get("error"));
+    }
+
+    @Test
+    void publicNotFoundFieldsIgnoreJsonMemberOrder() throws Exception {
+        JsonNode statusThenError = publicNotFoundFields("{\"status\":404,\"error\":\"Reservation not found\"}");
+        JsonNode errorThenStatus = publicNotFoundFields("{\"error\":\"Reservation not found\",\"status\":404}");
+
+        assertThat(statusThenError).isEqualTo(errorThenStatus);
+    }
+
+    private JsonNode publicNotFoundFields(String json) throws Exception {
+        JsonNode response = objectMapper.readTree(json);
+        var publicFields = objectMapper.createObjectNode();
+        publicFields.set("status", response.get("status"));
+        publicFields.set("error", response.get("error"));
+        return publicFields;
     }
 
     @Test
