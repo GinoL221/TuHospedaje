@@ -1,0 +1,59 @@
+name: Work request
+description: Propose a bug fix, test debt, feature, refactor, or maintenance task.
+title: ""
+body:
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: Request type
+      options:
+        - Bug
+        - Test debt
+        - Feature
+        - Refactor
+        - Maintenance
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-outcome
+    attributes:
+      label: Problem and desired outcome
+      description: Describe the current problem and the outcome this work should produce.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: State what is included and what is intentionally excluded.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List the observable conditions that must be met.
+      placeholder: |
+        - [ ] First criterion
+        - [ ] Second criterion
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification-plan
+    attributes:
+      label: Verification plan
+      description: Explain how the acceptance criteria will be verified.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I confirm that I have not included secrets or private data in this issue.
+          required: true
