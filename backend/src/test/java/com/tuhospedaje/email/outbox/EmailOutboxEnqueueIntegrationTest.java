@@ -1,12 +1,15 @@
 package com.tuhospedaje.email.outbox;
 
+import com.tuhospedaje.configuration.EmailOutboxProperties;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.dto.reservation.CreateReservationRequest;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.EmailOutboxStatus;
+import com.tuhospedaje.enums.EmailOutboxType;
 import com.tuhospedaje.exception.DuplicateEmailException;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
@@ -16,22 +19,27 @@ import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.EmailOutboxService;
+import com.tuhospedaje.service.EmailTransport;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
 import com.tuhospedaje.service.ReservationService;
+import com.tuhospedaje.service.impl.EmailOutboxDispatcher;
 import com.tuhospedaje.service.impl.EmailOutboxTransactionService;
 import com.tuhospedaje.service.impl.RegistrationPersistenceService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -46,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -74,6 +83,12 @@ class EmailOutboxEnqueueIntegrationTest {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private EmailOutboxTransactionService emailOutboxTransactions;
+    @Autowired
+    private EmailOutboxProperties emailOutboxProperties;
+    @Autowired
+    private Clock clock;
+    @MockitoBean
+    private EmailTransport emailTransport;
 
     @BeforeEach
     @AfterEach
@@ -152,6 +167,32 @@ class EmailOutboxEnqueueIntegrationTest {
         assertThat(reservationRepository.findById(response.getId())).isPresent();
         assertThat(emailOutboxRepository.findByEmailTypeAndAggregateId(
                 "RESERVATION_CONFIRMATION", response.getId().toString())).isPresent();
+    }
+
+    @Test
+    void dispatchesPersistedReservationConfirmationThroughTransport() {
+        User user = saveUser("dispatch@test.com");
+        Lodging lodging = saveLodging("dispatch@test.com");
+        var response = reservationService.createReservation(user, request(lodging.getId(), "dispatch@test.com"));
+        String expectedType = EmailOutboxType.RESERVATION_CONFIRMATION.name();
+        var persisted = emailOutboxRepository.findByEmailTypeAndAggregateId(
+                expectedType, response.getId().toString()).orElseThrow();
+
+        assertThat(persisted.getEmailType()).isEqualTo(expectedType);
+        assertThat(persisted.getAggregateId()).isEqualTo(response.getId().toString());
+        assertThat(persisted.getStatus()).isEqualTo(EmailOutboxStatus.PENDING);
+
+        new EmailOutboxDispatcher(emailOutboxTransactions, emailTransport, emailOutboxProperties, clock)
+                .dispatch(EmailOutboxType.RESERVATION_CONFIRMATION);
+
+        ArgumentCaptor<EmailMessage> messageCaptor = ArgumentCaptor.forClass(EmailMessage.class);
+        verify(emailTransport).submit(messageCaptor.capture());
+        assertThat(messageCaptor.getValue()).satisfies(message -> {
+            assertThat(message.emailType()).isEqualTo(persisted.getEmailType());
+            assertThat(message.aggregateId()).isEqualTo(persisted.getAggregateId());
+        });
+        assertThat(emailOutboxRepository.findById(persisted.getId()).orElseThrow().getStatus())
+                .isEqualTo(EmailOutboxStatus.DELIVERED);
     }
 
     @Test
