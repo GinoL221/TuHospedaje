@@ -62,11 +62,48 @@ describe("ImageUpload - successful upload", () => {
 });
 
 describe("ImageUpload - failed upload", () => {
+  it("shows the backend error message for a 400 response and does not update urls", async () => {
+    const errorMessage = "Only JPEG, PNG, WebP and GIF images are allowed.";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: errorMessage }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const onUrlsChange = vi.fn();
+    render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
+
+    await userEvent.upload(document.getElementById("imageUpload"), makeFile());
+
+    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+    expect(onUrlsChange).not.toHaveBeenCalled();
+  });
+
+  it("shows the backend error message for a 413 response and does not update urls", async () => {
+    const errorMessage = "The uploaded file is too large.";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 413,
+      json: async () => ({ error: errorMessage }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const onUrlsChange = vi.fn();
+    render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
+
+    await userEvent.upload(document.getElementById("imageUpload"), makeFile());
+
+    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+    expect(onUrlsChange).not.toHaveBeenCalled();
+  });
+
   it("shows a visible error message and does not call onUrlsChange when the response is not ok", async () => {
+    const responseBody = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({ error: "Upload failed" }),
+      json: responseBody,
     });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -75,6 +112,28 @@ describe("ImageUpload - failed upload", () => {
 
     const input = document.getElementById("imageUpload");
     await userEvent.upload(input, makeFile());
+
+    expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
+    expect(responseBody).not.toHaveBeenCalled();
+    expect(onUrlsChange).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a malformed body", vi.fn().mockRejectedValue(new SyntaxError("invalid JSON"))],
+    ["an absent error field", vi.fn().mockResolvedValue({})],
+    ["an empty error field", vi.fn().mockResolvedValue({ error: "   " })],
+  ])("shows the generic error for a 400 response with %s", async (_description, responseBody) => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: responseBody,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const onUrlsChange = vi.fn();
+    render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
+
+    await userEvent.upload(document.getElementById("imageUpload"), makeFile());
 
     expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
     expect(onUrlsChange).not.toHaveBeenCalled();
