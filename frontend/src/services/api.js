@@ -11,6 +11,13 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
 
+// A backend that accepts the connection and never answers leaves fetch pending forever:
+// the caller's loading state never resolves, so the UI keeps spinning with no error to
+// render and no way out. This deadline turns that into an ordinary rejection the existing
+// catch blocks already handle.
+const REQUEST_TIMEOUT_MS = 15_000;
+const TIMEOUT_MESSAGE = "La solicitud tardó demasiado. Intentá de nuevo.";
+
 // Endpoints that legitimately return 401 for reasons unrelated to an
 // expired/missing session cookie (e.g. wrong credentials on login), plus
 // /auth/refresh itself (its own 401 is terminal and must not recurse back
@@ -39,6 +46,29 @@ export async function bootstrapCsrf() {
   }
 }
 
+/**
+ * Each call gets its own controller, so the retry after a refresh is timed from when IT
+ * started rather than inheriting the original attempt's already-spent budget. The timer
+ * is always cleared, including on a rejection, so a settled request never leaves an armed
+ * deadline behind.
+ */
+async function fetchWithDeadline(url, config) {
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...config, signal: controller.signal });
+  } catch (err) {
+    // AbortError is the browser's word for it, not something to show a person — but it
+    // stays attached as `cause` so a debugger can still see what actually happened.
+    if (err?.name === "AbortError") {
+      throw new Error(TIMEOUT_MESSAGE, { cause: err });
+    }
+    throw err;
+  } finally {
+    clearTimeout(deadline);
+  }
+}
+
 async function request(method, endpoint, data, alreadyRetried = false) {
   const headers = { "Content-Type": "application/json" };
   if (UNSAFE_METHODS.has(method)) {
@@ -53,7 +83,7 @@ async function request(method, endpoint, data, alreadyRetried = false) {
     config.body = JSON.stringify(data);
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, config);
+  const res = await fetchWithDeadline(`${API_BASE}${endpoint}`, config);
 
   if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
     if (!alreadyRetried) {

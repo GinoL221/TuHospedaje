@@ -149,17 +149,22 @@ class ListingQueryCountTest {
      * have been proxy-safe; reading any other column is not.
      */
     @Test
-    void getAllReservations_queryCountIsIndependentOfHowManyReservationsAreReturned() {
+    void getAdminReservations_queryCountIsIndependentOfHowManyReservationsAreReturned() {
         seedReservations(SMALL_PAGE);
-        long smallPageStatements = statementsFor(() -> reservationService.getAllReservations());
+        long smallPageStatements = statementsFor(() -> adminReservationPage(SMALL_PAGE));
 
         cleanAll();
         seedReservations(LARGER_PAGE);
-        long largerPageStatements = statementsFor(() -> reservationService.getAllReservations());
+        long largerPageStatements = statementsFor(() -> adminReservationPage(LARGER_PAGE));
 
         assertThat(largerPageStatements)
                 .as("reservation rows each resolve their lodging proxy; that must be batched")
                 .isEqualTo(smallPageStatements);
+    }
+
+    /** Ordering is irrelevant here; what matters is that every row maps its lodging. */
+    private void adminReservationPage(int size) {
+        reservationService.getAdminReservations(0, size, "id", "asc", null, null);
     }
 
     private long statementsFor(Runnable action) {

@@ -17,7 +17,6 @@ public interface ReservationService {
 
     List<ReservationResponse> getMyReservations(User user);
 
-    List<ReservationResponse> getAllReservations();
 
     PageResponse<ReservationResponse> getAdminReservations(int page, int size, String sort, String direction, String status, String q);
 }

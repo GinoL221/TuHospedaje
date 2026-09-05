@@ -3,13 +3,22 @@ import { Building2, Tag, Star, Users, Calendar } from "lucide-react";
 import { get } from "../../services/api";
 import { hasReservationNotes, reservationCreatedAtLabel } from "../../utils/reservationPresentation";
 
+// The `key` of each card is the field name in GET /api/admin/stats.
 const STATS = [
-  { key: "lodgings",   label: "Alojamientos",    icon: Building2, endpoint: "/lodgings",   tab: "lodgings" },
-  { key: "categories", label: "Categorías",       icon: Tag,       endpoint: "/categories", tab: "categories" },
-  { key: "features",   label: "Características",  icon: Star,      endpoint: "/features",   tab: "features" },
-  { key: "users",      label: "Usuarios",         icon: Users,     endpoint: "/users",      tab: "users" },
-  { key: "reservations", label: "Reservas",        icon: Calendar,  endpoint: "/reservations", tab: "reservations" },
+  { key: "lodgings",     label: "Alojamientos",    icon: Building2, tab: "lodgings" },
+  { key: "categories",   label: "Categorías",      icon: Tag,       tab: "categories" },
+  { key: "features",     label: "Características", icon: Star,      tab: "features" },
+  { key: "users",        label: "Usuarios",        icon: Users,     tab: "users" },
+  { key: "reservations", label: "Reservas",        icon: Calendar,  tab: "reservations" },
 ];
+
+const RECENT_COUNT = 4;
+// The admin listings are the only paginated ones, and they sort by id descending,
+// which is "most recently created first" for an IDENTITY primary key.
+const RECENT_LODGINGS = `/lodgings/admin?page=0&size=${RECENT_COUNT}&sort=id&direction=desc`;
+const RECENT_RESERVATIONS = `/reservations/admin?page=0&size=${RECENT_COUNT}&sort=id&direction=desc`;
+
+const UNAVAILABLE = "—";
 
 export default function AdminDashboard({ onTabChange }) {
   const [counts, setCounts] = useState({});
@@ -17,27 +26,21 @@ export default function AdminDashboard({ onTabChange }) {
   const [recentReservations, setRecentReservations] = useState([]);
 
   useEffect(() => {
-    STATS.forEach(({ key, endpoint }) => {
-      get(endpoint)
-        .then((data) => {
-          const arr = Array.isArray(data) ? data : data?.content ?? data?.lodgings ?? [];
-          setCounts((prev) => ({ ...prev, [key]: arr.length }));
-        })
-        .catch(() => setCounts((prev) => ({ ...prev, [key]: "—" })));
-    });
+    // One call for all five cards. Counting used to mean downloading each table whole
+    // and reading .length, which shipped every user record to render a number and — for
+    // lodgings — reported the listing's result cap instead of the real total.
+    get("/admin/stats")
+      .then(setCounts)
+      .catch(() =>
+        setCounts(Object.fromEntries(STATS.map(({ key }) => [key, UNAVAILABLE])))
+      );
 
-    get("/lodgings?page=0&size=4")
-      .then((data) => {
-        const arr = Array.isArray(data) ? data : data?.lodgings ?? [];
-        setRecentLodgings(arr.slice(0, 4));
-      })
+    get(RECENT_LODGINGS)
+      .then((page) => setRecentLodgings(page?.items ?? []))
       .catch(() => {});
 
-    get("/reservations")
-      .then((data) => {
-        const arr = Array.isArray(data) ? data : [];
-        setRecentReservations(arr.slice(0, 4));
-      })
+    get(RECENT_RESERVATIONS)
+      .then((page) => setRecentReservations(page?.items ?? []))
       .catch(() => {});
   }, []);
 
