@@ -255,10 +255,12 @@
   }
 
   .login-box {
+    box-sizing: border-box;
     width: 100%;
     max-width: 360px;
   }
   .register-box {
+    box-sizing: border-box;
     width: 100%;
     max-width: 400px;
   }
