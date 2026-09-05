@@ -19,6 +19,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -193,6 +194,20 @@ public class GlobalExceptionHandler {
         log.warn("Pessimistic lock contention: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", resolveMessage("error.pessimistic_lock", locale), "status", 409));
+    }
+
+    /**
+     * The multipart parser aborts with this exception once a part crosses
+     * {@code spring.servlet.multipart.max-file-size}, before the request ever reaches
+     * {@code UploadController}. Without this handler it falls through to the
+     * {@code Exception} catch-all and the client gets a 500 for what is plainly its own
+     * oversized input — 413 is the honest answer, and the only one a UI can act on.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex, Locale locale) {
+        log.warn("Upload rejected: exceeds max size ({} bytes)", ex.getMaxUploadSize());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of("error", resolveMessage("error.upload.too_large", locale), "status", 413));
     }
 
     @ExceptionHandler(UploadException.class)
