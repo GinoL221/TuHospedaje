@@ -5,42 +5,80 @@ import { get } from "../../services/api";
 
 vi.mock("../../services/api");
 
+const EMPTY_STATS = {
+  lodgings: 0,
+  categories: 0,
+  features: 0,
+  users: 0,
+  reservations: 0,
+};
+
+function page(items) {
+  return { items, currentPage: 0, totalItems: items.length, totalPages: 1 };
+}
+
 function mockGetDefaults({
-  lodgingsCount = [],
+  stats = {},
   recentLodgings = [],
   reservations = [],
 } = {}) {
   get.mockImplementation((endpoint) => {
-    if (endpoint === "/lodgings") return Promise.resolve(lodgingsCount);
-    if (endpoint === "/lodgings?page=0&size=4")
-      return Promise.resolve({ lodgings: recentLodgings });
-    if (endpoint === "/categories") return Promise.resolve([]);
-    if (endpoint === "/features") return Promise.resolve([]);
-    if (endpoint === "/users") return Promise.resolve([]);
-    if (endpoint === "/reservations") return Promise.resolve(reservations);
+    if (endpoint === "/admin/stats")
+      return Promise.resolve({ ...EMPTY_STATS, ...stats });
+    if (endpoint.startsWith("/lodgings/admin")) return Promise.resolve(page(recentLodgings));
+    if (endpoint.startsWith("/reservations/admin")) return Promise.resolve(page(reservations));
     return Promise.resolve([]);
   });
 }
 
 describe("AdminDashboard - stat count", () => {
   it("shows … initially then the count once the fetch resolves", async () => {
-    mockGetDefaults({ lodgingsCount: [{ id: 1 }, { id: 2 }] });
+    mockGetDefaults({ stats: { lodgings: 2 } });
     render(<AdminDashboard onTabChange={vi.fn()} />);
 
     expect(screen.getAllByText("…").length).toBeGreaterThan(0);
     expect(await screen.findByText("2")).toBeInTheDocument();
   });
 
-  it("shows — for a stat when its endpoint rejects", async () => {
-    get.mockImplementation((endpoint) => {
-      if (endpoint === "/lodgings") return Promise.reject(new Error("fail"));
-      if (endpoint === "/lodgings?page=0&size=4")
-        return Promise.resolve({ lodgings: [] });
-      return Promise.resolve([]);
+  /**
+   * The defect this replaced: counts were the .length of listing payloads, and the
+   * lodgings listing caps its result set — so past that cap the card displayed the cap
+   * rather than the real total. The count must come from the server's own tally, which
+   * is why a total far larger than any page renders exactly.
+   */
+  it("renders a total larger than any page, because counts come from the server not from list lengths", async () => {
+    mockGetDefaults({
+      stats: { lodgings: 250 },
+      recentLodgings: [{ id: 1, name: "Hotel Sol" }],
     });
     render(<AdminDashboard onTabChange={vi.fn()} />);
 
-    expect(await screen.findByText("—")).toBeInTheDocument();
+    expect(await screen.findByText("250")).toBeInTheDocument();
+  });
+
+  it("asks only for counts and the two recent pages, never for a whole table", async () => {
+    mockGetDefaults();
+    render(<AdminDashboard onTabChange={vi.fn()} />);
+
+    await waitFor(() => expect(get).toHaveBeenCalledWith("/admin/stats"));
+
+    const requested = get.mock.calls.map(([endpoint]) => endpoint);
+    expect(requested).toHaveLength(3);
+    expect(requested).not.toContain("/lodgings");
+    expect(requested).not.toContain("/reservations");
+    expect(requested).not.toContain("/users");
+    expect(requested).not.toContain("/categories");
+    expect(requested).not.toContain("/features");
+  });
+
+  it("shows — on every card when the stats request rejects", async () => {
+    get.mockImplementation((endpoint) => {
+      if (endpoint === "/admin/stats") return Promise.reject(new Error("fail"));
+      return Promise.resolve(page([]));
+    });
+    render(<AdminDashboard onTabChange={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getAllByText("—")).toHaveLength(5));
   });
 });
 
