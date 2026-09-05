@@ -22,10 +22,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +68,9 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private EntityManagerFactory emf;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private String adminToken;
     private String userToken;
@@ -471,6 +476,10 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldPersistOrderedImagesWhenCreatingAndUpdatingLodging() throws Exception {
+        List<String> initialImageUrls = List.of(
+                "https://example.com/one.jpg",
+                "https://example.com/two.jpg"
+        );
         Map<String, Object> createRequest = Map.of(
                 "name", "Image order",
                 "description", "Initial images",
@@ -481,7 +490,7 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "email", "image-order@test.com",
                 "pricePerNight", new BigDecimal("30000.00"),
                 "maxGuests", 4,
-                "imageUrls", java.util.List.of("https://example.com/one.jpg", "https://example.com/two.jpg")
+                "imageUrls", initialImageUrls
         );
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
@@ -494,14 +503,22 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/one.jpg"))
                 .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/two.jpg"))
+                .andExpect(jsonPath("$.imageUrls.length()").value(initialImageUrls.size()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         Long id = objectMapper.readTree(createResponse).get("id").asLong();
 
+        lodgingRepository.flush();
+        assertThat(storedImageUrls(id)).containsExactlyElementsOf(initialImageUrls);
+
+        List<String> replacementImageUrls = List.of(
+                "https://example.com/three.jpg",
+                "https://example.com/four.jpg"
+        );
         Map<String, Object> updateRequest = new java.util.HashMap<>(createRequest);
         updateRequest.put("name", "Updated image order");
-        updateRequest.put("imageUrls", java.util.List.of("https://example.com/three.jpg", "https://example.com/four.jpg"));
+        updateRequest.put("imageUrls", replacementImageUrls);
 
         csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(put("/api/lodgings/{id}", id)
@@ -512,13 +529,29 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/three.jpg"))
-                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/four.jpg"));
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/four.jpg"))
+                .andExpect(jsonPath("$.imageUrls.length()").value(replacementImageUrls.size()));
+
+        lodgingRepository.flush();
+        assertThat(storedImageUrls(id)).containsExactlyElementsOf(replacementImageUrls);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM lodging_images WHERE image_url IN (?, ?)",
+                Integer.class,
+                initialImageUrls.get(0),
+                initialImageUrls.get(1))).isZero();
 
         mockMvc.perform(get("/api/lodgings/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/three.jpg"))
                 .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/four.jpg"))
                 .andExpect(jsonPath("$.imageUrls.length()").value(2));
+    }
+
+    private List<String> storedImageUrls(Long lodgingId) {
+        return jdbcTemplate.queryForList(
+                "SELECT image_url FROM lodging_images WHERE lodging_id = ? ORDER BY id ASC",
+                String.class,
+                lodgingId);
     }
 
     @Test
