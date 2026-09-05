@@ -1,6 +1,23 @@
 import { useState } from "react";
 import { getCsrfToken } from "../../services/api";
 
+const GENERIC_UPLOAD_ERROR = "No se pudo subir la imagen. Intentá de nuevo.";
+
+async function getClientErrorMessage(response) {
+  const isClientError = response.status >= 400 && response.status < 500;
+  if (!isClientError) return GENERIC_UPLOAD_ERROR;
+
+  try {
+    const body = await response.json();
+    const message = body?.error;
+    return typeof message === "string" && message.trim()
+      ? message
+      : GENERIC_UPLOAD_ERROR;
+  } catch {
+    return GENERIC_UPLOAD_ERROR;
+  }
+}
+
 export default function ImageUpload({
   urls,
   onUrlsChange,
@@ -26,13 +43,14 @@ export default function ImageUpload({
         body: formData,
       });
       if (!res.ok) {
-        throw new Error("No se pudo subir la imagen. Intentá de nuevo.");
+        setError(await getClientErrorMessage(res));
+        return;
       }
       const data = await res.json();
       onUrlsChange([...urls, data.url]);
     } catch (err) {
       console.error(err);
-      setError("No se pudo subir la imagen. Intentá de nuevo.");
+      setError(GENERIC_UPLOAD_ERROR);
     } finally {
       setUploading(false);
       onUploadingChange?.(false);
