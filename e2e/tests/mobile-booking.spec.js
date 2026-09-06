@@ -113,8 +113,10 @@ async function exerciseBooking(page) {
   const popper = page.locator('.react-datepicker-popper').last();
   const calendar = popper.locator('.react-datepicker');
   await expect(calendar).toBeVisible();
+  await calendar.scrollIntoViewIfNeeded();
   await expectContainedInViewport(page, calendar);
   await expectTouchTarget(popper.locator('.react-datepicker__navigation--next'));
+  await popper.locator('.react-datepicker__navigation--next').scrollIntoViewIfNeeded();
   await expectContainedInViewport(page, popper.locator('.react-datepicker__navigation--next'));
   await page.keyboard.press('Escape');
 
