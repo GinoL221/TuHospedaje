@@ -245,6 +245,20 @@ describe("ShareModal", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
+	it("locks body scrolling while mounted and restores the exact previous overflow", () => {
+		document.body.style.overflow = "scroll";
+
+		const { unmount } = render(
+			<ShareModal lodging={lodging} onClose={vi.fn()} />,
+		);
+
+		expect(document.body.style.overflow).toBe("hidden");
+
+		unmount();
+		expect(document.body.style.overflow).toBe("scroll");
+		document.body.style.overflow = "";
+	});
+
 	it("restores focus to the trigger when unmounted", async () => {
 		const user = userEvent.setup();
 		const { rerender } = render(<button>Compartir alojamiento</button>);
