@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { get, post } from "../../services/api";
 import useRatingEligibility from "../../hooks/useRatingEligibility";
 import "./ReviewsSection.css";
@@ -20,6 +20,8 @@ export default function ReviewsSection({ lodgingId, user }) {
   const [ratingsStatus, setRatingsStatus] = useState("loading");
   const [ratingsRequest, setRatingsRequest] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitButtonRef = useRef(null);
+  const restoreSubmitFocusRef = useRef(false);
   const { status: eligibilityStatus, load: loadEligibility } =
     useRatingEligibility(lodgingId);
   const sectionId = `reviews-${lodgingId}`;
@@ -38,6 +40,13 @@ export default function ReviewsSection({ lodgingId, user }) {
       .catch(() => active && setRatingsStatus("error"));
     return () => { active = false; };
   }, [lodgingId, ratingsRequest]);
+
+  useEffect(() => {
+    if (!isSubmitting && restoreSubmitFocusRef.current) {
+      restoreSubmitFocusRef.current = false;
+      submitButtonRef.current?.focus();
+    }
+  }, [isSubmitting]);
 
   useEffect(() => {
     // Anonymous visitors never call eligibility; the review form is hidden
@@ -66,6 +75,7 @@ export default function ReviewsSection({ lodgingId, user }) {
       setUserScore(0);
       setUserComment("");
     } catch (err) {
+      restoreSubmitFocusRef.current = true;
       setSubmitError(err?.message || "No pudimos enviar tu reseña.");
     } finally {
       setIsSubmitting(false);
@@ -149,6 +159,7 @@ export default function ReviewsSection({ lodgingId, user }) {
                 </p>
               )}
               <button
+                ref={submitButtonRef}
                 type="submit"
                 className="btn-submit-review"
                 disabled={userScore === 0 || isSubmitting}
@@ -180,9 +191,17 @@ export default function ReviewsSection({ lodgingId, user }) {
                   {new Date(r.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <div className="review-stars">
+              <div
+                className="review-stars"
+                role="img"
+                aria-label={`Puntaje ${r.score} de 5 estrellas`}
+              >
                 {STAR_VALUES.map((s) => (
-                  <span key={s} className={s <= r.score ? "star-filled" : "star-empty"}>
+                  <span
+                    key={s}
+                    className={s <= r.score ? "star-filled" : "star-empty"}
+                    aria-hidden="true"
+                  >
                     ★
                   </span>
                 ))}
