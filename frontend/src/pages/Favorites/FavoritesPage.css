@@ -29,6 +29,8 @@
   background: none;
   border: 1px solid var(--secondary);
   color: var(--secondary);
+  min-width: 44px;
+  min-height: 44px;
   padding: 8px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -38,10 +40,20 @@
   transition: all var(--transition);
 }
 
-.btn-remove-fav:hover {
+.btn-remove-fav:hover:not(:disabled) {
   background: var(--secondary);
   border-color: var(--secondary);
   color: var(--action-primary-fg);
+}
+
+.btn-remove-fav:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.btn-remove-fav:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .empty-state.error {

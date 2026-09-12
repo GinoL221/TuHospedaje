@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { get, del } from "../../services/api";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import "../../App.css";
@@ -9,6 +9,8 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [removalErrors, setRemovalErrors] = useState({});
+  const [pendingRemovals, setPendingRemovals] = useState(() => new Set());
+  const pendingRemovalsRef = useRef(new Set());
 
   useEffect(() => {
     get("/favorites")
@@ -23,6 +25,10 @@ export default function FavoritesPage() {
   }, []);
 
   async function removeFavorite(id) {
+    if (pendingRemovalsRef.current.has(id)) return;
+
+    pendingRemovalsRef.current.add(id);
+    setPendingRemovals(new Set(pendingRemovalsRef.current));
     setRemovalErrors((current) => ({ ...current, [id]: "" }));
     try {
       await del(`/favorites/${id}`);
@@ -32,13 +38,16 @@ export default function FavoritesPage() {
         ...current,
         [id]: err.message || "No se pudo quitar de favoritos. Intentá nuevamente.",
       }));
+    } finally {
+      pendingRemovalsRef.current.delete(id);
+      setPendingRemovals(new Set(pendingRemovalsRef.current));
     }
   }
 
   if (loading)
     return (
       <main className="page-container favorites-page">
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state" role="status">Cargando...</p>
       </main>
     );
 
@@ -46,21 +55,24 @@ export default function FavoritesPage() {
     <main className="page-container favorites-page">
       <h1 className="favorites-title">Mis favoritos</h1>
       {error ? (
-        <p className="empty-state error">{error}</p>
+        <p className="empty-state error" role="alert">{error}</p>
       ) : favorites.length === 0 ? (
         <p className="empty-state">No tenés favoritos guardados.</p>
       ) : (
         <div className="favorites-grid">
           {favorites.map((lodging) => (
-            <div key={lodging.id} className="favorite-item">
-              <ProductCard lodging={lodging} showFavoriteButton={false} />
-              <button
-                className="btn-remove-fav"
-                onClick={() => removeFavorite(lodging.id)}
-              >
-                Quitar de favoritos
-              </button>
-              {removalErrors[lodging.id] && (
+                <div key={lodging.id} className="favorite-item">
+                  <ProductCard lodging={lodging} showFavoriteButton={false} />
+                  <button
+                    className="btn-remove-fav"
+                    onClick={() => removeFavorite(lodging.id)}
+                    disabled={pendingRemovals.has(lodging.id)}
+                  >
+                    {pendingRemovals.has(lodging.id)
+                      ? "Quitando de favoritos"
+                      : "Quitar de favoritos"}
+                  </button>
+                  {removalErrors[lodging.id] && (
                 <p className="favorite-remove-error" role="alert">
                   {removalErrors[lodging.id]}
                 </p>
