@@ -143,6 +143,90 @@ describe("BookingPage - loading and summary", () => {
 	});
 });
 
+describe("BookingPage - root lodging failure recovery", () => {
+	it("renders an alert with a keyboard-operable retry after the root lodging request fails", async () => {
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/lodgings/1") return Promise.reject(new Error("down"));
+			if (endpoint === "/reservations/my") return Promise.resolve([]);
+			if (endpoint.startsWith("/lodgings/1/availability")) {
+				return Promise.resolve({ available: true, occupiedRanges: [] });
+			}
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderBookingPage();
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("No se pudo cargar el alojamiento.");
+		const retry = screen.getByRole("button", { name: "Reintentar alojamiento" });
+		retry.focus();
+		await user.keyboard("{Enter}");
+
+		await waitFor(() => {
+			expect(
+				get.mock.calls.filter(([endpoint]) => endpoint === "/lodgings/1"),
+			).toHaveLength(2);
+		});
+	});
+
+	it("retries only the root lodging request and recovers without repeating reservations or availability", async () => {
+		let lodgingAttempts = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/lodgings/1") {
+				lodgingAttempts += 1;
+				return lodgingAttempts === 1
+					? Promise.reject(new Error("down"))
+					: Promise.resolve(lodgingFixture);
+			}
+			if (endpoint === "/reservations/my") return Promise.resolve([]);
+			if (endpoint.startsWith("/lodgings/1/availability")) {
+				return Promise.resolve({ available: true, occupiedRanges: [] });
+			}
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderBookingPage();
+
+		await user.click(
+			await screen.findByRole("button", { name: "Reintentar alojamiento" }),
+		);
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(
+			get.mock.calls.filter(([endpoint]) => endpoint === "/lodgings/1"),
+		).toHaveLength(2);
+		expect(
+			get.mock.calls.filter(([endpoint]) => endpoint === "/reservations/my"),
+		).toHaveLength(1);
+		expect(
+			get.mock.calls.filter(([endpoint]) =>
+				endpoint.startsWith("/lodgings/1/availability"),
+			),
+		).toHaveLength(1);
+		expect(post).not.toHaveBeenCalled();
+	});
+
+	it("restores focus to the newly rendered retry button when a retry fails again", async () => {
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/lodgings/1") return Promise.reject(new Error("down"));
+			if (endpoint === "/reservations/my") return Promise.resolve([]);
+			if (endpoint.startsWith("/lodgings/1/availability")) {
+				return Promise.resolve({ available: true, occupiedRanges: [] });
+			}
+			return Promise.resolve(null);
+		});
+		const user = userEvent.setup();
+		renderBookingPage();
+
+		await user.click(
+			await screen.findByRole("button", { name: "Reintentar alojamiento" }),
+		);
+
+		expect(
+			await screen.findByRole("button", { name: "Reintentar alojamiento" }),
+		).toHaveFocus();
+	});
+});
+
 describe("BookingPage - semantic form groups", () => {
 	it("names the form groups and connects availability feedback to date fields", async () => {
 		mockGetDefaults();

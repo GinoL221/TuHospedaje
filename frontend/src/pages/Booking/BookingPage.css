@@ -423,10 +423,13 @@
 
 .booking-form .react-datepicker-popper {
   z-index: 10;
-  max-width: calc(100vw - 16px);
+  width: min(328px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
 }
 
 .booking-form .react-datepicker {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
   border-radius: var(--radius-md);
   background: var(--surface-raised);
@@ -454,8 +457,9 @@
 .booking-form .react-datepicker__day-name,
 .booking-form .react-datepicker__day {
   box-sizing: border-box;
-  flex: 0 0 44px;
-  width: 44px;
+  flex: 1 1 44px;
+  width: auto;
+  min-width: 0;
   height: 44px;
   margin: 0;
   line-height: 44px;
@@ -575,6 +579,27 @@
   margin: 0;
   font-size: var(--type-body-size);
   line-height: var(--type-body-line-height);
+}
+
+.booking-page-state--error {
+  flex-direction: column;
+  color: #c0392b;
+  text-align: center;
+}
+
+.booking-page-state--error button {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .booking-state-indicator {
