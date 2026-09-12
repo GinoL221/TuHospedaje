@@ -11,11 +11,19 @@ export default function useCityAutocomplete() {
 	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 	const [loadingCities, setLoadingCities] = useState(false);
 	const debounceRef = useRef();
+	const skipSearchForCityRef = useRef(null);
 
 	useEffect(() => {
+		clearTimeout(debounceRef.current);
+
+		if (skipSearchForCityRef.current === city) {
+			skipSearchForCityRef.current = null;
+			return;
+		}
+
+		skipSearchForCityRef.current = null;
 		if (city.length < 2) return;
 
-		clearTimeout(debounceRef.current);
 		debounceRef.current = setTimeout(() => {
 			setLoadingCities(true);
 			setShowSuggestions(true);
@@ -36,6 +44,7 @@ export default function useCityAutocomplete() {
 	}, [city]);
 
 	function handleCityChange(value) {
+		skipSearchForCityRef.current = null;
 		setCity(value);
 		setActiveSuggestionIndex(-1);
 		if (value.length < 2) {
@@ -46,6 +55,8 @@ export default function useCityAutocomplete() {
 	}
 
 	function selectCity(value) {
+		clearTimeout(debounceRef.current);
+		skipSearchForCityRef.current = value;
 		setCity(value);
 		setShowSuggestions(false);
 		setActiveSuggestionIndex(-1);

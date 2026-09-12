@@ -121,7 +121,7 @@ describe("useCityAutocomplete", () => {
 	});
 
 	it("navigates arrow boundaries, selects with Enter, and dismisses with Escape", async () => {
-		get.mockResolvedValueOnce(["Bariloche", "Buenos Aires"]);
+	get.mockResolvedValue(["Bariloche", "Buenos Aires"]);
 		const { result } = renderHook(() => useCityAutocomplete());
 		act(() => result.current.handleCityChange("Ba"));
 		await advanceDebounce();
@@ -140,10 +140,34 @@ describe("useCityAutocomplete", () => {
 		act(() => result.current.handleCityKeyDown(enter));
 		expect(enter.preventDefault).toHaveBeenCalledOnce();
 		expect(result.current.city).toBe("Bariloche");
+		expect(result.current.showSuggestions).toBe(false);
+		await advanceDebounce();
+		expect(get).toHaveBeenCalledTimes(1);
+		expect(result.current.showSuggestions).toBe(false);
 
 		act(() => result.current.handleCityChange("Bu"));
 		act(() => result.current.handleCityKeyDown(keyEvent("Escape")));
 		expect(result.current.showSuggestions).toBe(false);
 		expect(result.current.activeSuggestionIndex).toBe(-1);
+	});
+
+	it("selects by touch without reopening or requesting the selected city", async () => {
+		get.mockResolvedValue(["Bariloche"]);
+		const { result } = renderHook(() => useCityAutocomplete());
+
+		act(() => result.current.handleCityChange("Ba"));
+		await advanceDebounce();
+		await act(async () => {});
+
+		act(() => result.current.selectCity("Bariloche"));
+		expect(result.current.city).toBe("Bariloche");
+		expect(result.current.showSuggestions).toBe(false);
+
+		await advanceDebounce();
+		expect(get).toHaveBeenCalledTimes(1);
+		expect(get).not.toHaveBeenCalledWith(
+			"/lodgings/cities?q=Bariloche",
+		);
+		expect(result.current.showSuggestions).toBe(false);
 	});
 });
