@@ -18,7 +18,7 @@ describe("FavoritesPage - favorites list", () => {
     get.mockResolvedValue([favoriteFixture]);
     customRender(<FavoritesPage />);
 
-    expect(screen.getByText("Cargando...")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando...");
 
     expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
     expect(get).toHaveBeenCalledWith("/favorites");
@@ -41,9 +41,9 @@ describe("FavoritesPage - fetch failure", () => {
     get.mockRejectedValue(new Error("No se pudieron cargar los favoritos."));
     customRender(<FavoritesPage />);
 
-    expect(
-      await screen.findByText("No se pudieron cargar los favoritos.")
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No se pudieron cargar los favoritos."
+    );
   });
 });
 
@@ -64,8 +64,34 @@ describe("FavoritesPage - removing a favorite", () => {
     });
   });
 
-  it("leaves the item rendered and shows a per-item alert when the delete request fails", async () => {
-    get.mockResolvedValue([favoriteFixture]);
+      it("prevents duplicate delete requests while removal is pending", async () => {
+        let resolveDelete;
+        get.mockResolvedValue([favoriteFixture]);
+        del.mockImplementation(
+          () => new Promise((resolve) => {
+            resolveDelete = resolve;
+          })
+        );
+        const user = userEvent.setup();
+        customRender(<FavoritesPage />);
+
+        await screen.findByText("Cabaña del Lago");
+        const removeButton = screen.getByRole("button", { name: "Quitar de favoritos" });
+
+        await user.click(removeButton);
+        expect(removeButton).toBeDisabled();
+        expect(removeButton).toHaveAccessibleName("Quitando de favoritos");
+        await user.click(removeButton);
+        expect(del).toHaveBeenCalledTimes(1);
+
+        resolveDelete();
+        await waitFor(() => {
+          expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
+        });
+      });
+
+      it("leaves the item rendered and shows a per-item alert when the delete request fails", async () => {
+        get.mockResolvedValue([favoriteFixture]);
     del.mockRejectedValue(new Error("network error"));
     const user = userEvent.setup();
     customRender(<FavoritesPage />);
