@@ -54,8 +54,19 @@ describe("ReviewsSection - reviews listing", () => {
     expect(screen.getByRole("list", { name: "Opiniones de huéspedes" })).toBeInTheDocument();
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("Excelente lugar")).toBeInTheDocument();
-    expect(screen.getByText("Beto")).toBeInTheDocument();
-  });
+        expect(screen.getByText("Beto")).toBeInTheDocument();
+
+        const renderedScores = screen.getAllByRole("img", {
+          name: /Puntaje [45] de 5 estrellas/,
+        });
+        expect(renderedScores).toHaveLength(2);
+        for (const score of renderedScores) {
+          expect(within(score).getAllByText("★")).toHaveLength(5);
+          for (const glyph of within(score).getAllByText("★")) {
+            expect(glyph).toHaveAttribute("aria-hidden", "true");
+          }
+        }
+      });
 });
 
 describe("ReviewsSection - empty state", () => {
@@ -63,9 +74,11 @@ describe("ReviewsSection - empty state", () => {
     get.mockResolvedValue({ average: 0, count: 0, ratings: [] });
     render(<ReviewsSection lodgingId="1" user={null} />);
 
-    expect(await screen.findByText("0.0")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Todavía no hay reseñas para este alojamiento."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("0.0")).toBeInTheDocument();
     expect(screen.getByText("(0 reseñas)")).toBeInTheDocument();
-    expect(screen.getByText("Todavía no hay reseñas para este alojamiento.")).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Opiniones de huéspedes" })).not.toBeInTheDocument();
   });
 });
@@ -192,7 +205,24 @@ describe("ReviewsSection - eligible submission form", () => {
     expect(screen.getByLabelText("Comentario")).toBeInTheDocument();
   });
 
-  it("shows a pending label and prevents duplicate submits while the request is in flight", async () => {
+      it("lets keyboard users reach and activate a score", async () => {
+        get.mockImplementation(makeGetMock());
+        const user = userEvent.setup();
+        render(<ReviewsSection lodgingId="1" user={loggedUser} />);
+
+        await screen.findByText("4.5");
+        const firstScore = await screen.findByRole("button", { name: "1 estrella" });
+        firstScore.focus();
+        await user.tab();
+
+        const secondScore = screen.getByRole("button", { name: "2 estrellas" });
+        expect(secondScore).toHaveFocus();
+        await user.keyboard("[Space]");
+        expect(secondScore).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("button", { name: "Enviar reseña" })).toBeEnabled();
+      });
+
+      it("shows a pending label and prevents duplicate submits while the request is in flight", async () => {
     const submission = deferred();
     get.mockImplementation(makeGetMock()); post.mockReturnValue(submission.promise); const user = userEvent.setup();
     render(<ReviewsSection lodgingId="1" user={loggedUser} />);
@@ -288,6 +318,14 @@ describe("ReviewsSection - failed submission", () => {
       "true",
     );
     expect(alertSpy).not.toHaveBeenCalled();
+
+    const submit = screen.getByRole("button", { name: "Enviar reseña" });
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(submit).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("heading", { name: "Opiniones de huéspedes" })).toBeInTheDocument();
+    await user.tab({ shift: true });
+    expect(submit).toHaveFocus();
 
     await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
     alertSpy.mockRestore();
