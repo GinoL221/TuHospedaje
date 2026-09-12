@@ -25,6 +25,11 @@ export default function BookingPage() {
     : null;
 
   const [lodging, setLodging] = useState(null);
+  const [lodgingStatus, setLodgingStatus] = useState("loading");
+  const [resolvedLodgingId, setResolvedLodgingId] = useState(null);
+  const [lodgingRequestAttempt, setLodgingRequestAttempt] = useState(0);
+  const lodgingRetryRef = useRef(null);
+  const restoreRetryFocusRef = useRef(false);
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guestPhone, setGuestPhone] = useState("");
@@ -65,12 +70,39 @@ export default function BookingPage() {
   }
 
   useEffect(() => {
+    let active = true;
+
     get(`/lodgings/${lodgingId}`)
-      .then(setLodging)
+      .then((data) => {
+        if (!active) return;
+        setLodging(data);
+        setResolvedLodgingId(lodgingId);
+        setLodgingStatus("ready");
+        restoreRetryFocusRef.current = false;
+      })
       .catch(() => {
-        setError("No se pudo cargar el alojamiento.");
+        if (!active) return;
+        setResolvedLodgingId(lodgingId);
+        setLodgingStatus("error");
       });
-  }, [lodgingId]);
+
+    return () => {
+      active = false;
+    };
+  }, [lodgingId, lodgingRequestAttempt]);
+
+  useEffect(() => {
+    if (lodgingStatus === "error" && restoreRetryFocusRef.current) {
+      lodgingRetryRef.current?.focus();
+      restoreRetryFocusRef.current = false;
+    }
+  }, [lodgingStatus]);
+
+  function retryLodging() {
+    restoreRetryFocusRef.current = true;
+    setLodgingStatus("loading");
+    setLodgingRequestAttempt((attempt) => attempt + 1);
+  }
 
   // Replaces the two duplicated availability fetches (see ProductDetail):
   // dateless load on mount/reset, dated reload once both dates are picked.
@@ -161,16 +193,39 @@ export default function BookingPage() {
     }
   }
 
-  if (!lodging) {
+  const rootLodgingStatus =
+    resolvedLodgingId === lodgingId ? lodgingStatus : "loading";
+
+  if (rootLodgingStatus !== "ready" || !lodging) {
+    const isLoadingLodging = rootLodgingStatus === "loading";
+
     return (
       <main
         className="page-container booking-page booking-page--loading"
-        aria-busy="true"
+        aria-busy={isLoadingLodging ? "true" : "false"}
       >
-        <div className="booking-page-state" role="status" aria-live="polite">
-          <span className="booking-state-indicator" aria-hidden="true" />
-          <p>Cargando...</p>
-        </div>
+        {isLoadingLodging ? (
+          <div className="booking-page-state" role="status" aria-live="polite">
+            <span className="booking-state-indicator" aria-hidden="true" />
+            <p>Cargando...</p>
+          </div>
+        ) : (
+          <div
+            className="booking-page-state booking-page-state--error"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p>No se pudo cargar el alojamiento.</p>
+            <button
+              ref={lodgingRetryRef}
+              type="button"
+              aria-label="Reintentar alojamiento"
+              onClick={retryLodging}
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
       </main>
     );
   }
