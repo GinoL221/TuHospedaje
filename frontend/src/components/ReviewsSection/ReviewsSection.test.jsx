@@ -74,9 +74,11 @@ describe("ReviewsSection - empty state", () => {
     get.mockResolvedValue({ average: 0, count: 0, ratings: [] });
     render(<ReviewsSection lodgingId="1" user={null} />);
 
-    expect(await screen.findByText("0.0")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Todavía no hay reseñas para este alojamiento."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("0.0")).toBeInTheDocument();
     expect(screen.getByText("(0 reseñas)")).toBeInTheDocument();
-    expect(screen.getByText("Todavía no hay reseñas para este alojamiento.")).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Opiniones de huéspedes" })).not.toBeInTheDocument();
   });
 });
