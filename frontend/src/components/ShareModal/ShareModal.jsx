@@ -25,9 +25,12 @@ export default function ShareModal({ lodging, onClose }) {
 
 	useEffect(() => {
 		previousFocusRef.current = document.activeElement;
+		const previousBodyOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
 		closeButtonRef.current?.focus();
 
 		return () => {
+			document.body.style.overflow = previousBodyOverflow;
 			const previousFocus = previousFocusRef.current;
 			if (
 				previousFocus?.isConnected &&
