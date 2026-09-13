@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -27,6 +29,8 @@ class ActuatorReadinessIntegrationTest extends AbstractIntegrationTest {
     void readinessIsAnonymousAndOnlyReturnsAggregateUpStatus() throws Exception {
         mockMvc.perform(get("/actuator/health/readiness"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.parseMediaType(
+                        "application/vnd.spring-boot.actuator.v3+json")))
                 .andExpect(content().json("{\"status\":\"UP\"}", JsonCompareMode.STRICT));
     }
 
@@ -39,6 +43,9 @@ class ActuatorReadinessIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/actuator/health/readiness"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(head("/actuator/health/readiness"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(options("/actuator/health/readiness")
