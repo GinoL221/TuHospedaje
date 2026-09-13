@@ -73,6 +73,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health/readiness").permitAll()
+                        .requestMatchers("/actuator/**").denyAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/refresh").permitAll()
                         .requestMatchers("/api/auth/welcome-email/resend").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").authenticated()
