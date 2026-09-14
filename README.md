@@ -101,6 +101,54 @@ The Compose workflow starts MariaDB, Spring Boot, and Vite in containers while s
 
 ---
 
+### Production with Docker Compose
+
+Production uses immutable backend and frontend image references, a persistent MariaDB volume, and HTTP on the frontend only. Put TLS termination, certificates, and the public HTTPS reverse proxy outside Compose. The external proxy must preserve `Host` and send `X-Forwarded-Proto: https`.
+
+1. Copy and fill the untracked operator file. Never commit it:
+
+   ```bash
+   cp deploy/prod.env.example deploy/prod.env
+   ```
+
+   Set `BACKEND_IMAGE` and `FRONTEND_IMAGE` to immutable tags or digests. `VITE_API_URL=/api` is built into the frontend image; changing it or `VITE_WHATSAPP_NUMBER` requires rebuilding and publishing the frontend image.
+
+2. Resolve configuration and build images before starting services:
+
+   ```bash
+   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml config --quiet
+   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml build
+   ```
+
+3. Start the database and wait for its healthcheck, then explicitly provision separate runtime and Flyway accounts. Provisioning is not an automatic application dependency:
+
+   ```bash
+   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml up -d db
+   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml ps
+   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml --profile provision run --rm db-provision
+   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml up -d backend frontend
+   ```
+
+4. Verify the HTTP boundary:
+
+   ```bash
+   curl -fsS http://127.0.0.1:${PROD_HTTP_PORT:-8080}/nginx-health
+   curl -fsS http://127.0.0.1:${PROD_HTTP_PORT:-8080}/
+   curl -fsS http://127.0.0.1:${PROD_HTTP_PORT:-8080}/api/lodgings
+   ```
+
+   Backend readiness is internal to the Compose networks. Do not publish its port. Browser cookie and authentication checks must use the external HTTPS origin, for example `BASE_URL=https://<test-origin>`.
+
+The `tuhospedaje-prod-db` volume persists across Compose recreation. Backups, restore testing, and retention are operator responsibilities. Routine shutdown keeps data:
+
+```bash
+docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml down
+```
+
+Never use `down -v` in production. It is development-only. For credential rotation, stop backend writes, update the external env file, run `db-provision` again, then recreate backend. To roll back, select earlier immutable image references and recreate services; Flyway migrations are not reversed by an image rollback.
+
+---
+
 ### Backend (`/backend`)
 
 #### Crear la base de datos
