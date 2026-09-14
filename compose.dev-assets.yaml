@@ -1,0 +1,6 @@
+services:
+  backend:
+    volumes:
+      - ${CANONICAL_ASSETS_HOST_DIR:?CANONICAL_ASSETS_HOST_DIR is required}:/canonical-assets:ro
+    environment:
+      TUHOSPEDAJE_CANONICAL_ASSETS_ROOT: /canonical-assets

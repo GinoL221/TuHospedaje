@@ -4,7 +4,7 @@ set -eu
 child_pid=""
 
 start_app() {
-  ./mvnw spring-boot:run &
+  JAVA_TOOL_OPTIONS="-Dspring.devtools.restart.enabled=false" ./mvnw spring-boot:run &
   child_pid=$!
 }
 

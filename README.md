@@ -44,6 +44,63 @@ cd tuhospedaje
 
 ---
 
+### Development with Docker Compose
+
+The Compose workflow starts MariaDB, Spring Boot, and Vite in containers while source remains mounted from the working tree. It is intended for local development only; production Compose procedures arrive in a later change.
+
+1. Copy the tracked template and fill values locally. Do not commit `deploy/dev.env`:
+
+   ```bash
+   cp deploy/dev.env.example deploy/dev.env
+   ```
+
+   `DEV_JWT_SECRET` must be Base64 and decode to at least 32 bytes. `DEV_SESSION_REFRESH_KEY` and database passwords must be non-empty development-only values.
+
+2. Validate and start the schema-only default stack:
+
+   ```bash
+   docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml config --quiet
+   docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml up --build
+   ```
+
+   The database, backend, and frontend bind only to loopback by default: MariaDB at `127.0.0.1:3307`, backend at `127.0.0.1:8080`, and Vite at `127.0.0.1:5173`. Backend Java changes under `backend/src/main` or `backend/pom.xml` restart Maven; frontend changes use Vite HMR. The default database receives schema migrations only and has no demo rows.
+
+3. Use demo data only through the isolated seed overlay. It requires `DEV_ADMIN_PASSWORD_HASH` in the current shell or `deploy/dev.env` and uses the separate `tuhospedaje-dev-seeded` project and volume:
+
+   ```bash
+   DEV_ADMIN_PASSWORD_HASH='<bcrypt-hash-for-the-development-admin>' \
+     docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
+
+   Generate the bcrypt value with the disposable virtual-environment command in [Demo data (optional)](#datos-de-demo-opcional); do not put a plaintext password in the environment file.
+   ```
+
+4. Mount canonical assets only when required. The host path must be absolute and exists only on the developer machine:
+
+   ```bash
+   CANONICAL_ASSETS_HOST_DIR=/absolute/path/to/canonical-lodging-images \
+     docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml -f compose.dev-assets.yaml up --build
+   ```
+
+   Combine the seed and assets overlays by adding both `-f compose.dev-seed.yaml` and `-f compose.dev-assets.yaml`.
+
+5. Check reachability after startup:
+
+   ```bash
+   curl -fsS http://127.0.0.1:8080/actuator/health/readiness
+   curl -fsS http://127.0.0.1:5173/
+   curl -fsS http://127.0.0.1:8080/api/lodgings
+   ```
+
+   To remove a disposable development database, stop only the matching project and remove its volume. This is destructive and development-only:
+
+   ```bash
+   docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml down -v
+   ```
+
+   For the seed project, add `-f compose.dev-seed.yaml` to the same command. Never use `down -v` for a production deployment.
+
+---
+
 ### Backend (`/backend`)
 
 #### Crear la base de datos

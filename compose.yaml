@@ -1,0 +1,23 @@
+services:
+  db:
+    image: mariadb:10.11
+    networks:
+      - data
+    volumes:
+      - db-data:/var/lib/mysql
+
+  backend:
+    networks:
+      - app
+      - data
+
+  frontend:
+    networks:
+      - app
+
+networks:
+  app:
+  data:
+
+volumes:
+  db-data:

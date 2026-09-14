@@ -1,0 +1,11 @@
+name: tuhospedaje-dev-seeded
+
+services:
+  backend:
+    environment:
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
+      DEV_ADMIN_PASSWORD_HASH: ${DEV_ADMIN_PASSWORD_HASH:?DEV_ADMIN_PASSWORD_HASH is required}
+
+volumes:
+  db-data:
+    name: tuhospedaje-dev-seeded-db
