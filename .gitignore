@@ -13,6 +13,8 @@ frontend/.env.local
 
 # Environment (secrets)
 .env
+deploy/dev.env
+deploy/prod.env
 
 # Python
 __pycache__/
@@ -37,9 +39,5 @@ AGENTS.md
 mcp.json
 opencode.json
 .codegraph/
-
-# OpenSpec (discontinued — using Engram instead)
-openspec/
-
-# OpenSpec / Atlassian local artifacts
+# Local Pi runtime state
 .atl/
