@@ -422,6 +422,12 @@ public class LodgingServiceImpl implements LodgingService {
     @Override
     @Transactional(readOnly = true)
     public AvailabilityResponse checkAvailability(Long lodgingId, LocalDate checkIn, LocalDate checkOut) {
+        lodgingRepository.findById(lodgingId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "error.lodging.not_found",
+                        new Object[]{lodgingId},
+                        "Lodging not found with ID: " + lodgingId));
+
         List<Reservation> confirmed = reservationRepository
                 .findByLodgingIdAndStatus(lodgingId, ReservationStatus.CONFIRMED);
 
