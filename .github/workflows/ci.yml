@@ -54,7 +54,7 @@ jobs:
           # "dev" or "test" segment in the database name.
           MYSQL_DATABASE: tuhospedaje_test
           MYSQL_USER: tuhospedaje
-          MYSQL_PASSWORD: tuhospedaje123
+          MYSQL_PASSWORD: ci-db-${{ github.run_id }}-${{ github.run_attempt }}
         ports:
           - 3306:3306
         options: >-
@@ -85,9 +85,11 @@ jobs:
       # needs to be stored for a fixed dev-only password.
       - name: Generate dev admin bcrypt hash
         id: admin-hash
+        env:
+          DEV_ADMIN_PASSWORD: ci-admin-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           python3 -m pip install --quiet bcrypt
-          echo "hash=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")" >> "$GITHUB_OUTPUT"
+          echo "hash=$(python3 -c "import bcrypt, os; print(bcrypt.hashpw(os.environ['DEV_ADMIN_PASSWORD'].encode(), bcrypt.gensalt(10)).decode())")" >> "$GITHUB_OUTPUT"
 
       - name: Start backend (dev profile + demo seed)
         working-directory: backend
@@ -98,11 +100,13 @@ jobs:
           # application.properties hardcodes the DB name to "tuhospedaje";
           # override it to match the service container's tuhospedaje_test.
           SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/tuhospedaje_test
+          SPRING_DATASOURCE_USERNAME: tuhospedaje
+          SPRING_DATASOURCE_PASSWORD: ci-db-${{ github.run_id }}-${{ github.run_attempt }}
         run: nohup ./mvnw -B spring-boot:run > ../backend.log 2>&1 &
 
       - name: Wait for backend
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -sf http://localhost:8080/api/lodgings > /dev/null && exit 0
             sleep 3
           done
@@ -124,7 +128,7 @@ jobs:
 
       - name: Wait for frontend
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -sf http://localhost:5173 > /dev/null && exit 0
             sleep 2
           done
@@ -136,11 +140,13 @@ jobs:
       # reservations.spec.js need one to already exist via TEST_USER_EMAIL.
       - name: Register e2e test user
         id: test-user
+        env:
+          TEST_USER_PASSWORD: ci-user-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           EMAIL="e2e-ci-$(date +%s)@tuhospedaje.com"
           curl -sf -X POST http://localhost:8080/api/auth/register \
             -H "Content-Type: application/json" \
-            -d "{\"firstName\":\"E2E\",\"lastName\":\"Runner\",\"email\":\"$EMAIL\",\"password\":\"Test1234\"}" \
+            -d "{\"firstName\":\"E2E\",\"lastName\":\"Runner\",\"email\":\"$EMAIL\",\"password\":\"$TEST_USER_PASSWORD\"}" \
             > /dev/null
           echo "email=$EMAIL" >> "$GITHUB_OUTPUT"
 
@@ -151,10 +157,12 @@ jobs:
       # done with a direct insert, once the just-registered user's real id is
       # known.
       - name: Seed a confirmed past reservation for the e2e test user
+        env:
+          MYSQL_PWD: ci-db-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          USER_ID=$(mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -N -e \
+          USER_ID=$(mysql -h 127.0.0.1 -P 3306 -u tuhospedaje tuhospedaje_test -N -e \
             "SELECT id FROM users WHERE email = '${{ steps.test-user.outputs.email }}';")
-          mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -e \
+          mysql -h 127.0.0.1 -P 3306 -u tuhospedaje tuhospedaje_test -e \
             "INSERT INTO reservations (lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version)
              VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Fixture', 'e2e-fixture@tuhospedaje.com', '+5491100000000', 100.00, 'CONFIRMED', 0);"
 
@@ -173,9 +181,9 @@ jobs:
         env:
           BASE_URL: http://localhost:5173
           TEST_ADMIN_EMAIL: admin@tuhospedaje.com
-          TEST_ADMIN_PASSWORD: Admin1
+          TEST_ADMIN_PASSWORD: ci-admin-${{ github.run_id }}-${{ github.run_attempt }}
           TEST_USER_EMAIL: ${{ steps.test-user.outputs.email }}
-          TEST_USER_PASSWORD: Test1234
+          TEST_USER_PASSWORD: ci-user-${{ github.run_id }}-${{ github.run_attempt }}
           TEST_USER_NAME: E2E
         run: npx playwright test --project=${{ matrix.browser }}
 
