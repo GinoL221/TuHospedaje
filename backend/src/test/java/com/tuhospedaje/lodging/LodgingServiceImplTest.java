@@ -27,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -524,5 +526,16 @@ class LodgingServiceImplTest {
     void shouldThrowWhenSearchPageIsNegative() {
         assertThrows(IllegalArgumentException.class,
                 () -> lodgingService.search(null, null, null, null, null, null, null, -1, 9));
+    }
+
+    @Test
+    void shouldRejectUnknownLodgingAvailabilityBeforeQueryingReservations() {
+        when(lodgingRepository.findById(404L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> lodgingService.checkAvailability(404L, LocalDate.now(), LocalDate.now().plusDays(1)));
+
+        assertThat(exception.getErrorCode()).isEqualTo("error.lodging.not_found");
+        verify(reservationRepository, never()).findByLodgingIdAndStatus(any(), any());
     }
 }
