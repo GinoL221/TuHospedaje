@@ -332,8 +332,27 @@ El workflow de CI ejecuta los proyectos `chromium`, `firefox` y `mobile-chromium
 
 ---
 
+## Artefactos y despliegue de producción
+
+CI es el único builder de las imágenes de producción. En cada push a `main`, después de los tests y los escaneos Trivy, publica las referencias completas con digest en GHCR. El primer publish requiere configurar el secreto de repositorio `GHCR_PUBLISH_TOKEN` con `packages:write`; los pull requests usan `packages: read` y no tienen permiso de escritura de paquetes. Usá esas referencias exactas en `TUHOSPEDAJE_BACKEND_IMAGE` y `TUHOSPEDAJE_FRONTEND_IMAGE`; ambas deben tener formato `ghcr.io/...@sha256:...`.
+
+Mantené secretos y configuración fuera de Git. La base de datos es externa: definí `SPRING_DATASOURCE_URL` y las demás variables requeridas por `compose.prod.yaml` en el entorno de despliegue. Luego verificá y desplegá solo las imágenes publicadas por CI:
+
+```bash
+docker compose -f compose.prod.yaml config
+docker compose -f compose.prod.yaml pull
+docker compose -f compose.prod.yaml up -d --no-build
+```
+
+Registrá los digests desplegados. Para rollback, elegí un digest registrado previamente y actualizá las variables de imagen antes de repetir el despliegue. Las migraciones y el rollback de imagen, migración correctiva o restore/cutover se rigen por la [política de rollback de migraciones](docs/markdown/migrations/migration-rollback-policy.md).
+
+---
+
 ## Documentación
 
+- [product.md](product.md) — intención de producto y alcance de la entrega final
+- `ops/mariadb/README.md` — backup diario y verificación mensual de restore aislado para MariaDB
+- `docs/markdown/migrations/migration-rollback-policy.md` — política operativa de rollback de migraciones
 - `docs/diseno/` — manual de identidad visual y paleta de colores
 - `docs/markdown/project-definition.md` — definición del proyecto (alcance, roadmap, ADRs)
 - `docs/markdown/sprint-{1..4}/` — reporte y test plan de cada sprint
