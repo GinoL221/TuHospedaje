@@ -52,8 +52,12 @@ export async function bootstrapCsrf() {
  * is always cleared, including on a rejection, so a settled request never leaves an armed
  * deadline behind.
  */
-async function fetchWithDeadline(url, config) {
+async function fetchWithDeadline(url, config, externalSignal) {
   const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  externalSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  if (externalSignal?.aborted) controller.abort();
+
   const deadline = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     return await fetch(url, { ...config, signal: controller.signal });
@@ -66,11 +70,19 @@ async function fetchWithDeadline(url, config) {
     throw err;
   } finally {
     clearTimeout(deadline);
+    externalSignal?.removeEventListener("abort", abortFromCaller);
   }
 }
 
-async function request(method, endpoint, data, alreadyRetried = false) {
-  const headers = { "Content-Type": "application/json" };
+async function request(
+  method,
+  endpoint,
+  data,
+  alreadyRetried = false,
+  options = {},
+) {
+  const { multipart = false, signal } = options;
+  const headers = multipart ? {} : { "Content-Type": "application/json" };
   if (UNSAFE_METHODS.has(method)) {
     const csrfToken = getCsrfToken();
     if (csrfToken) {
@@ -80,10 +92,10 @@ async function request(method, endpoint, data, alreadyRetried = false) {
 
   const config = { method, headers, credentials: "include" };
   if (data) {
-    config.body = JSON.stringify(data);
+    config.body = multipart ? data : JSON.stringify(data);
   }
 
-  const res = await fetchWithDeadline(`${API_BASE}${endpoint}`, config);
+  const res = await fetchWithDeadline(`${API_BASE}${endpoint}`, config, signal);
 
   if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
     if (!alreadyRetried) {
@@ -93,7 +105,7 @@ async function request(method, endpoint, data, alreadyRetried = false) {
       // shared across every waiting caller) if the refresh fails, so we
       // simply propagate that rejection here without dispatching again.
       await ensureRefreshed();
-      return request(method, endpoint, data, true);
+      return request(method, endpoint, data, true, options);
     }
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
     throw new Error("Sesión expirada");
@@ -105,8 +117,15 @@ async function request(method, endpoint, data, alreadyRetried = false) {
       errorData.fields && Object.keys(errorData.fields).length > 0
         ? Object.values(errorData.fields).join(" ")
         : null;
-    const error = new Error(fieldMessages || errorData.error || `Error ${res.status}`);
+    const serverMessage =
+      fieldMessages ||
+      (typeof errorData.error === "string" && errorData.error.trim()
+        ? errorData.error
+        : null);
+    const error = new Error(serverMessage || `Error ${res.status}`);
     error.code = errorData.code;
+    error.status = res.status;
+    error.hasServerMessage = Boolean(serverMessage);
     throw error;
   }
 
@@ -125,6 +144,17 @@ export function get(endpoint) {
 
 export function post(endpoint, data) {
   return request("POST", endpoint, data);
+}
+
+/**
+ * Multipart requests retain credentials, CSRF, caller cancellation, and the shared
+ * deadline. Do not set Content-Type here: the browser must generate the boundary.
+ */
+export function postMultipart(endpoint, formData, { signal } = {}) {
+  return request("POST", endpoint, formData, false, {
+    multipart: true,
+    signal,
+  });
 }
 
 export function put(endpoint, data) {

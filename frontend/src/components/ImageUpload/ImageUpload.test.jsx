@@ -32,7 +32,9 @@ describe("ImageUpload - successful upload", () => {
     await userEvent.upload(input, makeFile());
 
     await waitFor(() => {
-      expect(onUrlsChange).toHaveBeenCalledWith(["https://example.com/uploaded.png"]);
+      expect(onUrlsChange).toHaveBeenCalledWith([
+        "https://example.com/uploaded.png",
+      ]);
     });
   });
 
@@ -58,6 +60,8 @@ describe("ImageUpload - successful upload", () => {
     expect(config.credentials).toBe("include");
     expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-abc" });
     expect(config.headers).not.toHaveProperty("Authorization");
+    expect(config.headers).not.toHaveProperty("Content-Type");
+    expect(config.signal).toBeInstanceOf(AbortSignal);
   });
 });
 
@@ -98,8 +102,10 @@ describe("ImageUpload - failed upload", () => {
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
 
-  it("shows a visible error message and does not call onUrlsChange when the response is not ok", async () => {
-    const responseBody = vi.fn();
+  it("keeps the generic message for a 5xx and does not call onUrlsChange", async () => {
+    const responseBody = vi
+      .fn()
+      .mockResolvedValue({ error: "Internal server error." });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -114,12 +120,18 @@ describe("ImageUpload - failed upload", () => {
     await userEvent.upload(input, makeFile());
 
     expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
-    expect(responseBody).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText("Internal server error."),
+    ).not.toBeInTheDocument();
+    expect(responseBody).toHaveBeenCalled();
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
 
   it.each([
-    ["a malformed body", vi.fn().mockRejectedValue(new SyntaxError("invalid JSON"))],
+    [
+      "a malformed body",
+      vi.fn().mockRejectedValue(new SyntaxError("invalid JSON")),
+    ],
     ["an absent error field", vi.fn().mockResolvedValue({})],
     ["an empty error field", vi.fn().mockResolvedValue({ error: "   " })],
   ])("shows the generic error for a 400 response with %s", async (_description, responseBody) => {

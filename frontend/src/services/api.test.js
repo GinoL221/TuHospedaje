@@ -1,4 +1,4 @@
-import { get, post, put, patch, del, getCsrfToken } from "./api";
+import { get, post, postMultipart, put, patch, del, getCsrfToken } from "./api";
 
 // NOTE: `api.js` reads `import.meta.env.VITE_API_URL` into a module-level
 // `const API_BASE` at import time. Most tests below assert only the
@@ -36,7 +36,7 @@ describe("api service - successful requests", () => {
     expect(result).toEqual({ data: 1 });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/lodgings"),
-      expect.objectContaining({ method: "GET" })
+      expect.objectContaining({ method: "GET" }),
     );
   });
 
@@ -52,12 +52,14 @@ describe("api service - successful requests", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ name: "Test" }),
-      })
+      }),
     );
   });
 
   it("PUT resolves with the parsed JSON body and serializes the request body", async () => {
-    const fetchMock = mockFetchResolved({ json: async () => ({ id: 1, name: "Updated" }) });
+    const fetchMock = mockFetchResolved({
+      json: async () => ({ id: 1, name: "Updated" }),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await put("/lodgings/1", { name: "Updated" });
@@ -68,12 +70,14 @@ describe("api service - successful requests", () => {
       expect.objectContaining({
         method: "PUT",
         body: JSON.stringify({ name: "Updated" }),
-      })
+      }),
     );
   });
 
   it("DELETE resolves with the parsed JSON body and omits a request body", async () => {
-    const fetchMock = mockFetchResolved({ json: async () => ({ deleted: true }) });
+    const fetchMock = mockFetchResolved({
+      json: async () => ({ deleted: true }),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await del("/lodgings/1");
@@ -86,7 +90,9 @@ describe("api service - successful requests", () => {
 
   it("PATCH sends an unsafe request without a body", async () => {
     document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
-    const fetchMock = mockFetchResolved({ json: async () => ({ status: "CANCELLED" }) });
+    const fetchMock = mockFetchResolved({
+      json: async () => ({ status: "CANCELLED" }),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await patch("/reservations/1/cancel");
@@ -107,7 +113,9 @@ describe("api service - successful requests", () => {
 describe("api service - 204 No Content", () => {
   it("resolves with null and does not attempt to parse a body", async () => {
     const jsonSpy = vi.fn();
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, json: jsonSpy });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 204, json: jsonSpy });
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await get("/lodgings/1");
@@ -150,16 +158,19 @@ describe("api service - non-OK HTTP errors", () => {
         error: "Error de validación",
         status: 400,
         fields: {
-          checkOutAfterCheckIn: "La fecha de check-out debe ser posterior al check-in",
+          checkOutAfterCheckIn:
+            "La fecha de check-out debe ser posterior al check-in",
         },
       }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(post("/reservations", {})).rejects.toThrow(
-      "La fecha de check-out debe ser posterior al check-in"
+      "La fecha de check-out debe ser posterior al check-in",
     );
-    await expect(post("/reservations", {})).rejects.not.toThrow("Error de validación");
+    await expect(post("/reservations", {})).rejects.not.toThrow(
+      "Error de validación",
+    );
   });
 
   it("joins multiple field validation messages when fields has more than one entry", async () => {
@@ -170,7 +181,8 @@ describe("api service - non-OK HTTP errors", () => {
         error: "Error de validación",
         status: 400,
         fields: {
-          checkOutAfterCheckIn: "La fecha de check-out debe ser posterior al check-in",
+          checkOutAfterCheckIn:
+            "La fecha de check-out debe ser posterior al check-in",
           guestPhone: "El teléfono es obligatorio",
         },
       }),
@@ -178,7 +190,7 @@ describe("api service - non-OK HTTP errors", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(post("/reservations", {})).rejects.toThrow(
-      "La fecha de check-out debe ser posterior al check-in El teléfono es obligatorio"
+      "La fecha de check-out debe ser posterior al check-in El teléfono es obligatorio",
     );
   });
 
@@ -190,25 +202,37 @@ describe("api service - non-OK HTTP errors", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/reservations", {})).rejects.toThrow("Error de validación");
+    await expect(post("/reservations", {})).rejects.toThrow(
+      "Error de validación",
+    );
   });
 
   it("falls back to errorData.error when fields is an empty object (no regression)", async () => {
     const fetchMock = mockFetchResolved({
       ok: false,
       status: 400,
-      json: async () => ({ error: "Error de validación", status: 400, fields: {} }),
+      json: async () => ({
+        error: "Error de validación",
+        status: 400,
+        fields: {},
+      }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/reservations", {})).rejects.toThrow("Error de validación");
+    await expect(post("/reservations", {})).rejects.toThrow(
+      "Error de validación",
+    );
   });
 
   it("attaches errorData.code onto the thrown error when the server sends one", async () => {
     const fetchMock = mockFetchResolved({
       ok: false,
       status: 400,
-      json: async () => ({ error: "Ese email ya está registrado", status: 400, code: "duplicate_email" }),
+      json: async () => ({
+        error: "Ese email ya está registrado",
+        status: 400,
+        code: "duplicate_email",
+      }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -242,7 +266,7 @@ describe("api service - credentials", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/lodgings"),
-      expect.objectContaining({ credentials: "include" })
+      expect.objectContaining({ credentials: "include" }),
     );
   });
 
@@ -327,9 +351,17 @@ describe("api service - 401 unauthorized", () => {
     // guard must then dispatch auth:unauthorized exactly once, with no loop.
     const fetchMock = vi.fn((url) => {
       if (url.includes("/auth/refresh")) {
-        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        });
       }
-      return Promise.resolve({ ok: false, status: 401, json: async () => ({}) });
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: async () => ({}),
+      });
     });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -340,7 +372,9 @@ describe("api service - 401 unauthorized", () => {
     expect(eventSpy).toHaveBeenCalledTimes(1);
     expect(eventSpy.mock.calls[0][0]).toBeInstanceOf(CustomEvent);
     expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
-    const lodgingsCalls = fetchMock.mock.calls.filter(([url]) => url.includes("/lodgings"));
+    const lodgingsCalls = fetchMock.mock.calls.filter(([url]) =>
+      url.includes("/lodgings"),
+    );
     expect(lodgingsCalls).toHaveLength(2); // original + single retry, no loop
 
     window.removeEventListener("auth:unauthorized", eventSpy);
@@ -374,9 +408,9 @@ describe("api service - 401 unauthorized", () => {
     const eventSpy = vi.fn();
     window.addEventListener("auth:unauthorized", eventSpy);
 
-    await expect(post("/auth/login", { email: "a@a.com", password: "wrong" })).rejects.toThrow(
-      "Credenciales inválidas"
-    );
+    await expect(
+      post("/auth/login", { email: "a@a.com", password: "wrong" }),
+    ).rejects.toThrow("Credenciales inválidas");
     expect(eventSpy).not.toHaveBeenCalled();
 
     window.removeEventListener("auth:unauthorized", eventSpy);
@@ -392,13 +426,25 @@ describe("api service - refresh-and-retry does not rotate CSRF", () => {
       if (url.includes("/auth/refresh")) {
         // Refresh rotates the session cookies server-side but does NOT
         // rotate the CSRF cookie (design ADR: "refresh does not rotate CSRF").
-        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        });
       }
       hitCounts[url] = (hitCounts[url] || 0) + 1;
       if (hitCounts[url] === 1) {
-        return Promise.resolve({ ok: false, status: 401, json: async () => ({}) });
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: async () => ({}),
+        });
       }
-      return Promise.resolve({ ok: true, status: 200, json: async () => ({ status: "CANCELLED" }) });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "CANCELLED" }),
+      });
     });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -406,10 +452,14 @@ describe("api service - refresh-and-retry does not rotate CSRF", () => {
 
     expect(result).toEqual({ status: "CANCELLED" });
 
-    const csrfBootstrapCalls = fetchMock.mock.calls.filter(([url]) => url.includes("/auth/csrf"));
+    const csrfBootstrapCalls = fetchMock.mock.calls.filter(([url]) =>
+      url.includes("/auth/csrf"),
+    );
     expect(csrfBootstrapCalls).toHaveLength(0);
 
-    const cancelCalls = fetchMock.mock.calls.filter(([url]) => url.includes("/reservations/1/cancel"));
+    const cancelCalls = fetchMock.mock.calls.filter(([url]) =>
+      url.includes("/reservations/1/cancel"),
+    );
     expect(cancelCalls).toHaveLength(2);
     for (const [, config] of cancelCalls) {
       expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-original" });
@@ -431,7 +481,7 @@ describe("api service - request URL construction", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       "http://test-base/lodgings",
-      expect.objectContaining({ method: "GET" })
+      expect.objectContaining({ method: "GET" }),
     );
   });
 });
@@ -453,6 +503,36 @@ describe("api service - ok response with unparseable body", () => {
   });
 });
 
+describe("api service - multipart uploads", () => {
+  it("preserves CSRF and credentials while letting the browser set the multipart boundary", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-upload; path=/";
+    const fetchMock = mockFetchResolved({
+      json: async () => ({ url: "https://example.com/image.png" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const formData = new FormData();
+    formData.append(
+      "file",
+      new File(["image"], "image.png", { type: "image/png" }),
+    );
+
+    await expect(postMultipart("/upload", formData)).resolves.toEqual({
+      url: "https://example.com/image.png",
+    });
+
+    const [, config] = fetchMock.mock.calls[0];
+    expect(config).toMatchObject({
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-upload" });
+    expect(config.headers).not.toHaveProperty("Content-Type");
+    expect(config.signal).toBeInstanceOf(AbortSignal);
+  });
+});
+
 describe("api service - request timeout", () => {
   /**
    * A backend that accepts the connection and never answers leaves fetch pending
@@ -460,14 +540,15 @@ describe("api service - request timeout", () => {
    * shows a spinner with no way out and no error to render.
    */
   function neverAnswers() {
-    return vi.fn((url, config) =>
-      new Promise((_resolve, reject) => {
-        config.signal?.addEventListener("abort", () => {
-          const aborted = new Error("The operation was aborted.");
-          aborted.name = "AbortError";
-          reject(aborted);
-        });
-      })
+    return vi.fn(
+      (url, config) =>
+        new Promise((_resolve, reject) => {
+          config.signal?.addEventListener("abort", () => {
+            const aborted = new Error("The operation was aborted.");
+            aborted.name = "AbortError";
+            reject(aborted);
+          });
+        }),
     );
   }
 
@@ -505,6 +586,23 @@ describe("api service - request timeout", () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     await assertion;
+  });
+
+  it("cancels a multipart upload when its caller aborts", async () => {
+    vi.stubGlobal("fetch", neverAnswers());
+    const controller = new AbortController();
+    const formData = new FormData();
+    formData.append(
+      "file",
+      new File(["image"], "image.png", { type: "image/png" }),
+    );
+
+    const pending = postMultipart("/upload", formData, {
+      signal: controller.signal,
+    });
+    controller.abort();
+
+    await expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
   });
 
   /** The deadline must be cleared on a normal response, not left armed. */
