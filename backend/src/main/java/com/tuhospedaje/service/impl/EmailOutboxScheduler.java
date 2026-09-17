@@ -27,7 +27,11 @@ public class EmailOutboxScheduler {
         EmailOutboxDispatcher availableDispatcher = dispatcher.getIfAvailable();
         if (availableDispatcher != null) {
             for (EmailOutboxType type : EmailOutboxType.values()) {
-                availableDispatcher.dispatch(type);
+                try {
+                    availableDispatcher.dispatch(type);
+                } catch (RuntimeException ignored) {
+                    log.warn("event=email_outbox.dispatch_failed email_type={} classification=DISPATCH_FAILED", type);
+                }
             }
         }
     }

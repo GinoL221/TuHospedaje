@@ -41,6 +41,17 @@ class EmailOutboxSchedulerTest {
     }
 
     @Test
+    void continuesLaterDispatchesAfterOneDispatcherFailure() {
+        when(dispatcherProvider.getIfAvailable()).thenReturn(dispatcher);
+        doThrow(new RuntimeException("database unavailable")).when(dispatcher).dispatch(EmailOutboxType.WELCOME);
+
+        assertThatCode(scheduler::poll).doesNotThrowAnyException();
+
+        verify(dispatcher).dispatch(EmailOutboxType.RESERVATION_CONFIRMATION);
+        verify(dispatcher).dispatch(EmailOutboxType.RESERVATION_CANCELLATION);
+    }
+
+    @Test
     void isolatesCleanupFailureFromLaterDispatches() {
         when(dispatcherProvider.getIfAvailable()).thenReturn(dispatcher);
         doThrow(new RuntimeException("database unavailable")).when(transactions).cleanup(EmailOutboxType.WELCOME);

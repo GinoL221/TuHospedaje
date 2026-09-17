@@ -107,6 +107,27 @@ class EmailOutboxObservabilityTest {
     }
 
     @Test
+    void emitsBoundedDispatchFailureEventWithoutRawFailureText() {
+        EmailOutboxTransactionService transactions = mock(EmailOutboxTransactionService.class);
+        EmailOutboxDispatcher dispatcher = mock(EmailOutboxDispatcher.class);
+        ObjectProvider<EmailOutboxDispatcher> dispatcherProvider = mock(ObjectProvider.class);
+        when(dispatcherProvider.getIfAvailable()).thenReturn(dispatcher);
+        doThrow(new IllegalStateException(SENSITIVE_BODY)).when(dispatcher).dispatch(EmailOutboxType.WELCOME);
+        EmailOutboxScheduler scheduler = new EmailOutboxScheduler(dispatcherProvider, transactions);
+
+        ListAppender<ILoggingEvent> events = attach(EmailOutboxScheduler.class);
+        try {
+            scheduler.poll();
+
+            assertThat(messages(events)).containsExactly(
+                    "event=email_outbox.dispatch_failed email_type=WELCOME classification=DISPATCH_FAILED");
+            assertThat(messages(events)).noneMatch(message -> message.contains(SENSITIVE_BODY));
+        } finally {
+            detach(EmailOutboxScheduler.class, events);
+        }
+    }
+
+    @Test
     void emitsBoundedCleanupEventsWithoutRawFailureText() {
         EmailOutboxTransactionService transactions = mock(EmailOutboxTransactionService.class);
         ObjectProvider<EmailOutboxDispatcher> dispatcher = mock(ObjectProvider.class);
