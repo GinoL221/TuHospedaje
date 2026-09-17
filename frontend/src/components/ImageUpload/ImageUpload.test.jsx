@@ -32,7 +32,9 @@ describe("ImageUpload - successful upload", () => {
     await userEvent.upload(input, makeFile());
 
     await waitFor(() => {
-      expect(onUrlsChange).toHaveBeenCalledWith(["https://example.com/uploaded.png"]);
+      expect(onUrlsChange).toHaveBeenCalledWith([
+        "https://example.com/uploaded.png",
+      ]);
     });
   });
 
@@ -58,6 +60,8 @@ describe("ImageUpload - successful upload", () => {
     expect(config.credentials).toBe("include");
     expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-abc" });
     expect(config.headers).not.toHaveProperty("Authorization");
+    expect(config.headers).not.toHaveProperty("Content-Type");
+    expect(config.signal).toBeInstanceOf(AbortSignal);
   });
 });
 
@@ -80,7 +84,9 @@ describe("ImageUpload - failed upload", () => {
     await userEvent.upload(input, makeFile());
 
     expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
-    expect(screen.queryByText("Internal server error.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Internal server error."),
+    ).not.toBeInTheDocument();
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
 
@@ -93,7 +99,10 @@ describe("ImageUpload - failed upload", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 400,
-      json: async () => ({ error: "Solo se permiten imágenes JPEG, PNG, WebP y GIF.", status: 400 }),
+      json: async () => ({
+        error: "Solo se permiten imágenes JPEG, PNG, WebP y GIF.",
+        status: 400,
+      }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -104,7 +113,9 @@ describe("ImageUpload - failed upload", () => {
     await userEvent.upload(input, makeFile());
 
     expect(
-      await screen.findByText("Solo se permiten imágenes JPEG, PNG, WebP y GIF.")
+      await screen.findByText(
+        "Solo se permiten imágenes JPEG, PNG, WebP y GIF.",
+      ),
     ).toBeInTheDocument();
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
@@ -113,7 +124,10 @@ describe("ImageUpload - failed upload", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 413,
-      json: async () => ({ error: "La imagen supera el tamaño máximo permitido.", status: 413 }),
+      json: async () => ({
+        error: "La imagen supera el tamaño máximo permitido.",
+        status: 413,
+      }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -124,7 +138,7 @@ describe("ImageUpload - failed upload", () => {
     await userEvent.upload(input, makeFile());
 
     expect(
-      await screen.findByText("La imagen supera el tamaño máximo permitido.")
+      await screen.findByText("La imagen supera el tamaño máximo permitido."),
     ).toBeInTheDocument();
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
@@ -147,6 +161,22 @@ describe("ImageUpload - failed upload", () => {
     await userEvent.upload(input, makeFile());
 
     expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
+    expect(onUrlsChange).not.toHaveBeenCalled();
+  });
+
+  it("shows the generic Spanish error message when a shared-request abort occurs", async () => {
+    const aborted = new Error("The operation was aborted.");
+    aborted.name = "AbortError";
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(aborted));
+
+    const onUrlsChange = vi.fn();
+    render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
+
+    const input = document.getElementById("imageUpload");
+    await userEvent.upload(input, makeFile());
+
+    expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
+    expect(screen.queryByText(/tardó demasiado/i)).not.toBeInTheDocument();
     expect(onUrlsChange).not.toHaveBeenCalled();
   });
 
