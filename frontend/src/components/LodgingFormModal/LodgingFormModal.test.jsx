@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { post, put } from "../../services/api";
+import { post, postMultipart, put } from "../../services/api";
 import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
 import LodgingFormModal from "./LodgingFormModal";
 
@@ -154,7 +154,7 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 
   it("blocks submit and close requests while an image upload is pending", async () => {
     let resolveUpload;
-    global.fetch = vi.fn(
+    postMultipart.mockImplementation(
       () => new Promise((resolve) => {
         resolveUpload = resolve;
       }),
@@ -289,10 +289,7 @@ describe("LodgingFormModal - price and capacity", () => {
 describe("LodgingFormModal - ImageUpload failure handling", () => {
   it("shows the upload error inside the modal and still allows submitting without an image", async () => {
     const user = userEvent.setup();
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({}),
-    });
+    postMultipart.mockRejectedValueOnce(new Error("upload failed"));
     post.mockResolvedValue({ id: 1 });
 
     const { props } = renderModal();
