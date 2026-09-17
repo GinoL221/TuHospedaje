@@ -39,13 +39,24 @@ jobs:
     needs: [backend, frontend]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      CI_DB_USERNAME: ci_user_${{ github.run_id }}_${{ github.run_attempt }}
+      CI_DB_PASSWORD: ci-db-${{ github.run_id }}-${{ github.run_attempt }}
+      CI_ADMIN_PASSWORD: ci-admin-${{ github.run_id }}-${{ github.run_attempt }}
+      CI_TEST_USER_PASSWORD: >-
+        ci-user-${{ github.run_id }}-${{ github.run_attempt }}
+      CI_SESSION_KEY_ID: >-
+        ci-session-${{ github.run_id }}-${{ github.run_attempt }}
+      CI_SESSION_REFRESH_KEY: >-
+        ci-refresh-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, mobile-chromium]
     services:
       mariadb:
-        # Match backend Testcontainers (mariadb:10.11) so lock/gap behavior aligns.
+        # Match backend Testcontainers (mariadb:10.11) so lock/gap behavior
+        # aligns.
         image: mariadb:10.11
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
@@ -53,8 +64,8 @@ jobs:
           # seed's chk_dev_seed_database_name guard requires a standalone
           # "dev" or "test" segment in the database name.
           MYSQL_DATABASE: tuhospedaje_test
-          MYSQL_USER: tuhospedaje
-          MYSQL_PASSWORD: tuhospedaje123
+          MYSQL_USER: ${{ env.CI_DB_USERNAME }}
+          MYSQL_PASSWORD: ${{ env.CI_DB_PASSWORD }}
         ports:
           - 3306:3306
         options: >-
@@ -80,14 +91,31 @@ jobs:
             frontend/package-lock.json
             e2e/package-lock.json
 
+      # Derive the Base64 JWT secret from this immutable workflow run context.
+      - name: Generate CI JWT secret
+        run: |
+          JWT_CONTEXT="${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}:${GITHUB_SHA}"
+          JWT_SECRET=$(printf '%s' "$JWT_CONTEXT" | base64 -w 0)
+          printf 'CI_JWT_SECRET=%s\n' "$JWT_SECRET" >> "$GITHUB_ENV"
+
       # The seeded admin (db/dev/V1_9000__dev_demo_data.sql) requires its
       # bcrypt hash as a Flyway placeholder — generated here so no secret
       # needs to be stored for a fixed dev-only password.
       - name: Generate dev admin bcrypt hash
         id: admin-hash
+        env:
+          DEV_ADMIN_PASSWORD: ${{ env.CI_ADMIN_PASSWORD }}
         run: |
           python3 -m pip install --quiet bcrypt
-          echo "hash=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")" >> "$GITHUB_OUTPUT"
+          HASH=$(python3 - <<'PY'
+          import bcrypt
+          import os
+          print(bcrypt.hashpw(
+              os.environ['DEV_ADMIN_PASSWORD'].encode(), bcrypt.gensalt(10)
+          ).decode())
+          PY
+          )
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
 
       - name: Start backend (dev profile + demo seed)
         working-directory: backend
@@ -98,11 +126,16 @@ jobs:
           # application.properties hardcodes the DB name to "tuhospedaje";
           # override it to match the service container's tuhospedaje_test.
           SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/tuhospedaje_test
+          SPRING_DATASOURCE_USERNAME: ${{ env.CI_DB_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ env.CI_DB_PASSWORD }}
+          JWT_SECRET: ${{ env.CI_JWT_SECRET }}
+          SESSION_ACTIVE_KEY_ID: ${{ env.CI_SESSION_KEY_ID }}
+          SESSION_REFRESH_KEY: ${{ env.CI_SESSION_REFRESH_KEY }}
         run: nohup ./mvnw -B spring-boot:run > ../backend.log 2>&1 &
 
       - name: Wait for backend
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -sf http://localhost:8080/api/lodgings > /dev/null && exit 0
             sleep 3
           done
@@ -114,7 +147,8 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: http://localhost:8080/api
-          # Must satisfy WhatsAppButton's PHONE_PATTERN (/^[1-9]\d{7,14}$/) or the
+          # Must satisfy WhatsAppButton's PHONE_PATTERN (/^[1-9]\d{7,14}$/)
+          # or the
           # button falls into its "not configured" state before ever calling
           # window.open, breaking tests/whatsapp.spec.js's handoff assertions.
           VITE_WHATSAPP_NUMBER: "5491123456789"
@@ -124,7 +158,7 @@ jobs:
 
       - name: Wait for frontend
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -sf http://localhost:5173 > /dev/null && exit 0
             sleep 2
           done
@@ -136,12 +170,19 @@ jobs:
       # reservations.spec.js need one to already exist via TEST_USER_EMAIL.
       - name: Register e2e test user
         id: test-user
+        env:
+          TEST_USER_PASSWORD: ${{ env.CI_TEST_USER_PASSWORD }}
         run: |
           EMAIL="e2e-ci-$(date +%s)@tuhospedaje.com"
+          PAYLOAD=$(printf '%s%s%s%s%s' \
+            '{"firstName":"E2E","lastName":"Runner","email":"' \
+            "$EMAIL" \
+            '","password":"' \
+            "$TEST_USER_PASSWORD" \
+            '"}')
           curl -sf -X POST http://localhost:8080/api/auth/register \
             -H "Content-Type: application/json" \
-            -d "{\"firstName\":\"E2E\",\"lastName\":\"Runner\",\"email\":\"$EMAIL\",\"password\":\"Test1234\"}" \
-            > /dev/null
+            -d "$PAYLOAD" > /dev/null
           echo "email=$EMAIL" >> "$GITHUB_OUTPUT"
 
       # tests/reviews.spec.js assumes LODGING_ELIGIBLE (id=1, seeded by
@@ -151,12 +192,22 @@ jobs:
       # done with a direct insert, once the just-registered user's real id is
       # known.
       - name: Seed a confirmed past reservation for the e2e test user
+        env:
+          MYSQL_PWD: ${{ env.CI_DB_PASSWORD }}
         run: |
-          USER_ID=$(mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -N -e \
-            "SELECT id FROM users WHERE email = '${{ steps.test-user.outputs.email }}';")
-          mysql -h 127.0.0.1 -P 3306 -u tuhospedaje -ptuhospedaje123 tuhospedaje_test -e \
-            "INSERT INTO reservations (lodging_id, user_id, check_in, check_out, guest_name, guest_email, guest_phone, total_price, status, version)
-             VALUES (1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Fixture', 'e2e-fixture@tuhospedaje.com', '+5491100000000', 100.00, 'CONFIRMED', 0);"
+          MYSQL_ARGS=(-h 127.0.0.1 -P 3306 -u "$CI_DB_USERNAME")
+          USER_EMAIL='${{ steps.test-user.outputs.email }}'
+          USER_ID=$(mysql "${MYSQL_ARGS[@]}" tuhospedaje_test -N -e \
+            "SELECT id FROM users WHERE email = '$USER_EMAIL';")
+          mysql "${MYSQL_ARGS[@]}" tuhospedaje_test -e \
+            "INSERT INTO reservations (
+               lodging_id, user_id, check_in, check_out, guest_name,
+               guest_email, guest_phone, total_price, status, version
+             ) VALUES (
+               1, $USER_ID, '2020-01-01', '2020-01-05', 'E2E Fixture',
+               'e2e-fixture@tuhospedaje.com', '+5491100000000', 100.00,
+               'CONFIRMED', 0
+             );"
 
       - name: Install Playwright
         working-directory: e2e
@@ -173,9 +224,9 @@ jobs:
         env:
           BASE_URL: http://localhost:5173
           TEST_ADMIN_EMAIL: admin@tuhospedaje.com
-          TEST_ADMIN_PASSWORD: Admin1
+          TEST_ADMIN_PASSWORD: ${{ env.CI_ADMIN_PASSWORD }}
           TEST_USER_EMAIL: ${{ steps.test-user.outputs.email }}
-          TEST_USER_PASSWORD: Test1234
+          TEST_USER_PASSWORD: ${{ env.CI_TEST_USER_PASSWORD }}
           TEST_USER_NAME: E2E
         run: npx playwright test --project=${{ matrix.browser }}
 
