@@ -18,6 +18,14 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
+      - name: Generate per-run backend test secrets
+        run: |
+          JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')
+          SESSION_REFRESH_KEY=$(openssl rand -base64 48 | tr -d '\n')
+          {
+            printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+            printf 'SESSION_REFRESH_KEY=%s\n' "$SESSION_REFRESH_KEY"
+          } >> "$GITHUB_ENV"
       - run: ./mvnw -B verify
 
   frontend:
