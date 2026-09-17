@@ -11,22 +11,34 @@ import java.util.Map;
 @Configuration
 public class CloudinaryConfig {
 
-    @Value("${cloudinary.cloud-name:}")
-    private String cloudName;
+    private final String cloudName;
+    private final String apiKey;
+    private final String apiSecret;
+    private final int timeoutSeconds;
 
-    @Value("${cloudinary.api-key:}")
-    private String apiKey;
-
-    @Value("${cloudinary.api-secret:}")
-    private String apiSecret;
+    public CloudinaryConfig(
+            @Value("${cloudinary.cloud-name:}") String cloudName,
+            @Value("${cloudinary.api-key:}") String apiKey,
+            @Value("${cloudinary.api-secret:}") String apiSecret,
+            @Value("${cloudinary.timeout:15}") int timeoutSeconds) {
+        this.cloudName = cloudName;
+        this.apiKey = apiKey;
+        this.apiSecret = apiSecret;
+        this.timeoutSeconds = timeoutSeconds;
+    }
 
     @Bean
     @ConditionalOnProperty(name = "cloudinary.cloud-name")
     public Cloudinary cloudinary() {
-        return new Cloudinary(Map.of(
+        return new Cloudinary(cloudinaryConfiguration());
+    }
+
+    Map<String, Object> cloudinaryConfiguration() {
+        return Map.of(
                 "cloud_name", cloudName,
                 "api_key", apiKey,
-                "api_secret", apiSecret
-        ));
+                "api_secret", apiSecret,
+                "timeout", timeoutSeconds
+        );
     }
 }
