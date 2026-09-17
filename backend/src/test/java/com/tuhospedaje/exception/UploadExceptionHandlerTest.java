@@ -120,6 +120,26 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.error").value("Only JPEG, PNG, WebP and GIF images are allowed."));
     }
 
+    /** The service-level 5 MiB guard retains the same localized 400 shape. */
+    @Test
+    void serviceLevelSizeRejection_returns400WithResolvedMessage() throws Exception {
+        when(cloudinaryService.uploadImage(any()))
+                .thenThrow(new IllegalArgumentException("error.upload.too_large"));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "large.jpg", "image/jpeg", "valid-parser-size-bytes".getBytes());
+
+        jakarta.servlet.http.Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(multipart("/api/upload")
+                        .file(file)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("The image exceeds the maximum allowed size."));
+    }
+
     /** Same guard, empty part: still the caller's input, still 400. */
     @Test
     void emptyFile_returns400WithResolvedMessage() throws Exception {
