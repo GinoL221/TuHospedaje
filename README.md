@@ -9,6 +9,7 @@ Proyecto final integrador — Digital House.
 ## Tecnologías
 
 ### Backend
+
 - Java 17
 - Spring Boot 3.5
 - Spring Security + JWT (jjwt 0.12.6)
@@ -18,12 +19,14 @@ Proyecto final integrador — Digital House.
 - Testcontainers (tests de integración)
 
 ### Frontend
+
 - React 19 + Vite 8
 - React Router 7
 - Lucide React
 - jwt-decode
 
 ### E2E
+
 - Playwright (Chromium + Firefox + mobile Chromium)
 
 ---
@@ -31,12 +34,14 @@ Proyecto final integrador — Digital House.
 ## Instalación local
 
 ### Requisitos
+
 - Java 17+
 - Node.js 18+
 - MariaDB
 - Maven (o usar el wrapper incluido)
 
 ### Clonar el repositorio
+
 ```bash
 git clone https://github.com/GinoL221/tuhospedaje.git
 cd tuhospedaje
@@ -59,11 +64,13 @@ database name must contain a standalone `dev` or `test` segment — it gates the
 seed below.
 
 #### Configurar variables de entorno
+
 ```bash
 cp backend/.env.example backend/.env
 ```
 
 **Archivo `.env` (backend):**
+
 ```dotenv
 # Base de datos
 DB_USERNAME=tuhospedaje
@@ -128,10 +135,12 @@ reintentar — las migraciones de `db/dev` no son transaccionales en MariaDB.
 Credencial del admin demo: **`admin@tuhospedaje.com`** / **`Admin1`**.
 
 #### Correr el backend
+
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
+
 > Disponible en `http://localhost:8080`
 
 #### Operación del outbox de bienvenida
@@ -157,6 +166,7 @@ En producción, `DB_USERNAME`/`DB_PASSWORD` pertenecen a la cuenta de ejecución
 1. Detené todas las instancias de la aplicación y bloqueá escrituras. Tomá un backup restaurable y verificá la restauración en un entorno aislado.
 2. Compará tablas, columnas, índices, claves y restricciones contra `V1__baseline_schema.sql`. Continuá únicamente si el esquema coincide exactamente y no hay una tabla `flyway_schema_history` parcial.
 3. Con una versión compatible de Flyway y credenciales administrativas temporales, creá una configuración efímera que no exponga la contraseña en los argumentos del proceso y ejecutá una sola vez:
+
    ```bash
    FLYWAY_CONF=$(mktemp)
    chmod 600 "$FLYWAY_CONF"
@@ -167,6 +177,7 @@ En producción, `DB_USERNAME`/`DB_PASSWORD` pertenecen a la cuenta de ejecución
    rm -f "$FLYWAY_CONF"
    trap - EXIT
    ```
+
 4. Verificá que `flyway_schema_history` contenga un baseline exitoso en versión 1. Iniciá una instancia con las credenciales normales y confirmá que `migrate` no intenta ejecutar V1 y que Hibernate valida el esquema.
 5. Quitá las credenciales administrativas temporales y recién entonces reabrí escrituras.
 
@@ -179,11 +190,13 @@ MariaDB puede confirmar cada sentencia DDL aunque una migración completa falle.
 ### Frontend (`/frontend`)
 
 #### Configurar variables de entorno
+
 ```bash
 cp frontend/.env.example frontend/.env
 ```
 
 **Archivo `.env` (frontend):**
+
 ```dotenv
 VITE_API_URL=http://localhost:8080/api
 
@@ -192,11 +205,13 @@ VITE_WHATSAPP_NUMBER=5491112345678
 ```
 
 #### Correr el frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 > Disponible en `http://localhost:5173`
 
 ---
@@ -306,12 +321,14 @@ Las mutaciones usan protección CSRF vía cookie `XSRF-TOKEN` + header `X-XSRF-T
 ## Testing
 
 ### Backend (JUnit + Testcontainers)
+
 ```bash
 cd backend
 ./mvnw test
 ```
 
 ### E2E — Playwright (requiere backend y frontend corriendo)
+
 ```bash
 cd e2e
 npm install
