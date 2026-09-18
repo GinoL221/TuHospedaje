@@ -288,7 +288,7 @@ jobs:
           tags: ${{ steps.images.outputs.frontend }}
 
       - name: Scan backend image
-        uses: aquasecurity/trivy-action@v0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.images.outputs.backend }}
           format: table
@@ -297,7 +297,7 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Scan frontend image
-        uses: aquasecurity/trivy-action@v0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.images.outputs.frontend }}
           format: table
