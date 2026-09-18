@@ -4,7 +4,8 @@ const { test, expect } = require('@playwright/test');
 const FRONTEND = 'http://localhost:5173';
 const BACKEND  = 'http://localhost:8080';
 const EMAIL    = 'admin@tuhospedaje.com';
-const PASS     = 'Admin1';
+const PASS     = process.env.TEST_ADMIN_PASSWORD;
+if (!PASS) throw new Error('TEST_ADMIN_PASSWORD must be set');
 
 async function loginViaUI(page) {
   await page.goto(`${FRONTEND}/login`);
