@@ -85,15 +85,15 @@ No usar una base productiva ni credenciales reales para este recorrido.
 - Abrir DevTools con un viewport móvil de `390x844`.
 - Mostrar el menú móvil, la navegación y el recorrido de **Mis reservas** sin overflow horizontal.
 - Mostrar brevemente el plan de pruebas y los resultados automatizados.
-- Resaltar que la suite cubre backend, frontend, Chromium, Firefox y mobile Chromium.
+- Resaltar que la validación observada de la entrega cubre backend, frontend, Chromium, Firefox, mobile Chromium y el escaneo de imágenes de contenedor.
 
 **Evidencia:** TC-45, TC-46 y TC-47; resumen de ejecución de [sprint-4-test-plan.md](sprint-4-test-plan.md).
 
 ## Evidencia de CI
 
-El workflow actual ejecuta la matriz completa para pull requests y para pushes a `main` o `sprint-4`. Un push directo a esta rama de documentación no dispara ese workflow por su filtro de ramas. Para obtener evidencia remota de esta rama, abrir un pull request y conservar el enlace a la ejecución y sus artefactos de Playwright.
+La ejecución observada del PR #233 (`35346391939`) validó la entrega antes del merge y terminó con los seis checks exitosos: backend, frontend, E2E Chromium, E2E Firefox, E2E mobile Chromium y containers/Trivy. [Ver ejecución en GitHub Actions](https://github.com/GinoL221/TuHospedaje/actions/runs/35346391939).
 
-La ejecución debe mostrar cinco jobs: backend, frontend, E2E Chromium, E2E Firefox y E2E mobile Chromium. Los artefactos de Playwright se conservan durante siete días.
+Esta referencia prueba la validación del candidato del PR; no se presenta como una ejecución posterior al merge sobre `main`. Los artefactos de Playwright de las ejecuciones de CI se conservan durante siete días.
 
 ## Criterio de cierre
 
@@ -105,3 +105,10 @@ La demo está completa cuando se observan estos cuatro resultados:
 - administración del catálogo con permisos de administrador.
 
 Los escenarios de imágenes canónicas sin sus JPEG maestros externos, SMTP sin Mailtrap y hardening productivo no bloquean el recorrido académico si quedan documentados como condiciones del entorno.
+
+## Límites de evidencia
+
+- Las imágenes canónicas externas no se presentan como verificadas cuando faltan los JPEG maestros; usar placeholders y dejar constancia de la omisión.
+- Con SMTP local, el log de `ConsoleEmailServiceImpl` prueba la solicitud de envío, no la recepción en un buzón. La entrega real requiere Mailtrap u otro buzón de prueba configurado.
+- La existencia de `ops/mariadb/backup.sh` y `restore-verify.sh` documenta el procedimiento, pero no prueba una ejecución real de backup/restore.
+- `backend/.env.example` queda fuera de esta entrega y pendiente de resolución manual.
