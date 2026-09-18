@@ -47,4 +47,4 @@ Demonstrate the product's core guest and administrator journeys in a repeatable 
 
 ## Work-unit evidence
 
-Commit authorized; work-unit identity pending creation.
+Primary work-unit commit: `926c944` (`docs: record academic demo validation`).
