@@ -40,8 +40,6 @@ services:
 
   backend:
     image: ${BACKEND_IMAGE:?BACKEND_IMAGE is required}
-    build:
-      context: ./backend
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${PROD_DB_NAME:?PROD_DB_NAME is required}
@@ -77,16 +75,11 @@ services:
 
   frontend:
     image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}
-    build:
-      context: ./frontend
-      args:
-        VITE_API_URL: /api
-        VITE_WHATSAPP_NUMBER: ${VITE_WHATSAPP_NUMBER:-}
     ports:
-      - "${PROD_HTTP_BIND_ADDRESS:-127.0.0.1}:${PROD_HTTP_PORT:-8080}:80"
+      - "${PROD_HTTP_BIND_ADDRESS:-127.0.0.1}:${PROD_HTTP_PORT:-8080}:8080"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/nginx-health > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/nginx-health > /dev/null || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 12
