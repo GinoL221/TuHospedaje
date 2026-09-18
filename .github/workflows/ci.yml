@@ -50,9 +50,8 @@ jobs:
     env:
       CI_DB_USERNAME: ci_user_${{ github.run_id }}_${{ github.run_attempt }}
       CI_DB_PASSWORD: ci-db-${{ github.run_id }}-${{ github.run_attempt }}
-      CI_ADMIN_PASSWORD: ci-admin-${{ github.run_id }}-${{ github.run_attempt }}
-      CI_TEST_USER_PASSWORD: >-
-        ci-user-${{ github.run_id }}-${{ github.run_attempt }}
+      CI_ADMIN_PASSWORD: A${{ github.run_id }}
+      CI_TEST_USER_PASSWORD: U${{ github.run_id }}
       CI_SESSION_KEY_ID: >-
         ci-session-${{ github.run_id }}-${{ github.run_attempt }}
       CI_SESSION_REFRESH_KEY: >-
