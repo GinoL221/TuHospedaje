@@ -33,6 +33,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -389,6 +390,41 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/lodgings/search")
                         .param("size", "0"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectSearchFiltersOutsideThePublicContract() throws Exception {
+        LocalDate today = LocalDate.now();
+
+        assertBadRequestForSearch(Map.of("size", "101"));
+        assertBadRequestForSearch(Map.of("checkIn", today.toString()));
+        assertBadRequestForSearch(Map.of("checkOut", today.plusDays(1).toString()));
+        assertBadRequestForSearch(Map.of("checkIn", today.plusDays(2).toString(), "checkOut", today.plusDays(1).toString()));
+        assertBadRequestForSearch(Map.of("guests", "0"));
+        assertBadRequestForSearch(Map.of("minPrice", "-1"));
+        assertBadRequestForSearch(Map.of("maxPrice", "-1"));
+        assertBadRequestForSearch(Map.of("minPrice", "200", "maxPrice", "100"));
+    }
+
+    @Test
+    void shouldPreserveValidSearchFilterResponseShape() throws Exception {
+        createTestLodgingWithCity("Valid Filter Hotel", "valid-filter@search-contract.test", "search-contract-city");
+        LocalDate today = LocalDate.now();
+
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("city", "search-contract-city")
+                        .param("checkIn", today.plusDays(1).toString())
+                        .param("checkOut", today.plusDays(3).toString())
+                        .param("guests", "4")
+                        .param("minPrice", "1")
+                        .param("maxPrice", "30000")
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings[0].name").value("Valid Filter Hotel"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalItems").isNumber())
+                .andExpect(jsonPath("$.catalogItems").isNumber())
+                .andExpect(jsonPath("$.totalPages").isNumber());
     }
 
     @Test
@@ -809,6 +845,15 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void availabilityEndpoint_returnsLocalizedNotFoundResponseForUnknownLodging() throws Exception {
+        mockMvc.perform(get("/api/lodgings/{id}/availability", 999999L)
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value(startsWith("Alojamiento no encontrado con ID: ")))
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
     void searchWithDates_executesAtMostTwoQueries() throws Exception {
         Long id = createTestLodgingWithCity("Perf Hotel", "perf@tdd-perf-06.com", "tdd-perf-06");
         LocalDate today = LocalDate.now();
@@ -827,6 +872,16 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
         // Search + ratings aggregate + catalog total = 3 queries.
         long queryCount = sf.getStatistics().getQueryExecutionCount();
         assertThat(queryCount).isLessThanOrEqualTo(3L);
+    }
+
+    private void assertBadRequestForSearch(Map<String, String> parameters) throws Exception {
+        var request = get("/api/lodgings/search");
+        parameters.forEach(request::param);
+
+        mockMvc.perform(request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").isString())
+                .andExpect(jsonPath("$.status").value(400));
     }
 
     private void seedReservation(Long lodgingId, LocalDate checkIn, LocalDate checkOut, ReservationStatus status) {

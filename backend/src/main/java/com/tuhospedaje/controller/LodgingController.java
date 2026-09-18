@@ -16,6 +16,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -169,14 +171,27 @@ public class LodgingController {
             @RequestParam(required = false) String city,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
-            @RequestParam(required = false) Integer guests,
+            @RequestParam(required = false) @Positive(message = "{error.search.guests.positive}") Integer guests,
             @RequestParam(required = false) List<Long> categories,
-            @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) @PositiveOrZero(message = "{error.search.price.non_negative}") BigDecimal minPrice,
+            @RequestParam(required = false) @PositiveOrZero(message = "{error.search.price.non_negative}") BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
-            @RequestParam(defaultValue = "9") @Min(value = 1, message = "{error.size.negative}") int size) {
+            @RequestParam(defaultValue = "9") @Min(value = 1, message = "{error.size.negative}") @Max(value = 100, message = "{error.size.max}") int size) {
+        validateSearchFilters(checkIn, checkOut, minPrice, maxPrice);
         return ResponseEntity.ok(lodgingService.search(
                 city, checkIn, checkOut, guests, categories, minPrice, maxPrice, page, size));
+    }
+
+    private void validateSearchFilters(LocalDate checkIn, LocalDate checkOut, BigDecimal minPrice, BigDecimal maxPrice) {
+        if ((checkIn == null) != (checkOut == null)) {
+            throw new IllegalArgumentException("error.search.dates.required");
+        }
+        if (checkIn != null && !checkIn.isBefore(checkOut)) {
+            throw new IllegalArgumentException("error.search.dates.order");
+        }
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new IllegalArgumentException("error.search.price.range");
+        }
     }
 
     @GetMapping("/cities")
