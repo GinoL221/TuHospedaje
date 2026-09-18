@@ -1,22 +1,7 @@
 import { useState } from "react";
-import { getCsrfToken } from "../../services/api";
+import { postMultipart } from "../../services/api";
 
 const GENERIC_UPLOAD_ERROR = "No se pudo subir la imagen. Intentá de nuevo.";
-
-async function getClientErrorMessage(response) {
-  const isClientError = response.status >= 400 && response.status < 500;
-  if (!isClientError) return GENERIC_UPLOAD_ERROR;
-
-  try {
-    const body = await response.json();
-    const message = body?.error;
-    return typeof message === "string" && message.trim()
-      ? message
-      : GENERIC_UPLOAD_ERROR;
-  } catch {
-    return GENERIC_UPLOAD_ERROR;
-  }
-}
 
 export default function ImageUpload({
   urls,
@@ -36,21 +21,14 @@ export default function ImageUpload({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "X-XSRF-TOKEN": getCsrfToken() },
-        body: formData,
-      });
-      if (!res.ok) {
-        setError(await getClientErrorMessage(res));
-        return;
-      }
-      const data = await res.json();
+      const data = await postMultipart("/upload", formData);
       onUrlsChange([...urls, data.url]);
     } catch (err) {
-      console.error(err);
-      setError(GENERIC_UPLOAD_ERROR);
+      setError(
+        err?.status >= 400 && err.status < 500 && err.hasServerMessage
+          ? err.message
+          : GENERIC_UPLOAD_ERROR,
+      );
     } finally {
       setUploading(false);
       onUploadingChange?.(false);
