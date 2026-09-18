@@ -95,6 +95,19 @@ La ejecución observada del PR #233 (`35346391939`) validó la entrega antes del
 
 Esta referencia prueba la validación del candidato del PR; no se presenta como una ejecución posterior al merge sobre `main`. Los artefactos de Playwright de las ejecuciones de CI se conservan durante siete días.
 
+## Validación local del recorrido académico
+
+Una ejecución local posterior sobre el entorno descartable `tuhospedaje-dev-seeded` observó:
+
+- backend, frontend y MariaDB saludables;
+- 13 checks Chromium exitosos para smoke, búsqueda, autenticación, reserva y listado de reservas;
+- registro de un huésped único, rechazo de acceso a `/administración`, creación y consulta de una reserva futura, cancelación y estado final `CANCELLED` sin una segunda acción de cancelación;
+- 7 checks Chromium exitosos para acceso administrativo, dashboard y CRUD de políticas con limpieza de los registros creados.
+
+El primer intento del recorrido huésped usó `127.0.0.1` y el navegador mostró `Failed to fetch`, porque el origen CORS configurado para desarrollo es `http://localhost:5173`. El mismo recorrido pasó al usar el origen configurado. Esta incidencia no se presenta como un defecto del registro.
+
+También se ejecutó un ensayo técnico directo de dump y restore entre dos MariaDB 10.11 efímeras: coincidió el SHA-256 y se recuperaron historial de migración, tablas y un registro marcador. Ese ensayo no ejecutó `ops/mariadb/backup.sh` ni `restore-verify.sh`, y no validó S3, KMS, retención, RPO/RTO, health de una aplicación restaurada ni cutover productivo.
+
 ## Criterio de cierre
 
 La demo está completa cuando se observan estos cuatro resultados:
@@ -111,4 +124,4 @@ Los escenarios de imágenes canónicas sin sus JPEG maestros externos, SMTP sin 
 - Las imágenes canónicas externas no se presentan como verificadas cuando faltan los JPEG maestros; usar placeholders y dejar constancia de la omisión.
 - Con SMTP local, el log de `ConsoleEmailServiceImpl` prueba la solicitud de envío, no la recepción en un buzón. La entrega real requiere Mailtrap u otro buzón de prueba configurado.
 - La existencia de `ops/mariadb/backup.sh` y `restore-verify.sh` documenta el procedimiento, pero no prueba una ejecución real de backup/restore.
-- `backend/.env.example` queda fuera de esta entrega y pendiente de resolución manual.
+- `backend/.env.example` fue actualizado manualmente con una plantilla sanitizada; esta sesión no leyó ni verificó el archivo local porque la política de seguridad bloqueó esa ruta.
