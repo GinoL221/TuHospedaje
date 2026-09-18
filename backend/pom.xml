@@ -32,7 +32,7 @@
 		<micrometer.version>1.15.12</micrometer.version>
 		<spring-data-bom.version>2025.0.12</spring-data-bom.version>
 		<spring-framework.version>6.2.19</spring-framework.version>
-		<tomcat.version>10.1.55</tomcat.version>
+		<tomcat.version>11.0.25</tomcat.version>
 		<httpcore5.version>5.4.3</httpcore5.version>
 	</properties>
 	<dependencies>
