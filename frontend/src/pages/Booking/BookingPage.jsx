@@ -7,11 +7,9 @@ import {
 } from "../../services/reservationService";
 import { useAuth } from "../../hooks/useAuth";
 import useAvailability from "../../hooks/useAvailability";
-
-import DatePicker from "react-datepicker";
-import Icon from "../../components/Icons/Icon";
-import LodgingGallery from "../../components/LodgingGallery/LodgingGallery";
-import { minCheckoutDate } from "../../utils/dateRange";
+import BookingDateFields from "./BookingDateFields";
+import BookingSummary from "./BookingSummary";
+import GuestDetails from "./GuestDetails";
 
 import "./BookingPage.css";
 
@@ -127,8 +125,8 @@ export default function BookingPage() {
     return Math.round((checkOut - checkIn) / (1000 * 60 * 60 * 24));
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setError("");
 
     if (!guestPhone.trim()) {
@@ -195,6 +193,19 @@ export default function BookingPage() {
     }
   }
 
+  function handleGuestDetailsToggle() {
+    if (guestDetailsExpanded && !guestPhone.trim()) {
+      setPhoneError("Ingresá un teléfono válido.");
+      return;
+    }
+    setGuestDetailsExpanded((expanded) => !expanded);
+  }
+
+  function handleGuestPhoneChange(event) {
+    setGuestPhone(event.target.value);
+    setPhoneError("");
+  }
+
   const rootLodgingStatus =
     resolvedLodgingId === lodgingId ? lodgingStatus : "loading";
 
@@ -254,35 +265,7 @@ export default function BookingPage() {
       </header>
 
       <div className="booking-layout">
-        <section
-          className="booking-summary"
-          aria-labelledby="booking-summary-title"
-        >
-          <div className="booking-summary-header">
-            <p className="booking-section-kicker">Tu alojamiento</p>
-            <h2 id="booking-summary-title">{lodging.name}</h2>
-          </div>
-          <p className="booking-location">
-            {lodging.city}, {lodging.country}
-          </p>
-          <p className="booking-price">
-            <strong>${lodging.pricePerNight?.toLocaleString()}</strong> / noche
-          </p>
-          <LodgingGallery images={lodging.imageUrls} name={lodging.name} />
-          {lodging.description && (
-            <p className="booking-description">{lodging.description}</p>
-          )}
-          {lodging.features && lodging.features.length > 0 && (
-            <div className="booking-features">
-              {lodging.features.map((f) => (
-                <span key={f.id} className="booking-feature-item">
-                  <Icon name={f.icon} size={14} />
-                  {f.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </section>
+        <BookingSummary lodging={lodging} />
 
         <form
           className="booking-form"
@@ -295,196 +278,28 @@ export default function BookingPage() {
             <h2 id="booking-form-title">Datos de la reserva</h2>
           </header>
 
-          <fieldset className="booking-fieldset booking-identity-fieldset">
-            <legend>Tus datos</legend>
-            <div className="booking-field-grid booking-field-grid--identity">
-              <div className="booking-field">
-                <label htmlFor="booking-first-name">Nombre</label>
-                <input
-                  id="booking-first-name"
-                  value={user.firstName}
-                  readOnly
-                  autoComplete="given-name"
-                />
-              </div>
+          <GuestDetails
+            user={user}
+            guestPhone={guestPhone}
+            guestDetailsExpanded={guestDetailsExpanded}
+            phoneError={phoneError}
+            phoneInputRef={phoneInputRef}
+            onGuestPhoneChange={handleGuestPhoneChange}
+            onToggle={handleGuestDetailsToggle}
+          />
 
-              <div className="booking-field">
-                <label htmlFor="booking-last-name">Apellido</label>
-                <input
-                  id="booking-last-name"
-                  value={user.lastName}
-                  readOnly
-                  autoComplete="family-name"
-                />
-              </div>
-
-              <div className="booking-field booking-field--full">
-                <label htmlFor="booking-email">Email</label>
-                <input
-                  id="booking-email"
-                  type="email"
-                  value={user.email}
-                  readOnly
-                  autoComplete="email"
-                />
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset className="booking-fieldset booking-guest-fieldset">
-            <legend>Detalles del huésped</legend>
-            <button
-              type="button"
-              className="guest-details-toggle"
-              aria-expanded={guestDetailsExpanded}
-              aria-controls="guest-details"
-              aria-describedby={phoneError ? "booking-phone-error" : undefined}
-              onClick={() => {
-                if (guestDetailsExpanded && !guestPhone.trim()) {
-                  setPhoneError("Ingresá un teléfono válido.");
-                  return;
-                }
-                setGuestDetailsExpanded((expanded) => !expanded);
-              }}
-            >
-              {guestDetailsExpanded
-                ? "Ocultar detalles del huésped"
-                : "Mostrar detalles del huésped"}
-            </button>
-
-            {guestDetailsExpanded && (
-              <section id="guest-details" aria-label="Detalles del huésped">
-                {user.imageUrl && (
-                  <img
-                    src={user.imageUrl}
-                    alt={`Perfil de ${user.firstName} ${user.lastName}`}
-                    className="guest-profile-image"
-                  />
-                )}
-                <div className="booking-phone-field">
-                  <label htmlFor="booking-phone">Teléfono</label>
-                  <input
-                    id="booking-phone"
-                    ref={phoneInputRef}
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={guestPhone}
-                    onChange={(event) => {
-                      setGuestPhone(event.target.value);
-                      setPhoneError("");
-                    }}
-                    placeholder="Ingresá tu teléfono"
-                    aria-required="true"
-                    aria-invalid={phoneError ? "true" : undefined}
-                    aria-describedby={
-                      phoneError ? "booking-phone-error" : undefined
-                    }
-                  />
-                  {phoneError && (
-                    <p
-                      id="booking-phone-error"
-                      className="error"
-                      role="alert"
-                      aria-live="assertive"
-                    >
-                      {phoneError}
-                    </p>
-                  )}
-                </div>
-              </section>
-            )}
-          </fieldset>
-
-          <fieldset
-            className="booking-fieldset booking-date-fieldset"
-            aria-describedby={dateFieldsetDescribedBy}
-          >
-            <legend>Fechas de la estadía</legend>
-
-            <div className="booking-availability">
-              {availabilityStatus === "loading" && (
-                <p
-                  id={availabilityMessageId}
-                  className="availability-status availability-status--loading"
-                  role="status"
-                  aria-live="polite"
-                >
-                  Comprobando disponibilidad...
-                </p>
-              )}
-              {(availabilityStatus === "error" ||
-                availabilityStatus === "stale") && (
-                <div
-                  id={availabilityMessageId}
-                  className="availability-alert"
-                  role="alert"
-                  aria-live="assertive"
-                  aria-atomic="true"
-                >
-                  <p>
-                    {availabilityStatus === "stale"
-                      ? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
-                      : "No pudimos obtener la disponibilidad de este alojamiento."}
-                  </p>
-                  <button type="button" onClick={retryAvailability}>
-                    Reintentar
-                  </button>
-                </div>
-              )}
-              {availabilityStatus === "ready" &&
-                occupiedRanges.length === 0 && (
-                  <p
-                    id={availabilityMessageId}
-                    className="availability-status availability-status--ready"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    Todas las fechas están disponibles.
-                  </p>
-                )}
-            </div>
-
-            <div className="booking-field-grid booking-field-grid--dates">
-              <div className="booking-field">
-                <label htmlFor="booking-check-in">Check-in</label>
-                <DatePicker
-                  id="booking-check-in"
-                  selected={checkIn}
-                  onChange={(date) => setCheckIn(date)}
-                  selectsStart
-                  startDate={checkIn}
-                  endDate={checkOut}
-                  minDate={new Date()}
-                  filterDate={(date) => !isDateOccupied(date)}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Check-in"
-                  aria-required="true"
-                  aria-describedby={availabilityMessageId}
-                  disabled={availabilityStatus === "loading"}
-                />
-              </div>
-
-              <div className="booking-field">
-                <label htmlFor="booking-check-out">Check-out</label>
-                <DatePicker
-                  id="booking-check-out"
-                  selected={checkOut}
-                  onChange={(date) => setCheckOut(date)}
-                  selectsEnd
-                  startDate={checkIn}
-                  endDate={checkOut}
-                  minDate={minCheckoutDate(checkIn)}
-                  filterDate={(date) => !isDateOccupied(date)}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Check-out"
-                  aria-required="true"
-                  aria-describedby={availabilityMessageId}
-                  disabled={availabilityStatus === "loading"}
-                />
-              </div>
-            </div>
-          </fieldset>
+          <BookingDateFields
+            availabilityStatus={availabilityStatus}
+            occupiedRanges={occupiedRanges}
+            retryAvailability={retryAvailability}
+            availabilityMessageId={availabilityMessageId}
+            dateFieldsetDescribedBy={dateFieldsetDescribedBy}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            onCheckInChange={setCheckIn}
+            onCheckOutChange={setCheckOut}
+            isDateOccupied={isDateOccupied}
+          />
 
           <fieldset className="booking-fieldset booking-notes-fieldset">
             <legend>
