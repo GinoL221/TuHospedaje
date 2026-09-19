@@ -5,7 +5,8 @@ import com.tuhospedaje.dto.lodging.RecommendationPageResponse;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
-import com.tuhospedaje.service.impl.LodgingServiceImpl;
+import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.service.impl.LodgingQueryServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,10 +34,13 @@ class RecommendationServiceContractTest {
     private LodgingRepository lodgingRepository;
 
     @Mock
+    private ReservationRepository reservationRepository;
+
+    @Mock
     private RatingRepository ratingRepository;
 
     @InjectMocks
-    private LodgingServiceImpl lodgingService;
+    private LodgingQueryServiceImpl lodgingQueryService;
 
     @Test
     void keepsFixedSeedPagesStableUniqueAndCappedAtTen() {
@@ -44,9 +48,9 @@ class RecommendationServiceContractTest {
                 .thenReturn(lodgings(12));
         when(ratingRepository.aggregateByLodgingIds(any())).thenReturn(List.of());
 
-        RecommendationPageResponse firstPage = lodgingService.findRecommendations("recommendationseed", 0, 10, null);
-        RecommendationPageResponse secondPage = lodgingService.findRecommendations("recommendationseed", 1, 10, firstPage.revision());
-        RecommendationPageResponse revisitedFirstPage = lodgingService.findRecommendations(
+        RecommendationPageResponse firstPage = lodgingQueryService.findRecommendations("recommendationseed", 0, 10, null);
+        RecommendationPageResponse secondPage = lodgingQueryService.findRecommendations("recommendationseed", 1, 10, firstPage.revision());
+        RecommendationPageResponse revisitedFirstPage = lodgingQueryService.findRecommendations(
                 "recommendationseed", 0, 10, firstPage.revision());
 
         assertThat(firstPage.lodgings()).hasSize(10);
@@ -65,8 +69,8 @@ class RecommendationServiceContractTest {
                 .thenReturn(lodgings(2));
         when(ratingRepository.aggregateByLodgingIds(any())).thenReturn(List.of());
 
-        RecommendationPageResponse initial = lodgingService.findRecommendations("recommendationseed", 99, 10, null);
-        RecommendationPageResponse reset = lodgingService.findRecommendations("recommendationseed", 1, 10, "obsolete-revision");
+        RecommendationPageResponse initial = lodgingQueryService.findRecommendations("recommendationseed", 99, 10, null);
+        RecommendationPageResponse reset = lodgingQueryService.findRecommendations("recommendationseed", 1, 10, "obsolete-revision");
 
         assertThat(initial.currentPage()).isZero();
         assertThat(initial.totalPages()).isEqualTo(1);
@@ -81,7 +85,7 @@ class RecommendationServiceContractTest {
                 .thenReturn(lodgings(12));
         when(ratingRepository.aggregateByLodgingIds(any())).thenReturn(List.of());
 
-        RecommendationPageResponse page = lodgingService.findRecommendations("recommendationseed", -1, 10, null);
+        RecommendationPageResponse page = lodgingQueryService.findRecommendations("recommendationseed", -1, 10, null);
 
         assertThat(page.currentPage()).isZero();
         assertThat(page.lodgings()).hasSize(10);
@@ -92,7 +96,7 @@ class RecommendationServiceContractTest {
         when(lodgingRepository.findAll(any(org.springframework.data.domain.Sort.class))).thenReturn(List.of());
         when(ratingRepository.aggregateByLodgingIds(any())).thenReturn(List.of());
 
-        RecommendationPageResponse empty = lodgingService.findRecommendations("recommendationseed", 4, 100, null);
+        RecommendationPageResponse empty = lodgingQueryService.findRecommendations("recommendationseed", 4, 100, null);
 
         assertThat(empty.lodgings()).isEmpty();
         assertThat(empty.currentPage()).isZero();
@@ -100,7 +104,7 @@ class RecommendationServiceContractTest {
         assertThat(empty.totalPages()).isZero();
 
         when(lodgingRepository.findAll(any(org.springframework.data.domain.Sort.class))).thenReturn(lodgings(12));
-        RecommendationPageResponse capped = lodgingService.findRecommendations("recommendationseed", 0, 100, null);
+        RecommendationPageResponse capped = lodgingQueryService.findRecommendations("recommendationseed", 0, 100, null);
 
         assertThat(capped.lodgings()).hasSize(10);
         assertThat(capped.totalPages()).isEqualTo(2);
