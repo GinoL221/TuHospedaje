@@ -1,8 +1,8 @@
 package com.tuhospedaje.service;
 
 import com.tuhospedaje.dto.upload.UploadResult;
-import org.springframework.web.multipart.MultipartFile;
+import com.tuhospedaje.service.command.UploadImageCommand;
 
 public interface CloudinaryService {
-    UploadResult uploadImage(MultipartFile file);
+    UploadResult uploadImage(UploadImageCommand command);
 }

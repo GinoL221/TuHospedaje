@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.Uploader;
 import com.tuhospedaje.dto.upload.UploadResult;
 import com.tuhospedaje.exception.UploadException;
+import com.tuhospedaje.service.command.UploadImageCommand;
 import com.tuhospedaje.service.impl.CloudinaryServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +13,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -21,7 +21,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
@@ -39,40 +38,29 @@ class CloudinaryServiceImplTest {
     private CloudinaryServiceImpl cloudinaryService;
 
     @Test
-    void uploadImage_whenCloudinarySucceeds_returnsUploadResult() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        Uploader uploader = mock(Uploader.class);
+    void uploadImage_acceptsAnUploadImageCommand() throws Exception {
+        Uploader uploader = successfulUploader();
+        byte[] imageBytes = validImageBytes("image/jpeg");
 
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getBytes()).thenReturn(validImageBytes("image/jpeg"));
-        when(cloudinary.uploader()).thenReturn(uploader);
-        when(uploader.upload(any(byte[].class), anyMap())).thenReturn(Map.of("secure_url", "https://res.cloudinary.com/img.jpg"));
-
-        UploadResult result = cloudinaryService.uploadImage(file);
+        UploadResult result = cloudinaryService.uploadImage(command(imageBytes, "image/jpeg"));
 
         assertThat(result).isNotNull();
+        verify(uploader).upload(imageBytes, Map.of());
     }
 
     @Test
     void uploadImage_whenCloudinaryThrows_throwsUploadException() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
         Uploader uploader = mock(Uploader.class);
-
-        when(file.getContentType()).thenReturn("image/png");
-        when(file.getBytes()).thenReturn(validImageBytes("image/png"));
         when(cloudinary.uploader()).thenReturn(uploader);
-        when(uploader.upload(any(byte[].class), anyMap()))
-                .thenThrow(new RuntimeException("Cloudinary connection failed"));
+        when(uploader.upload(any(byte[].class), anyMap())).thenThrow(new RuntimeException("Cloudinary connection failed"));
 
-        assertThrows(UploadException.class, () -> cloudinaryService.uploadImage(file));
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(validImageBytes("image/png"), "image/png")))
+                .isInstanceOf(UploadException.class);
     }
 
     @Test
-    void uploadImage_whenFileIsEmpty_rejectsBeforeCallingCloudinary() {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(true);
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+    void uploadImage_whenContentIsEmpty_rejectsBeforeCallingCloudinary() {
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(new byte[0], "image/jpeg")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.empty");
 
@@ -81,11 +69,8 @@ class CloudinaryServiceImplTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"application/pdf", "text/html", "image/svg+xml", "application/zip"})
-    void uploadImage_whenContentTypeIsNotAnAllowedImage_rejectsBeforeCallingCloudinary(String contentType) {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn(contentType);
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+    void uploadImage_whenContentTypeIsNotAnAllowedImage_rejectsBeforeCallingCloudinary(String contentType) throws Exception {
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(validImageBytes("image/jpeg"), contentType)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.invalid_type");
 
@@ -93,11 +78,8 @@ class CloudinaryServiceImplTest {
     }
 
     @Test
-    void uploadImage_whenContentTypeIsMissing_rejectsBeforeCallingCloudinary() {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn(null);
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+    void uploadImage_whenContentTypeIsMissing_rejectsBeforeCallingCloudinary() throws Exception {
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(validImageBytes("image/jpeg"), null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.invalid_type");
 
@@ -107,37 +89,21 @@ class CloudinaryServiceImplTest {
     @ParameterizedTest
     @ValueSource(strings = {"image/jpeg", "image/png", "image/webp", "image/gif"})
     void uploadImage_acceptsTheSupportedRasterFormats(String contentType) throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        Uploader uploader = mock(Uploader.class);
+        successfulUploader();
 
-        when(file.getContentType()).thenReturn(contentType);
-        when(file.getBytes()).thenReturn(validImageBytes(contentType));
-        when(cloudinary.uploader()).thenReturn(uploader);
-        when(uploader.upload(any(byte[].class), anyMap())).thenReturn(Map.of("secure_url", "https://res.cloudinary.com/img"));
-
-        assertThat(cloudinaryService.uploadImage(file)).isNotNull();
+        assertThat(cloudinaryService.uploadImage(command(validImageBytes(contentType), contentType))).isNotNull();
     }
 
     @Test
     void uploadImage_ignoresContentTypeParametersAndCasing() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        Uploader uploader = mock(Uploader.class);
+        successfulUploader();
 
-        when(file.getContentType()).thenReturn("IMAGE/JPEG; charset=binary");
-        when(file.getBytes()).thenReturn(validImageBytes("image/jpeg"));
-        when(cloudinary.uploader()).thenReturn(uploader);
-        when(uploader.upload(any(byte[].class), anyMap())).thenReturn(Map.of("secure_url", "https://res.cloudinary.com/img"));
-
-        assertThat(cloudinaryService.uploadImage(file)).isNotNull();
+        assertThat(cloudinaryService.uploadImage(command(validImageBytes("image/jpeg"), "IMAGE/JPEG; charset=binary"))).isNotNull();
     }
 
     @Test
     void uploadImage_whenMimeDoesNotMatchBytes_rejectsBeforeCallingCloudinary() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getBytes()).thenReturn(validImageBytes("image/png"));
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(validImageBytes("image/png"), "image/jpeg")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.invalid_type");
 
@@ -145,12 +111,8 @@ class CloudinaryServiceImplTest {
     }
 
     @Test
-    void uploadImage_whenImageBytesAreMalformed_rejectsBeforeCallingCloudinary() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("image/png");
-        when(file.getBytes()).thenReturn(new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47});
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+    void uploadImage_whenImageBytesAreMalformed_rejectsBeforeCallingCloudinary() {
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47}, "image/png")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.invalid_type");
 
@@ -158,12 +120,9 @@ class CloudinaryServiceImplTest {
     }
 
     @Test
-    void uploadImage_whenWebpRiffIsTruncated_rejectsBeforeCallingCloudinary() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("image/webp");
-        when(file.getBytes()).thenReturn(new byte[]{'R', 'I', 'F', 'F', 18, 0, 0, 0, 'W', 'E', 'B', 'P'});
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+    void uploadImage_whenWebpRiffIsTruncated_rejectsBeforeCallingCloudinary() {
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(
+                new byte[]{'R', 'I', 'F', 'F', 18, 0, 0, 0, 'W', 'E', 'B', 'P'}, "image/webp")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.invalid_type");
 
@@ -172,14 +131,11 @@ class CloudinaryServiceImplTest {
 
     @Test
     void uploadImage_whenPngPixelsExceedTheDecodedImageLimit_rejectsBeforeCallingCloudinary() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
         byte[] imageBytes = validImageBytes("image/png");
         writeInt(imageBytes, 16, 5_000);
         writeInt(imageBytes, 20, 5_000);
-        when(file.getContentType()).thenReturn("image/png");
-        when(file.getBytes()).thenReturn(imageBytes);
 
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(imageBytes, "image/png")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.invalid_type");
 
@@ -187,15 +143,27 @@ class CloudinaryServiceImplTest {
     }
 
     @Test
-    void uploadImage_whenServiceReceivesFileLargerThanFiveMiB_rejectsBeforeCallingCloudinary() {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getSize()).thenReturn(5L * 1024 * 1024 + 1);
-
-        assertThatThrownBy(() -> cloudinaryService.uploadImage(file))
+    void uploadImage_whenContentIsLargerThanFiveMiB_rejectsBeforeCallingCloudinary() {
+        assertThatThrownBy(() -> cloudinaryService.uploadImage(command(new byte[5 * 1024 * 1024 + 1], "image/jpeg")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("error.upload.too_large");
 
         verify(cloudinary, never()).uploader();
+    }
+
+    private Uploader successfulUploader() {
+        Uploader uploader = mock(Uploader.class);
+        when(cloudinary.uploader()).thenReturn(uploader);
+        try {
+            when(uploader.upload(any(byte[].class), anyMap())).thenReturn(Map.of("secure_url", "https://res.cloudinary.com/img"));
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+        return uploader;
+    }
+
+    private UploadImageCommand command(byte[] content, String contentType) {
+        return new UploadImageCommand(content, contentType);
     }
 
     private void writeInt(byte[] bytes, int offset, int value) {
