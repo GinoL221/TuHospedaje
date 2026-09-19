@@ -8,13 +8,22 @@ import {
 	fireEvent,
 } from "../../test/test-utils";
 import BookingPage from "./BookingPage";
-import { get, post } from "../../services/api";
+import { get } from "../../services/api";
+import {
+	createReservation as post,
+	getMyReservations,
+} from "../../services/reservationService";
 import {
 	getDateCellByLabelPart,
 	selectDateByLabelPart,
 } from "../../test/date-picker-utils";
 
 vi.mock("../../services/api");
+vi.mock("../../services/reservationService");
+
+beforeEach(() => {
+	getMyReservations.mockResolvedValue([]);
+});
 
 function ConfirmationSentinel() {
 	return <div data-testid="confirmation-sentinel">confirmation page</div>;
@@ -36,6 +45,7 @@ function mockGetDefaults({
 	myReservations = [],
 	availability = { available: true, occupiedRanges: [] },
 } = {}) {
+	getMyReservations.mockResolvedValue(myReservations);
 	get.mockImplementation((endpoint) => {
 		if (endpoint === "/reservations/my") {
 			return Promise.resolve(myReservations);
@@ -68,6 +78,7 @@ function mockGetSequenced({
 	myReservations = [],
 	availabilityResponses = [{}],
 } = {}) {
+	getMyReservations.mockResolvedValue(myReservations);
 	let availabilityCallIndex = 0;
 	get.mockImplementation((endpoint) => {
 		if (endpoint === "/reservations/my") {
@@ -192,9 +203,7 @@ describe("BookingPage - root lodging failure recovery", () => {
 		expect(
 			get.mock.calls.filter(([endpoint]) => endpoint === "/lodgings/1"),
 		).toHaveLength(2);
-		expect(
-			get.mock.calls.filter(([endpoint]) => endpoint === "/reservations/my"),
-		).toHaveLength(1);
+		expect(getMyReservations).toHaveBeenCalledTimes(1);
 		expect(
 			get.mock.calls.filter(([endpoint]) =>
 				endpoint.startsWith("/lodgings/1/availability"),
@@ -444,7 +453,6 @@ describe("BookingPage - successful reservation", () => {
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
 		expect(post).toHaveBeenCalledWith(
-			"/reservations",
 			expect.objectContaining({
 				notes: "Llegamos después de las 22",
 			}),
@@ -470,7 +478,6 @@ describe("BookingPage - successful reservation", () => {
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
 		expect(post).toHaveBeenCalledWith(
-			"/reservations",
 			expect.not.objectContaining({
 				notes: expect.anything(),
 			}),
@@ -503,9 +510,7 @@ describe("BookingPage - successful reservation", () => {
 		await user.type(phoneInput, "123456");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		const reservationPayload = post.mock.calls.find(
-			([path]) => path === "/reservations",
-		)[1];
+		const reservationPayload = post.mock.calls[0][0];
 		expect(reservationPayload).toEqual({
 			lodgingId: 1,
 			checkIn: "2026-07-01",
@@ -743,9 +748,7 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 		await user.type(screen.getByLabelText("Teléfono"), "123456");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		const reservationPayload = post.mock.calls.find(
-			([path]) => path === "/reservations",
-		)[1];
+		const reservationPayload = post.mock.calls[0][0];
 		expect(reservationPayload).toEqual({
 			lodgingId: 1,
 			checkIn: "2026-07-01",

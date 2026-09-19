@@ -1,5 +1,9 @@
 import { get } from "./api";
 
+export function getLodging(id) {
+  return get(`/lodgings/${id}`);
+}
+
 export function searchLodgings(params) {
   const query = params ? `?${new URLSearchParams(params).toString()}` : "";
   return get(`/lodgings/search${query}`);
