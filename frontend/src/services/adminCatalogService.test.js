@@ -2,6 +2,7 @@ import { del, get, post, put } from "./api";
 import {
   createCategory,
   createFeature,
+  createLodging,
   createPolicy,
   deleteCategory,
   deleteFeature,
@@ -15,6 +16,7 @@ import {
   getUsers,
   updateCategory,
   updateFeature,
+  updateLodging,
   updatePolicy,
   updateUserRole,
 } from "./adminCatalogService";
@@ -39,6 +41,8 @@ describe("adminCatalogService", () => {
     deleteFeature(2);
     createPolicy(policy);
     updatePolicy(3, policy);
+    createLodging({ name: "Cabaña del lago" });
+    updateLodging(6, { name: "Cabaña renovada" });
     deletePolicy(3);
     updateUserRole(4, "ADMIN");
     deleteLodging(5);
@@ -56,6 +60,12 @@ describe("adminCatalogService", () => {
     expect(post).toHaveBeenCalledWith("/policies", policy);
     expect(put).toHaveBeenCalledWith("/policies/3", policy);
     expect(del).toHaveBeenCalledWith("/policies/3");
+    expect(post).toHaveBeenCalledWith("/lodgings", {
+      name: "Cabaña del lago",
+    });
+    expect(put).toHaveBeenCalledWith("/lodgings/6", {
+      name: "Cabaña renovada",
+    });
     expect(put).toHaveBeenCalledWith("/users/4/role", { role: "ADMIN" });
     expect(del).toHaveBeenCalledWith("/lodgings/5");
   });

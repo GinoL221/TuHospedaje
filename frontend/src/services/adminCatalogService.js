@@ -82,6 +82,14 @@ export function updateUserRole(id, role) {
   return put(`/users/${id}/role`, { role });
 }
 
+export function createLodging(payload) {
+  return post("/lodgings", payload);
+}
+
+export function updateLodging(id, payload) {
+  return put(`/lodgings/${id}`, payload);
+}
+
 export function deleteLodging(id) {
   return del(`/lodgings/${id}`);
 }
