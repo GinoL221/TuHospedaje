@@ -61,6 +61,7 @@ describe("account and shared surfaces visual contract", () => {
 		const login = readSource("pages/LoginPage.jsx");
 		const register = readSource("pages/RegisterPage.jsx");
 		const favorites = readSource("pages/Favorites/FavoritesPage.jsx");
+		const favoriteService = readSource("services/favoriteService.js");
 		const reservations = readSource(
 			"pages/MyReservations/MyReservationsPage.jsx",
 		);
@@ -68,7 +69,8 @@ describe("account and shared surfaces visual contract", () => {
 
 		expect(login).toContain("navigate(from, { replace: true })");
 		expect(register).toContain('err.code === "duplicate_email"');
-		expect(favorites).toContain("await del(`/favorites/${id}`)");
+		expect(favorites).toContain("from \"../../services/favoriteService\"");
+		expect(favoriteService).toContain("del(`/favorites/${lodgingId}`)");
 		expect(reservations).toContain('reservation.status === "CONFIRMED"');
 		expect(unauthorized).toContain(
 			"No tenés permisos para acceder a esta página.",
