@@ -1,14 +1,45 @@
-import { render, screen, userEvent, waitFor, within } from "../../test/test-utils";
+import {
+  render,
+  screen,
+  userEvent,
+  waitFor,
+  within,
+} from "../../test/test-utils";
 import ReviewsSection from "./ReviewsSection";
-import { get, post } from "../../services/api";
+import {
+  createRating,
+  getRatingEligibility,
+  getRatingsByLodging,
+} from "../../services/ratingService";
 
-vi.mock("../../services/api");
+vi.mock("../../services/ratingService");
+
+const get = vi.fn();
+const post = vi.fn();
+
+beforeEach(() => {
+  get.mockReset();
+  post.mockReset();
+  getRatingsByLodging.mockImplementation((lodgingId) =>
+    get(`/ratings/lodging/${lodgingId}`),
+  );
+  getRatingEligibility.mockImplementation((lodgingId) =>
+    get(`/ratings/lodging/${lodgingId}/eligibility`),
+  );
+  createRating.mockImplementation((payload) => post("/ratings", payload));
+});
 
 const ratingsFixture = {
   average: 4.5,
   count: 2,
   ratings: [
-    { id: 1, userName: "Ana", score: 5, comment: "Excelente lugar", createdAt: "2026-01-01" },
+    {
+      id: 1,
+      userName: "Ana",
+      score: 5,
+      comment: "Excelente lugar",
+      createdAt: "2026-01-01",
+    },
     { id: 2, userName: "Beto", score: 4, comment: "", createdAt: "2026-02-01" },
   ],
 };
@@ -50,23 +81,29 @@ describe("ReviewsSection - reviews listing", () => {
     expect(get).toHaveBeenCalledWith("/ratings/lodging/1");
     expect(await screen.findByText("4.5")).toBeInTheDocument();
     expect(screen.getByText("(2 reseñas)")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Puntaje promedio 4.5 de 5 estrellas; 2 reseñas" })).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Opiniones de huéspedes" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", {
+        name: "Puntaje promedio 4.5 de 5 estrellas; 2 reseñas",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "Opiniones de huéspedes" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("Excelente lugar")).toBeInTheDocument();
-        expect(screen.getByText("Beto")).toBeInTheDocument();
+    expect(screen.getByText("Beto")).toBeInTheDocument();
 
-        const renderedScores = screen.getAllByRole("img", {
-          name: /Puntaje [45] de 5 estrellas/,
-        });
-        expect(renderedScores).toHaveLength(2);
-        for (const score of renderedScores) {
-          expect(within(score).getAllByText("★")).toHaveLength(5);
-          for (const glyph of within(score).getAllByText("★")) {
-            expect(glyph).toHaveAttribute("aria-hidden", "true");
-          }
-        }
-      });
+    const renderedScores = screen.getAllByRole("img", {
+      name: /Puntaje [45] de 5 estrellas/,
+    });
+    expect(renderedScores).toHaveLength(2);
+    for (const score of renderedScores) {
+      expect(within(score).getAllByText("★")).toHaveLength(5);
+      for (const glyph of within(score).getAllByText("★")) {
+        expect(glyph).toHaveAttribute("aria-hidden", "true");
+      }
+    }
+  });
 });
 
 describe("ReviewsSection - empty state", () => {
@@ -79,14 +116,23 @@ describe("ReviewsSection - empty state", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("0.0")).toBeInTheDocument();
     expect(screen.getByText("(0 reseñas)")).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Opiniones de huéspedes" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", { name: "Opiniones de huéspedes" }),
+    ).not.toBeInTheDocument();
   });
 });
 
 describe("ReviewsSection - ratings loading and recovery", () => {
   it("shows an accessible ratings error and retries the initial request", async () => {
-    const ratingsResponses = [Promise.reject(new Error("network")), Promise.resolve(ratingsFixture)];
-    get.mockImplementation((endpoint) => endpoint === "/ratings/lodging/1" ? ratingsResponses.shift() : Promise.resolve(null));
+    const ratingsResponses = [
+      Promise.reject(new Error("network")),
+      Promise.resolve(ratingsFixture),
+    ];
+    get.mockImplementation((endpoint) =>
+      endpoint === "/ratings/lodging/1"
+        ? ratingsResponses.shift()
+        : Promise.resolve(null),
+    );
     const user = userEvent.setup();
     render(<ReviewsSection lodgingId="1" user={null} />);
 
@@ -106,7 +152,9 @@ describe("ReviewsSection - anonymous visitor", () => {
 
     await screen.findByText("4.5");
 
-    expect(get).not.toHaveBeenCalledWith(expect.stringContaining("eligibility"));
+    expect(get).not.toHaveBeenCalledWith(
+      expect.stringContaining("eligibility"),
+    );
     expect(screen.queryByText("Dejá tu reseña")).not.toBeInTheDocument();
   });
 });
@@ -114,14 +162,20 @@ describe("ReviewsSection - anonymous visitor", () => {
 describe("ReviewsSection - eligibility loading", () => {
   it("shows an accessible loading state and no submission form while eligibility is pending", async () => {
     const eligibilityDeferred = deferred();
-    get.mockImplementation(makeGetMock({ eligibility: eligibilityDeferred.promise }));
+    get.mockImplementation(
+      makeGetMock({ eligibility: eligibilityDeferred.promise }),
+    );
     render(<ReviewsSection lodgingId="1" user={loggedUser} />);
 
     await screen.findByText("4.5");
 
     expect(screen.getByRole("status")).toHaveTextContent(/comprobando/i);
-    expect(screen.queryByRole("button", { name: /estrella/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Enviar reseña" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /estrella/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Enviar reseña" }),
+    ).not.toBeInTheDocument();
 
     eligibilityDeferred.resolve({ eligible: true, reason: "ELIGIBLE" });
     expect(
@@ -205,26 +259,30 @@ describe("ReviewsSection - eligible submission form", () => {
     expect(screen.getByLabelText("Comentario")).toBeInTheDocument();
   });
 
-      it("lets keyboard users reach and activate a score", async () => {
-        get.mockImplementation(makeGetMock());
-        const user = userEvent.setup();
-        render(<ReviewsSection lodgingId="1" user={loggedUser} />);
+  it("lets keyboard users reach and activate a score", async () => {
+    get.mockImplementation(makeGetMock());
+    const user = userEvent.setup();
+    render(<ReviewsSection lodgingId="1" user={loggedUser} />);
 
-        await screen.findByText("4.5");
-        const firstScore = await screen.findByRole("button", { name: "1 estrella" });
-        firstScore.focus();
-        await user.tab();
+    await screen.findByText("4.5");
+    const firstScore = await screen.findByRole("button", {
+      name: "1 estrella",
+    });
+    firstScore.focus();
+    await user.tab();
 
-        const secondScore = screen.getByRole("button", { name: "2 estrellas" });
-        expect(secondScore).toHaveFocus();
-        await user.keyboard("[Space]");
-        expect(secondScore).toHaveAttribute("aria-pressed", "true");
-        expect(screen.getByRole("button", { name: "Enviar reseña" })).toBeEnabled();
-      });
+    const secondScore = screen.getByRole("button", { name: "2 estrellas" });
+    expect(secondScore).toHaveFocus();
+    await user.keyboard("[Space]");
+    expect(secondScore).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Enviar reseña" })).toBeEnabled();
+  });
 
-      it("shows a pending label and prevents duplicate submits while the request is in flight", async () => {
+  it("shows a pending label and prevents duplicate submits while the request is in flight", async () => {
     const submission = deferred();
-    get.mockImplementation(makeGetMock()); post.mockReturnValue(submission.promise); const user = userEvent.setup();
+    get.mockImplementation(makeGetMock());
+    post.mockReturnValue(submission.promise);
+    const user = userEvent.setup();
     render(<ReviewsSection lodgingId="1" user={loggedUser} />);
 
     await screen.findByText("4.5");
@@ -232,11 +290,14 @@ describe("ReviewsSection - eligible submission form", () => {
     const submit = screen.getByRole("button", { name: "Enviar reseña" });
     await user.click(submit);
 
-    expect(screen.getByRole("button", { name: "Enviando..." })).toBeDisabled(); await user.click(submit);
+    expect(screen.getByRole("button", { name: "Enviando..." })).toBeDisabled();
+    await user.click(submit);
     expect(post).toHaveBeenCalledTimes(1);
 
     submission.resolve(undefined);
-    expect(await screen.findByRole("button", { name: "Enviar reseña" })).toBeDisabled();
+    expect(
+      await screen.findByRole("button", { name: "Enviar reseña" }),
+    ).toBeDisabled();
   });
 });
 
@@ -247,7 +308,13 @@ describe("ReviewsSection - successful submission", () => {
       count: 3,
       ratings: [
         ...ratingsFixture.ratings,
-        { id: 3, userName: "Test User", score: 5, comment: "Genial", createdAt: "2026-03-01" },
+        {
+          id: 3,
+          userName: "Test User",
+          score: 5,
+          comment: "Genial",
+          createdAt: "2026-03-01",
+        },
       ],
     };
     get.mockImplementation(
@@ -300,7 +367,9 @@ describe("ReviewsSection - failed submission", () => {
     render(<ReviewsSection lodgingId="1" user={loggedUser} />);
 
     await screen.findByText("4.5");
-    await user.click(await screen.findByRole("button", { name: "2 estrellas" }));
+    await user.click(
+      await screen.findByRole("button", { name: "2 estrellas" }),
+    );
 
     const textarea = screen.getByLabelText("Comentario");
     await user.type(textarea, "Mal");
@@ -312,7 +381,10 @@ describe("ReviewsSection - failed submission", () => {
     );
     expect(textarea.value).toBe("Mal");
     expect(textarea).toHaveAttribute("aria-invalid", "true");
-    expect(textarea).toHaveAttribute("aria-describedby", "reviews-1-submit-error");
+    expect(textarea).toHaveAttribute(
+      "aria-describedby",
+      "reviews-1-submit-error",
+    );
     expect(screen.getByRole("button", { name: "2 estrellas" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -323,7 +395,9 @@ describe("ReviewsSection - failed submission", () => {
     await waitFor(() => expect(submit).toBeEnabled());
     expect(submit).toHaveFocus();
     await user.tab();
-    expect(screen.getByRole("heading", { name: "Opiniones de huéspedes" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Opiniones de huéspedes" }),
+    ).toBeInTheDocument();
     await user.tab({ shift: true });
     expect(submit).toHaveFocus();
 
