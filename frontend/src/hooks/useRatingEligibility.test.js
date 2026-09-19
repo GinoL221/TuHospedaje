@@ -1,8 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import useRatingEligibility from "./useRatingEligibility";
-import { get } from "../services/api";
+import { getRatingEligibility } from "../services/ratingService";
 
-vi.mock("../services/api");
+vi.mock("../services/ratingService");
 
 function deferred() {
   let resolve;
@@ -17,7 +17,7 @@ function deferred() {
 describe("useRatingEligibility - unmount protection", () => {
   it("does not update state after an eligibility request resolves post-unmount", async () => {
     const pending = deferred();
-    get.mockReturnValueOnce(pending.promise);
+    getRatingEligibility.mockReturnValueOnce(pending.promise);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const { result, unmount } = renderHook(() => useRatingEligibility(10));
 
@@ -39,7 +39,7 @@ describe("useRatingEligibility - unmount protection", () => {
 
   it("does not update state after an eligibility request rejects post-unmount", async () => {
     const pending = deferred();
-    get.mockReturnValueOnce(pending.promise);
+    getRatingEligibility.mockReturnValueOnce(pending.promise);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const { result, unmount } = renderHook(() => useRatingEligibility(11));
 

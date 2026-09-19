@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { get, post } from "../../services/api";
+import {
+  createRating,
+  getRatingsByLodging,
+} from "../../services/ratingService";
 import useRatingEligibility from "../../hooks/useRatingEligibility";
 import "./ReviewsSection.css";
 
@@ -25,11 +28,14 @@ export default function ReviewsSection({ lodgingId, user }) {
   const { status: eligibilityStatus, load: loadEligibility } =
     useRatingEligibility(lodgingId);
   const sectionId = `reviews-${lodgingId}`;
-  const retryRatings = () => { setRatingsStatus("loading"); setRatingsRequest((request) => request + 1); };
+  const retryRatings = () => {
+    setRatingsStatus("loading");
+    setRatingsRequest((request) => request + 1);
+  };
 
   useEffect(() => {
     let active = true;
-    get(`/ratings/lodging/${lodgingId}`)
+    getRatingsByLodging(lodgingId)
       .then((data) => {
         if (!active) return;
         setAvgScore(data.average || 0);
@@ -38,7 +44,9 @@ export default function ReviewsSection({ lodgingId, user }) {
         setRatingsStatus("ready");
       })
       .catch(() => active && setRatingsStatus("error"));
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [lodgingId, ratingsRequest]);
 
   useEffect(() => {
@@ -62,12 +70,12 @@ export default function ReviewsSection({ lodgingId, user }) {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await post("/ratings", {
+      await createRating({
         lodgingId,
         score: userScore,
         comment: userComment,
       });
-      const data = await get(`/ratings/lodging/${lodgingId}`);
+      const data = await getRatingsByLodging(lodgingId);
       setAvgScore(data.average || 0);
       setTotalReviews(data.count || 0);
       setRatings(Array.isArray(data.ratings) ? data.ratings : []);
@@ -83,22 +91,43 @@ export default function ReviewsSection({ lodgingId, user }) {
   }
 
   return (
-    <section className="ratings-section" aria-labelledby={`${sectionId}-title`} aria-busy={ratingsStatus === "loading"}>
+    <section
+      className="ratings-section"
+      aria-labelledby={`${sectionId}-title`}
+      aria-busy={ratingsStatus === "loading"}
+    >
       <h2 id={`${sectionId}-title`}>Reseñas</h2>
-      <div className="ratings-header" role="img" aria-label={`Puntaje promedio ${avgScore.toFixed(1)} de 5 estrellas; ${totalReviews} reseñas`}>
-        <span className="avg-score" aria-hidden="true">{avgScore.toFixed(1)}</span>
+      <div
+        className="ratings-header"
+        role="img"
+        aria-label={`Puntaje promedio ${avgScore.toFixed(1)} de 5 estrellas; ${totalReviews} reseñas`}
+      >
+        <span className="avg-score" aria-hidden="true">
+          {avgScore.toFixed(1)}
+        </span>
         <span className="stars-display" aria-hidden="true">
           {STAR_VALUES.map((s) => (
-            <span key={s} className={s <= Math.round(avgScore) ? "star-filled" : "star-empty"}>
+            <span
+              key={s}
+              className={
+                s <= Math.round(avgScore) ? "star-filled" : "star-empty"
+              }
+            >
               ★
             </span>
           ))}
         </span>
-        <span className="reviews-count" aria-hidden="true">({totalReviews} reseñas)</span>
+        <span className="reviews-count" aria-hidden="true">
+          ({totalReviews} reseñas)
+        </span>
       </div>
 
       {user && (
-        <form className="review-form" onSubmit={submitRating} aria-labelledby={`${sectionId}-form-title`}>
+        <form
+          className="review-form"
+          onSubmit={submitRating}
+          aria-labelledby={`${sectionId}-form-title`}
+        >
           <h3 id={`${sectionId}-form-title`}>Dejá tu reseña</h3>
 
           {eligibilityStatus === "loading" && (
@@ -131,7 +160,11 @@ export default function ReviewsSection({ lodgingId, user }) {
                   <button
                     type="button"
                     key={s}
-                    className={s <= (hoverScore || userScore) ? "star-filled" : "star-empty"}
+                    className={
+                      s <= (hoverScore || userScore)
+                        ? "star-filled"
+                        : "star-empty"
+                    }
                     aria-pressed={s === userScore}
                     aria-label={starLabel(s)}
                     onClick={() => setUserScore(s)}
@@ -151,10 +184,17 @@ export default function ReviewsSection({ lodgingId, user }) {
                 rows={3}
                 disabled={isSubmitting}
                 aria-invalid={submitError ? "true" : undefined}
-                aria-describedby={submitError ? `${sectionId}-submit-error` : undefined}
+                aria-describedby={
+                  submitError ? `${sectionId}-submit-error` : undefined
+                }
               />
               {submitError && (
-                <p id={`${sectionId}-submit-error`} className="submit-error" role="alert" aria-live="assertive">
+                <p
+                  id={`${sectionId}-submit-error`}
+                  className="submit-error"
+                  role="alert"
+                  aria-live="assertive"
+                >
                   {submitError}
                 </p>
               )}
@@ -173,16 +213,30 @@ export default function ReviewsSection({ lodgingId, user }) {
       )}
 
       <h3 className="reviews-list-title">Opiniones de huéspedes</h3>
-      {ratingsStatus === "loading" && <p className="ratings-loading" role="status" aria-live="polite">Cargando reseñas...</p>}
+      {ratingsStatus === "loading" && (
+        <p className="ratings-loading" role="status" aria-live="polite">
+          Cargando reseñas...
+        </p>
+      )}
       {ratingsStatus === "error" && (
         <div className="ratings-alert" role="alert" aria-live="assertive">
           <p>No pudimos cargar las reseñas.</p>
-          <button type="button" onClick={retryRatings}>Reintentar</button>
+          <button type="button" onClick={retryRatings}>
+            Reintentar
+          </button>
         </div>
       )}
-      {ratingsStatus === "ready" && ratings.length === 0 && <p className="reviews-empty-state">Todavía no hay reseñas para este alojamiento.</p>}
+      {ratingsStatus === "ready" && ratings.length === 0 && (
+        <p className="reviews-empty-state">
+          Todavía no hay reseñas para este alojamiento.
+        </p>
+      )}
       {ratingsStatus === "ready" && ratings.length > 0 && (
-        <div className="reviews-list" role="list" aria-label="Opiniones de huéspedes">
+        <div
+          className="reviews-list"
+          role="list"
+          aria-label="Opiniones de huéspedes"
+        >
           {ratings.map((r) => (
             <div key={r.id} className="review-item" role="listitem">
               <div className="review-header">

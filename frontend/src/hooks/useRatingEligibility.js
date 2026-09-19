@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { get } from "../services/api";
+import { getRatingEligibility } from "../services/ratingService";
 
 /**
  * Fetches the US-28.1 rating eligibility for the current authenticated user
@@ -25,7 +25,7 @@ export default function useRatingEligibility(lodgingId) {
     const generation = ++generationRef.current;
     setStatus("loading");
 
-    return get(`/ratings/lodging/${lodgingId}/eligibility`)
+    return getRatingEligibility(lodgingId)
       .then((data) => {
         if (!mountedRef.current || generation !== generationRef.current) return;
         setStatus(data.eligible ? "eligible" : "ineligible");
