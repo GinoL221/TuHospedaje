@@ -19,7 +19,15 @@ export default function ProductDetail() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { user } = useAuth();
-	const [lodging, setLodging] = useState(null);
+	const [lodgingState, setLodgingState] = useState({
+		id,
+		lodging: null,
+		error: false,
+	});
+	if (lodgingState.id !== id) {
+		setLodgingState({ id, lodging: null, error: false });
+	}
+	const { lodging, error: lodgingError } = lodgingState;
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
 	const [selectionConflict, setSelectionConflict] = useState({
@@ -39,8 +47,35 @@ export default function ProductDetail() {
 	} = useAvailability(id);
 
 	useEffect(() => {
-		getLodging(id).then(setLodging).catch(console.error);
+		let active = true;
+
+		getLodging(id)
+			.then((lodging) => {
+				if (active) setLodgingState({ id, lodging, error: false });
+			})
+			.catch(() => {
+				if (active) setLodgingState({ id, lodging: null, error: true });
+			});
+
+		return () => {
+			active = false;
+		};
 	}, [id]);
+
+	function retryLodging() {
+		setLodgingState({ id, lodging: null, error: false });
+		getLodging(id)
+			.then((lodging) =>
+				setLodgingState((current) =>
+					current.id === id ? { id, lodging, error: false } : current,
+				),
+			)
+			.catch(() =>
+				setLodgingState((current) =>
+					current.id === id ? { id, lodging: null, error: true } : current,
+				),
+			);
+	}
 
 	// A single effect replaces the two duplicated availability fetches: it
 	// runs the dateless (full occupied-ranges) load on mount/reset, then
@@ -84,7 +119,23 @@ export default function ProductDetail() {
 	if (!lodging)
 		return (
 			<main className="page-container">
-				<p>Cargando...</p>
+				{lodgingError ? (
+					<div
+						className="availability-alert"
+						role="alert"
+						aria-live="assertive"
+						aria-atomic="true"
+					>
+						<p>No pudimos cargar el alojamiento.</p>
+						<button type="button" onClick={retryLodging}>
+							Reintentar
+						</button>
+					</div>
+				) : (
+					<p role="status" aria-live="polite">
+						Cargando...
+					</p>
+				)}
 			</main>
 		);
 
