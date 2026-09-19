@@ -1,19 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { get } from "../services/api";
-
-function formatDate(date) {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
-
-function buildQuery({ checkIn, checkOut } = {}) {
-	const params = [];
-	if (checkIn) params.push(`checkIn=${formatDate(checkIn)}`);
-	if (checkOut) params.push(`checkOut=${formatDate(checkOut)}`);
-	return params.length ? `?${params.join("&")}` : "";
-}
+import { getAvailability } from "../services/lodgingService";
 
 function rangesOverlap(checkIn, checkOut, range) {
 	const rangeStart = new Date(range.checkIn);
@@ -55,7 +41,7 @@ export default function useAvailability(lodgingId) {
 			lastParamsRef.current = params;
 			setStatus("loading");
 
-			return get(`/lodgings/${lodgingId}/availability${buildQuery(params)}`)
+			return getAvailability(lodgingId, params)
 				.then((data) => {
 					if (!mountedRef.current || generation !== generationRef.current) {
 						return null;

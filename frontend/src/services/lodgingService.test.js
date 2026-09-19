@@ -1,4 +1,5 @@
 import {
+  getAvailability,
   getLodging,
   searchLodgings,
   getRecommendations,
@@ -24,6 +25,49 @@ describe("lodgingService - getLodging", () => {
 
     expect(get).toHaveBeenCalledWith("/lodgings/abc-123");
     expect(result).toEqual(response);
+  });
+});
+
+describe("lodgingService - getAvailability", () => {
+  it("requests availability without query parameters when no dates are supplied", async () => {
+    get.mockResolvedValue({ available: true, occupiedRanges: [] });
+
+    await getAvailability(42);
+
+    expect(get).toHaveBeenCalledWith("/lodgings/42/availability");
+  });
+
+  it("formats local calendar dates and includes supplied check-in and check-out parameters", async () => {
+    get.mockResolvedValue({ available: false, occupiedRanges: [] });
+
+    await getAvailability("abc-123", {
+      checkIn: new Date(2026, 0, 9),
+      checkOut: new Date(2026, 10, 5),
+    });
+
+    expect(get).toHaveBeenCalledWith(
+      "/lodgings/abc-123/availability?checkIn=2026-01-09&checkOut=2026-11-05",
+    );
+  });
+
+  it("includes only the supplied check-in date", async () => {
+    get.mockResolvedValue({ available: true, occupiedRanges: [] });
+
+    await getAvailability(12, { checkIn: new Date(2026, 10, 5) });
+
+    expect(get).toHaveBeenCalledWith(
+      "/lodgings/12/availability?checkIn=2026-11-05",
+    );
+  });
+
+  it("includes only the supplied check-out date", async () => {
+    get.mockResolvedValue({ available: true, occupiedRanges: [] });
+
+    await getAvailability(13, { checkOut: new Date(2026, 10, 6) });
+
+    expect(get).toHaveBeenCalledWith(
+      "/lodgings/13/availability?checkOut=2026-11-06",
+    );
   });
 });
 

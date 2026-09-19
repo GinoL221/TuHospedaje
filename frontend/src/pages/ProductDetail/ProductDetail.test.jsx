@@ -10,12 +10,14 @@ import {
 } from "../../test/test-utils";
 import ProductDetail from "./ProductDetail";
 import { get } from "../../services/api";
+import { getAvailability, getLodging } from "../../services/lodgingService";
 import {
 	getDateCellByLabelPart,
 	selectDateByLabelPart,
 } from "../../test/date-picker-utils";
 
 vi.mock("../../services/api");
+vi.mock("../../services/lodgingService");
 
 function BookingSentinel() {
 	return <div data-testid="booking-sentinel">booking page</div>;
@@ -25,8 +27,12 @@ function LodgingNavigation() {
 	const navigate = useNavigate();
 	return (
 		<>
-			<button type="button" onClick={() => navigate("/lodgings/2")}>Ver otro alojamiento</button>
-			<button type="button" onClick={() => navigate("/lodgings/1")}>Volver al alojamiento</button>
+			<button type="button" onClick={() => navigate("/lodgings/2")}>
+				Ver otro alojamiento
+			</button>
+			<button type="button" onClick={() => navigate("/lodgings/1")}>
+				Volver al alojamiento
+			</button>
 		</>
 	);
 }
@@ -46,13 +52,9 @@ function mockGetDefaults({
 	availability = {},
 	ratings = {},
 } = {}) {
+	getLodging.mockResolvedValue(lodging);
+	getAvailability.mockResolvedValue(availability);
 	get.mockImplementation((endpoint) => {
-		if (endpoint.startsWith(`/lodgings/${lodging?.id ?? 1}/availability`)) {
-			return Promise.resolve(availability);
-		}
-		if (endpoint === `/lodgings/${lodging?.id ?? 1}`) {
-			return Promise.resolve(lodging);
-		}
 		if (endpoint.startsWith("/ratings/lodging/")) {
 			return Promise.resolve({ average: 0, count: 0, ratings: [], ...ratings });
 		}
@@ -78,17 +80,17 @@ function mockGetSequenced({
 	ratings = {},
 	availabilityResponses = [{}],
 } = {}) {
+	getLodging.mockResolvedValue(lodging);
 	let availabilityCallIndex = 0;
+	getAvailability.mockImplementation(() => {
+		const entry =
+			availabilityResponses[
+				Math.min(availabilityCallIndex, availabilityResponses.length - 1)
+			];
+		availabilityCallIndex += 1;
+		return typeof entry === "function" ? entry() : Promise.resolve(entry);
+	});
 	get.mockImplementation((endpoint) => {
-		if (endpoint.startsWith(`/lodgings/${lodging.id}/availability`)) {
-			const entry =
-				availabilityResponses[
-					Math.min(availabilityCallIndex, availabilityResponses.length - 1)
-				];
-			availabilityCallIndex += 1;
-			return typeof entry === "function" ? entry() : Promise.resolve(entry);
-		}
-		if (endpoint === `/lodgings/${lodging.id}`) return Promise.resolve(lodging);
 		if (endpoint.startsWith("/ratings/lodging/"))
 			return Promise.resolve({ average: 0, count: 0, ratings: [], ...ratings });
 		return Promise.resolve(null);
@@ -135,11 +137,26 @@ describe("ProductDetail - rendering lodging detail", () => {
 		expect(screen.getByText("Cargando...")).toBeInTheDocument();
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
-		expect(get).toHaveBeenCalledWith("/lodgings/1");
+		expect(getLodging).toHaveBeenCalledWith("1");
 		expect(screen.getByText("Bariloche, Argentina")).toBeInTheDocument();
-		expect(
-			screen.getByText("Una cabaña con vista al lago."),
-		).toBeInTheDocument();
+		expect(screen.getByText("Una cabaña con vista al lago.")).toBeInTheDocument();
+	});
+});
+
+describe("ProductDetail - lodging service integration", () => {
+	it("loads the lodging and availability through lodgingService", async () => {
+		getLodging.mockResolvedValue(lodgingFixture);
+		getAvailability.mockResolvedValue({ available: true, occupiedRanges: [] });
+		mockGetDefaults();
+		renderProductDetail();
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(getLodging).toHaveBeenCalledWith("1");
+		expect(getAvailability).toHaveBeenCalledWith("1", {
+			checkIn: null,
+			checkOut: null,
+		});
 	});
 });
 
@@ -149,13 +166,24 @@ describe("ProductDetail - header navigation placement", () => {
 		renderProductDetail();
 
 		await screen.findByText("Cabaña del Lago");
-		const header = screen.getByRole("heading", { name: "Cabaña del Lago" }).parentElement.parentElement;
+		const header = screen.getByRole("heading", { name: "Cabaña del Lago" })
+			.parentElement.parentElement;
 
-		expect(Array.from(header.children).map((child) => child.getAttribute("aria-label") || child.textContent))
-			.toEqual(["Cabaña del LagoBariloche, Argentina", "Compartir", "Volver"]);
-		expect(screen.getByRole("main", { name: "Cabaña del Lago" })).toHaveAttribute("aria-labelledby", "product-detail-title");
-		expect(screen.getByRole("region", { name: "Reservar este alojamiento" })).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Volver" }).querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+		expect(
+			Array.from(header.children).map(
+				(child) => child.getAttribute("aria-label") || child.textContent,
+			),
+		).toEqual(["Cabaña del LagoBariloche, Argentina", "Compartir", "Volver"]);
+		expect(screen.getByRole("main", { name: "Cabaña del Lago" })).toHaveAttribute(
+			"aria-labelledby",
+			"product-detail-title",
+		);
+		expect(
+			screen.getByRole("region", { name: "Reservar este alojamiento" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Volver" }).querySelector("svg"),
+		).toHaveAttribute("aria-hidden", "true");
 	});
 
 	it("does not override the header controls' DOM order through Share CSS", () => {
@@ -168,8 +196,12 @@ describe("ProductDetail - header navigation placement", () => {
 		expect(shareRule).not.toMatch(/\border\s*:/);
 		expect(css.match(/\.btn-share\s*\{/g)).toHaveLength(1);
 		expect(css).toMatch(/\.product-detail\s*\{[^}]*overflow-x:\s*hidden/);
-		expect(css).toMatch(/\.product-detail \.product-datepicker-popper[^}]*width:\s*min\(320px, 100vw\)/);
-		expect(css).toMatch(/@media \(max-width: 768px\)[\s\S]*\.date-pickers[^}]*grid-template-columns:\s*1fr/);
+		expect(css).toMatch(
+			/\.product-detail \.product-datepicker-popper[^}]*width:\s*min\(320px, 100vw\)/,
+		);
+		expect(css).toMatch(
+			/@media \(max-width: 768px\)[\s\S]*\.date-pickers[^}]*grid-template-columns:\s*1fr/,
+		);
 		expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
 	});
 });
@@ -333,7 +365,9 @@ describe("ProductDetail - availability state machine", () => {
 	});
 
 	it("shows a usable status with zero occupied ranges instead of an error or indefinite loading state", async () => {
-		mockGetSequenced({ availabilityResponses: [{ available: true, occupiedRanges: [] }] });
+		mockGetSequenced({
+			availabilityResponses: [{ available: true, occupiedRanges: [] }],
+		});
 		renderProductDetail({ authValue: makeAuthValue() });
 
 		await screen.findByText("Cabaña del Lago");
@@ -341,13 +375,20 @@ describe("ProductDetail - availability state machine", () => {
 		expect(
 			await screen.findByText("Todas las fechas están disponibles."),
 		).toHaveAttribute("role", "status");
-		expect(screen.getByText("Todas las fechas están disponibles.")).toHaveAttribute("id", "product-availability-status");
-		expect(screen.getByRole("group", { name: "Fechas de la estadía" })).toHaveAttribute("aria-describedby", "product-availability-status");
+		expect(
+			screen.getByText("Todas las fechas están disponibles."),
+		).toHaveAttribute("id", "product-availability-status");
+		expect(
+			screen.getByRole("group", { name: "Fechas de la estadía" }),
+		).toHaveAttribute("aria-describedby", "product-availability-status");
 		for (const label of ["Check-in", "Check-out"]) {
 			const input = screen.getByLabelText(label);
 			expect(input).toBeRequired();
 			expect(input).toHaveAttribute("aria-required", "true");
-			expect(input).toHaveAttribute("aria-describedby", "product-availability-status");
+			expect(input).toHaveAttribute(
+				"aria-describedby",
+				"product-availability-status",
+			);
 		}
 	});
 
@@ -375,7 +416,9 @@ describe("ProductDetail - availability state machine", () => {
 	});
 
 	it("shows an accessible error with Retry on initial failure and keeps controls disabled", async () => {
-		mockGetSequenced({ availabilityResponses: [() => Promise.reject(new Error("down"))] });
+		mockGetSequenced({
+			availabilityResponses: [() => Promise.reject(new Error("down"))],
+		});
 		renderProductDetail({ authValue: makeAuthValue() });
 
 		await screen.findByText("Cabaña del Lago");
@@ -383,7 +426,10 @@ describe("ProductDetail - availability state machine", () => {
 		const alert = await screen.findByRole("alert");
 		expect(alert).toHaveTextContent("No pudimos obtener la disponibilidad");
 		expect(alert).toHaveAttribute("id", "product-availability-alert");
-		expect(screen.getByLabelText("Check-in")).toHaveAttribute("aria-describedby", "product-availability-alert");
+		expect(screen.getByLabelText("Check-in")).toHaveAttribute(
+			"aria-describedby",
+			"product-availability-alert",
+		);
 		expect(screen.getByLabelText("Check-in")).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
 	});
@@ -425,7 +471,9 @@ describe("ProductDetail - availability state machine", () => {
 
 		const alert = await screen.findByRole("alert");
 		expect(alert).toHaveTextContent("No pudimos obtener la disponibilidad");
-		expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Reintentar" }),
+		).toBeInTheDocument();
 	});
 
 	it("marks a stale refresh as non-authoritative and keeps Reserve disabled after a ready state", async () => {
@@ -453,9 +501,7 @@ describe("ProductDetail - availability state machine", () => {
 		);
 
 		const alert = await screen.findByRole("alert");
-		expect(alert).toHaveTextContent(
-			"No pudimos actualizar la disponibilidad",
-		);
+		expect(alert).toHaveTextContent("No pudimos actualizar la disponibilidad");
 		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
 	});
 
@@ -498,58 +544,112 @@ describe("ProductDetail - availability state machine", () => {
 
 	it("clears a selection conflict when navigation starts loading another lodging", async () => {
 		let availabilityCallIndex = 0;
-		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings/") && endpoint.includes("/availability")) {
-				const responses = [
-					{ available: true, occupiedRanges: [] },
-					{ available: false, occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }] },
-				];
-				return Promise.resolve(responses[Math.min(availabilityCallIndex++, 1)]);
-			}
-			if (endpoint === "/lodgings/1") return Promise.resolve(lodgingFixture);
-			if (endpoint === "/lodgings/2")
-				return Promise.resolve({ ...lodgingFixture, id: 2, name: "Cabaña del Bosque" });
-			if (endpoint.startsWith("/ratings/lodging/"))
-				return Promise.resolve({ average: 0, count: 0, ratings: [] });
-			return Promise.resolve(null);
+		getLodging.mockImplementation((id) =>
+			Promise.resolve(
+				id === "2"
+					? { ...lodgingFixture, id: 2, name: "Cabaña del Bosque" }
+					: lodgingFixture,
+			),
+		);
+		getAvailability.mockImplementation(() => {
+			const responses = [
+				{ available: true, occupiedRanges: [] },
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }],
+				},
+			];
+			return Promise.resolve(responses[Math.min(availabilityCallIndex++, 1)]);
 		});
+		get.mockImplementation((endpoint) =>
+			endpoint.startsWith("/ratings/lodging/")
+				? Promise.resolve({ average: 0, count: 0, ratings: [] })
+				: Promise.resolve(null),
+		);
 		const user = userEvent.setup();
 		renderProductDetail({ authValue: makeAuthValue() });
 
 		await screen.findByText("Todas las fechas están disponibles.");
-		await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 15th, 2026");
-		await selectDateByLabelPart(user, screen.getByLabelText("Check-out"), "July 16th, 2026");
-		await screen.findByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.");
-
-		await user.click(screen.getByRole("button", { name: "Ver otro alojamiento" }));
-
-		await waitFor(() =>
-			expect(screen.queryByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.")).not.toBeInTheDocument(),
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 16th, 2026",
+		);
+		await screen.findByText(
+			"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
 		);
 
-		await user.click(screen.getByRole("button", { name: "Volver al alojamiento" }));
-		expect(screen.queryByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.")).not.toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Ver otro alojamiento" }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.queryByText(
+					"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+				),
+			).not.toBeInTheDocument(),
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Volver al alojamiento" }),
+		);
+		expect(
+			screen.queryByText(
+				"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+			),
+		).not.toBeInTheDocument();
 	});
 
 	it("clears a selection conflict after the user reselects a valid date range", async () => {
 		mockGetSequenced({
 			availabilityResponses: [
 				{ available: true, occupiedRanges: [] },
-				{ available: false, occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }] },
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-15", checkOut: "2026-07-16" }],
+				},
 			],
 		});
 		const user = userEvent.setup();
 		renderProductDetail({ authValue: makeAuthValue() });
 
 		await screen.findByText("Todas las fechas están disponibles.");
-		await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 15th, 2026");
-		await selectDateByLabelPart(user, screen.getByLabelText("Check-out"), "July 16th, 2026");
-		await screen.findByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.");
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 16th, 2026",
+		);
+		await screen.findByText(
+			"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+		);
 
-		await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 17th, 2026");
-		await selectDateByLabelPart(user, screen.getByLabelText("Check-out"), "July 18th, 2026");
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 17th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 18th, 2026",
+		);
 
-		expect(screen.queryByText("Las fechas seleccionadas ya no están disponibles. Elegí otro rango.")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(
+				"Las fechas seleccionadas ya no están disponibles. Elegí otro rango.",
+			),
+		).not.toBeInTheDocument();
 	});
 });
 
@@ -598,13 +698,18 @@ describe("ProductDetail - ShareModal", () => {
 
 describe("ProductDetail - GalleryModal", () => {
 	it("delegates the first-five preview and full gallery to LodgingGallery", async () => {
-		const imageUrls = Array.from({ length: 6 }, (_, index) => `https://example.com/image-${index + 1}.jpg`);
+		const imageUrls = Array.from(
+			{ length: 6 },
+			(_, index) => `https://example.com/image-${index + 1}.jpg`,
+		);
 		mockGetDefaults({ lodging: { ...lodgingFixture, imageUrls } });
 		const user = userEvent.setup();
 		renderProductDetail();
 
 		await screen.findByText("Cabaña del Lago");
-		expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ })).toHaveLength(5);
+		expect(
+			screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }),
+		).toHaveLength(5);
 		await user.click(screen.getByRole("button", { name: "Ver más" }));
 		expect(screen.getByText("1 / 6")).toBeInTheDocument();
 	});
@@ -633,10 +738,7 @@ describe("ProductDetail - GalleryModal", () => {
 	it("navigates to the clicked thumbnail's real image when multiple images exist", async () => {
 		const multiImageLodging = {
 			...lodgingFixture,
-			imageUrls: [
-				"https://example.com/img.jpg",
-				"https://example.com/img2.jpg",
-			],
+			imageUrls: ["https://example.com/img.jpg", "https://example.com/img2.jpg"],
 		};
 		mockGetDefaults({ lodging: multiImageLodging });
 		const user = userEvent.setup();
@@ -655,10 +757,7 @@ describe("ProductDetail - GalleryModal", () => {
 	it("changes the main image with bounded arrows without opening the modal", async () => {
 		const multiImageLodging = {
 			...lodgingFixture,
-			imageUrls: [
-				"https://example.com/img.jpg",
-				"https://example.com/img2.jpg",
-			],
+			imageUrls: ["https://example.com/img.jpg", "https://example.com/img2.jpg"],
 		};
 		mockGetDefaults({ lodging: multiImageLodging });
 		const user = userEvent.setup();
@@ -673,9 +772,7 @@ describe("ProductDetail - GalleryModal", () => {
 		await user.click(next);
 
 		expect(
-			screen
-				.getByRole("button", { name: "Abrir galería" })
-				.querySelector("img"),
+			screen.getByRole("button", { name: "Abrir galería" }).querySelector("img"),
 		).toHaveAttribute("src", "https://example.com/img2.jpg");
 		expect(next).toBeDisabled();
 		expect(previous).not.toBeDisabled();
@@ -699,10 +796,7 @@ describe("ProductDetail - GalleryModal", () => {
 			mockGetDefaults({
 				lodging: {
 					...lodgingFixture,
-					imageUrls: [
-						"https://example.com/img.jpg",
-						"https://example.com/img2.jpg",
-					],
+					imageUrls: ["https://example.com/img.jpg", "https://example.com/img2.jpg"],
 				},
 			});
 			const user = userEvent.setup();
@@ -727,7 +821,6 @@ describe("ProductDetail - GalleryModal", () => {
 			window.matchMedia = originalMatchMedia;
 		}
 	});
-
 });
 
 describe("ProductDetail - Features detail", () => {
@@ -746,10 +839,10 @@ describe("ProductDetail - Features detail", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }))
-			.toHaveLength(3);
-		expect(screen.getAllByRole("button", { name: /Ver imagen/ }))
-			.toHaveLength(2);
+		expect(
+			screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }),
+		).toHaveLength(3);
+		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(2);
 	});
 
 	it("renders up to four existing secondary images and opens every image from Ver más", async () => {
@@ -763,13 +856,16 @@ describe("ProductDetail - Features detail", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }))
-			.toHaveLength(5);
+		expect(
+			screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }),
+		).toHaveLength(5);
 		expect(screen.getByRole("button", { name: "Ver más" })).toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: "Ver más" }));
 
-		expect(screen.getByRole("dialog", { name: "Galería de imágenes" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("dialog", { name: "Galería de imágenes" }),
+		).toBeInTheDocument();
 		expect(screen.getByText("1 / 6")).toBeInTheDocument();
 	});
 
@@ -790,7 +886,9 @@ describe("ProductDetail - Features detail", () => {
 		expect(screen.getByText("Características")).toBeInTheDocument();
 		expect(screen.getByText("WiFi")).toBeInTheDocument();
 		expect(screen.getByText("Estacionamiento")).toBeInTheDocument();
-		expect(screen.getByRole("img", { name: "Ícono de WiFi" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("img", { name: "Ícono de WiFi" }),
+		).toBeInTheDocument();
 		expect(
 			screen.getByRole("img", { name: "Ícono de Estacionamiento" }),
 		).toBeInTheDocument();
@@ -802,9 +900,7 @@ describe("ProductDetail - Features detail", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(
-			screen.queryByText("Características"),
-		).not.toBeInTheDocument();
+		expect(screen.queryByText("Características")).not.toBeInTheDocument();
 	});
 });
 
