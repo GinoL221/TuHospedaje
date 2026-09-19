@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { get } from "../services/api";
+import { getCities } from "../services/lodgingService";
 
 const DEBOUNCE_MS = 200;
 const BLUR_DELAY_MS = 300;
@@ -27,7 +27,7 @@ export default function useCityAutocomplete() {
 		debounceRef.current = setTimeout(() => {
 			setLoadingCities(true);
 			setShowSuggestions(true);
-			get(`/lodgings/cities?q=${encodeURIComponent(city)}`)
+			getCities(city)
 				.then((data) => {
 					setSuggestions(Array.isArray(data) ? data : []);
 					setActiveSuggestionIndex(-1);

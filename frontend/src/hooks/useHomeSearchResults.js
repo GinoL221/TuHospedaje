@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { get } from "../services/api";
+import { searchLodgings } from "../services/lodgingService";
 
 const EMPTY_SEARCH_RESULTS = { lodgings: [], totalItems: 0, catalogItems: 0 };
 
@@ -10,7 +10,7 @@ export default function useHomeSearchResults(search) {
 		if (!search) return undefined;
 
 		let isCurrentSearch = true;
-		get(`/lodgings/search${search}`)
+		searchLodgings(search)
 			.then((data) => {
 				if (isCurrentSearch) setSearchResults({ query: search, data });
 			})
@@ -25,5 +25,7 @@ export default function useHomeSearchResults(search) {
 		};
 	}, [search]);
 
-	return { searchResults: searchResults?.query === search ? searchResults.data : null };
+	return {
+		searchResults: searchResults?.query === search ? searchResults.data : null,
+	};
 }

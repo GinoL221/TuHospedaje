@@ -1,8 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import useCityAutocomplete from "./useCityAutocomplete";
-import { get } from "../services/api";
+import { getCities } from "../services/lodgingService";
 
-vi.mock("../services/api", () => ({ get: vi.fn() }));
+vi.mock("../services/lodgingService", () => ({ getCities: vi.fn() }));
 
 function deferred() {
 	let resolve;
@@ -26,7 +26,7 @@ async function advanceDebounce() {
 
 beforeEach(() => {
 	vi.useFakeTimers();
-	get.mockReset();
+	getCities.mockReset();
 });
 
 afterEach(() => {
@@ -36,15 +36,15 @@ afterEach(() => {
 describe("useCityAutocomplete", () => {
 	it("debounces city loading for 200ms and exposes successful suggestions", async () => {
 		const pending = deferred();
-		get.mockReturnValueOnce(pending.promise);
+		getCities.mockReturnValueOnce(pending.promise);
 		const { result } = renderHook(() => useCityAutocomplete());
 
 		act(() => result.current.handleCityChange("Ba"));
-		expect(get).not.toHaveBeenCalled();
+		expect(getCities).not.toHaveBeenCalled();
 		expect(result.current.showSuggestions).toBe(false);
 
 		await advanceDebounce();
-		expect(get).toHaveBeenCalledWith("/lodgings/cities?q=Ba");
+		expect(getCities).toHaveBeenCalledWith("Ba");
 		expect(result.current.loadingCities).toBe(true);
 		expect(result.current.showSuggestions).toBe(true);
 
@@ -58,14 +58,14 @@ describe("useCityAutocomplete", () => {
 	});
 
 	it("retains suggestions while loading, clears on errors, and clears short city text", async () => {
-		get.mockResolvedValueOnce(["Bariloche"]);
+		getCities.mockResolvedValueOnce(["Bariloche"]);
 		const { result } = renderHook(() => useCityAutocomplete());
 		act(() => result.current.handleCityChange("Ba"));
 		await advanceDebounce();
 		await act(async () => {});
 
 		const pending = deferred();
-		get.mockReturnValueOnce(pending.promise);
+		getCities.mockReturnValueOnce(pending.promise);
 		act(() => result.current.handleCityChange("Bar"));
 		await advanceDebounce();
 		expect(result.current.suggestions).toEqual(["Bariloche"]);
@@ -85,7 +85,7 @@ describe("useCityAutocomplete", () => {
 	});
 
 	it("keeps focus and blur ordering and cancels scheduled work on cleanup", async () => {
-		get.mockResolvedValueOnce([]);
+		getCities.mockResolvedValueOnce([]);
 		const { result, unmount } = renderHook(() => useCityAutocomplete());
 		act(() => result.current.handleCityChange("Me"));
 		act(() => result.current.handleCityFocus());
@@ -101,13 +101,13 @@ describe("useCityAutocomplete", () => {
 		});
 		expect(result.current.showSuggestions).toBe(false);
 
-		get.mockClear();
+		getCities.mockClear();
 		act(() => result.current.handleCityChange("Men"));
 		unmount();
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(200);
 		});
-		expect(get).not.toHaveBeenCalled();
+		expect(getCities).not.toHaveBeenCalled();
 	});
 
 	it("selects cities and resets the active option", () => {
@@ -121,7 +121,7 @@ describe("useCityAutocomplete", () => {
 	});
 
 	it("navigates arrow boundaries, selects with Enter, and dismisses with Escape", async () => {
-	get.mockResolvedValue(["Bariloche", "Buenos Aires"]);
+		getCities.mockResolvedValue(["Bariloche", "Buenos Aires"]);
 		const { result } = renderHook(() => useCityAutocomplete());
 		act(() => result.current.handleCityChange("Ba"));
 		await advanceDebounce();
@@ -142,7 +142,7 @@ describe("useCityAutocomplete", () => {
 		expect(result.current.city).toBe("Bariloche");
 		expect(result.current.showSuggestions).toBe(false);
 		await advanceDebounce();
-		expect(get).toHaveBeenCalledTimes(1);
+		expect(getCities).toHaveBeenCalledTimes(1);
 		expect(result.current.showSuggestions).toBe(false);
 
 		act(() => result.current.handleCityChange("Bu"));
@@ -152,7 +152,7 @@ describe("useCityAutocomplete", () => {
 	});
 
 	it("selects by touch without reopening or requesting the selected city", async () => {
-		get.mockResolvedValue(["Bariloche"]);
+		getCities.mockResolvedValue(["Bariloche"]);
 		const { result } = renderHook(() => useCityAutocomplete());
 
 		act(() => result.current.handleCityChange("Ba"));
@@ -164,10 +164,8 @@ describe("useCityAutocomplete", () => {
 		expect(result.current.showSuggestions).toBe(false);
 
 		await advanceDebounce();
-		expect(get).toHaveBeenCalledTimes(1);
-		expect(get).not.toHaveBeenCalledWith(
-			"/lodgings/cities?q=Bariloche",
-		);
+		expect(getCities).toHaveBeenCalledTimes(1);
+		expect(getCities).not.toHaveBeenCalledWith("Bariloche");
 		expect(result.current.showSuggestions).toBe(false);
 	});
 });
