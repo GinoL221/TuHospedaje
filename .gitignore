@@ -41,3 +41,13 @@ opencode.json
 .codegraph/
 # Local Pi runtime state
 .atl/
+.pi/
+.mcp.json
+
+# Local logs and test artifacts
+*.log
+test-results/
+.vitest/
+
+# Untracked ODD scratch (tracked odd/tasks stay in git)
+odd/frontend-image-hardening/
