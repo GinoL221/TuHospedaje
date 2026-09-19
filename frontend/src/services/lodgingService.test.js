@@ -1,11 +1,40 @@
-import { searchLodgings, getRecommendations } from "./lodgingService";
+import {
+  getLodging,
+  searchLodgings,
+  getRecommendations,
+} from "./lodgingService";
 import { get } from "./api";
 
 vi.mock("./api");
 
+describe("lodgingService - getLodging", () => {
+  it("requests the lodging endpoint for the supplied id", async () => {
+    get.mockResolvedValue({ id: 42, name: "Cabaña del Lago" });
+
+    await getLodging(42);
+
+    expect(get).toHaveBeenCalledWith("/lodgings/42");
+  });
+
+  it("returns the response for a different lodging id", async () => {
+    const response = { id: "abc-123", name: "Casa del Bosque" };
+    get.mockResolvedValue(response);
+
+    const result = await getLodging("abc-123");
+
+    expect(get).toHaveBeenCalledWith("/lodgings/abc-123");
+    expect(result).toEqual(response);
+  });
+});
+
 describe("lodgingService - searchLodgings", () => {
   it("builds the query string from params and calls get with it", async () => {
-    get.mockResolvedValue({ lodgings: [], currentPage: 0, totalItems: 0, totalPages: 0 });
+    get.mockResolvedValue({
+      lodgings: [],
+      currentPage: 0,
+      totalItems: 0,
+      totalPages: 0,
+    });
 
     await searchLodgings({ city: "Bariloche", page: "1" });
 
@@ -21,7 +50,12 @@ describe("lodgingService - searchLodgings", () => {
   });
 
   it("resolves with the response returned by get", async () => {
-    const response = { lodgings: [{ id: 1 }], currentPage: 0, totalItems: 1, totalPages: 1 };
+    const response = {
+      lodgings: [{ id: 1 }],
+      currentPage: 0,
+      totalItems: 1,
+      totalPages: 1,
+    };
     get.mockResolvedValue(response);
 
     const result = await searchLodgings({ city: "Bariloche" });
@@ -32,7 +66,14 @@ describe("lodgingService - searchLodgings", () => {
 
 describe("lodgingService - getRecommendations", () => {
   it("builds seed, page, and fixed size 10 without a revision param", async () => {
-    get.mockResolvedValue({ lodgings: [], currentPage: 0, totalItems: 0, totalPages: 0, revision: "r1", reset: false });
+    get.mockResolvedValue({
+      lodgings: [],
+      currentPage: 0,
+      totalItems: 0,
+      totalPages: 0,
+      revision: "r1",
+      reset: false,
+    });
 
     await getRecommendations({ seed: "seed-value-0123456789", page: 0 });
 
@@ -42,9 +83,20 @@ describe("lodgingService - getRecommendations", () => {
   });
 
   it("includes the revision param only when a revision is supplied", async () => {
-    get.mockResolvedValue({ lodgings: [], currentPage: 2, totalItems: 0, totalPages: 3, revision: "r2", reset: false });
+    get.mockResolvedValue({
+      lodgings: [],
+      currentPage: 2,
+      totalItems: 0,
+      totalPages: 3,
+      revision: "r2",
+      reset: false,
+    });
 
-    await getRecommendations({ seed: "seed-value-0123456789", page: 2, revision: "r1" });
+    await getRecommendations({
+      seed: "seed-value-0123456789",
+      page: 2,
+      revision: "r1",
+    });
 
     expect(get).toHaveBeenCalledWith(
       "/lodgings/recommendations?seed=seed-value-0123456789&page=2&size=8&revision=r1",
@@ -52,10 +104,20 @@ describe("lodgingService - getRecommendations", () => {
   });
 
   it("resolves with the response returned by get", async () => {
-    const response = { lodgings: [{ id: 1 }], currentPage: 0, totalItems: 1, totalPages: 1, revision: "r1", reset: false };
+    const response = {
+      lodgings: [{ id: 1 }],
+      currentPage: 0,
+      totalItems: 1,
+      totalPages: 1,
+      revision: "r1",
+      reset: false,
+    };
     get.mockResolvedValue(response);
 
-    const result = await getRecommendations({ seed: "seed-value-0123456789", page: 0 });
+    const result = await getRecommendations({
+      seed: "seed-value-0123456789",
+      page: 0,
+    });
 
     expect(result).toEqual(response);
   });

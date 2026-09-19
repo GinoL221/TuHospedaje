@@ -1,4 +1,12 @@
-import { get, patch } from "./api";
+import { get, patch, post } from "./api";
+
+export function createReservation(payload) {
+	return post("/reservations", payload);
+}
+
+export function getMyReservations() {
+	return get("/reservations/my");
+}
 
 export function cancelReservation(id) {
 	return patch(`/reservations/${id}/cancel`);

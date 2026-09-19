@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { get, post } from "../../services/api";
+import { getLodging } from "../../services/lodgingService";
+import {
+  createReservation,
+  getMyReservations,
+} from "../../services/reservationService";
 import { useAuth } from "../../hooks/useAuth";
 import useAvailability from "../../hooks/useAvailability";
 
@@ -47,7 +51,7 @@ export default function BookingPage() {
   } = useAvailability(lodgingId);
 
   useEffect(() => {
-    get("/reservations/my")
+    getMyReservations()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           // data is sorted checkIn DESC — first element is the most recent reservation
@@ -72,7 +76,7 @@ export default function BookingPage() {
   useEffect(() => {
     let active = true;
 
-    get(`/lodgings/${lodgingId}`)
+    getLodging(lodgingId)
       .then((data) => {
         if (!active) return;
         setLodging(data);
@@ -167,7 +171,7 @@ export default function BookingPage() {
       }
 
       const normalizedNotes = notes.trim();
-      const reservation = await post("/reservations", {
+      const reservation = await createReservation({
         lodgingId: Number(lodgingId),
         checkIn: formatDate(checkIn),
         checkOut: formatDate(checkOut),

@@ -1,9 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, User, Mail, Phone, ExternalLink } from "lucide-react";
-import { get } from "../../services/api";
-import { cancelReservation } from "../../services/reservationService";
-import { hasReservationNotes, reservationCreatedAtLabel } from "../../utils/reservationPresentation";
+import {
+  Calendar,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  ExternalLink,
+} from "lucide-react";
+import {
+  cancelReservation,
+  getMyReservations,
+} from "../../services/reservationService";
+import {
+  hasReservationNotes,
+  reservationCreatedAtLabel,
+} from "../../utils/reservationPresentation";
 import "./MyReservationsPage.css";
 
 const BUSINESS_TIME_ZONE = "America/Argentina/Buenos_Aires";
@@ -27,7 +39,9 @@ function businessDate() {
 }
 
 function canCancel(reservation) {
-  return reservation.status === "CONFIRMED" && reservation.checkIn > businessDate();
+  return (
+    reservation.status === "CONFIRMED" && reservation.checkIn > businessDate()
+  );
 }
 
 export default function MyReservationsPage() {
@@ -39,7 +53,7 @@ export default function MyReservationsPage() {
   const [cancellationErrors, setCancellationErrors] = useState({});
 
   useEffect(() => {
-    get("/reservations/my")
+    getMyReservations()
       .then(setReservations)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -49,7 +63,8 @@ export default function MyReservationsPage() {
     if (
       pendingIdsRef.current.has(reservation.id) ||
       !window.confirm("¿Querés cancelar esta reserva?")
-    ) return;
+    )
+      return;
 
     pendingIdsRef.current.add(reservation.id);
     setPendingIds(new Set(pendingIdsRef.current));
@@ -62,7 +77,8 @@ export default function MyReservationsPage() {
     } catch (err) {
       setCancellationErrors((current) => ({
         ...current,
-        [reservation.id]: err.message || "No se pudo cancelar. Intentá nuevamente.",
+        [reservation.id]:
+          err.message || "No se pudo cancelar. Intentá nuevamente.",
       }));
     } finally {
       pendingIdsRef.current.delete(reservation.id);
@@ -84,7 +100,8 @@ export default function MyReservationsPage() {
         <h1>Mis reservas</h1>
         {reservations.length > 0 && (
           <span className="reservations-count">
-            {reservations.length} {reservations.length === 1 ? "reserva" : "reservas"}
+            {reservations.length}{" "}
+            {reservations.length === 1 ? "reserva" : "reservas"}
           </span>
         )}
       </div>
@@ -94,7 +111,9 @@ export default function MyReservationsPage() {
       {!error && reservations.length === 0 ? (
         <div className="reservations-empty">
           <p>No tenés reservas todavía.</p>
-          <Link to="/" className="reservations-back">Explorar alojamientos</Link>
+          <Link to="/" className="reservations-back">
+            Explorar alojamientos
+          </Link>
         </div>
       ) : (
         <div className="reservations-list">
@@ -111,7 +130,9 @@ export default function MyReservationsPage() {
                       {r.city}
                     </p>
                   </div>
-                  <span className={`reservation-status ${r.status?.toLowerCase()}`}>
+                  <span
+                    className={`reservation-status ${r.status?.toLowerCase()}`}
+                  >
                     {r.status}
                   </span>
                 </div>
@@ -119,7 +140,9 @@ export default function MyReservationsPage() {
                 <div className="reservation-card-body">
                   <div className="reservation-row">
                     <Calendar size={14} />
-                    <span>{fmtDate(r.checkIn)} → {fmtDate(r.checkOut)}</span>
+                    <span>
+                      {fmtDate(r.checkIn)} → {fmtDate(r.checkOut)}
+                    </span>
                     {nights > 0 && (
                       <span className="reservation-nights">
                         {nights} {nights === 1 ? "noche" : "noches"}
@@ -158,7 +181,10 @@ export default function MyReservationsPage() {
                   <span className="reservation-total">
                     Total: <strong>${r.totalPrice?.toLocaleString()}</strong>
                   </span>
-                  <Link to={`/lodgings/${r.lodgingId}`} className="reservation-link">
+                  <Link
+                    to={`/lodgings/${r.lodgingId}`}
+                    className="reservation-link"
+                  >
                     Ver alojamiento <ExternalLink size={13} />
                   </Link>
                 </div>
@@ -170,7 +196,9 @@ export default function MyReservationsPage() {
                       disabled={pendingIds.has(r.id)}
                       onClick={() => handleCancel(r)}
                     >
-                      {pendingIds.has(r.id) ? "Cancelando..." : "Cancelar reserva"}
+                      {pendingIds.has(r.id)
+                        ? "Cancelando..."
+                        : "Cancelar reserva"}
                     </button>
                     {cancellationErrors[r.id] && (
                       <p className="reservation-cancel-error" role="alert">
