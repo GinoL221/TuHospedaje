@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { postMultipart } from "../../services/api";
+import { uploadImage } from "../../services/uploadService";
 
 const GENERIC_UPLOAD_ERROR = "No se pudo subir la imagen. Intentá de nuevo.";
 
@@ -19,9 +19,7 @@ export default function ImageUpload({
     onUploadingChange?.(true);
     setError(null);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const data = await postMultipart("/upload", formData);
+      const data = await uploadImage(file);
       onUrlsChange([...urls, data.url]);
     } catch (err) {
       setError(
