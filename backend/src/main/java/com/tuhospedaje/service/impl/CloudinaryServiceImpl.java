@@ -4,8 +4,8 @@ import com.cloudinary.Cloudinary;
 import com.tuhospedaje.dto.upload.UploadResult;
 import com.tuhospedaje.exception.UploadException;
 import com.tuhospedaje.service.CloudinaryService;
+import com.tuhospedaje.service.command.UploadImageCommand;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -42,8 +42,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     @Override
     @SuppressWarnings("rawtypes")
-    public UploadResult uploadImage(MultipartFile file) {
-        byte[] imageBytes = validate(file);
+    public UploadResult uploadImage(UploadImageCommand command) {
+        byte[] imageBytes = validate(command);
         try {
             Map raw = cloudinary.uploader().upload(imageBytes, Map.of());
             return new UploadResult(raw);
@@ -56,31 +56,21 @@ public class CloudinaryServiceImpl implements CloudinaryService {
      * The parser rejects oversized HTTP parts as 413 before controller invocation. This
      * 5 MiB service guard also protects direct callers before allocating or uploading bytes.
      */
-    private byte[] validate(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
+    private byte[] validate(UploadImageCommand command) {
+        if (command == null || command.content() == null || command.content().length == 0) {
             throw new IllegalArgumentException("error.upload.empty");
         }
-        if (file.getSize() > MAX_FILE_SIZE_BYTES) {
+
+        byte[] imageBytes = command.content();
+        if (imageBytes.length > MAX_FILE_SIZE_BYTES) {
             throw new IllegalArgumentException("error.upload.too_large");
         }
 
-        String contentType = normalizedContentType(file);
-        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+        String contentType = normalizedContentType(command.contentType());
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType) || !hasMatchingValidImageBytes(contentType, imageBytes)) {
             throw new IllegalArgumentException("error.upload.invalid_type");
         }
-
-        try {
-            byte[] imageBytes = file.getBytes();
-            if (imageBytes.length > MAX_FILE_SIZE_BYTES) {
-                throw new IllegalArgumentException("error.upload.too_large");
-            }
-            if (!hasMatchingValidImageBytes(contentType, imageBytes)) {
-                throw new IllegalArgumentException("error.upload.invalid_type");
-            }
-            return imageBytes;
-        } catch (IOException e) {
-            throw new UploadException("No se pudo leer la imagen", e);
-        }
+        return imageBytes;
     }
 
     private boolean hasMatchingValidImageBytes(String contentType, byte[] imageBytes) {
@@ -216,8 +206,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
      * ({@code IMAGE/JPEG; charset=binary}); only the media type decides. A missing header
      * normalizes to the empty string, which is not in the allow-list, so it is refused.
      */
-    private String normalizedContentType(MultipartFile file) {
-        String contentType = file.getContentType();
+    private String normalizedContentType(String contentType) {
         if (contentType == null) {
             return "";
         }

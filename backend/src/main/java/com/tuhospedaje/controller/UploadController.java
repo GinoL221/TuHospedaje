@@ -1,7 +1,9 @@
 package com.tuhospedaje.controller;
 
 import com.tuhospedaje.dto.upload.UploadResult;
+import com.tuhospedaje.exception.UploadException;
 import com.tuhospedaje.service.CloudinaryService;
+import com.tuhospedaje.service.command.UploadImageCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/upload")
@@ -45,6 +49,12 @@ public class UploadController {
             @ApiResponse(responseCode = "502", description = "Cloudinary upload failed", content = @Content),
     })
     public ResponseEntity<UploadResult> upload(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(cloudinaryService.uploadImage(file));
+        try {
+            return ResponseEntity.ok(cloudinaryService.uploadImage(
+                    new UploadImageCommand(file.getBytes(), file.getContentType())
+            ));
+        } catch (IOException e) {
+            throw new UploadException("No se pudo leer la imagen", e);
+        }
     }
 }
