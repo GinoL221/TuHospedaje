@@ -68,11 +68,17 @@ describe("AdminLodgings - listing", () => {
 		renderAdminLodgings();
 
 		await screen.findByText("Cabaña del Lago");
-		expect(screen.getByRole("heading", { name: "Lista de productos" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Lista de productos" }),
+		).toBeInTheDocument();
 		expect(screen.getAllByRole("columnheader")).toHaveLength(3);
 		expect(screen.getByRole("columnheader", { name: /Id/ })).toBeInTheDocument();
-		expect(screen.getByRole("columnheader", { name: /Nombre/ })).toBeInTheDocument();
-		expect(screen.getByRole("columnheader", { name: "Acciones" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: /Nombre/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: "Acciones" }),
+		).toBeInTheDocument();
 	});
 
 	it("renders the empty state when there are no lodgings", async () => {
@@ -84,6 +90,57 @@ describe("AdminLodgings - listing", () => {
 				"No hay alojamientos cargados todavía. ¡Agregá el primero!",
 			),
 		).toBeInTheDocument();
+	});
+
+	it("shows a retryable error instead of the empty state when the lodging request fails", async () => {
+		mockGetDefaults();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/admin")) {
+				return Promise.reject(new Error("No se pudieron cargar los alojamientos"));
+			}
+			return Promise.resolve([]);
+		});
+		renderAdminLodgings();
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"No pudimos cargar los alojamientos.",
+		);
+		expect(
+			screen.getByRole("button", { name: "Reintentar" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText(
+				"No hay alojamientos cargados todavía. ¡Agregá el primero!",
+			),
+		).not.toBeInTheDocument();
+	});
+
+	it("retries the failed lodging request with the current listing parameters", async () => {
+		let lodgingRequests = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/admin")) {
+				lodgingRequests += 1;
+				return lodgingRequests === 1
+					? Promise.reject(new Error("No se pudieron cargar los alojamientos"))
+					: Promise.resolve(pageResponse([lodgingFixture()]));
+			}
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderAdminLodgings();
+
+		await screen.findByRole("alert");
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(
+			get.mock.calls
+				.filter(([endpoint]) => endpoint.startsWith("/lodgings/admin"))
+				.map(([endpoint]) => endpoint),
+		).toEqual([
+			"/lodgings/admin?page=0&size=10&sort=id&direction=asc",
+			"/lodgings/admin?page=0&size=10&sort=id&direction=asc",
+		]);
 	});
 
 	it("renders a row per lodging with its name", async () => {
@@ -137,9 +194,7 @@ describe("AdminLodgings - listing", () => {
 						pageResponse([], { currentPage: 1, totalItems: 10, totalPages: 1 }),
 					);
 				}
-				return Promise.resolve(
-					pageResponse([lodgingFixture()], { totalPages: 2 }),
-				);
+				return Promise.resolve(pageResponse([lodgingFixture()], { totalPages: 2 }));
 			}
 			if (endpoint === "/categories") return Promise.resolve([]);
 			if (endpoint === "/features") return Promise.resolve([]);
@@ -360,9 +415,7 @@ describe("AdminLodgings - edit", () => {
 			screen.getByRole("heading", { name: "Editar alojamiento" }),
 		).toBeInTheDocument();
 		expect(screen.getByTestId("field-name")).toHaveValue("Cabaña del Lago");
-		expect(screen.getByTestId("field-email")).toHaveValue(
-			"contacto@cabana.com",
-		);
+		expect(screen.getByTestId("field-email")).toHaveValue("contacto@cabana.com");
 	});
 
 	it("shows an inline form error (not an alert) when the update request rejects", async () => {
@@ -382,9 +435,7 @@ describe("AdminLodgings - edit", () => {
 		// a blocking window.alert for its own failure path — the two Admin CRUD
 		// screens use different, inconsistent error UX. Asserted as-is per spec
 		// Risks; not unified here (no production change in this change).
-		expect(
-			await screen.findByText("No se pudo actualizar"),
-		).toBeInTheDocument();
+		expect(await screen.findByText("No se pudo actualizar")).toBeInTheDocument();
 		expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
 	});
 

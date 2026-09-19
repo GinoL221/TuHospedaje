@@ -23,6 +23,7 @@ export default function AdminLodgings() {
 	const [sortKey, setSortKey] = useState("id");
 	const [sortDir, setSortDir] = useState("asc");
 	const [search, setSearch] = useState("");
+	const [lodgingsError, setLodgingsError] = useState(false);
 
 	const fetchLodgings = useCallback(() => {
 		getAdminLodgings({
@@ -33,6 +34,7 @@ export default function AdminLodgings() {
 			q: search,
 		})
 			.then((data) => {
+				setLodgingsError(false);
 				const items = Array.isArray(data?.items) ? data.items : [];
 				const nextTotalPages = data?.totalPages ?? 0;
 
@@ -45,7 +47,7 @@ export default function AdminLodgings() {
 				setLodgings(items);
 				setTotalPages(nextTotalPages);
 			})
-			.catch(console.error);
+			.catch(() => setLodgingsError(true));
 	}, [page, search, sortDir, sortKey]);
 
 	const fetchData = (fetcher, setter) => {
@@ -130,17 +132,24 @@ export default function AdminLodgings() {
 					/>
 				</label>
 			</div>
-			<LodgingsTable
-				lodgings={lodgings}
-				onDelete={handleDelete}
-				onEdit={handleEdit}
-				sortKey={sortKey}
-				sortDir={sortDir}
-				onSort={handleSort}
-				page={page}
-				totalPages={totalPages}
-				onPageChange={setPage}
-			/>
+			{lodgingsError ? (
+				<div role="alert">
+					<p>No pudimos cargar los alojamientos.</p>
+					<button onClick={fetchLodgings}>Reintentar</button>
+				</div>
+			) : (
+				<LodgingsTable
+					lodgings={lodgings}
+					onDelete={handleDelete}
+					onEdit={handleEdit}
+					sortKey={sortKey}
+					sortDir={sortDir}
+					onSort={handleSort}
+					page={page}
+					totalPages={totalPages}
+					onPageChange={setPage}
+				/>
+			)}
 			<ConfirmDialog
 				show={deleteConfirm !== null}
 				message={
