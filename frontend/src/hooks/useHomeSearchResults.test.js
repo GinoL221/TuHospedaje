@@ -1,8 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import useHomeSearchResults from "./useHomeSearchResults";
-import { get } from "../services/api";
+import { searchLodgings } from "../services/lodgingService";
 
-vi.mock("../services/api");
+vi.mock("../services/lodgingService", () => ({ searchLodgings: vi.fn() }));
 
 function deferred() {
 	let resolve;
@@ -19,24 +19,24 @@ function results(name) {
 }
 
 describe("useHomeSearchResults", () => {
-	beforeEach(() => get.mockReset());
+	beforeEach(() => searchLodgings.mockReset());
 
 	it("loads the exact URL query and exposes its current response", async () => {
-		get.mockResolvedValueOnce(results("Salta"));
+		searchLodgings.mockResolvedValueOnce(results("Salta"));
 		const { result } = renderHook(() => useHomeSearchResults("?city=Salta"));
 
-		expect(get).toHaveBeenCalledWith("/lodgings/search?city=Salta");
+		expect(searchLodgings).toHaveBeenCalledWith("?city=Salta");
 		await act(async () => await Promise.resolve());
 		expect(result.current.searchResults).toEqual(results("Salta"));
 	});
 
 	it("does not load an empty query", () => {
 		renderHook(() => useHomeSearchResults(""));
-		expect(get).not.toHaveBeenCalled();
+		expect(searchLodgings).not.toHaveBeenCalled();
 	});
 
 	it("uses the existing empty payload after a current-query failure", async () => {
-		get.mockRejectedValueOnce(new Error("offline"));
+		searchLodgings.mockRejectedValueOnce(new Error("offline"));
 		const { result } = renderHook(() => useHomeSearchResults("?city=Salta"));
 
 		await act(async () => await Promise.resolve());
@@ -50,10 +50,15 @@ describe("useHomeSearchResults", () => {
 	it("rejects an older query response after a newer query settles", async () => {
 		const salta = deferred();
 		const mendoza = deferred();
-		get.mockReturnValueOnce(salta.promise).mockReturnValueOnce(mendoza.promise);
-		const { result, rerender } = renderHook(({ search }) => useHomeSearchResults(search), {
-			initialProps: { search: "?city=Salta" },
-		});
+		searchLodgings
+			.mockReturnValueOnce(salta.promise)
+			.mockReturnValueOnce(mendoza.promise);
+		const { result, rerender } = renderHook(
+			({ search }) => useHomeSearchResults(search),
+			{
+				initialProps: { search: "?city=Salta" },
+			},
+		);
 
 		rerender({ search: "?city=Mendoza" });
 		await act(async () => {
@@ -70,9 +75,11 @@ describe("useHomeSearchResults", () => {
 
 	it("does not update after unmount and has no recommendation ownership", async () => {
 		const pending = deferred();
-		get.mockReturnValueOnce(pending.promise);
+		searchLodgings.mockReturnValueOnce(pending.promise);
 		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-		const { result, unmount } = renderHook(() => useHomeSearchResults("?city=Salta"));
+		const { result, unmount } = renderHook(() =>
+			useHomeSearchResults("?city=Salta"),
+		);
 
 		expect(result.current).toEqual({ searchResults: null });
 		unmount();

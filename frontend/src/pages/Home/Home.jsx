@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
-import { get } from "../../services/api";
+import { getCategories } from "../../services/categoryService";
+import { getFavorites } from "../../services/favoriteService";
 import { useAuth } from "../../hooks/useAuth";
 import useHomeRecommendations from "../../hooks/useHomeRecommendations";
 import useHomeSearchResults from "../../hooks/useHomeSearchResults";
@@ -43,7 +44,10 @@ export default function Home() {
 		const category = String(categoryId);
 		const selected = next.getAll("categories").filter((id) => id !== category);
 		next.delete("categories");
-		(selected.length === selectedCategories.length ? [...selected, category] : selected).forEach((id) => next.append("categories", id));
+		(selected.length === selectedCategories.length
+			? [...selected, category]
+			: selected
+		).forEach((id) => next.append("categories", id));
 		navigate(`/?${next.toString()}`);
 	}
 	function clearCategories() {
@@ -53,14 +57,14 @@ export default function Home() {
 	}
 
 	useEffect(() => {
-		get("/categories")
+		getCategories()
 			.then((data) => setCategories(Array.isArray(data) ? data : []))
 			.catch(() => {});
 	}, []);
 
 	useEffect(() => {
 		if (!user) return;
-		get("/favorites")
+		getFavorites()
 			.then((data) => {
 				if (Array.isArray(data)) setFavoriteIds(new Set(data.map((l) => l.id)));
 			})
@@ -121,57 +125,52 @@ export default function Home() {
 							<input
 								type="text"
 								placeholder="Ciudad"
-									value={city}
-									onChange={(e) => handleCityChange(e.target.value)}
-									onFocus={handleCityFocus}
-									onBlur={handleCityBlur}
-									onKeyDown={handleCityKeyDown}
-									role="combobox"
-									aria-autocomplete="list"
-									aria-expanded={showSuggestions}
-									aria-controls="city-suggestions-listbox"
-									aria-activedescendant={
-										activeSuggestionIndex >= 0
-											? `city-suggestion-${activeSuggestionIndex}`
-											: undefined
-									}
-								/>
-								{showSuggestions && (
-									<ul
-										id="city-suggestions-listbox"
-									className={
-										"city-suggestions" +
-										(loadingCities ? " is-pending" : "")
-									}
+								value={city}
+								onChange={(e) => handleCityChange(e.target.value)}
+								onFocus={handleCityFocus}
+								onBlur={handleCityBlur}
+								onKeyDown={handleCityKeyDown}
+								role="combobox"
+								aria-autocomplete="list"
+								aria-expanded={showSuggestions}
+								aria-controls="city-suggestions-listbox"
+								aria-activedescendant={
+									activeSuggestionIndex >= 0
+										? `city-suggestion-${activeSuggestionIndex}`
+										: undefined
+								}
+							/>
+							{showSuggestions && (
+								<ul
+									id="city-suggestions-listbox"
+									className={"city-suggestions" + (loadingCities ? " is-pending" : "")}
 									role="listbox"
 									aria-label="Sugerencias de ciudades"
 									aria-busy={loadingCities}
 								>
-										{loadingCities && (
-											<li className="city-suggestions-loading" role="status">
-												Buscando...
-											</li>
-										)}
-										{!loadingCities && suggestions.length === 0 && (
-											<li className="city-suggestions-empty" role="status">
-												Sin resultados
-											</li>
-										)}
-										{suggestions.map((c, index) => (
-												<li
-													key={c}
-													id={`city-suggestion-${index}`}
-													role="option"
-													aria-selected={activeSuggestionIndex === index}
-													className={
-														activeSuggestionIndex === index ? "is-active" : undefined
-													}
-												onMouseEnter={() => activateSuggestion(index)}
-													onMouseDown={() => selectCity(c)}
-											>
-												{c}
-											</li>
-										))}
+									{loadingCities && (
+										<li className="city-suggestions-loading" role="status">
+											Buscando...
+										</li>
+									)}
+									{!loadingCities && suggestions.length === 0 && (
+										<li className="city-suggestions-empty" role="status">
+											Sin resultados
+										</li>
+									)}
+									{suggestions.map((c, index) => (
+										<li
+											key={c}
+											id={`city-suggestion-${index}`}
+											role="option"
+											aria-selected={activeSuggestionIndex === index}
+											className={activeSuggestionIndex === index ? "is-active" : undefined}
+											onMouseEnter={() => activateSuggestion(index)}
+											onMouseDown={() => selectCity(c)}
+										>
+											{c}
+										</li>
+									))}
 								</ul>
 							)}
 						</div>
@@ -180,9 +179,9 @@ export default function Home() {
 								selected={checkIn}
 								onChange={(date) => setCheckIn(date)}
 								selectsStart
-									startDate={checkIn}
-									endDate={checkOut}
-									minDate={new Date()}
+								startDate={checkIn}
+								endDate={checkOut}
+								minDate={new Date()}
 								placeholderText="Check-in"
 								dateFormat="dd/MM/yyyy"
 								locale="es"
@@ -194,9 +193,9 @@ export default function Home() {
 								selected={checkOut}
 								onChange={(date) => setCheckOut(date)}
 								selectsEnd
-									startDate={checkIn}
-									endDate={checkOut}
-									minDate={checkIn || new Date()}
+								startDate={checkIn}
+								endDate={checkOut}
+								minDate={checkIn || new Date()}
 								placeholderText="Check-out"
 								dateFormat="dd/MM/yyyy"
 								locale="es"
@@ -207,7 +206,11 @@ export default function Home() {
 							Buscar
 						</button>
 					</form>
-					{searchError && <p className="search-error" role="alert">{searchError}</p>}
+					{searchError && (
+						<p className="search-error" role="alert">
+							{searchError}
+						</p>
+					)}
 				</div>
 			</section>
 			<section className="categories">
@@ -229,23 +232,37 @@ export default function Home() {
 			</section>
 			{visibleSearchResults && (
 				<section className="search-results" aria-live="polite">
-					<div className="section-header"><h2>Resultados de búsqueda</h2>{selectedCategories.length > 0 && <button className="btn-clear-filter" onClick={clearCategories}>Limpiar filtros</button>}</div>
-					<p>{visibleSearchResults.totalItems ?? 0} resultados de {visibleSearchResults.catalogItems ?? 0} alojamientos</p>
-					{visibleSearchResults.lodgings?.length > 0 && <div className="hotel-list">{visibleSearchResults.lodgings.map((lodging) => <ProductCard key={lodging.id} lodging={lodging} />)}</div>}
+					<div className="section-header">
+						<h2>Resultados de búsqueda</h2>
+						{selectedCategories.length > 0 && (
+							<button className="btn-clear-filter" onClick={clearCategories}>
+								Limpiar filtros
+							</button>
+						)}
+					</div>
+					<p>
+						{visibleSearchResults.totalItems ?? 0} resultados de{" "}
+						{visibleSearchResults.catalogItems ?? 0} alojamientos
+					</p>
+					{visibleSearchResults.lodgings?.length > 0 && (
+						<div className="hotel-list">
+							{visibleSearchResults.lodgings.map((lodging) => (
+								<ProductCard key={lodging.id} lodging={lodging} />
+							))}
+						</div>
+					)}
 				</section>
 			)}
 			<section className="recommendations">
 				<div className="section-header">
-					<h2>
-						Recomendaciones
-					</h2>
-						<button
-							type="button"
-							className="btn-refresh-recommendations"
-							onClick={handleRefreshRecommendations}
-						>
-							Actualizar recomendaciones
-						</button>
+					<h2>Recomendaciones</h2>
+					<button
+						type="button"
+						className="btn-refresh-recommendations"
+						onClick={handleRefreshRecommendations}
+					>
+						Actualizar recomendaciones
+					</button>
 				</div>
 				{recStatus === "loading" && (
 					<p className="recommendations-status" role="status">

@@ -20,8 +20,17 @@ export function getAvailability(id, { checkIn, checkOut } = {}) {
 }
 
 export function searchLodgings(params) {
-  const query = params ? `?${new URLSearchParams(params).toString()}` : "";
+  const query =
+    typeof params === "string"
+      ? params
+      : params
+        ? `?${new URLSearchParams(params).toString()}`
+        : "";
   return get(`/lodgings/search${query}`);
+}
+
+export function getCities(query) {
+  return get(`/lodgings/cities?q=${encodeURIComponent(query)}`);
 }
 
 // Fixed page size of 8 fills two desktop rows of four cards; the backend

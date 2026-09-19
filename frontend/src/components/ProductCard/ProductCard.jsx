@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { post, del } from "../../services/api";
+import { addFavorite, removeFavorite } from "../../services/favoriteService";
 import { useAuth } from "../../hooks/useAuth";
 import { Heart } from "lucide-react";
 import "./ProductCard.css";
@@ -31,9 +31,9 @@ export default function ProductCard({
 		onFavoriteToggle?.(lodging.id, next);
 		try {
 			if (next) {
-				await post(`/favorites/${lodging.id}`);
+				await addFavorite(lodging.id);
 			} else {
-				await del(`/favorites/${lodging.id}`);
+				await removeFavorite(lodging.id);
 			}
 		} catch (err) {
 			console.error(err);
@@ -58,13 +58,11 @@ export default function ProductCard({
 					/>
 					{user && showFavoriteButton && (
 						<button
-								className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
-								onClick={toggleFavorite}
-								disabled={pending}
-								aria-busy={pending}
-							aria-label={
-								isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
-							}
+							className={`fav-btn ${isFavorite ? "fav-active" : ""}`}
+							onClick={toggleFavorite}
+							disabled={pending}
+							aria-busy={pending}
+							aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
 						>
 							<Heart
 								size={20}
@@ -94,7 +92,10 @@ export default function ProductCard({
 				</div>
 				<div className="hotel-card-body">
 					<h3>{lodging.name}</h3>
-					<p className="rating-summary">{Number(lodging.averageRating ?? 0).toFixed(1)} ({lodging.ratingCount ?? 0} opiniones)</p>
+					<p className="rating-summary">
+						{Number(lodging.averageRating ?? 0).toFixed(1)} (
+						{lodging.ratingCount ?? 0} opiniones)
+					</p>
 					<p className="location">
 						{lodging.city}, {lodging.country}
 					</p>

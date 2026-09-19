@@ -2,6 +2,7 @@ import {
   getAvailability,
   getLodging,
   searchLodgings,
+  getCities,
   getRecommendations,
 } from "./lodgingService";
 import { get } from "./api";
@@ -85,6 +86,16 @@ describe("lodgingService - searchLodgings", () => {
     expect(get).toHaveBeenCalledWith("/lodgings/search?city=Bariloche&page=1");
   });
 
+  it("preserves an existing search string including its leading question mark", async () => {
+    get.mockResolvedValue({});
+
+    await searchLodgings("?city=San%20Mart%C3%ADn&categories=1");
+
+    expect(get).toHaveBeenCalledWith(
+      "/lodgings/search?city=San%20Mart%C3%ADn&categories=1",
+    );
+  });
+
   it("calls get with no query string when params is empty/undefined", async () => {
     get.mockResolvedValue({});
 
@@ -105,6 +116,24 @@ describe("lodgingService - searchLodgings", () => {
     const result = await searchLodgings({ city: "Bariloche" });
 
     expect(result).toEqual(response);
+  });
+});
+
+describe("lodgingService - getCities", () => {
+  it("requests matching cities with the supplied query", async () => {
+    get.mockResolvedValue(["Bariloche"]);
+
+    await getCities("Ba");
+
+    expect(get).toHaveBeenCalledWith("/lodgings/cities?q=Ba");
+  });
+
+  it("encodes city queries before requesting suggestions", async () => {
+    get.mockResolvedValue(["San Martín"]);
+
+    await getCities("San Martín");
+
+    expect(get).toHaveBeenCalledWith("/lodgings/cities?q=San%20Mart%C3%ADn");
   });
 });
 
