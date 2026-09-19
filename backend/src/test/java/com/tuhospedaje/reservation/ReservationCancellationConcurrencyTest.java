@@ -11,6 +11,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,9 +110,9 @@ class ReservationCancellationConcurrencyTest extends AbstractIntegrationTest {
         List<Future<ReservationResponse>> calls = new ArrayList<>();
         try {
             calls.add(executor.submit(() -> transactions.execute(status ->
-                    reservationService.cancelReservation(reservationId, owner))));
+                    reservationService.cancelReservation(reservationId, AuthenticatedActor.from(owner)))));
             calls.add(executor.submit(() -> transactions.execute(status ->
-                    reservationService.cancelReservation(reservationId, owner))));
+                    reservationService.cancelReservation(reservationId, AuthenticatedActor.from(owner)))));
             lockBoundaryGate.awaitBothArrivals();
             lockBoundaryGate.release();
 

@@ -8,6 +8,8 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.impl.ReservationServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,7 @@ class ReservationCancellationServiceTest {
 
     @Mock ReservationRepository reservationRepository;
     @Mock LodgingRepository lodgingRepository;
+    @Mock UserRepository userRepository;
     @Mock EmailOutboxService emailOutboxService;
 
     @Test
@@ -41,7 +44,7 @@ class ReservationCancellationServiceTest {
         var reservation = reservation(1L, 7L, ReservationStatus.CONFIRMED);
         when(reservationRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reservation));
 
-        var result = serviceAt("2026-08-20T02:59:59Z").cancelReservation(1L, user(7L));
+        var result = serviceAt("2026-08-20T02:59:59Z").cancelReservation(1L, actor(user(7L)));
 
         assertThat(result.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
         verify(emailOutboxService).enqueueReservationCancellation(org.mockito.ArgumentMatchers.any(),
@@ -53,7 +56,7 @@ class ReservationCancellationServiceTest {
         var reservation = reservation(1L, 7L, ReservationStatus.CONFIRMED);
         when(reservationRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reservation));
 
-        assertThatThrownBy(() -> serviceAt("2026-08-20T03:00:00Z").cancelReservation(1L, user(7L)))
+        assertThatThrownBy(() -> serviceAt("2026-08-20T03:00:00Z").cancelReservation(1L, actor(user(7L))))
                 .isInstanceOf(IllegalArgumentException.class);
 
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
@@ -68,9 +71,9 @@ class ReservationCancellationServiceTest {
                 .thenReturn(Optional.of(reservation(1L, 7L, ReservationStatus.CONFIRMED)));
 
         var service = serviceAt("2026-08-19T12:00:00Z");
-        assertThatThrownBy(() -> service.cancelReservation(99L, user(8L)))
+        assertThatThrownBy(() -> service.cancelReservation(99L, actor(user(8L))))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> service.cancelReservation(1L, user(8L)))
+        assertThatThrownBy(() -> service.cancelReservation(1L, actor(user(8L))))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -79,7 +82,7 @@ class ReservationCancellationServiceTest {
         var reservation = reservation(1L, 7L, ReservationStatus.CANCELLED);
         when(reservationRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reservation));
 
-        var result = serviceAt("2026-08-19T12:00:00Z").cancelReservation(1L, user(7L));
+        var result = serviceAt("2026-08-19T12:00:00Z").cancelReservation(1L, actor(user(7L)));
 
         assertThat(result.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
         verify(emailOutboxService, never()).enqueueReservationCancellation(org.mockito.ArgumentMatchers.any(),
@@ -95,12 +98,12 @@ class ReservationCancellationServiceTest {
                         org.mockito.ArgumentMatchers.any());
 
         assertThatThrownBy(() -> serviceAt("2026-08-19T12:00:00Z")
-                .cancelReservation(1L, user(7L)))
+                .cancelReservation(1L, actor(user(7L))))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     private ReservationServiceImpl serviceAt(String instant) {
-        return new ReservationServiceImpl(reservationRepository, lodgingRepository, emailOutboxService,
+        return new ReservationServiceImpl(reservationRepository, lodgingRepository, userRepository, emailOutboxService,
                 Clock.fixed(Instant.parse(instant), BUSINESS_ZONE));
     }
 
@@ -109,6 +112,10 @@ class ReservationCancellationServiceTest {
         user.setId(id);
         user.setRole(RoleEnum.USER);
         return user;
+    }
+
+    private static AuthenticatedActor actor(User user) {
+        return AuthenticatedActor.from(user);
     }
 
     private static Reservation reservation(Long id, Long ownerId, ReservationStatus status) {

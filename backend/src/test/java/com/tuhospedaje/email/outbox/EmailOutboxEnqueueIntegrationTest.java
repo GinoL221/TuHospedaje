@@ -18,6 +18,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.EmailTransport;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
@@ -162,7 +163,7 @@ class EmailOutboxEnqueueIntegrationTest {
         Lodging lodging = saveLodging("create@test.com");
         CreateReservationRequest request = request(lodging.getId(), "create@test.com");
 
-        var response = reservationService.createReservation(user, request);
+        var response = reservationService.createReservation(AuthenticatedActor.from(user), request);
 
         assertThat(reservationRepository.findById(response.getId())).isPresent();
         assertThat(emailOutboxRepository.findByEmailTypeAndAggregateId(
@@ -173,7 +174,7 @@ class EmailOutboxEnqueueIntegrationTest {
     void dispatchesPersistedReservationConfirmationThroughTransport() {
         User user = saveUser("dispatch@test.com");
         Lodging lodging = saveLodging("dispatch@test.com");
-        var response = reservationService.createReservation(user, request(lodging.getId(), "dispatch@test.com"));
+        var response = reservationService.createReservation(AuthenticatedActor.from(user), request(lodging.getId(), "dispatch@test.com"));
         String expectedType = EmailOutboxType.RESERVATION_CONFIRMATION.name();
         var persisted = emailOutboxRepository.findByEmailTypeAndAggregateId(
                 expectedType, response.getId().toString()).orElseThrow();
@@ -201,7 +202,7 @@ class EmailOutboxEnqueueIntegrationTest {
         Lodging lodging = saveLodging("cancel@test.com");
         Reservation reservation = saveReservation(user, lodging, "cancel@test.com");
 
-        var response = reservationService.cancelReservation(reservation.getId(), user);
+        var response = reservationService.cancelReservation(reservation.getId(), AuthenticatedActor.from(user));
 
         assertThat(response.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
         assertThat(emailOutboxRepository.findByEmailTypeAndAggregateId(

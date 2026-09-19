@@ -4,6 +4,7 @@ import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.reservation.CreateReservationRequest;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
 import com.tuhospedaje.entity.User;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -59,7 +60,7 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> create(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateReservationRequest request) {
-        ReservationResponse response = reservationService.createReservation(user, request);
+        ReservationResponse response = reservationService.createReservation(AuthenticatedActor.from(user), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -79,7 +80,7 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> getById(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(reservationService.getReservationById(id, user));
+        return ResponseEntity.ok(reservationService.getReservationById(id, AuthenticatedActor.from(user)));
     }
 
     @PatchMapping("/{id}/cancel")
@@ -96,7 +97,7 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> cancel(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(reservationService.cancelReservation(id, user));
+        return ResponseEntity.ok(reservationService.cancelReservation(id, AuthenticatedActor.from(user)));
     }
 
     @GetMapping("/my")
@@ -112,7 +113,7 @@ public class ReservationController {
     })
     public ResponseEntity<List<ReservationResponse>> getMyReservations(
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(reservationService.getMyReservations(user));
+        return ResponseEntity.ok(reservationService.getMyReservations(AuthenticatedActor.from(user)));
     }
 
     @GetMapping("/admin")
