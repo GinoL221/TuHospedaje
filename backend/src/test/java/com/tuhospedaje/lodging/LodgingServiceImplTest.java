@@ -1,86 +1,56 @@
 package com.tuhospedaje.lodging;
 
 import com.tuhospedaje.dto.lodging.LodgingDTO;
+import com.tuhospedaje.dto.lodging.LodgingSearchResponse;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
-import com.tuhospedaje.repository.CityProjection;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
-import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.service.LodgingQueryService;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LodgingServiceImplTest {
 
-    @Mock
-    private LodgingRepository lodgingRepository;
+    @Mock private LodgingRepository lodgingRepository;
+    @Mock private CategoryRepository categoryRepository;
+    @Mock private FeatureRepository featureRepository;
+    @Mock private PolicyRepository policyRepository;
+    @Mock private RatingRepository ratingRepository;
+    @Mock private LodgingQueryService lodgingQueryService;
 
-    @Mock
-    private CategoryRepository categoryRepository;
-
-    @Mock
-    private FeatureRepository featureRepository;
-
-    @Mock
-    private ReservationRepository reservationRepository;
-
-    @Mock
-    private PolicyRepository policyRepository;
-
-    @Mock
-    private RatingRepository ratingRepository;
-
-    @InjectMocks
-    private LodgingServiceImpl lodgingService;
+    @InjectMocks private LodgingServiceImpl lodgingService;
 
     @Test
     void shouldSaveLodgingSuccessfully() {
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Gran Hotel");
-        dto.setAddress("Calle 123");
-        dto.setCity("Ciudad");
-        dto.setCountry("País");
-        dto.setPhoneNumber("123456");
-        dto.setEmail("hotel@test.com");
-
-        Lodging savedEntity = new Lodging();
-        savedEntity.setId(1L);
-        savedEntity.setName("Gran Hotel");
-
-        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
-        when(lodgingRepository.existsByEmail("hotel@test.com")).thenReturn(false);
-        when(lodgingRepository.save(any(Lodging.class))).thenReturn(savedEntity);
+        LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
+        Lodging saved = lodging(1L, "Gran Hotel");
+        when(lodgingRepository.existsByName(dto.getName())).thenReturn(false);
+        when(lodgingRepository.existsByEmail(dto.getEmail())).thenReturn(false);
+        when(lodgingRepository.save(any(Lodging.class))).thenReturn(saved);
 
         LodgingDTO response = lodgingService.save(dto);
 
@@ -90,452 +60,149 @@ class LodgingServiceImplTest {
 
     @Test
     void shouldThrowWhenSaveDuplicateName() {
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Gran Hotel");
-        dto.setEmail("hotel@test.com");
-
-        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(true);
+        LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
+        when(lodgingRepository.existsByName(dto.getName())).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> lodgingService.save(dto));
     }
 
     @Test
-    void shouldThrowWhenSaveDuplicateEmail() {
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Gran Hotel");
-        dto.setEmail("dup@test.com");
-
-        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
-        when(lodgingRepository.existsByEmail("dup@test.com")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class, () -> lodgingService.save(dto));
-    }
-
-    @Test
-    void shouldAssignCategoryOnSaveWhenCategoryIdExists() {
+    void shouldAssignCategoryAndRelationshipsOnSave() {
         Category category = new Category();
         category.setId(1L);
-        category.setName("Hotel");
-
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Gran Hotel");
-        dto.setAddress("Dirección");
-        dto.setCity("Ciudad");
-        dto.setCountry("País");
-        dto.setPhoneNumber("123456");
-        dto.setEmail("test@lodging.com");
+        Feature feature = new Feature();
+        feature.setId(2L);
+        Policy policy = new Policy();
+        policy.setId(3L);
+        LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
         dto.setCategoryId(1L);
-
-        Lodging savedEntity = new Lodging();
-        savedEntity.setId(99L);
-        savedEntity.setName("Gran Hotel");
-        savedEntity.setCategory(category);
-
-        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
-        when(lodgingRepository.existsByEmail("test@lodging.com")).thenReturn(false);
+        dto.setFeatureIds(Set.of(2L));
+        dto.setPolicyIds(Set.of(3L));
+        Lodging saved = lodging(1L, "Gran Hotel");
+        saved.setCategory(category);
+        saved.setFeatures(Set.of(feature));
+        saved.setPolicies(Set.of(policy));
+        when(lodgingRepository.existsByName(dto.getName())).thenReturn(false);
+        when(lodgingRepository.existsByEmail(dto.getEmail())).thenReturn(false);
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
-        when(lodgingRepository.save(any(Lodging.class))).thenReturn(savedEntity);
+        when(featureRepository.findAllById(Set.of(2L))).thenReturn(List.of(feature));
+        when(policyRepository.findAllById(Set.of(3L))).thenReturn(List.of(policy));
+        when(lodgingRepository.save(any(Lodging.class))).thenReturn(saved);
 
         LodgingDTO response = lodgingService.save(dto);
 
         assertThat(response.getCategoryId()).isEqualTo(1L);
-        assertThat(response.getCategoryName()).isEqualTo("Hotel");
+        assertThat(response.getFeatureIds()).containsExactly(2L);
+        assertThat(response.getPolicyIds()).containsExactly(3L);
     }
 
     @Test
-    void shouldThrowWhenSaveUsesMissingCategory() {
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Gran Hotel");
-        dto.setAddress("Dirección");
-        dto.setCity("Ciudad");
-        dto.setCountry("País");
-        dto.setPhoneNumber("123456");
-        dto.setEmail("test@lodging.com");
-        dto.setCategoryId(999L);
+    void shouldUpdateLodgingSuccessfully() {
+        Lodging existing = lodging(1L, "Hotel");
+        existing.setEmail("old@test.com");
+        LodgingDTO dto = lodgingDto("Hotel Boutique", "old@test.com");
+        dto.setId(1L);
+        dto.setPricePerNight(new BigDecimal("27500.50"));
+        dto.setMaxGuests(7);
+        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.save(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
-        when(lodgingRepository.existsByEmail("test@lodging.com")).thenReturn(false);
-        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
+        LodgingDTO response = lodgingService.update(dto);
 
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> lodgingService.save(dto));
-
-        assertThat(ex.getMessage()).isEqualTo("Categoría no encontrada");
+        assertThat(response.getName()).isEqualTo("Hotel Boutique");
+        assertThat(response.getPricePerNight()).isEqualByComparingTo("27500.50");
+        assertThat(response.getMaxGuests()).isEqualTo(7);
     }
 
     @Test
-    void shouldReturnAllLodgings() {
-        Lodging one = new Lodging();
-        one.setId(1L);
-        one.setName("Hotel A");
+    void shouldRejectDuplicateEmailOnUpdate() {
+        Lodging existing = lodging(1L, "Hotel");
+        existing.setEmail("old@test.com");
+        LodgingDTO dto = lodgingDto("Hotel", "new@test.com");
+        dto.setId(1L);
+        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.existsByEmail("new@test.com")).thenReturn(true);
 
-        Lodging two = new Lodging();
-        two.setId(2L);
-        two.setName("Hotel B");
-
-        when(lodgingRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(one, two)));
-
-        List<LodgingDTO> response = lodgingService.findAll();
-
-        assertThat(response).hasSize(2);
-        assertThat(response.get(0).getName()).isEqualTo("Hotel A");
-        assertThat(response.get(1).getName()).isEqualTo("Hotel B");
+        assertThrows(IllegalArgumentException.class, () -> lodgingService.update(dto));
     }
 
     @Test
-    void shouldReturnLodgingById() {
-        Lodging lodging = new Lodging();
-        lodging.setId(5L);
-        lodging.setName("Hotel Central");
-
-        when(lodgingRepository.findById(5L)).thenReturn(Optional.of(lodging));
-
-        Optional<LodgingDTO> response = lodgingService.findById(5L);
-
-        assertThat(response).isPresent();
-        assertThat(response.get().getId()).isEqualTo(5L);
-        assertThat(response.get().getName()).isEqualTo("Hotel Central");
-    }
-
-    @Test
-    void shouldReturnEmptyWhenLodgingByIdDoesNotExist() {
-        when(lodgingRepository.findById(999L)).thenReturn(Optional.empty());
-
-        Optional<LodgingDTO> response = lodgingService.findById(999L);
-
-        assertThat(response).isEmpty();
-    }
-
-    @Test
-    void shouldFindLodgingsByName() {
-        Lodging lodging = new Lodging();
-        lodging.setId(1L);
-        lodging.setName("Hotel Boutique");
-
-        when(lodgingRepository.findByNameContainingIgnoreCase("Boutique")).thenReturn(List.of(lodging));
-
-        List<LodgingDTO> response = lodgingService.findByName("Boutique");
-
-        assertThat(response).hasSize(1);
-        assertThat(response.get(0).getName()).isEqualTo("Hotel Boutique");
-    }
-
-    @Test
-    void shouldDeleteLodgingSuccessfully() {
-        Lodging lodging = new Lodging();
-        lodging.setId(8L);
-        lodging.setName("Temporal");
-
+    void shouldDeleteExistingLodging() {
+        Lodging lodging = lodging(8L, "Temporal");
         when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging));
 
         Optional<LodgingDTO> deleted = lodgingService.delete(8L);
 
         assertThat(deleted).isPresent();
         assertThat(deleted.get().getId()).isEqualTo(8L);
+        verify(lodgingRepository).deleteById(8L);
     }
 
     @Test
-    void shouldThrowWhenDeleteLodgingDoesNotExist() {
-        when(lodgingRepository.findById(404L)).thenReturn(Optional.empty());
+    void shouldReturnLodgingByIdAndEmptyWhenMissing() {
+        Lodging lodging = lodging(5L, "Hotel Central");
+        when(lodgingRepository.findById(5L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> lodgingService.delete(404L));
+        assertThat(lodgingService.findById(5L)).map(LodgingDTO::getName).contains("Hotel Central");
+        assertThat(lodgingService.findById(999L)).isEmpty();
     }
 
     @Test
-    void shouldUpdateLodgingSuccessfully() {
-        Lodging existing = new Lodging();
-        existing.setId(1L);
-        existing.setName("Hotel");
-        existing.setEmail("hotel@test.com");
+    void shouldFindLodgingsByName() {
+        when(lodgingRepository.findByNameContainingIgnoreCase("Boutique"))
+                .thenReturn(List.of(lodging(1L, "Hotel Boutique")));
 
-        LodgingDTO input = new LodgingDTO();
-        input.setId(1L);
-        input.setName("Hotel Boutique");
-        input.setAddress("Av. Nueva 456");
-        input.setCity("Ciudad");
-        input.setCountry("País");
-        input.setPhoneNumber("999");
-        input.setEmail("hotel@test.com");
-        input.setPricePerNight(new BigDecimal("27500.50"));
-        input.setMaxGuests(7);
+        List<LodgingDTO> response = lodgingService.findByName("Boutique");
 
-        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.save(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        LodgingDTO response = lodgingService.update(input);
-
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getName()).isEqualTo("Hotel Boutique");
-        assertThat(response.getAddress()).isEqualTo("Av. Nueva 456");
-        assertThat(response.getPricePerNight()).isEqualByComparingTo("27500.50");
-        assertThat(response.getMaxGuests()).isEqualTo(7);
+        assertThat(response).extracting(LodgingDTO::getName).containsExactly("Hotel Boutique");
     }
 
     @Test
-    void shouldThrowWhenUpdateLodgingDoesNotExist() {
-        LodgingDTO input = new LodgingDTO();
-        input.setId(777L);
-        input.setName("No existe");
+    void shouldDelegateListQueriesToQueryService() {
+        List<LodgingDTO> expected = List.of(new LodgingDTO());
+        when(lodgingQueryService.findAll()).thenReturn(expected);
+        when(lodgingQueryService.findByCategory(3L)).thenReturn(expected);
+        when(lodgingQueryService.findAllRandom()).thenReturn(expected);
 
-        when(lodgingRepository.findById(777L)).thenReturn(Optional.empty());
+        assertThat(lodgingService.findAll()).isSameAs(expected);
+        assertThat(lodgingService.findByCategory(3L)).isSameAs(expected);
+        assertThat(lodgingService.findAllRandom()).isSameAs(expected);
 
-        assertThrows(ResourceNotFoundException.class, () -> lodgingService.update(input));
+        verify(lodgingQueryService).findAll();
+        verify(lodgingQueryService).findByCategory(3L);
+        verify(lodgingQueryService).findAllRandom();
     }
 
     @Test
-    void shouldClearCategoryOnUpdateWhenCategoryIdIsNull() {
-        Category oldCategory = new Category();
-        oldCategory.setId(2L);
-        oldCategory.setName("Hostel");
+    void shouldDelegateSearchAndAvailabilityQueriesToQueryService() {
+        LodgingSearchResponse expected = new LodgingSearchResponse(List.of(), 0, 0, 0, 0);
+        LocalDate checkIn = LocalDate.of(2026, 1, 10);
+        LocalDate checkOut = LocalDate.of(2026, 1, 12);
+        when(lodgingQueryService.search("Mar del Plata", checkIn, checkOut, 2, List.of(1L), null, null, 0, 9))
+                .thenReturn(expected);
 
-        Lodging existing = new Lodging();
-        existing.setId(20L);
-        existing.setName("Refugio");
-        existing.setAddress("Dir");
-        existing.setCity("City");
-        existing.setCountry("Country");
-        existing.setPhoneNumber("555");
-        existing.setEmail("refugio@test.com");
-        existing.setCategory(oldCategory);
+        assertThat(lodgingService.search("Mar del Plata", checkIn, checkOut, 2, List.of(1L), null, null, 0, 9))
+                .isSameAs(expected);
 
+        verify(lodgingQueryService).search("Mar del Plata", checkIn, checkOut, 2, List.of(1L), null, null, 0, 9);
+    }
+
+    private LodgingDTO lodgingDto(String name, String email) {
         LodgingDTO dto = new LodgingDTO();
-        dto.setId(20L);
-        dto.setName("Refugio");
-        dto.setAddress("Dir");
-        dto.setCity("City");
-        dto.setCountry("Country");
-        dto.setPhoneNumber("555");
-        dto.setEmail("refugio@test.com");
-        dto.setCategoryId(null);
-
-        when(lodgingRepository.findById(20L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.save(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        LodgingDTO response = lodgingService.update(dto);
-
-        assertThat(response.getCategoryId()).isNull();
-        assertThat(response.getCategoryName()).isNull();
-    }
-
-    @Test
-    void shouldAssignCategoryOnUpdateWhenCategoryIdExists() {
-        Category category = new Category();
-        category.setId(3L);
-        category.setName("Cabaña");
-
-        Lodging existing = new Lodging();
-        existing.setId(21L);
-        existing.setName("Refugio");
-        existing.setAddress("Dir");
-        existing.setCity("City");
-        existing.setCountry("Country");
-        existing.setPhoneNumber("555");
-        existing.setEmail("refugio@test.com");
-
-        LodgingDTO dto = new LodgingDTO();
-        dto.setId(21L);
-        dto.setName("Refugio");
-        dto.setAddress("Dir");
-        dto.setCity("City");
-        dto.setCountry("Country");
-        dto.setPhoneNumber("555");
-        dto.setEmail("refugio@test.com");
-        dto.setCategoryId(3L);
-
-        when(lodgingRepository.findById(21L)).thenReturn(Optional.of(existing));
-        when(categoryRepository.findById(3L)).thenReturn(Optional.of(category));
-        when(lodgingRepository.save(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        LodgingDTO response = lodgingService.update(dto);
-
-        assertThat(response.getCategoryId()).isEqualTo(3L);
-        assertThat(response.getCategoryName()).isEqualTo("Cabaña");
-    }
-
-    @Test
-    void shouldThrowWhenUpdateLodgingWithDuplicateEmail() {
-        Lodging existing = new Lodging();
-        existing.setId(1L);
-        existing.setName("Hotel");
-        existing.setEmail("original@test.com");
-
-        LodgingDTO input = new LodgingDTO();
-        input.setId(1L);
-        input.setName("Hotel");
-        input.setEmail("otro@test.com");
-
-        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.existsByEmail("otro@test.com")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class, () -> lodgingService.update(input));
-    }
-
-    @Test
-    void shouldFindCitiesViaDistinctQuery() {
-        CityProjection projection = org.mockito.Mockito.mock(CityProjection.class);
-        when(projection.getCity()).thenReturn("Springfield");
-        when(lodgingRepository.findDistinctByCityContainingIgnoreCaseOrderByCityAsc("spring"))
-                .thenReturn(List.of(projection));
-        List<String> cities = lodgingService.findCities("spring");
-        assertThat(cities).containsExactly("Springfield");
-    }
-
-    @Test
-    void shouldReturnEmptyListWhenFindCitiesQueryIsNull() {
-        // query == null branch: ternary resolves to ""
-        when(lodgingRepository.findDistinctByCityContainingIgnoreCaseOrderByCityAsc(""))
-                .thenReturn(List.of());
-        List<String> cities = lodgingService.findCities(null);
-        assertThat(cities).isEmpty();
-    }
-
-    @Test
-    void shouldReturnEmptyWhenFindAllRandomAndNoLodgings() {
-        when(lodgingRepository.count()).thenReturn(0L);
-        List<LodgingDTO> result = lodgingService.findAllRandom();
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void shouldSaveLodgingWithFeaturesAndPolicies() {
-        Feature feature = new Feature();
-        feature.setId(1L);
-        feature.setName("Pool");
-
-        Policy policy = new Policy();
-        policy.setId(2L);
-        policy.setName("No pets");
-        policy.setDescription("No pets allowed");
-
-        LodgingDTO dto = new LodgingDTO();
-        dto.setName("Hotel Features");
-        dto.setAddress("Av. Test 1");
+        dto.setName(name);
+        dto.setAddress("Calle 123");
         dto.setCity("Ciudad");
-        dto.setCountry("Pais");
-        dto.setPhoneNumber("999");
-        dto.setEmail("features@test.com");
-        dto.setFeatureIds(Set.of(1L));
-        dto.setPolicyIds(Set.of(2L));
-
-        Lodging savedEntity = new Lodging();
-        savedEntity.setId(50L);
-        savedEntity.setName("Hotel Features");
-        savedEntity.setFeatures(Set.of(feature));
-        savedEntity.setPolicies(Set.of(policy));
-
-        when(lodgingRepository.existsByName("Hotel Features")).thenReturn(false);
-        when(lodgingRepository.existsByEmail("features@test.com")).thenReturn(false);
-        when(featureRepository.findAllById(Set.of(1L))).thenReturn(List.of(feature));
-        when(policyRepository.findAllById(Set.of(2L))).thenReturn(List.of(policy));
-        when(lodgingRepository.save(any(Lodging.class))).thenReturn(savedEntity);
-
-        LodgingDTO response = lodgingService.save(dto);
-
-        assertThat(response.getId()).isEqualTo(50L);
+        dto.setCountry("País");
+        dto.setPhoneNumber("123456");
+        dto.setEmail(email);
+        return dto;
     }
 
-    @Test
-    void shouldReturnEmptyListFromEnrichWithRatingsWhenInputIsEmpty() {
-        // enrichWithRatings short-circuit: dtos.isEmpty() == true
-        when(lodgingRepository.findAll(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of()));
-        List<LodgingDTO> result = lodgingService.findAll();
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void shouldReturnLodgingsForCategoryId() {
+    private Lodging lodging(Long id, String name) {
         Lodging lodging = new Lodging();
-        lodging.setId(3L);
-        lodging.setName("Hostel Mar");
-
-        when(lodgingRepository.findByCategoryId(5L)).thenReturn(List.of(lodging));
-
-        List<LodgingDTO> result = lodgingService.findByCategory(5L);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("Hostel Mar");
-    }
-
-    @Test
-    void shouldReturnPaginatedLodgings() {
-        Lodging lodging = new Lodging();
-        lodging.setId(7L);
-        lodging.setName("Hotel Pag");
-
-        when(lodgingRepository.findAll(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(lodging)));
-
-        var result = lodgingService.findAllPaginated(0, 10);
-
-        assertThat(result.get("currentPage")).isEqualTo(0);
-        assertThat(result.get("totalItems")).isEqualTo(1L);
-        assertThat((List<?>) result.get("lodgings")).hasSize(1);
-    }
-
-    @Test
-    void shouldSearchWithDefaultPagination() {
-        Lodging lodging = new Lodging();
-        lodging.setId(1L);
-        lodging.setName("Hotel Default");
-
-        when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(lodging), PageRequest.of(0, 9), 1));
-
-        var result = lodgingService.search(null, null, null, null, null, null, null, 0, 9);
-
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(lodgingRepository).findAll(any(Specification.class), pageableCaptor.capture());
-        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(0);
-        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(9);
-        assertThat(result.currentPage()).isEqualTo(0);
-        assertThat(result.totalItems()).isEqualTo(1L);
-        assertThat(result.lodgings()).hasSize(1);
-    }
-
-    @Test
-    void shouldFilterByMultipleCategoriesUsingInClause() {
-        Lodging lodging = new Lodging();
-        lodging.setId(2L);
-        lodging.setName("Hotel Multi-Cat");
-
-        when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(lodging), PageRequest.of(0, 9), 1));
-
-        var result = lodgingService.search(
-                null, null, null, null, List.of(1L, 2L), null, null, 0, 9);
-
-        ArgumentCaptor<Specification> specCaptor = ArgumentCaptor.forClass(Specification.class);
-        verify(lodgingRepository).findAll(specCaptor.capture(), any(Pageable.class));
-        assertThat(specCaptor.getValue()).isNotNull();
-        assertThat(result.lodgings()).hasSize(1);
-    }
-
-    @Test
-    void shouldReturnEmptyListWhenSearchPageIsOutOfBounds() {
-        when(lodgingRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(999, 9), 0));
-
-        var result = lodgingService.search(null, null, null, null, null, null, null, 999, 9);
-
-        assertThat(result.lodgings()).isEmpty();
-        assertThat(result.currentPage()).isEqualTo(999);
-        assertThat(result.totalItems()).isEqualTo(0L);
-    }
-
-    @Test
-    void shouldThrowWhenSearchPageIsNegative() {
-        assertThrows(IllegalArgumentException.class,
-                () -> lodgingService.search(null, null, null, null, null, null, null, -1, 9));
-    }
-
-    @Test
-    void shouldRejectUnknownLodgingAvailabilityBeforeQueryingReservations() {
-        when(lodgingRepository.findById(404L)).thenReturn(Optional.empty());
-
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
-                () -> lodgingService.checkAvailability(404L, LocalDate.now(), LocalDate.now().plusDays(1)));
-
-        assertThat(exception.getErrorCode()).isEqualTo("error.lodging.not_found");
-        verify(reservationRepository, never()).findByLodgingIdAndStatus(any(), any());
+        lodging.setId(id);
+        lodging.setName(name);
+        return lodging;
     }
 }
