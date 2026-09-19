@@ -266,8 +266,6 @@ class ReservationConcurrencyTest {
         req.setLodgingId(lodgingId);
         req.setCheckIn(checkIn);
         req.setCheckOut(checkOut);
-        req.setGuestName(user.getFirstName() + " " + user.getLastName());
-        req.setGuestEmail(user.getEmail());
         req.setGuestPhone("+5491100000000");
         return reservationService.createReservation(user, req);
     }

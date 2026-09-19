@@ -111,8 +111,8 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 "lodgingId", lodgingId,
                 "checkIn", checkIn.toString(),
                 "checkOut", checkOut.toString(),
-                "guestName", "Juan Perez",
-                "guestEmail", "juan-reservas@test.com",
+                "guestName", "Client Supplied Name",
+                "guestEmail", "client-supplied@example.com",
                 "guestPhone", "+5491122334455"
         );
 
@@ -129,6 +129,9 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.guestEmail").value("juan-reservas@test.com"))
                 .andExpect(jsonPath("$.guestPhone").value("+5491122334455"));
 
+        Reservation saved = reservationRepository.findAll().get(0);
+        assertThat(saved.getGuestName()).isEqualTo("Juan Perez");
+        assertThat(saved.getGuestEmail()).isEqualTo("juan-reservas@test.com");
         verify(emailOutboxService, times(1)).enqueueReservationConfirmation(any(), any(ReservationResponse.class));
     }
 

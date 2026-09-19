@@ -103,8 +103,8 @@ class ReservationServiceImplTest {
         saved.setUser(user);
         saved.setCheckIn(request.getCheckIn());
         saved.setCheckOut(request.getCheckOut());
-        saved.setGuestName(request.getGuestName());
-        saved.setGuestEmail(request.getGuestEmail());
+        saved.setGuestName(user.getFirstName() + " " + user.getLastName());
+        saved.setGuestEmail(user.getEmail());
         saved.setGuestPhone(request.getGuestPhone());
         saved.setTotalPrice(new BigDecimal("300.00"));
         saved.setStatus(ReservationStatus.CONFIRMED);
@@ -114,6 +114,28 @@ class ReservationServiceImplTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void createReservation_snapshotsAuthenticatedUserIdentityInsteadOfClientPayload() {
+        User user = buildUser(1L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("150.00"));
+        CreateReservationRequest request = buildRequest(10L);
+
+        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Collections.emptyList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+            Reservation reservation = invocation.getArgument(0);
+            reservation.setId(1L);
+            return reservation;
+        });
+
+        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z")
+                .createReservation(user, request);
+
+        assertThat(response.getGuestName()).isEqualTo("Test User");
+        assertThat(response.getGuestEmail()).isEqualTo("test1@tuhospedaje.com");
     }
 
     @Test
@@ -305,8 +327,6 @@ class ReservationServiceImplTest {
         req.setLodgingId(lodgingId);
         req.setCheckIn(LocalDate.now().plusDays(10));
         req.setCheckOut(LocalDate.now().plusDays(12));
-        req.setGuestName("Test Guest");
-        req.setGuestEmail("guest@test.com");
         req.setGuestPhone("111222333");
         return req;
     }
