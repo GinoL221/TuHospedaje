@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { get, post, put, del } from "../../services/api";
+import {
+  createCategory,
+  deleteCategory,
+  getCategories,
+  updateCategory,
+} from "../../services/adminCatalogService";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
@@ -24,9 +29,22 @@ function isValidHttpsImageUrl(value) {
 
 export default function AdminCategories() {
   const [catList, setCatList] = useState([]);
-  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(catList);
+  const {
+    pageItems,
+    sortKey,
+    sortDir,
+    requestSort,
+    page,
+    totalPages,
+    setPage,
+  } = useTableData(catList);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", icon: "", imageUrl: "" });
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    icon: "",
+    imageUrl: "",
+  });
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -35,14 +53,22 @@ export default function AdminCategories() {
   const nameInputRef = useRef(null);
   const imageUrlInputRef = useRef(null);
 
-  const resetForm = () => setForm({ name: "", description: "", icon: "", imageUrl: "" });
-  const cancel = useConfirmCancel(form.name || form.description || form.icon || form.imageUrl, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const resetForm = () =>
+    setForm({ name: "", description: "", icon: "", imageUrl: "" });
+  const cancel = useConfirmCancel(
+    form.name || form.description || form.icon || form.imageUrl,
+    () => {
+      setFieldErrors({});
+      resetForm();
+      setShowModal(false);
+    },
+  );
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const data = await get("/categories");
+        const data = await getCategories();
         if (!cancelled) setCatList(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
@@ -63,7 +89,12 @@ export default function AdminCategories() {
 
   const openModal = (cat = null) => {
     if (cat) {
-      setForm({ name: cat.name, description: cat.description || "", icon: cat.icon || "", imageUrl: cat.imageUrl || "" });
+      setForm({
+        name: cat.name,
+        description: cat.description || "",
+        icon: cat.icon || "",
+        imageUrl: cat.imageUrl || "",
+      });
       setEditing(cat);
     } else {
       setForm({ name: "", description: "", icon: "", imageUrl: "" });
@@ -75,7 +106,7 @@ export default function AdminCategories() {
   };
 
   const refresh = () => {
-    get("/categories")
+    getCategories()
       .then((data) => setCatList(Array.isArray(data) ? data : []))
       .catch(() => {});
   };
@@ -112,8 +143,8 @@ export default function AdminCategories() {
       imageUrl: trimmedImageUrl || null,
     };
     const request = editing
-      ? put(`/categories/${editing.id}`, body)
-      : post("/categories", body);
+      ? updateCategory(editing.id, body)
+      : createCategory(body);
     request
       .then(() => {
         setShowModal(false);
@@ -130,7 +161,7 @@ export default function AdminCategories() {
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
     try {
-      await del(`/categories/${deleteConfirm.id}`);
+      await deleteCategory(deleteConfirm.id);
       setDeleteConfirm(null);
       refresh();
     } catch (err) {
@@ -141,7 +172,11 @@ export default function AdminCategories() {
 
   return (
     <>
-      <button className="btn-fab" data-testid="admin-add-btn" onClick={() => openModal(null)}>
+      <button
+        className="btn-fab"
+        data-testid="admin-add-btn"
+        onClick={() => openModal(null)}
+      >
         + Agregar categoría
       </button>
       {catList.length === 0 ? (
@@ -153,10 +188,38 @@ export default function AdminCategories() {
           <table>
             <thead>
               <tr>
-                <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>ID</SortableTh>
-                <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Nombre</SortableTh>
-                <SortableTh columnKey="description" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Descripción</SortableTh>
-                <SortableTh columnKey="icon" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Ícono</SortableTh>
+                <SortableTh
+                  columnKey="id"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  ID
+                </SortableTh>
+                <SortableTh
+                  columnKey="name"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  Nombre
+                </SortableTh>
+                <SortableTh
+                  columnKey="description"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  Descripción
+                </SortableTh>
+                <SortableTh
+                  columnKey="icon"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  Ícono
+                </SortableTh>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -170,7 +233,11 @@ export default function AdminCategories() {
                     <Icon name={c.icon} /> <code>{c.icon}</code>
                   </td>
                   <td>
-                    <button className="btn-edit" data-testid="row-edit-btn" onClick={() => openModal(c)}>
+                    <button
+                      className="btn-edit"
+                      data-testid="row-edit-btn"
+                      onClick={() => openModal(c)}
+                    >
                       Editar
                     </button>
                     <button
@@ -185,19 +252,41 @@ export default function AdminCategories() {
               ))}
             </tbody>
           </table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
 
       {showModal && (
         <div className="modal-overlay" onClick={cancel.handleCancel}>
-          <div className="modal" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal"
+            data-testid="admin-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2>{editing ? "Editar categoría" : "Nueva categoría"}</h2>
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
-                <input ref={nameInputRef} data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
-                {fieldErrors.name && <span className="field-error" data-testid="error-name">{fieldErrors.name}</span>}
+                <input
+                  ref={nameInputRef}
+                  data-testid="field-name"
+                  value={form.name}
+                  className={fieldErrors.name ? "input-error" : ""}
+                  onChange={(e) => {
+                    setForm({ ...form, name: e.target.value });
+                    if (fieldErrors.name)
+                      setFieldErrors({ ...fieldErrors, name: "" });
+                  }}
+                />
+                {fieldErrors.name && (
+                  <span className="field-error" data-testid="error-name">
+                    {fieldErrors.name}
+                  </span>
+                )}
               </label>
               <label>
                 Descripción
@@ -211,7 +300,11 @@ export default function AdminCategories() {
               </label>
               <label>
                 Ícono
-                <IconPicker value={form.icon} onChange={(val) => setForm({ ...form, icon: val })} placeholder="Buscar ícono" />
+                <IconPicker
+                  value={form.icon}
+                  onChange={(val) => setForm({ ...form, icon: val })}
+                  placeholder="Buscar ícono"
+                />
               </label>
               <label className={editing ? undefined : "required-dot"}>
                 Imagen representativa (URL)
@@ -223,14 +316,21 @@ export default function AdminCategories() {
                   required={!editing}
                   className={fieldErrors.imageUrl ? "input-error" : ""}
                   aria-invalid={fieldErrors.imageUrl ? "true" : "false"}
-                  aria-describedby={fieldErrors.imageUrl ? "error-image-url" : undefined}
+                  aria-describedby={
+                    fieldErrors.imageUrl ? "error-image-url" : undefined
+                  }
                   onChange={(e) => {
                     setForm({ ...form, imageUrl: e.target.value });
-                    if (fieldErrors.imageUrl) setFieldErrors({ ...fieldErrors, imageUrl: "" });
+                    if (fieldErrors.imageUrl)
+                      setFieldErrors({ ...fieldErrors, imageUrl: "" });
                   }}
                 />
                 {fieldErrors.imageUrl && (
-                  <span className="field-error" id="error-image-url" data-testid="error-image-url">
+                  <span
+                    className="field-error"
+                    id="error-image-url"
+                    data-testid="error-image-url"
+                  >
                     {fieldErrors.imageUrl}
                   </span>
                 )}
@@ -243,10 +343,18 @@ export default function AdminCategories() {
                   data-testid="image-url-preview"
                 />
               )}
-              {error && <p className="form-error" data-testid="admin-form-error">{error}</p>}
+              {error && (
+                <p className="form-error" data-testid="admin-form-error">
+                  {error}
+                </p>
+              )}
               <p className="required-note">* Campos obligatorios</p>
               <div className="modal-actions">
-                <button type="submit" className="btn-save" data-testid="admin-save-btn">
+                <button
+                  type="submit"
+                  className="btn-save"
+                  data-testid="admin-save-btn"
+                >
                   {editing ? "Guardar cambios" : "Crear"}
                 </button>
                 <button
@@ -266,19 +374,29 @@ export default function AdminCategories() {
       <ConfirmDialog
         show={cancel.showConfirm}
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
-        onConfirm={() => { cancel.confirmCancel(); }}
+        onConfirm={() => {
+          cancel.confirmCancel();
+        }}
         onCancel={cancel.dismissConfirm}
         testId="confirm-cancel"
       />
 
       <ConfirmDialog
         show={deleteConfirm !== null}
-        message={deleteConfirm ? `¿Eliminar la categoría "${deleteConfirm.name}"? Solo se puede eliminar si no tiene alojamientos asociados.` : ""}
+        message={
+          deleteConfirm
+            ? `¿Eliminar la categoría "${deleteConfirm.name}"? Solo se puede eliminar si no tiene alojamientos asociados.`
+            : ""
+        }
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
         testId="confirm-delete"
       />
-      {deleteError && <p role="alert" className="form-error">{deleteError}</p>}
+      {deleteError && (
+        <p role="alert" className="form-error">
+          {deleteError}
+        </p>
+      )}
     </>
   );
 }

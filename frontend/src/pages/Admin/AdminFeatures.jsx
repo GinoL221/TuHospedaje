@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { get, post, put, del } from "../../services/api";
+import {
+  createFeature,
+  deleteFeature,
+  getFeatures,
+  updateFeature,
+} from "../../services/adminCatalogService";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
@@ -10,7 +15,15 @@ import Pagination from "../../components/Pagination/Pagination";
 
 export default function AdminFeatures() {
   const [featureList, setFeatureList] = useState([]);
-  const { pageItems, sortKey, sortDir, requestSort, page, totalPages, setPage } = useTableData(featureList);
+  const {
+    pageItems,
+    sortKey,
+    sortDir,
+    requestSort,
+    page,
+    totalPages,
+    setPage,
+  } = useTableData(featureList);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: "", icon: "" });
   const [editing, setEditing] = useState(null);
@@ -20,7 +33,11 @@ export default function AdminFeatures() {
   const focusInvalidFieldTimeoutRef = useRef(null);
 
   const resetForm = () => setForm({ name: "", icon: "" });
-  const cancel = useConfirmCancel(form.name || form.icon, () => { setFieldErrors({}); resetForm(); setShowModal(false); });
+  const cancel = useConfirmCancel(form.name || form.icon, () => {
+    setFieldErrors({});
+    resetForm();
+    setShowModal(false);
+  });
 
   useEffect(() => {
     return () => clearTimeout(focusInvalidFieldTimeoutRef.current);
@@ -30,7 +47,7 @@ export default function AdminFeatures() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await get("/features");
+        const data = await getFeatures();
         if (!cancelled) setFeatureList(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
@@ -55,7 +72,7 @@ export default function AdminFeatures() {
   };
 
   const refresh = () => {
-    get("/features")
+    getFeatures()
       .then((data) => setFeatureList(Array.isArray(data) ? data : []))
       .catch(() => {});
   };
@@ -83,8 +100,8 @@ export default function AdminFeatures() {
 
     const body = { name: form.name, icon: form.icon };
     const request = editing
-      ? put(`/features/${editing.id}`, body)
-      : post("/features", body);
+      ? updateFeature(editing.id, body)
+      : createFeature(body);
     request
       .then(() => {
         setShowModal(false);
@@ -100,7 +117,7 @@ export default function AdminFeatures() {
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
     try {
-      await del(`/features/${deleteConfirm.id}`);
+      await deleteFeature(deleteConfirm.id);
       refresh();
     } catch (err) {
       alert(err.message);
@@ -111,7 +128,11 @@ export default function AdminFeatures() {
 
   return (
     <>
-      <button className="btn-fab" data-testid="admin-add-btn" onClick={() => openModal(null)}>
+      <button
+        className="btn-fab"
+        data-testid="admin-add-btn"
+        onClick={() => openModal(null)}
+      >
         + Agregar característica
       </button>
       {featureList.length === 0 ? (
@@ -123,9 +144,30 @@ export default function AdminFeatures() {
           <table>
             <thead>
               <tr>
-                <SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>ID</SortableTh>
-                <SortableTh columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Nombre</SortableTh>
-                <SortableTh columnKey="icon" sortKey={sortKey} sortDir={sortDir} onSort={requestSort}>Ícono</SortableTh>
+                <SortableTh
+                  columnKey="id"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  ID
+                </SortableTh>
+                <SortableTh
+                  columnKey="name"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  Nombre
+                </SortableTh>
+                <SortableTh
+                  columnKey="icon"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={requestSort}
+                >
+                  Ícono
+                </SortableTh>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -138,7 +180,11 @@ export default function AdminFeatures() {
                     <Icon name={f.icon} /> <code>{f.icon}</code>
                   </td>
                   <td>
-                    <button className="btn-edit" data-testid="row-edit-btn" onClick={() => openModal(f)}>
+                    <button
+                      className="btn-edit"
+                      data-testid="row-edit-btn"
+                      onClick={() => openModal(f)}
+                    >
                       Editar
                     </button>
                     <button
@@ -153,31 +199,72 @@ export default function AdminFeatures() {
               ))}
             </tbody>
           </table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
 
       {showModal && (
         <div className="modal-overlay" onClick={cancel.handleCancel}>
-          <div className="modal" data-testid="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal"
+            data-testid="admin-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2>
               {editing ? "Editar característica" : "Nueva característica"}
             </h2>
             <form onSubmit={handleSubmit} noValidate>
               <label className="required-dot">
                 Nombre
-                <input data-testid="field-name" value={form.name} className={fieldErrors.name ? "input-error" : ""} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: "" }); }} />
-                {fieldErrors.name && <span className="field-error" data-testid="error-name">{fieldErrors.name}</span>}
+                <input
+                  data-testid="field-name"
+                  value={form.name}
+                  className={fieldErrors.name ? "input-error" : ""}
+                  onChange={(e) => {
+                    setForm({ ...form, name: e.target.value });
+                    if (fieldErrors.name)
+                      setFieldErrors({ ...fieldErrors, name: "" });
+                  }}
+                />
+                {fieldErrors.name && (
+                  <span className="field-error" data-testid="error-name">
+                    {fieldErrors.name}
+                  </span>
+                )}
               </label>
               <label className="required-dot">
                 Ícono
-                <IconPicker value={form.icon} onChange={(val) => { setForm({ ...form, icon: val }); if (fieldErrors.icon) setFieldErrors({ ...fieldErrors, icon: "" }); }} placeholder="fa-solid fa-wifi" />
-                {fieldErrors.icon && <span className="field-error" data-testid="error-icon">{fieldErrors.icon}</span>}
+                <IconPicker
+                  value={form.icon}
+                  onChange={(val) => {
+                    setForm({ ...form, icon: val });
+                    if (fieldErrors.icon)
+                      setFieldErrors({ ...fieldErrors, icon: "" });
+                  }}
+                  placeholder="fa-solid fa-wifi"
+                />
+                {fieldErrors.icon && (
+                  <span className="field-error" data-testid="error-icon">
+                    {fieldErrors.icon}
+                  </span>
+                )}
               </label>
-              {error && <p className="form-error" data-testid="admin-form-error">{error}</p>}
+              {error && (
+                <p className="form-error" data-testid="admin-form-error">
+                  {error}
+                </p>
+              )}
               <p className="required-note">* Campos obligatorios</p>
               <div className="modal-actions">
-                <button type="submit" className="btn-save" data-testid="admin-save-btn">
+                <button
+                  type="submit"
+                  className="btn-save"
+                  data-testid="admin-save-btn"
+                >
                   {editing ? "Guardar cambios" : "Crear"}
                 </button>
                 <button
@@ -197,14 +284,20 @@ export default function AdminFeatures() {
       <ConfirmDialog
         show={cancel.showConfirm}
         message="Hay cambios sin guardar. ¿Cancelar de todas formas?"
-        onConfirm={() => { cancel.confirmCancel(); }}
+        onConfirm={() => {
+          cancel.confirmCancel();
+        }}
         onCancel={cancel.dismissConfirm}
         testId="confirm-cancel"
       />
 
       <ConfirmDialog
         show={deleteConfirm !== null}
-        message={deleteConfirm ? `¿Eliminar característica "${deleteConfirm.name}"?` : ""}
+        message={
+          deleteConfirm
+            ? `¿Eliminar característica "${deleteConfirm.name}"?`
+            : ""
+        }
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(null)}
         testId="confirm-delete"
