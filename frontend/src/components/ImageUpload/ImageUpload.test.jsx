@@ -1,6 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ImageUpload from "./ImageUpload";
+import { uploadImage } from "../../services/uploadService";
+
+vi.mock("../../services/uploadService", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, uploadImage: vi.fn(actual.uploadImage) };
+});
 
 function makeFile(name = "photo.png") {
   return new File(["fake-image-content"], name, { type: "image/png" });
@@ -18,6 +24,23 @@ afterEach(() => {
 });
 
 describe("ImageUpload - successful upload", () => {
+  it("delegates the selected file to uploadImage", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ url: "https://example.com/uploaded.png" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ImageUpload urls={[]} onUrlsChange={vi.fn()} />);
+
+    const file = makeFile();
+    await userEvent.upload(document.getElementById("imageUpload"), file);
+
+    await waitFor(() => {
+      expect(uploadImage).toHaveBeenCalledWith(file);
+    });
+  });
+
   it("calls onUrlsChange with the new image url when the upload succeeds", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -134,22 +157,28 @@ describe("ImageUpload - failed upload", () => {
     ],
     ["an absent error field", vi.fn().mockResolvedValue({})],
     ["an empty error field", vi.fn().mockResolvedValue({ error: "   " })],
-  ])("shows the generic error for a 400 response with %s", async (_description, responseBody) => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 400,
-      json: responseBody,
-    });
-    vi.stubGlobal("fetch", fetchMock);
+  ])(
+    "shows the generic error for a 400 response with %s",
+    async (_description, responseBody) => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: responseBody,
+      });
+      vi.stubGlobal("fetch", fetchMock);
 
-    const onUrlsChange = vi.fn();
-    render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
+      const onUrlsChange = vi.fn();
+      render(<ImageUpload urls={[]} onUrlsChange={onUrlsChange} />);
 
-    await userEvent.upload(document.getElementById("imageUpload"), makeFile());
+      await userEvent.upload(
+        document.getElementById("imageUpload"),
+        makeFile(),
+      );
 
-    expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
-    expect(onUrlsChange).not.toHaveBeenCalled();
-  });
+      expect(await screen.findByText(/no se pudo subir/i)).toBeInTheDocument();
+      expect(onUrlsChange).not.toHaveBeenCalled();
+    },
+  );
 
   it("shows the generic Spanish error message when fetch itself rejects (network error), not the raw exception text", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error("network down"));
