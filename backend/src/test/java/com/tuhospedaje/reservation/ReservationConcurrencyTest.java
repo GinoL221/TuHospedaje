@@ -10,6 +10,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.ReservationService;
 import com.tuhospedaje.service.EmailOutboxService;
 import org.junit.jupiter.api.AfterEach;
@@ -267,7 +268,7 @@ class ReservationConcurrencyTest {
         req.setCheckIn(checkIn);
         req.setCheckOut(checkOut);
         req.setGuestPhone("+5491100000000");
-        return reservationService.createReservation(user, req);
+        return reservationService.createReservation(AuthenticatedActor.from(user), req);
     }
 
     /**

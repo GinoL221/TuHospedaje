@@ -11,7 +11,9 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.repository.specification.ReservationSpecifications;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.ReservationService;
 import org.springframework.data.domain.Page;
@@ -39,24 +41,26 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final LodgingRepository lodgingRepository;
+    private final UserRepository userRepository;
     private final EmailOutboxService emailOutboxService;
     private final Clock clock;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  LodgingRepository lodgingRepository, EmailOutboxService emailOutboxService,
-                                  Clock clock) {
+                                  LodgingRepository lodgingRepository, UserRepository userRepository,
+                                  EmailOutboxService emailOutboxService, Clock clock) {
         this.reservationRepository = reservationRepository;
         this.lodgingRepository = lodgingRepository;
+        this.userRepository = userRepository;
         this.emailOutboxService = emailOutboxService;
         this.clock = clock;
     }
 
     @Override
     @Transactional
-    public ReservationResponse cancelReservation(Long id, User requester) {
+    public ReservationResponse cancelReservation(Long id, AuthenticatedActor requester) {
         Reservation reservation = reservationRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> reservationNotFound(id));
-        if (!reservation.getUser().getId().equals(requester.getId())) {
+        if (!reservation.getUser().getId().equals(requester.id())) {
             throw reservationNotFound(id);
         }
         if (reservation.getStatus() == ReservationStatus.CANCELLED) {
@@ -73,7 +77,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservation.setStatus(ReservationStatus.CANCELLED);
         ReservationResponse response = ReservationResponse.fromEntity(reservation);
-        emailOutboxService.enqueueReservationCancellation(requester, response);
+        emailOutboxService.enqueueReservationCancellation(reservation.getUser(), response);
         log.info("reservation.cancelled reservationId={}", id);
         return response;
     }
@@ -84,7 +88,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
-    public ReservationResponse createReservation(User user, CreateReservationRequest request) {
+    public ReservationResponse createReservation(AuthenticatedActor actor, CreateReservationRequest request) {
         Lodging lodging = lodgingRepository.findById(request.getLodgingId())
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado"));
 
@@ -104,13 +108,15 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalArgumentException("El alojamiento no está disponible para las fechas seleccionadas");
         }
 
+        User user = userRepository.findById(actor.id())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         Reservation reservation = new Reservation();
         reservation.setLodging(lodging);
         reservation.setUser(user);
         reservation.setCheckIn(request.getCheckIn());
         reservation.setCheckOut(request.getCheckOut());
-        reservation.setGuestName(user.getFirstName() + " " + user.getLastName());
-        reservation.setGuestEmail(user.getEmail());
+        reservation.setGuestName(actor.firstName() + " " + actor.lastName());
+        reservation.setGuestEmail(actor.email());
         reservation.setGuestPhone(request.getGuestPhone());
         reservation.setNotes(normalizeNotes(request.getNotes()));
         reservation.setCreatedAt(LocalDateTime.now(clock));
@@ -134,11 +140,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ReservationResponse getReservationById(Long id, User requester) {
+    public ReservationResponse getReservationById(Long id, AuthenticatedActor requester) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + id));
-        boolean isOwner = reservation.getUser().getId().equals(requester.getId());
-        boolean isAdmin = requester.getRole() == RoleEnum.ADMIN;
+        boolean isOwner = reservation.getUser().getId().equals(requester.id());
+        boolean isAdmin = requester.role() == RoleEnum.ADMIN;
         if (!isOwner && !isAdmin) {
             // 404 instead of 403 to hide resource existence (IDOR prevention)
             throw new ResourceNotFoundException("Reserva no encontrada con ID: " + id);
@@ -148,8 +154,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReservationResponse> getMyReservations(User user) {
-        return reservationRepository.findByUserIdOrderByCheckInDesc(user.getId())
+    public List<ReservationResponse> getMyReservations(AuthenticatedActor actor) {
+        return reservationRepository.findByUserIdOrderByCheckInDesc(actor.id())
                 .stream()
                 .map(ReservationResponse::fromEntity)
                 .toList();

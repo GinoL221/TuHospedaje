@@ -10,6 +10,8 @@ import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
+import com.tuhospedaje.repository.UserRepository;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.impl.ReservationServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,9 @@ class ReservationServiceImplTest {
     private LodgingRepository lodgingRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private EmailOutboxService emailOutboxService;
 
     @InjectMocks
@@ -60,7 +65,7 @@ class ReservationServiceImplTest {
 
         ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.createReservation(user, request)
+                () -> reservationService.createReservation(actor(user), request)
         );
         assertThat(ex.getMessage()).contains("Alojamiento no encontrado");
     }
@@ -82,7 +87,7 @@ class ReservationServiceImplTest {
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> reservationService.createReservation(user, request)
+                () -> reservationService.createReservation(actor(user), request)
         );
         assertThat(ex.getMessage()).contains("no está disponible");
     }
@@ -93,6 +98,7 @@ class ReservationServiceImplTest {
         Lodging lodging = buildLodging(10L, new BigDecimal("150.00"));
         CreateReservationRequest request = buildRequest(10L);
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
@@ -110,7 +116,7 @@ class ReservationServiceImplTest {
         saved.setStatus(ReservationStatus.CONFIRMED);
         when(reservationRepository.save(any(Reservation.class))).thenReturn(saved);
 
-        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z").createReservation(user, request);
+        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z").createReservation(actor(user), request);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
@@ -122,6 +128,7 @@ class ReservationServiceImplTest {
         Lodging lodging = buildLodging(10L, new BigDecimal("150.00"));
         CreateReservationRequest request = buildRequest(10L);
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
@@ -131,11 +138,14 @@ class ReservationServiceImplTest {
             return reservation;
         });
 
-        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z")
-                .createReservation(user, request);
+        AuthenticatedActor actor = new AuthenticatedActor(
+                user.getId(), RoleEnum.USER, "Actor", "Snapshot", "actor-snapshot@test.com");
 
-        assertThat(response.getGuestName()).isEqualTo("Test User");
-        assertThat(response.getGuestEmail()).isEqualTo("test1@tuhospedaje.com");
+        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z")
+                .createReservation(actor, request);
+
+        assertThat(response.getGuestName()).isEqualTo("Actor Snapshot");
+        assertThat(response.getGuestEmail()).isEqualTo("actor-snapshot@test.com");
     }
 
     @Test
@@ -146,6 +156,7 @@ class ReservationServiceImplTest {
         request.setNotes("  Late arrival after 22:00  ");
         LocalDateTime expectedCreatedAt = LocalDateTime.of(2026, 8, 25, 15, 30, 45);
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
@@ -156,7 +167,7 @@ class ReservationServiceImplTest {
         });
 
         ReservationResponse response = serviceAt("2026-08-25T18:30:45Z")
-                .createReservation(user, request);
+                .createReservation(actor(user), request);
 
         assertThat(response.getNotes()).isEqualTo("Late arrival after 22:00");
         assertThat(response.getCreatedAt()).isEqualTo(expectedCreatedAt);
@@ -170,6 +181,7 @@ class ReservationServiceImplTest {
         CreateReservationRequest request = buildRequest(10L);
         request.setNotes("   ");
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
@@ -180,7 +192,7 @@ class ReservationServiceImplTest {
         });
 
         ReservationResponse response = serviceAt("2026-08-26T10:00:00Z")
-                .createReservation(user, request);
+                .createReservation(actor(user), request);
 
         assertThat(response.getNotes()).isNull();
         assertThat(response.isCreatedAtDerived()).isFalse();
@@ -207,11 +219,21 @@ class ReservationServiceImplTest {
 
         when(reservationRepository.findByUserIdOrderByCheckInDesc(1L)).thenReturn(List.of(r));
 
-        List<ReservationResponse> result = reservationService.getMyReservations(user);
+        List<ReservationResponse> result = reservationService.getMyReservations(actor(user));
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(1L);
         assertThat(result.get(0).getGuestEmail()).isEqualTo("guest@test.com");
+    }
+
+    @Test
+    void getMyReservations_acceptsAnAuthenticatedActorInsteadOfAUserEntity() {
+        User user = buildUser(1L, RoleEnum.USER);
+        when(reservationRepository.findByUserIdOrderByCheckInDesc(1L)).thenReturn(Collections.emptyList());
+
+        List<ReservationResponse> result = reservationService.getMyReservations(actor(user));
+
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -220,7 +242,7 @@ class ReservationServiceImplTest {
 
         when(reservationRepository.findByUserIdOrderByCheckInDesc(1L)).thenReturn(Collections.emptyList());
 
-        List<ReservationResponse> result = reservationService.getMyReservations(user);
+        List<ReservationResponse> result = reservationService.getMyReservations(actor(user));
 
         assertThat(result).isEmpty();
     }
@@ -235,7 +257,7 @@ class ReservationServiceImplTest {
 
         ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.getReservationById(999L, requester)
+                () -> reservationService.getReservationById(999L, actor(requester))
         );
         assertThat(ex.getMessage()).contains("999");
     }
@@ -263,7 +285,7 @@ class ReservationServiceImplTest {
         // Non-owner, non-admin → ResourceNotFoundException (IDOR prevention)
         ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.getReservationById(42L, otherUser)
+                () -> reservationService.getReservationById(42L, actor(otherUser))
         );
         assertThat(ex.getMessage()).contains("42");
     }
@@ -288,7 +310,7 @@ class ReservationServiceImplTest {
 
         when(reservationRepository.findById(42L)).thenReturn(Optional.of(reservation));
 
-        var response = reservationService.getReservationById(42L, admin);
+        var response = reservationService.getReservationById(42L, actor(admin));
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(42L);
@@ -305,6 +327,10 @@ class ReservationServiceImplTest {
         user.setPassword("secret");
         user.setRole(role);
         return user;
+    }
+
+    private static AuthenticatedActor actor(User user) {
+        return AuthenticatedActor.from(user);
     }
 
     private static Lodging buildLodging(Long id, BigDecimal pricePerNight) {
@@ -332,7 +358,7 @@ class ReservationServiceImplTest {
     }
 
     private ReservationServiceImpl serviceAt(String instant) {
-        return new ReservationServiceImpl(reservationRepository, lodgingRepository, emailOutboxService,
+        return new ReservationServiceImpl(reservationRepository, lodgingRepository, userRepository, emailOutboxService,
                 Clock.fixed(Instant.parse(instant), ZoneId.of("America/Argentina/Buenos_Aires")));
     }
 }

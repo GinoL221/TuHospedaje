@@ -13,6 +13,7 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
+import com.tuhospedaje.service.AuthenticatedActor;
 import com.tuhospedaje.service.EmailOutboxService;
 import com.tuhospedaje.service.ReservationService;
 import org.junit.jupiter.api.AfterEach;
@@ -98,7 +99,7 @@ class EmailOutboxEnqueueRollbackIntegrationTest {
         doThrow(new IllegalStateException("outbox unavailable"))
                 .when(emailOutboxService).enqueueReservationConfirmation(any(), any());
 
-        assertThatThrownBy(() -> reservationService.createReservation(user,
+        assertThatThrownBy(() -> reservationService.createReservation(AuthenticatedActor.from(user),
                 request(lodging.getId(), "create@test.com")))
                 .isInstanceOf(IllegalStateException.class);
 
@@ -114,7 +115,7 @@ class EmailOutboxEnqueueRollbackIntegrationTest {
         doThrow(new IllegalStateException("outbox unavailable"))
                 .when(emailOutboxService).enqueueReservationCancellation(any(), any());
 
-        assertThatThrownBy(() -> reservationService.cancelReservation(reservation.getId(), user))
+        assertThatThrownBy(() -> reservationService.cancelReservation(reservation.getId(), AuthenticatedActor.from(user)))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
