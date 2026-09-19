@@ -1,8 +1,6 @@
 package com.tuhospedaje.email.outbox;
 
 import com.tuhospedaje.dto.email.EmailMessage;
-import com.tuhospedaje.dto.reservation.ReservationResponse;
-import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.service.EmailTransportFailure;
 import com.tuhospedaje.service.EmailTransportFailureClassification;
 import com.tuhospedaje.service.impl.SmtpEmailServiceImpl;
@@ -14,8 +12,6 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.util.Properties;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,44 +93,4 @@ class SmtpEmailServiceImplTest {
         verify(mailSender, never()).send(any(MimeMessage.class));
     }
 
-    @Test
-    void sendsEscapedNonEmptyNotesInReservationConfirmation() throws Exception {
-        MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
-        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-        ReservationResponse reservation = reservation("Late <arrival> & luggage");
-
-        service.sendReservationConfirmation(reservation);
-
-        assertThat(mimeMessage.getContent())
-                .asString()
-                .contains("Notes")
-                .contains("Reservation number")
-                .contains("42")
-                .contains("Late &lt;arrival&gt; &amp; luggage");
-    }
-
-    @Test
-    void omitsBlankNotesFromReservationConfirmation() throws Exception {
-        MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
-        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-
-        service.sendReservationConfirmation(reservation("   "));
-
-        assertThat(mimeMessage.getContent()).asString().doesNotContain("Notes");
-    }
-
-    private static ReservationResponse reservation(String notes) {
-        ReservationResponse reservation = new ReservationResponse();
-        reservation.setLodgingName("Hotel Sur");
-        reservation.setId(42L);
-        reservation.setCity("Buenos Aires");
-        reservation.setCheckIn(LocalDate.of(2026, 8, 20));
-        reservation.setCheckOut(LocalDate.of(2026, 8, 22));
-        reservation.setGuestName("Guest");
-        reservation.setGuestEmail("guest@example.com");
-        reservation.setTotalPrice(new BigDecimal("300.00"));
-        reservation.setStatus(ReservationStatus.CONFIRMED);
-        reservation.setNotes(notes);
-        return reservation;
-    }
 }

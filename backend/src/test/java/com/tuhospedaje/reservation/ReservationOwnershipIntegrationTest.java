@@ -11,13 +11,11 @@ import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
-import com.tuhospedaje.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -52,9 +50,6 @@ class ReservationOwnershipIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
-
-    @MockitoBean
-    private EmailService emailService;
 
     private User owner;
     private User otherUser;
