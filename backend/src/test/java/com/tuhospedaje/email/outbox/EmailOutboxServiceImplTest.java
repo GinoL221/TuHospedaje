@@ -1,5 +1,6 @@
 package com.tuhospedaje.email.outbox;
 
+import com.tuhospedaje.configuration.WelcomeEmailProperties;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.dto.email.EmailMessage;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
@@ -9,6 +10,7 @@ import com.tuhospedaje.enums.EmailOutboxStatus;
 import com.tuhospedaje.enums.EmailOutboxType;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.repository.EmailOutboxRepository;
+import com.tuhospedaje.service.EmailTemplateRenderer;
 import com.tuhospedaje.service.WelcomeEmailRenderer;
 import com.tuhospedaje.service.impl.EmailOutboxServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -34,6 +37,8 @@ class EmailOutboxServiceImplTest {
     private EmailOutboxRepository repository;
     @Mock
     private WelcomeEmailRenderer welcomeEmailRenderer;
+    @Mock
+    private EmailTemplateRenderer emailTemplateRenderer;
 
     @Test
     void enqueueWelcomeStoresTheRenderedWelcomeMessage() {
@@ -62,6 +67,9 @@ class EmailOutboxServiceImplTest {
         ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CONFIRMED);
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
                 .thenReturn(Optional.empty());
+        when(emailTemplateRenderer.renderReservationConfirmation(user, reservation)).thenReturn(new EmailMessage(
+                "registered@example.com", "Booking confirmed — Hotel Sur", "<p>Your booking is confirmed!</p>",
+                "RESERVATION_CONFIRMATION", "42"));
 
         newService().enqueueReservationConfirmation(user, reservation);
 
@@ -70,40 +78,10 @@ class EmailOutboxServiceImplTest {
         assertThat(saved.getAggregateId()).isEqualTo("42");
         assertThat(saved.getRecipient()).isEqualTo("registered@example.com");
         assertThat(saved.getSubject()).isEqualTo("Booking confirmed — Hotel Sur");
-        assertThat(saved.getHtmlBody()).contains("Your booking is confirmed!")
-                .contains("Hotel Sur")
-                .contains("Reservation number")
-                .contains("42")
-                .contains("hotel@example.com");
+        assertThat(saved.getHtmlBody()).isEqualTo("<p>Your booking is confirmed!</p>");
+        verify(emailTemplateRenderer).renderReservationConfirmation(user, reservation);
     }
 
-    @Test
-    void enqueueReservationConfirmationEscapesNonEmptyNotes() {
-        User user = user(8L, "registered@example.com");
-        ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CONFIRMED);
-        reservation.setNotes("Late <arrival> & luggage");
-        when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
-                .thenReturn(Optional.empty());
-
-        newService().enqueueReservationConfirmation(user, reservation);
-
-        assertThat(capturedOutbox().getHtmlBody())
-                .contains("Notes")
-                .contains("Late &lt;arrival&gt; &amp; luggage");
-    }
-
-    @Test
-    void enqueueReservationConfirmationOmitsBlankNotes() {
-        User user = user(8L, "registered@example.com");
-        ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CONFIRMED);
-        reservation.setNotes("   ");
-        when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
-                .thenReturn(Optional.empty());
-
-        newService().enqueueReservationConfirmation(user, reservation);
-
-        assertThat(capturedOutbox().getHtmlBody()).doesNotContain("Notes");
-    }
 
     @Test
     void enqueueReservationCancellationStoresTheRenderedCancellationMessage() {
@@ -111,6 +89,9 @@ class EmailOutboxServiceImplTest {
         ReservationResponse reservation = reservation(42L, "guest@example.com", ReservationStatus.CANCELLED);
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CANCELLATION", "42"))
                 .thenReturn(Optional.empty());
+        when(emailTemplateRenderer.renderReservationCancellation(user, reservation)).thenReturn(new EmailMessage(
+                "registered@example.com", "Booking cancelled — Hotel Sur", "<p>Your booking was cancelled</p>",
+                "RESERVATION_CANCELLATION", "42"));
 
         newService().enqueueReservationCancellation(user, reservation);
 
@@ -119,11 +100,8 @@ class EmailOutboxServiceImplTest {
         assertThat(saved.getAggregateId()).isEqualTo("42");
         assertThat(saved.getRecipient()).isEqualTo("registered@example.com");
         assertThat(saved.getSubject()).isEqualTo("Booking cancelled — Hotel Sur");
-        assertThat(saved.getHtmlBody()).contains("Your booking was cancelled")
-                .contains("2026-08-20")
-                .contains("2026-08-22")
-                .contains("555")
-                .contains("hotel@example.com");
+        assertThat(saved.getHtmlBody()).isEqualTo("<p>Your booking was cancelled</p>");
+        verify(emailTemplateRenderer).renderReservationCancellation(user, reservation);
     }
 
     @Test
@@ -153,7 +131,8 @@ class EmailOutboxServiceImplTest {
     }
 
     private EmailOutboxServiceImpl newService() {
-        return new EmailOutboxServiceImpl(repository, welcomeEmailRenderer);
+        return new EmailOutboxServiceImpl(repository, welcomeEmailRenderer, emailTemplateRenderer,
+                new WelcomeEmailProperties(), Clock.systemUTC());
     }
 
     private static User user(Long id, String email) {
