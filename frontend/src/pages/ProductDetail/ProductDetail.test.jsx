@@ -134,12 +134,59 @@ describe("ProductDetail - rendering lodging detail", () => {
 		mockGetDefaults();
 		renderProductDetail();
 
-		expect(screen.getByText("Cargando...")).toBeInTheDocument();
+		expect(screen.getByRole("status")).toHaveTextContent("Cargando...");
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(getLodging).toHaveBeenCalledWith("1");
 		expect(screen.getByText("Bariloche, Argentina")).toBeInTheDocument();
 		expect(screen.getByText("Una cabaña con vista al lago.")).toBeInTheDocument();
+	});
+
+	it("shows a lodging load error and retries the same lodging successfully", async () => {
+		const retry = deferred();
+		getLodging
+			.mockRejectedValueOnce(new Error("down"))
+			.mockReturnValueOnce(retry.promise);
+		getAvailability.mockResolvedValue({});
+		get.mockResolvedValue(null);
+		const user = userEvent.setup();
+		renderProductDetail();
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("No pudimos cargar el alojamiento.");
+		expect(screen.queryByText("Cargando...")).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+		expect(screen.getByText("Cargando...")).toHaveAttribute("role", "status");
+		retry.resolve(lodgingFixture);
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(getLodging).toHaveBeenNthCalledWith(1, "1");
+		expect(getLodging).toHaveBeenNthCalledWith(2, "1");
+	});
+
+	it("clears a lodging load error and reloads when the lodging id changes", async () => {
+		const nextLodging = deferred();
+		getLodging.mockImplementation((id) =>
+			id === "1" ? Promise.reject(new Error("down")) : nextLodging.promise,
+		);
+		getAvailability.mockResolvedValue({});
+		get.mockResolvedValue(null);
+		const user = userEvent.setup();
+		renderProductDetail();
+
+		await screen.findByRole("alert");
+		await user.click(
+			screen.getByRole("button", { name: "Ver otro alojamiento" }),
+		);
+
+		expect(screen.getByText("Cargando...")).toHaveAttribute("role", "status");
+		nextLodging.resolve({ ...lodgingFixture, id: 2, name: "Cabaña del Bosque" });
+		expect(await screen.findByText("Cabaña del Bosque")).toBeInTheDocument();
+		expect(
+			screen.queryByText("No pudimos cargar el alojamiento."),
+		).not.toBeInTheDocument();
+		expect(getLodging).toHaveBeenLastCalledWith("2");
 	});
 });
 
