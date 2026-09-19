@@ -1,8 +1,8 @@
 import { renderHook, act } from "@testing-library/react";
 import useAvailability from "./useAvailability";
-import { get } from "../services/api";
+import { getAvailability } from "../services/lodgingService";
 
-vi.mock("../services/api");
+vi.mock("../services/lodgingService");
 
 function deferred() {
   let resolve;
@@ -21,7 +21,7 @@ function availabilityResponse(occupiedRanges = []) {
 describe("useAvailability - idle to loading to ready", () => {
   it("starts idle, moves to loading while the request is in flight, then ready with the response's occupied ranges", async () => {
     const first = deferred();
-    get.mockReturnValue(first.promise);
+    getAvailability.mockReturnValue(first.promise);
     const { result } = renderHook(() => useAvailability(1));
 
     expect(result.current.status).toBe("idle");
@@ -32,11 +32,13 @@ describe("useAvailability - idle to loading to ready", () => {
     });
 
     expect(result.current.status).toBe("loading");
-    expect(get).toHaveBeenCalledWith("/lodgings/1/availability");
+    expect(getAvailability).toHaveBeenCalledWith(1, {});
 
     await act(async () => {
       first.resolve(
-        availabilityResponse([{ checkIn: "2026-08-01", checkOut: "2026-08-05" }]),
+        availabilityResponse([
+          { checkIn: "2026-08-01", checkOut: "2026-08-05" },
+        ]),
       );
       await first.promise;
     });
@@ -63,7 +65,7 @@ describe("useAvailability - idle to loading to ready", () => {
 
 describe("useAvailability - zero-occupied ready state", () => {
   it("becomes ready with an empty occupiedRanges list, treating every range as available", async () => {
-    get.mockResolvedValueOnce(availabilityResponse([]));
+    getAvailability.mockResolvedValueOnce(availabilityResponse([]));
     const { result } = renderHook(() => useAvailability(2));
 
     await act(async () => {
@@ -92,7 +94,7 @@ describe("useAvailability - isRangeAvailable before a ready result", () => {
       ),
     ).toBe(false);
 
-    get.mockRejectedValueOnce(new Error("boom"));
+    getAvailability.mockRejectedValueOnce(new Error("boom"));
     await act(async () => {
       await result.current.load({});
     });
@@ -109,7 +111,7 @@ describe("useAvailability - isRangeAvailable before a ready result", () => {
 
 describe("useAvailability - initial and repeated failures", () => {
   it("transitions to error on an initial failure, with no ready data to protect", async () => {
-    get.mockRejectedValueOnce(new Error("network down"));
+    getAvailability.mockRejectedValueOnce(new Error("network down"));
     const { result } = renderHook(() => useAvailability(4));
 
     await act(async () => {
@@ -122,7 +124,7 @@ describe("useAvailability - initial and repeated failures", () => {
   });
 
   it("stays in error, never stale, when the initial request and a retry both fail", async () => {
-    get.mockRejectedValueOnce(new Error("first failure"));
+    getAvailability.mockRejectedValueOnce(new Error("first failure"));
     const { result } = renderHook(() => useAvailability(4));
 
     await act(async () => {
@@ -130,7 +132,7 @@ describe("useAvailability - initial and repeated failures", () => {
     });
     expect(result.current.status).toBe("error");
 
-    get.mockRejectedValueOnce(new Error("second failure"));
+    getAvailability.mockRejectedValueOnce(new Error("second failure"));
     await act(async () => {
       await result.current.retry();
     });
@@ -142,7 +144,7 @@ describe("useAvailability - initial and repeated failures", () => {
 
 describe("useAvailability - retrying the last request", () => {
   it("retry() reissues the exact same last requested date range", async () => {
-    get.mockRejectedValueOnce(new Error("network down"));
+    getAvailability.mockRejectedValueOnce(new Error("network down"));
     const { result } = renderHook(() => useAvailability(5));
 
     await act(async () => {
@@ -153,14 +155,15 @@ describe("useAvailability - retrying the last request", () => {
     });
     expect(result.current.status).toBe("error");
 
-    get.mockResolvedValueOnce(availabilityResponse([]));
+    getAvailability.mockResolvedValueOnce(availabilityResponse([]));
     await act(async () => {
       await result.current.retry();
     });
 
-    expect(get).toHaveBeenLastCalledWith(
-      "/lodgings/5/availability?checkIn=2026-08-01&checkOut=2026-08-03",
-    );
+    expect(getAvailability).toHaveBeenLastCalledWith(5, {
+      checkIn: new Date(2026, 7, 1),
+      checkOut: new Date(2026, 7, 3),
+    });
     expect(result.current.status).toBe("ready");
   });
 });
@@ -171,7 +174,7 @@ describe("useAvailability - availability query dates", () => {
       .spyOn(Date.prototype, "toISOString")
       .mockReturnValue("1999-12-31T00:00:00.000Z");
     try {
-      get.mockResolvedValueOnce(availabilityResponse([]));
+      getAvailability.mockResolvedValueOnce(availabilityResponse([]));
       const { result } = renderHook(() => useAvailability(11));
 
       await act(async () => {
@@ -181,44 +184,45 @@ describe("useAvailability - availability query dates", () => {
         });
       });
 
-      expect(get).toHaveBeenCalledWith(
-        "/lodgings/11/availability?checkIn=2026-01-09&checkOut=2026-01-10",
-      );
+      expect(getAvailability).toHaveBeenCalledWith(11, {
+        checkIn: new Date(2026, 0, 9),
+        checkOut: new Date(2026, 0, 10),
+      });
     } finally {
       utcSpy.mockRestore();
     }
   });
 
   it("includes only checkIn when checkOut is omitted", async () => {
-    get.mockResolvedValueOnce(availabilityResponse([]));
+    getAvailability.mockResolvedValueOnce(availabilityResponse([]));
     const { result } = renderHook(() => useAvailability(12));
 
     await act(async () => {
       await result.current.load({ checkIn: new Date(2026, 10, 5) });
     });
 
-    expect(get).toHaveBeenCalledWith(
-      "/lodgings/12/availability?checkIn=2026-11-05",
-    );
+    expect(getAvailability).toHaveBeenCalledWith(12, {
+      checkIn: new Date(2026, 10, 5),
+    });
   });
 
   it("includes only checkOut when checkIn is omitted", async () => {
-    get.mockResolvedValueOnce(availabilityResponse([]));
+    getAvailability.mockResolvedValueOnce(availabilityResponse([]));
     const { result } = renderHook(() => useAvailability(13));
 
     await act(async () => {
       await result.current.load({ checkOut: new Date(2026, 10, 6) });
     });
 
-    expect(get).toHaveBeenCalledWith(
-      "/lodgings/13/availability?checkOut=2026-11-06",
-    );
+    expect(getAvailability).toHaveBeenCalledWith(13, {
+      checkOut: new Date(2026, 10, 6),
+    });
   });
 });
 
 describe("useAvailability - stale refresh", () => {
   it("keeps the previous occupied ranges but flags stale when a refresh after ready fails", async () => {
-    get.mockResolvedValueOnce(
+    getAvailability.mockResolvedValueOnce(
       availabilityResponse([{ checkIn: "2026-09-01", checkOut: "2026-09-05" }]),
     );
     const { result } = renderHook(() => useAvailability(6));
@@ -228,7 +232,7 @@ describe("useAvailability - stale refresh", () => {
     });
     expect(result.current.status).toBe("ready");
 
-    get.mockRejectedValueOnce(new Error("refresh failed"));
+    getAvailability.mockRejectedValueOnce(new Error("refresh failed"));
     await act(async () => {
       await result.current.load({});
     });
@@ -250,7 +254,7 @@ describe("useAvailability - out-of-order and unmount protection", () => {
   it("ignores a slow first response that resolves after a newer request already resolved", async () => {
     const slow = deferred();
     const fast = deferred();
-    get.mockReturnValueOnce(slow.promise);
+    getAvailability.mockReturnValueOnce(slow.promise);
     const { result } = renderHook(() => useAvailability(9));
 
     act(() => {
@@ -260,7 +264,7 @@ describe("useAvailability - out-of-order and unmount protection", () => {
       });
     });
 
-    get.mockReturnValueOnce(fast.promise);
+    getAvailability.mockReturnValueOnce(fast.promise);
     act(() => {
       result.current.load({
         checkIn: new Date("2026-08-10T00:00:00Z"),
@@ -270,7 +274,9 @@ describe("useAvailability - out-of-order and unmount protection", () => {
 
     await act(async () => {
       fast.resolve(
-        availabilityResponse([{ checkIn: "2026-08-10", checkOut: "2026-08-12" }]),
+        availabilityResponse([
+          { checkIn: "2026-08-10", checkOut: "2026-08-12" },
+        ]),
       );
       await fast.promise;
     });
@@ -282,7 +288,9 @@ describe("useAvailability - out-of-order and unmount protection", () => {
 
     await act(async () => {
       slow.resolve(
-        availabilityResponse([{ checkIn: "2026-01-01", checkOut: "2026-01-02" }]),
+        availabilityResponse([
+          { checkIn: "2026-01-01", checkOut: "2026-01-02" },
+        ]),
       );
       await slow.promise;
     });
@@ -295,7 +303,7 @@ describe("useAvailability - out-of-order and unmount protection", () => {
 
   it("does not update state after the component unmounts", async () => {
     const pending = deferred();
-    get.mockReturnValueOnce(pending.promise);
+    getAvailability.mockReturnValueOnce(pending.promise);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const { result, unmount } = renderHook(() => useAvailability(10));
 

@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import {
-	ArrowLeft,
-} from "lucide-react";
-import { get } from "../../services/api";
+import { ArrowLeft } from "lucide-react";
+import { getLodging } from "../../services/lodgingService";
 import { useAuth } from "../../hooks/useAuth";
 import useAvailability from "../../hooks/useAvailability";
 
@@ -24,7 +22,10 @@ export default function ProductDetail() {
 	const [lodging, setLodging] = useState(null);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
-	const [selectionConflict, setSelectionConflict] = useState({ lodgingId: id, visible: false });
+	const [selectionConflict, setSelectionConflict] = useState({
+		lodgingId: id,
+		visible: false,
+	});
 	if (selectionConflict.lodgingId !== id) {
 		setSelectionConflict({ lodgingId: id, visible: false });
 	}
@@ -38,7 +39,7 @@ export default function ProductDetail() {
 	} = useAvailability(id);
 
 	useEffect(() => {
-		get(`/lodgings/${id}`).then(setLodging).catch(console.error);
+		getLodging(id).then(setLodging).catch(console.error);
 	}, [id]);
 
 	// A single effect replaces the two duplicated availability fetches: it
@@ -126,21 +127,29 @@ export default function ProductDetail() {
 			<LodgingGallery images={lodging.imageUrls} name={lodging.name} />
 
 			{lodging.pricePerNight && (
-				<section
-					className="booking-section"
-					aria-label="Reservar este alojamiento"
-				>
+				<section className="booking-section" aria-label="Reservar este alojamiento">
 					<div className="price-display">
 						<strong>${lodging.pricePerNight.toLocaleString()}</strong> / noche
 					</div>
 
 					{availabilityStatus === "loading" && (
-						<p id={availabilityMessageId} className="availability-status" role="status" aria-live="polite">
+						<p
+							id={availabilityMessageId}
+							className="availability-status"
+							role="status"
+							aria-live="polite"
+						>
 							Comprobando disponibilidad...
 						</p>
 					)}
 					{(availabilityStatus === "error" || availabilityStatus === "stale") && (
-						<div id={availabilityMessageId} className="availability-alert" role="alert" aria-live="assertive" aria-atomic="true">
+						<div
+							id={availabilityMessageId}
+							className="availability-alert"
+							role="alert"
+							aria-live="assertive"
+							aria-atomic="true"
+						>
 							<p>
 								{availabilityStatus === "stale"
 									? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
@@ -152,18 +161,33 @@ export default function ProductDetail() {
 						</div>
 					)}
 					{availabilityStatus === "ready" && occupiedRanges.length === 0 && (
-						<p id={availabilityMessageId} className="availability-status" role="status" aria-live="polite">
+						<p
+							id={availabilityMessageId}
+							className="availability-status"
+							role="status"
+							aria-live="polite"
+						>
 							Todas las fechas están disponibles.
 						</p>
 					)}
 					{selectionConflict.visible && (
-						<p id={availabilityMessageId} className="availability-alert" role="alert" aria-live="assertive" aria-atomic="true">
-							Las fechas seleccionadas ya no están disponibles. Elegí otro
-							rango.
+						<p
+							id={availabilityMessageId}
+							className="availability-alert"
+							role="alert"
+							aria-live="assertive"
+							aria-atomic="true"
+						>
+							Las fechas seleccionadas ya no están disponibles. Elegí otro rango.
 						</p>
 					)}
 
-					<div className="date-pickers" role="group" aria-label="Fechas de la estadía" aria-describedby={availabilityMessageId}>
+					<div
+						className="date-pickers"
+						role="group"
+						aria-label="Fechas de la estadía"
+						aria-describedby={availabilityMessageId}
+					>
 						<div>
 							<label htmlFor="product-check-in">Check-in</label>
 							<DatePicker
@@ -216,8 +240,8 @@ export default function ProductDetail() {
 
 					{nights > 0 && (
 						<p className="total-estimate">
-							Total estimado: <strong>${total.toLocaleString()}</strong> (
-							{nights} noches)
+							Total estimado: <strong>${total.toLocaleString()}</strong> ({nights}{" "}
+							noches)
 						</p>
 					)}
 
@@ -304,7 +328,6 @@ export default function ProductDetail() {
 			{showShare && (
 				<ShareModal lodging={lodging} onClose={() => setShowShare(false)} />
 			)}
-
 		</main>
 	);
 }
