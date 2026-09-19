@@ -109,8 +109,8 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setUser(user);
         reservation.setCheckIn(request.getCheckIn());
         reservation.setCheckOut(request.getCheckOut());
-        reservation.setGuestName(request.getGuestName());
-        reservation.setGuestEmail(request.getGuestEmail());
+        reservation.setGuestName(user.getFirstName() + " " + user.getLastName());
+        reservation.setGuestEmail(user.getEmail());
         reservation.setGuestPhone(request.getGuestPhone());
         reservation.setNotes(normalizeNotes(request.getNotes()));
         reservation.setCreatedAt(LocalDateTime.now(clock));

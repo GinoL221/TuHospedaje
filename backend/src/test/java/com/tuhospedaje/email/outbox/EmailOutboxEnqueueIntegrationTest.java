@@ -302,8 +302,6 @@ class EmailOutboxEnqueueIntegrationTest {
         request.setLodgingId(lodgingId);
         request.setCheckIn(LocalDate.now().plusDays(10));
         request.setCheckOut(LocalDate.now().plusDays(12));
-        request.setGuestName("Test Guest");
-        request.setGuestEmail(EMAIL_PREFIX + suffix);
         request.setGuestPhone("123");
         return request;
     }

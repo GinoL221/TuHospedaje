@@ -26,16 +26,6 @@ public class CreateReservationRequest {
     @Schema(description = "Check-out date (ISO 8601) — must be after checkIn", example = "2025-07-20")
     private LocalDate checkOut;
 
-    @NotBlank(message = "El nombre del huésped es obligatorio")
-    @Size(max = 100, message = "El nombre no puede superar 100 caracteres")
-    @Schema(description = "Full name of the guest", example = "Maria Gomez")
-    private String guestName;
-
-    @NotBlank(message = "El email del huésped es obligatorio")
-    @Email(message = "Formato de email inválido")
-    @Schema(description = "Email address of the guest", example = "maria.gomez@example.com")
-    private String guestEmail;
-
     @NotBlank(message = "El teléfono del huésped es obligatorio")
     @Size(max = 30, message = "El teléfono no puede superar 30 caracteres")
     @Schema(description = "Phone number of the guest", example = "+5491112345678")

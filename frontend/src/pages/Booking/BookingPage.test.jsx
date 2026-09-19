@@ -111,9 +111,7 @@ describe("BookingPage - loading and summary", () => {
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(screen.getByText("Bariloche, Argentina")).toBeInTheDocument();
-		expect(
-			screen.getByText("Una cabaña con vista al lago."),
-		).toBeInTheDocument();
+		expect(screen.getByText("Una cabaña con vista al lago.")).toBeInTheDocument();
 	});
 
 	it("renders the lodging's image and features in the summary", async () => {
@@ -272,13 +270,11 @@ describe("BookingPage - guest phone prefill", () => {
 				}),
 			).toBeInTheDocument(),
 		);
-		await userEvent
-			.setup()
-			.click(
-				screen.getByRole("button", {
-					name: "Mostrar detalles del huésped",
-				}),
-			);
+		await userEvent.setup().click(
+			screen.getByRole("button", {
+				name: "Mostrar detalles del huésped",
+			}),
+		);
 		expect(screen.getByLabelText("Teléfono")).toHaveValue("222222");
 	});
 
@@ -405,7 +401,9 @@ describe("BookingPage - submit without dates", () => {
 		// The submit button is disabled with no dates selected, so we dispatch the
 		// form's submit event directly to exercise the handleSubmit guard clause
 		// (the same code path the spec requires us to characterize).
-		fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123456" } });
+		fireEvent.change(screen.getByLabelText("Teléfono"), {
+			target: { value: "123456" },
+		});
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
 		expect(
@@ -445,9 +443,12 @@ describe("BookingPage - successful reservation", () => {
 		await user.type(screen.getByLabelText("Notas"), "Llegamos después de las 22");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		expect(post).toHaveBeenCalledWith("/reservations", expect.objectContaining({
-			notes: "Llegamos después de las 22",
-		}));
+		expect(post).toHaveBeenCalledWith(
+			"/reservations",
+			expect.objectContaining({
+				notes: "Llegamos después de las 22",
+			}),
+		);
 	});
 
 	it("omits blank optional notes from the reservation request", async () => {
@@ -468,9 +469,12 @@ describe("BookingPage - successful reservation", () => {
 		await user.type(screen.getByLabelText("Notas"), "   ");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		expect(post).toHaveBeenCalledWith("/reservations", expect.not.objectContaining({
-			notes: expect.anything(),
-		}));
+		expect(post).toHaveBeenCalledWith(
+			"/reservations",
+			expect.not.objectContaining({
+				notes: expect.anything(),
+			}),
+		);
 	});
 
 	it("navigates to /booking/confirmation with reservation and lodging state", async () => {
@@ -499,14 +503,17 @@ describe("BookingPage - successful reservation", () => {
 		await user.type(phoneInput, "123456");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		expect(post).toHaveBeenCalledWith("/reservations", {
+		const reservationPayload = post.mock.calls.find(
+			([path]) => path === "/reservations",
+		)[1];
+		expect(reservationPayload).toEqual({
 			lodgingId: 1,
 			checkIn: "2026-07-01",
 			checkOut: "2026-07-04",
-			guestName: `${authValue.user.firstName} ${authValue.user.lastName}`,
-			guestEmail: authValue.user.email,
 			guestPhone: "123456",
 		});
+		expect(reservationPayload).not.toHaveProperty("guestName");
+		expect(reservationPayload).not.toHaveProperty("guestEmail");
 		expect(
 			await screen.findByTestId("confirmation-sentinel"),
 		).toBeInTheDocument();
@@ -530,13 +537,13 @@ describe("BookingPage - reservation submit error", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123456" } });
+		fireEvent.change(screen.getByLabelText("Teléfono"), {
+			target: { value: "123456" },
+		});
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
 		expect(
-			await screen.findByText(
-				"Las fechas seleccionadas ya no están disponibles.",
-			),
+			await screen.findByText("Las fechas seleccionadas ya no están disponibles."),
 		).toBeInTheDocument();
 		expect(
 			screen.getByRole("form", { name: "Datos de la reserva" }),
@@ -691,7 +698,9 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123456" } });
+		fireEvent.change(screen.getByLabelText("Teléfono"), {
+			target: { value: "123456" },
+		});
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
 		expect(
@@ -734,14 +743,17 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 		await user.type(screen.getByLabelText("Teléfono"), "123456");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		expect(post).toHaveBeenCalledWith("/reservations", {
+		const reservationPayload = post.mock.calls.find(
+			([path]) => path === "/reservations",
+		)[1];
+		expect(reservationPayload).toEqual({
 			lodgingId: 1,
 			checkIn: "2026-07-01",
 			checkOut: "2026-07-04",
-			guestName: `${authValue.user.firstName} ${authValue.user.lastName}`,
-			guestEmail: authValue.user.email,
 			guestPhone: "123456",
 		});
+		expect(reservationPayload).not.toHaveProperty("guestName");
+		expect(reservationPayload).not.toHaveProperty("guestEmail");
 		expect(
 			await screen.findByTestId("confirmation-sentinel"),
 		).toBeInTheDocument();
@@ -780,9 +792,7 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 			),
 		).toHaveAttribute("role", "alert");
 		expect(post).not.toHaveBeenCalled();
-		expect(
-			screen.queryByTestId("confirmation-sentinel"),
-		).not.toBeInTheDocument();
+		expect(screen.queryByTestId("confirmation-sentinel")).not.toBeInTheDocument();
 	});
 
 	it("keeps the backend overlap rejection as final authority, shows an inline conflict, and refreshes availability for recovery", async () => {
@@ -817,14 +827,10 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
 		expect(
-			await screen.findByText(
-				"Las fechas seleccionadas ya no están disponibles.",
-			),
+			await screen.findByText("Las fechas seleccionadas ya no están disponibles."),
 		).toHaveAttribute("role", "alert");
 		expect(post).toHaveBeenCalledTimes(1);
-		expect(
-			screen.queryByTestId("confirmation-sentinel"),
-		).not.toBeInTheDocument();
+		expect(screen.queryByTestId("confirmation-sentinel")).not.toBeInTheDocument();
 
 		// Recovery refresh: a third availability call (beyond the initial load
 		// and the pre-post preflight) proves the hook re-fetched current
@@ -888,14 +894,22 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 
 			await screen.findByText("Cabaña del Lago");
 			await waitFor(() =>
-				expect(screen.getByRole("button", { name: "Confirmar reserva" })).not.toBeDisabled(),
+				expect(
+					screen.getByRole("button", { name: "Confirmar reserva" }),
+				).not.toBeDisabled(),
 			);
-			await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), "July 2nd, 2026");
+			await selectDateByLabelPart(
+				user,
+				screen.getByLabelText("Check-in"),
+				"July 2nd, 2026",
+			);
 
 			await screen.findByRole("alert");
 			expect(screen.getByLabelText("Check-in")).not.toBeDisabled();
 			expect(screen.getByLabelText("Check-out")).not.toBeDisabled();
-			expect(screen.getByRole("button", { name: "Confirmar reserva" })).toBeDisabled();
+			expect(
+				screen.getByRole("button", { name: "Confirmar reserva" }),
+			).toBeDisabled();
 		} finally {
 			vi.useRealTimers();
 		}
@@ -913,12 +927,18 @@ describe("BookingPage - availability preflight and conflict recovery", () => {
 
 		await screen.findByText("Cabaña del Lago");
 		await waitFor(() =>
-			expect(screen.getByRole("button", { name: "Confirmar reserva" })).not.toBeDisabled(),
+			expect(
+				screen.getByRole("button", { name: "Confirmar reserva" }),
+			).not.toBeDisabled(),
 		);
 		await user.type(screen.getByLabelText("Teléfono"), "123456");
 		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
 
-		expect(await screen.findByText("No pudimos verificar la disponibilidad. Reintentá antes de confirmar la reserva.")).toHaveAttribute("role", "alert");
+		expect(
+			await screen.findByText(
+				"No pudimos verificar la disponibilidad. Reintentá antes de confirmar la reserva.",
+			),
+		).toHaveAttribute("role", "alert");
 		expect(post).not.toHaveBeenCalled();
 	});
 });
@@ -931,9 +951,7 @@ describe("BookingPage - current user via useAuth", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getByLabelText("Nombre")).toHaveValue(
-			authValue.user.firstName,
-		);
+		expect(screen.getByLabelText("Nombre")).toHaveValue(authValue.user.firstName);
 		expect(screen.getByLabelText("Apellido")).toHaveValue(
 			authValue.user.lastName,
 		);
@@ -964,14 +982,23 @@ describe("BookingPage - guest details disclosure", () => {
 
 		await screen.findByText("Cabaña del Lago");
 		expect(screen.getByLabelText("Nombre")).toBeVisible();
-		expect(screen.getByRole("region", { name: "Detalles del huésped" })).toBeVisible();
-		expect(screen.getByRole("img", { name: "Perfil de Test User" })).toHaveAttribute("src", "https://example.com/profile.jpg");
+		expect(
+			screen.getByRole("region", { name: "Detalles del huésped" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("img", { name: "Perfil de Test User" }),
+		).toHaveAttribute("src", "https://example.com/profile.jpg");
 
 		fireEvent.submit(container.querySelector("form.booking-form"));
 
-		expect(await screen.findByText("Ingresá un teléfono válido.")).toBeInTheDocument();
+		expect(
+			await screen.findByText("Ingresá un teléfono válido."),
+		).toBeInTheDocument();
 		expect(screen.getByLabelText("Teléfono")).toHaveFocus();
-		expect(screen.getByLabelText("Teléfono")).toHaveAttribute("aria-invalid", "true");
+		expect(screen.getByLabelText("Teléfono")).toHaveAttribute(
+			"aria-invalid",
+			"true",
+		);
 		expect(screen.getByLabelText("Teléfono")).toHaveAttribute(
 			"aria-describedby",
 			"booking-phone-error",
@@ -1013,13 +1040,19 @@ describe("BookingPage - guest details disclosure", () => {
 		renderBookingPage();
 
 		await screen.findByText("Cabaña del Lago");
-		const toggle = screen.getByRole("button", { name: "Mostrar detalles del huésped" });
+		const toggle = screen.getByRole("button", {
+			name: "Mostrar detalles del huésped",
+		});
 		expect(toggle).toHaveAttribute("aria-expanded", "false");
 		await user.click(toggle);
 		await user.clear(screen.getByLabelText("Teléfono"));
-		await user.click(screen.getByRole("button", { name: "Ocultar detalles del huésped" }));
+		await user.click(
+			screen.getByRole("button", { name: "Ocultar detalles del huésped" }),
+		);
 
-		expect(screen.getByRole("region", { name: "Detalles del huésped" })).toBeVisible();
+		expect(
+			screen.getByRole("region", { name: "Detalles del huésped" }),
+		).toBeVisible();
 		expect(screen.getByText("Ingresá un teléfono válido.")).toBeInTheDocument();
 	});
 });

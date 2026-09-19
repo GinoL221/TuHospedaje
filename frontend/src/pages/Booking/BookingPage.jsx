@@ -171,8 +171,6 @@ export default function BookingPage() {
         lodgingId: Number(lodgingId),
         checkIn: formatDate(checkIn),
         checkOut: formatDate(checkOut),
-        guestName: `${user.firstName} ${user.lastName}`,
-        guestEmail: user.email,
         guestPhone,
         ...(normalizedNotes ? { notes: normalizedNotes } : {}),
       });
@@ -430,16 +428,17 @@ export default function BookingPage() {
                   </button>
                 </div>
               )}
-              {availabilityStatus === "ready" && occupiedRanges.length === 0 && (
-                <p
-                  id={availabilityMessageId}
-                  className="availability-status availability-status--ready"
-                  role="status"
-                  aria-live="polite"
-                >
-                  Todas las fechas están disponibles.
-                </p>
-              )}
+              {availabilityStatus === "ready" &&
+                occupiedRanges.length === 0 && (
+                  <p
+                    id={availabilityMessageId}
+                    className="availability-status availability-status--ready"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Todas las fechas están disponibles.
+                  </p>
+                )}
             </div>
 
             <div className="booking-field-grid booking-field-grid--dates">
