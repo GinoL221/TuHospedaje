@@ -1,9 +1,20 @@
 import { useState } from "react";
-import { post, postMultipart, put } from "../../services/api";
-import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
+import {
+  createLodging,
+  updateLodging,
+} from "../../services/adminCatalogService";
+import { uploadImage } from "../../services/uploadService";
+import {
+  customRender,
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+} from "../../test/test-utils";
 import LodgingFormModal from "./LodgingFormModal";
 
-vi.mock("../../services/api");
+vi.mock("../../services/adminCatalogService");
+vi.mock("../../services/uploadService");
 
 function renderModal(overrides = {}) {
   const props = {
@@ -19,15 +30,33 @@ function renderModal(overrides = {}) {
 }
 
 function fillRequiredFields() {
-  fireEvent.change(screen.getByTestId("field-name"), { target: { value: "Cabaña Test" } });
-  fireEvent.change(screen.getByTestId("field-email"), { target: { value: "test@example.com" } });
-  fireEvent.change(screen.getByTestId("field-description"), { target: { value: "Una descripción" } });
-  fireEvent.change(screen.getByTestId("field-address"), { target: { value: "Calle 123" } });
-  fireEvent.change(screen.getByTestId("field-city"), { target: { value: "Bariloche" } });
-  fireEvent.change(screen.getByTestId("field-country"), { target: { value: "Argentina" } });
-  fireEvent.change(screen.getByTestId("field-phoneNumber"), { target: { value: "1122334455" } });
-  fireEvent.change(screen.getByTestId("field-pricePerNight"), { target: { value: "12500.50" } });
-  fireEvent.change(screen.getByTestId("field-maxGuests"), { target: { value: "4" } });
+  fireEvent.change(screen.getByTestId("field-name"), {
+    target: { value: "Cabaña Test" },
+  });
+  fireEvent.change(screen.getByTestId("field-email"), {
+    target: { value: "test@example.com" },
+  });
+  fireEvent.change(screen.getByTestId("field-description"), {
+    target: { value: "Una descripción" },
+  });
+  fireEvent.change(screen.getByTestId("field-address"), {
+    target: { value: "Calle 123" },
+  });
+  fireEvent.change(screen.getByTestId("field-city"), {
+    target: { value: "Bariloche" },
+  });
+  fireEvent.change(screen.getByTestId("field-country"), {
+    target: { value: "Argentina" },
+  });
+  fireEvent.change(screen.getByTestId("field-phoneNumber"), {
+    target: { value: "1122334455" },
+  });
+  fireEvent.change(screen.getByTestId("field-pricePerNight"), {
+    target: { value: "12500.50" },
+  });
+  fireEvent.change(screen.getByTestId("field-maxGuests"), {
+    target: { value: "4" },
+  });
 }
 
 function ModalHarness() {
@@ -128,10 +157,11 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 
   it("prevents duplicate submit and close requests while submit is pending", async () => {
     let resolveRequest;
-    post.mockImplementation(
-      () => new Promise((resolve) => {
-        resolveRequest = resolve;
-      }),
+    createLodging.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
     );
     const user = userEvent.setup();
     const { props } = renderModal();
@@ -144,7 +174,7 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
     fireEvent.click(screen.getByTestId("admin-modal").parentElement);
     fireEvent.submit(saveButton.closest("form"));
 
-    expect(post).toHaveBeenCalledTimes(1);
+    expect(createLodging).toHaveBeenCalledTimes(1);
     expect(props.onClose).not.toHaveBeenCalled();
     expect(screen.queryByTestId("confirm-cancel")).not.toBeInTheDocument();
 
@@ -154,10 +184,11 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 
   it("blocks submit and close requests while an image upload is pending", async () => {
     let resolveUpload;
-    postMultipart.mockImplementation(
-      () => new Promise((resolve) => {
-        resolveUpload = resolve;
-      }),
+    uploadImage.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpload = resolve;
+        }),
     );
     const user = userEvent.setup();
     const { props } = renderModal();
@@ -175,21 +206,22 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
       ok: true,
       json: async () => ({ url: "https://example.com/photo.png" }),
     });
-    await waitFor(() => expect(screen.getByTestId("admin-save-btn")).not.toBeDisabled());
+    await waitFor(() =>
+      expect(screen.getByTestId("admin-save-btn")).not.toBeDisabled(),
+    );
   });
 });
 
 describe("LodgingFormModal - price and capacity", () => {
   it("creates a lodging with numeric ARS price and guest capacity", async () => {
     const user = userEvent.setup();
-    post.mockResolvedValue({ id: 1 });
+    createLodging.mockResolvedValue({ id: 1 });
 
     renderModal();
     fillRequiredFields();
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(post).toHaveBeenCalledWith(
-      "/lodgings",
+    expect(createLodging).toHaveBeenCalledWith(
       expect.objectContaining({
         pricePerNight: 12500.5,
         maxGuests: 4,
@@ -199,7 +231,7 @@ describe("LodgingFormModal - price and capacity", () => {
 
   it("loads and submits the existing values when editing", async () => {
     const user = userEvent.setup();
-    put.mockResolvedValue({ id: 7 });
+    updateLodging.mockResolvedValue({ id: 7 });
     const lodging = {
       id: 7,
       name: "Cabaña existente",
@@ -232,8 +264,8 @@ describe("LodgingFormModal - price and capacity", () => {
     await user.type(screen.getByTestId("field-maxGuests"), "8");
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(put).toHaveBeenCalledWith(
-      "/lodgings/7",
+    expect(updateLodging).toHaveBeenCalledWith(
+      7,
       expect.objectContaining({
         pricePerNight: 100000.75,
         maxGuests: 8,
@@ -249,7 +281,7 @@ describe("LodgingFormModal - price and capacity", () => {
 
     expect(screen.getByTestId("error-pricePerNight")).toBeVisible();
     expect(screen.getByTestId("error-maxGuests")).toBeVisible();
-    expect(post).not.toHaveBeenCalled();
+    expect(createLodging).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -264,8 +296,10 @@ describe("LodgingFormModal - price and capacity", () => {
 
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(screen.getByTestId("error-pricePerNight")).toHaveTextContent(message);
-    expect(post).not.toHaveBeenCalled();
+    expect(screen.getByTestId("error-pricePerNight")).toHaveTextContent(
+      message,
+    );
+    expect(createLodging).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -282,15 +316,15 @@ describe("LodgingFormModal - price and capacity", () => {
     await user.click(screen.getByTestId("admin-save-btn"));
 
     expect(screen.getByTestId("error-maxGuests")).toHaveTextContent(message);
-    expect(post).not.toHaveBeenCalled();
+    expect(createLodging).not.toHaveBeenCalled();
   });
 });
 
 describe("LodgingFormModal - ImageUpload failure handling", () => {
   it("shows the upload error inside the modal and still allows submitting without an image", async () => {
     const user = userEvent.setup();
-    postMultipart.mockRejectedValueOnce(new Error("upload failed"));
-    post.mockResolvedValue({ id: 1 });
+    uploadImage.mockRejectedValueOnce(new Error("upload failed"));
+    createLodging.mockResolvedValue({ id: 1 });
 
     const { props } = renderModal();
 
@@ -305,8 +339,7 @@ describe("LodgingFormModal - ImageUpload failure handling", () => {
 
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(post).toHaveBeenCalledWith(
-      "/lodgings",
+    expect(createLodging).toHaveBeenCalledWith(
       expect.objectContaining({ imageUrls: [] }),
     );
     expect(props.onSaved).toHaveBeenCalled();

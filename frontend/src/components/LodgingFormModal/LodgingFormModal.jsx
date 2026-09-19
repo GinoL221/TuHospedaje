@@ -1,5 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { post, put } from "../../services/api";
+import {
+  createLodging,
+  updateLodging,
+} from "../../services/adminCatalogService";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import ImageUpload from "../../components/ImageUpload/ImageUpload";
@@ -93,18 +96,18 @@ export default function LodgingFormModal({
       form.imageUrls.some((url, index) => url !== lodging.imageUrls[index])
     : Boolean(
         form.name ||
-        form.description ||
-        form.address ||
-        form.city ||
-        form.country ||
-        form.phoneNumber ||
-        form.email ||
-        form.pricePerNight ||
-        form.maxGuests ||
-        form.categoryId ||
-        form.featureIds.length > 0 ||
-        form.policyIds.length > 0 ||
-        form.imageUrls.length > 0,
+          form.description ||
+          form.address ||
+          form.city ||
+          form.country ||
+          form.phoneNumber ||
+          form.email ||
+          form.pricePerNight ||
+          form.maxGuests ||
+          form.categoryId ||
+          form.featureIds.length > 0 ||
+          form.policyIds.length > 0 ||
+          form.imageUrls.length > 0,
       );
 
   const cancel = useConfirmCancel(hasChanges, () => {
@@ -208,8 +211,8 @@ export default function LodgingFormModal({
     setSubmitting(true);
     try {
       await (isEdit
-        ? put(`/lodgings/${lodging.id}`, payload)
-        : post("/lodgings", payload));
+        ? updateLodging(lodging.id, payload)
+        : createLodging(payload));
       onSaved();
       onClose();
     } catch (err) {
@@ -232,7 +235,9 @@ export default function LodgingFormModal({
           data-testid={`field-${name}`}
           className={error ? "input-error" : ""}
           aria-invalid={error ? "true" : undefined}
-          aria-describedby={error ? `${descriptionId}-${name}-error` : undefined}
+          aria-describedby={
+            error ? `${descriptionId}-${name}-error` : undefined
+          }
           disabled={isPending}
           ref={name === "name" ? initialFocusRef : undefined}
           {...inputProps}
@@ -241,7 +246,15 @@ export default function LodgingFormModal({
             if (error) setFieldErrors({ ...fieldErrors, [name]: "" });
           }}
         />
-        {error && <span id={`${descriptionId}-${name}-error`} className="field-error" data-testid={`error-${name}`}>{error}</span>}
+        {error && (
+          <span
+            id={`${descriptionId}-${name}-error`}
+            className="field-error"
+            data-testid={`error-${name}`}
+          >
+            {error}
+          </span>
+        )}
       </label>
     );
   }
@@ -267,7 +280,9 @@ export default function LodgingFormModal({
           aria-describedby={descriptionId}
           onClick={(e) => e.stopPropagation()}
         >
-          <h2 id={titleId}>{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}</h2>
+          <h2 id={titleId}>
+            {isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}
+          </h2>
           <form onSubmit={handleSubmit} noValidate>
             <div className="modal-form-grid">
               {inputField("name", true, "text", "Nombre del alojamiento")}
@@ -279,7 +294,11 @@ export default function LodgingFormModal({
                   value={form.description}
                   className={fieldErrors.description ? "input-error" : ""}
                   aria-invalid={fieldErrors.description ? "true" : undefined}
-                  aria-describedby={fieldErrors.description ? `${descriptionId}-description-error` : undefined}
+                  aria-describedby={
+                    fieldErrors.description
+                      ? `${descriptionId}-description-error`
+                      : undefined
+                  }
                   disabled={isPending}
                   onChange={(e) => {
                     setForm({ ...form, description: e.target.value });
@@ -288,21 +307,39 @@ export default function LodgingFormModal({
                   }}
                 />
                 {fieldErrors.description && (
-                  <span id={`${descriptionId}-description-error`} className="field-error" data-testid="error-description">{fieldErrors.description}</span>
+                  <span
+                    id={`${descriptionId}-description-error`}
+                    className="field-error"
+                    data-testid="error-description"
+                  >
+                    {fieldErrors.description}
+                  </span>
                 )}
               </label>
               {inputField("address", true, "text", "Dirección")}
               {inputField("city", true, "text", "Ciudad")}
               {inputField("country", true, "text", "País")}
               {inputField("phoneNumber", true, "tel", "Teléfono")}
-              {inputField("pricePerNight", true, "number", "Precio por noche (ARS)", {
-                min: "0.01",
-                step: "0.01",
-              })}
-              {inputField("maxGuests", true, "number", "Capacidad máxima de huéspedes", {
-                min: "1",
-                step: "1",
-              })}
+              {inputField(
+                "pricePerNight",
+                true,
+                "number",
+                "Precio por noche (ARS)",
+                {
+                  min: "0.01",
+                  step: "0.01",
+                },
+              )}
+              {inputField(
+                "maxGuests",
+                true,
+                "number",
+                "Capacidad máxima de huéspedes",
+                {
+                  min: "1",
+                  step: "1",
+                },
+              )}
               <label>
                 Categoría
                 <select
@@ -382,9 +419,16 @@ export default function LodgingFormModal({
                 }}
               />
               {error && <p className="form-error full-width">{error}</p>}
-              <p id={descriptionId} className="required-note full-width">* Campos obligatorios</p>
+              <p id={descriptionId} className="required-note full-width">
+                * Campos obligatorios
+              </p>
               <div className="modal-actions full-width">
-                <button type="submit" className="btn-save" data-testid="admin-save-btn" disabled={isPending}>
+                <button
+                  type="submit"
+                  className="btn-save"
+                  data-testid="admin-save-btn"
+                  disabled={isPending}
+                >
                   {isEdit ? "Guardar cambios" : "Guardar"}
                 </button>
                 <button
