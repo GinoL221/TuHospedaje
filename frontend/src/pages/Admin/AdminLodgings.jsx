@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { get, del } from "../../services/api";
+import {
+	deleteLodging,
+	getAdminLodgings,
+	getCategories,
+	getFeatures,
+	getPolicies,
+} from "../../services/adminCatalogService";
 import LodgingFormModal from "../../components/LodgingFormModal/LodgingFormModal";
 import LodgingsTable from "../../components/LodgingsTable/LodgingsTable";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -19,15 +25,13 @@ export default function AdminLodgings() {
 	const [search, setSearch] = useState("");
 
 	const fetchLodgings = useCallback(() => {
-		const params = new URLSearchParams({
-			page: String(page),
-			size: "10",
+		getAdminLodgings({
+			page,
+			size: 10,
 			sort: sortKey,
 			direction: sortDir,
-		});
-		if (search.trim()) params.set("q", search.trim());
-
-		get(`/lodgings/admin?${params.toString()}`)
+			q: search,
+		})
 			.then((data) => {
 				const items = Array.isArray(data?.items) ? data.items : [];
 				const nextTotalPages = data?.totalPages ?? 0;
@@ -44,8 +48,8 @@ export default function AdminLodgings() {
 			.catch(console.error);
 	}, [page, search, sortDir, sortKey]);
 
-	const fetchData = (url, setter) => {
-		get(url)
+	const fetchData = (fetcher, setter) => {
+		fetcher()
 			.then((data) => setter(Array.isArray(data) ? data : []))
 			.catch(() => {});
 	};
@@ -54,13 +58,13 @@ export default function AdminLodgings() {
 		fetchLodgings();
 	}, [fetchLodgings]);
 	useEffect(() => {
-		fetchData("/categories", setCategories);
+		fetchData(getCategories, setCategories);
 	}, []);
 	useEffect(() => {
-		fetchData("/features", setFeatures);
+		fetchData(getFeatures, setFeatures);
 	}, []);
 	useEffect(() => {
-		fetchData("/policies", setPolicies);
+		fetchData(getPolicies, setPolicies);
 	}, []);
 
 	const handleDelete = (id, name) => {
@@ -70,7 +74,7 @@ export default function AdminLodgings() {
 	const confirmDelete = async () => {
 		if (!deleteConfirm) return;
 		try {
-			await del(`/lodgings/${deleteConfirm.id}`);
+			await deleteLodging(deleteConfirm.id);
 			fetchLodgings();
 		} catch (err) {
 			console.error(err);
