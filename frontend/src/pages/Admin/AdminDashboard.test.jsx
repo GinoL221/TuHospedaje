@@ -25,8 +25,10 @@ function mockGetDefaults({
   get.mockImplementation((endpoint) => {
     if (endpoint === "/admin/stats")
       return Promise.resolve({ ...EMPTY_STATS, ...stats });
-    if (endpoint.startsWith("/lodgings/admin")) return Promise.resolve(page(recentLodgings));
-    if (endpoint.startsWith("/reservations/admin")) return Promise.resolve(page(reservations));
+    if (endpoint.startsWith("/lodgings/admin"))
+      return Promise.resolve(page(recentLodgings));
+    if (endpoint.startsWith("/reservations/admin"))
+      return Promise.resolve(page(reservations));
     return Promise.resolve([]);
   });
 }
@@ -80,6 +82,105 @@ describe("AdminDashboard - stat count", () => {
 
     await waitFor(() => expect(screen.getAllByText("—")).toHaveLength(5));
   });
+
+  it("keeps successful recent sections visible when lodgings fail", async () => {
+    get.mockImplementation((endpoint) => {
+      if (endpoint.startsWith("/lodgings/admin"))
+        return Promise.reject(new Error("fail"));
+      if (endpoint.startsWith("/reservations/admin")) {
+        return Promise.resolve(
+          page([
+            {
+              id: 1,
+              lodgingName: "Cabaña",
+              guestName: "Ana García",
+              checkIn: "2026-07-01",
+              checkOut: "2026-07-04",
+              totalPrice: 300,
+              status: "CONFIRMED",
+            },
+          ]),
+        );
+      }
+      return Promise.resolve({ ...EMPTY_STATS, lodgings: 7 });
+    });
+    render(<AdminDashboard onTabChange={vi.fn()} />);
+
+    expect(await screen.findByText("7")).toBeInTheDocument();
+    expect(screen.getByText("Últimas reservas")).toBeInTheDocument();
+    expect(
+      screen.getByText("No pudimos cargar los alojamientos recientes."),
+    ).toBeInTheDocument();
+  });
+
+  it("retries each failed section independently and recovers only that section", async () => {
+    const requests = { stats: 0, lodgings: 0, reservations: 0 };
+    get.mockImplementation((endpoint) => {
+      if (endpoint === "/admin/stats") {
+        requests.stats += 1;
+        return requests.stats === 1
+          ? Promise.reject(new Error("fail"))
+          : Promise.resolve({ ...EMPTY_STATS, lodgings: 9 });
+      }
+      if (endpoint.startsWith("/lodgings/admin")) {
+        requests.lodgings += 1;
+        return requests.lodgings === 1
+          ? Promise.reject(new Error("fail"))
+          : Promise.resolve(page([{ id: 2, name: "Hotel Sol" }]));
+      }
+      if (endpoint.startsWith("/reservations/admin")) {
+        requests.reservations += 1;
+        return requests.reservations === 1
+          ? Promise.reject(new Error("fail"))
+          : Promise.resolve(
+              page([
+                {
+                  id: 3,
+                  lodgingName: "Hostal",
+                  guestName: "Luis Pérez",
+                  checkIn: "2026-08-01",
+                  checkOut: "2026-08-03",
+                  totalPrice: 200,
+                  status: "CONFIRMED",
+                },
+              ]),
+            );
+      }
+      return Promise.resolve([]);
+    });
+    const user = userEvent.setup();
+    render(<AdminDashboard onTabChange={vi.fn()} />);
+
+    await screen.findByText("No pudimos cargar las estadísticas.");
+    expect(
+      screen.getByText("No pudimos cargar los alojamientos recientes."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("No pudimos cargar las reservas recientes."),
+    ).toBeInTheDocument();
+
+    const retryButtons = screen.getAllByRole("button", { name: "Reintentar" });
+    await user.click(retryButtons[0]);
+    expect(await screen.findByText("9")).toBeInTheDocument();
+    expect(
+      screen.queryByText("No pudimos cargar las estadísticas."),
+    ).not.toBeInTheDocument();
+    expect(requests).toEqual({ stats: 2, lodgings: 1, reservations: 1 });
+
+    await user.click(retryButtons[1]);
+    expect(await screen.findByText("Hotel Sol")).toBeInTheDocument();
+    expect(
+      screen.queryByText("No pudimos cargar los alojamientos recientes."),
+    ).not.toBeInTheDocument();
+    expect(requests).toEqual({ stats: 2, lodgings: 2, reservations: 1 });
+
+    await user.click(retryButtons[2]);
+    expect(await screen.findByText("Hostal")).toBeInTheDocument();
+    expect(
+      screen.queryByText("No pudimos cargar las reservas recientes."),
+    ).not.toBeInTheDocument();
+    expect(requests).toEqual({ stats: 2, lodgings: 2, reservations: 2 });
+  });
 });
 
 describe("AdminDashboard - tab navigation", () => {
@@ -90,7 +191,7 @@ describe("AdminDashboard - tab navigation", () => {
     render(<AdminDashboard onTabChange={onTabChange} />);
 
     await user.click(
-      screen.getByText("Alojamientos").closest('[role="button"]')
+      screen.getByText("Alojamientos").closest('[role="button"]'),
     );
     expect(onTabChange).toHaveBeenCalledWith("lodgings");
   });
@@ -101,9 +202,7 @@ describe("AdminDashboard - tab navigation", () => {
     const user = userEvent.setup();
     render(<AdminDashboard onTabChange={onTabChange} />);
 
-    await user.click(
-      screen.getByText("Reservas").closest('[role="button"]')
-    );
+    await user.click(screen.getByText("Reservas").closest('[role="button"]'));
     expect(onTabChange).toHaveBeenCalledWith("reservations");
   });
 });
@@ -169,29 +268,53 @@ describe("AdminDashboard - recent reservations table", () => {
 
   it("shows reservation notes and labels derived creation times as estimated", async () => {
     mockGetDefaults({
-      reservations: [{
-        id: 1, lodgingName: "Cabaña", guestName: "Ana García", checkIn: "2026-07-01",
-        checkOut: "2026-07-04", totalPrice: 300, status: "CONFIRMED",
-        createdAt: "2026-07-01T00:00:00", createdAtDerived: true, notes: "Llegada tarde",
-      }],
+      reservations: [
+        {
+          id: 1,
+          lodgingName: "Cabaña",
+          guestName: "Ana García",
+          checkIn: "2026-07-01",
+          checkOut: "2026-07-04",
+          totalPrice: 300,
+          status: "CONFIRMED",
+          createdAt: "2026-07-01T00:00:00",
+          createdAtDerived: true,
+          notes: "Llegada tarde",
+        },
+      ],
     });
     render(<AdminDashboard onTabChange={vi.fn()} />);
 
-    expect(await screen.findByText("Fecha estimada: 01/07/2026 00:00")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Fecha estimada: 01/07/2026 00:00"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Llegada tarde")).toBeInTheDocument();
   });
 
   it("omits empty notes from recent reservations", async () => {
     mockGetDefaults({
-      reservations: [{
-        id: 1, lodgingName: "Cabaña", guestName: "Ana García", checkIn: "2026-07-01",
-        checkOut: "2026-07-04", totalPrice: 300, status: "CONFIRMED",
-        createdAt: "2026-06-20T14:30:00", createdAtDerived: false, notes: " ",
-      }],
+      reservations: [
+        {
+          id: 1,
+          lodgingName: "Cabaña",
+          guestName: "Ana García",
+          checkIn: "2026-07-01",
+          checkOut: "2026-07-04",
+          totalPrice: 300,
+          status: "CONFIRMED",
+          createdAt: "2026-06-20T14:30:00",
+          createdAtDerived: false,
+          notes: " ",
+        },
+      ],
     });
     render(<AdminDashboard onTabChange={vi.fn()} />);
 
-    expect(await screen.findByText("Fecha de creación: 20/06/2026 14:30")).toBeInTheDocument();
-    expect(screen.getByText("Fecha de creación: 20/06/2026 14:30").closest("tr")).toHaveTextContent("-");
+    expect(
+      await screen.findByText("Fecha de creación: 20/06/2026 14:30"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Fecha de creación: 20/06/2026 14:30").closest("tr"),
+    ).toHaveTextContent("-");
   });
 });
