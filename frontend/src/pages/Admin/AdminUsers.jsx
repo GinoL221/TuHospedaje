@@ -21,21 +21,27 @@ export default function AdminUsers() {
     accessors: { name: (u) => (u.firstName || "") + " " + (u.lastName || "") },
   });
   const [roleConfirm, setRoleConfirm] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const data = await getUsers();
-        if (!cancelled) setUsers(Array.isArray(data) ? data : []);
+        if (!cancelled) {
+          setUsers(Array.isArray(data) ? data : []);
+          setLoadError(false);
+        }
       } catch (err) {
         console.error(err);
+        if (!cancelled) setLoadError(true);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAttempt]);
 
   const toggleRole = (u) => {
     const newRole = u.role === "ADMIN" ? "USER" : "ADMIN";
@@ -65,9 +71,18 @@ export default function AdminUsers() {
 
   return (
     <>
-      {users.length === 0 ? (
+      {loadError && (
+        <div role="alert">
+          <p>No pudimos cargar los usuarios.</p>
+          <button onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+            Reintentar
+          </button>
+        </div>
+      )}
+      {!loadError && users.length === 0 && (
         <p className="empty-state">No hay usuarios registrados.</p>
-      ) : (
+      )}
+      {!loadError && users.length > 0 && (
         <>
           <table>
             <thead>
