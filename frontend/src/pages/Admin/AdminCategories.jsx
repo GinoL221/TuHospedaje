@@ -50,6 +50,7 @@ export default function AdminCategories() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleteError, setDeleteError] = useState("");
+  const [categoriesLoadError, setCategoriesLoadError] = useState(false);
   const nameInputRef = useRef(null);
   const imageUrlInputRef = useRef(null);
 
@@ -64,16 +65,23 @@ export default function AdminCategories() {
     },
   );
 
+  const loadCategories = (isCancelled = () => false) => {
+    getCategories()
+      .then((data) => {
+        if (isCancelled()) return;
+        setCatList(Array.isArray(data) ? data : []);
+        setCategoriesLoadError(false);
+      })
+      .catch((err) => {
+        if (isCancelled()) return;
+        console.error(err);
+        setCategoriesLoadError(true);
+      });
+  };
+
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const data = await getCategories();
-        if (!cancelled) setCatList(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error(err);
-      }
-    })();
+    loadCategories(() => cancelled);
     return () => {
       cancelled = true;
     };
@@ -179,7 +187,12 @@ export default function AdminCategories() {
       >
         + Agregar categoría
       </button>
-      {catList.length === 0 ? (
+      {categoriesLoadError ? (
+        <div role="alert">
+          <p>No pudimos cargar las categorías.</p>
+          <button onClick={() => loadCategories()}>Reintentar</button>
+        </div>
+      ) : catList.length === 0 ? (
         <p className="empty-state">
           No hay categorías cargadas todavía. ¡Creá la primera!
         </p>
