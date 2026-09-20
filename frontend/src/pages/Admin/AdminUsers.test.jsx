@@ -1,4 +1,10 @@
-import { customRender, screen, userEvent, makeAuthValue, waitFor } from "../../test/test-utils";
+import {
+  customRender,
+  screen,
+  userEvent,
+  makeAuthValue,
+  waitFor,
+} from "../../test/test-utils";
 import AdminUsers from "./AdminUsers";
 import { get, put } from "../../services/api";
 
@@ -23,14 +29,20 @@ describe("AdminUsers - listing", () => {
     renderAdminUsers();
 
     expect(
-      await screen.findByText("No hay usuarios registrados.")
+      await screen.findByText("No hay usuarios registrados."),
     ).toBeInTheDocument();
   });
 
   it("renders a row per user with name, email and role badge", async () => {
     get.mockResolvedValue([
       userFixture({ id: 1, firstName: "Ana", lastName: "Gomez", role: "USER" }),
-      userFixture({ id: 2, firstName: "Beto", lastName: "Diaz", email: "beto@example.com", role: "ADMIN" }),
+      userFixture({
+        id: 2,
+        firstName: "Beto",
+        lastName: "Diaz",
+        email: "beto@example.com",
+        role: "ADMIN",
+      }),
     ]);
     renderAdminUsers();
 
@@ -51,6 +63,36 @@ describe("AdminUsers - listing", () => {
     await screen.findByText("ana@example.com");
     expect(get).toHaveBeenCalledWith("/users");
   });
+
+  it("shows a load error instead of the empty state when fetching users fails", async () => {
+    get.mockRejectedValue(new Error("Network error"));
+    renderAdminUsers();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No pudimos cargar los usuarios.",
+    );
+    expect(
+      screen.getByRole("button", { name: "Reintentar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No hay usuarios registrados."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("retries loading users and removes the error after a successful response", async () => {
+    get
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce([userFixture()]);
+    const user = userEvent.setup();
+    renderAdminUsers();
+
+    await screen.findByRole("alert");
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(await screen.findByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("AdminUsers - role toggle", () => {
@@ -68,7 +110,7 @@ describe("AdminUsers - role toggle", () => {
     // Uses the in-app ConfirmDialog (testId confirm-role-toggle), NOT
     // window.confirm — same mechanism as AdminLodgings/AdminCategories.
     expect(screen.getByTestId("confirm-role-toggle")).toHaveTextContent(
-      '¿dar permisos de admin a "Ana Gomez"?'
+      '¿dar permisos de admin a "Ana Gomez"?',
     );
     expect(put).not.toHaveBeenCalled();
 
@@ -77,7 +119,9 @@ describe("AdminUsers - role toggle", () => {
     expect(put).toHaveBeenCalledWith("/users/1/role", { role: "ADMIN" });
 
     await waitFor(() => {
-      expect(screen.getByTestId("row-role-btn")).toHaveTextContent("Quitar admin");
+      expect(screen.getByTestId("row-role-btn")).toHaveTextContent(
+        "Quitar admin",
+      );
     });
     expect(screen.queryByTestId("confirm-role-toggle")).not.toBeInTheDocument();
   });
@@ -101,22 +145,32 @@ describe("AdminUsers - role toggle", () => {
   it("keeps the dialog message scoped to the most recently clicked user when reopened for a different row", async () => {
     get.mockResolvedValue([
       userFixture({ id: 1, firstName: "Ana", lastName: "Gomez", role: "USER" }),
-      userFixture({ id: 2, firstName: "Beto", lastName: "Diaz", email: "beto@example.com", role: "ADMIN" }),
+      userFixture({
+        id: 2,
+        firstName: "Beto",
+        lastName: "Diaz",
+        email: "beto@example.com",
+        role: "ADMIN",
+      }),
     ]);
     const user = userEvent.setup();
     renderAdminUsers();
 
     await screen.findByText("ana@example.com");
 
-    await user.click(screen.getByTestId("row-1").querySelector("[data-testid='row-role-btn']"));
+    await user.click(
+      screen.getByTestId("row-1").querySelector("[data-testid='row-role-btn']"),
+    );
     expect(screen.getByTestId("confirm-role-toggle")).toHaveTextContent(
-      '¿dar permisos de admin a "Ana Gomez"?'
+      '¿dar permisos de admin a "Ana Gomez"?',
     );
     await user.click(screen.getByTestId("confirm-role-toggle-no"));
 
-    await user.click(screen.getByTestId("row-2").querySelector("[data-testid='row-role-btn']"));
+    await user.click(
+      screen.getByTestId("row-2").querySelector("[data-testid='row-role-btn']"),
+    );
     expect(screen.getByTestId("confirm-role-toggle")).toHaveTextContent(
-      '¿quitar permisos de admin a "Beto Diaz"?'
+      '¿quitar permisos de admin a "Beto Diaz"?',
     );
     expect(put).not.toHaveBeenCalled();
   });
@@ -148,13 +202,19 @@ describe("AdminUsers - role toggle", () => {
       userFixture({ id: 1, email: "admin@example.com", role: "ADMIN" }),
       userFixture({ id: 2, email: "ana@example.com", role: "USER" }),
     ]);
-    renderAdminUsers({ authValue: makeAuthValue({ user: { ...makeAuthValue().user, email: "admin@example.com" } }) });
+    renderAdminUsers({
+      authValue: makeAuthValue({
+        user: { ...makeAuthValue().user, email: "admin@example.com" },
+      }),
+    });
 
     await screen.findByText("admin@example.com");
 
     const ownRow = screen.getByTestId("row-1");
     const otherRow = screen.getByTestId("row-2");
     expect(ownRow.querySelector("[data-testid='row-role-btn']")).toBeDisabled();
-    expect(otherRow.querySelector("[data-testid='row-role-btn']")).not.toBeDisabled();
+    expect(
+      otherRow.querySelector("[data-testid='row-role-btn']"),
+    ).not.toBeDisabled();
   });
 });
