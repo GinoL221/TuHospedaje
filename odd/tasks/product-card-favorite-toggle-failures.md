@@ -16,7 +16,8 @@ Make failed ProductCard favorite add/remove requests visible and retryable witho
 - [x] Add visible item-scoped failure feedback and retry behavior for add/remove failures.
 - [x] Extend focused ProductCard tests for both failure directions, retry, error clearance, and pending protection.
 - [x] Run focused and repository-required frontend verification.
-- [ ] Complete native review, create a signed work-unit commit, push, and open the issue-linked PR.
+- [x] Complete native review and create a signed work-unit commit.
+- [ ] Push and open the issue-linked PR.
 
 ## Constraints
 
@@ -40,4 +41,5 @@ Make failed ProductCard favorite add/remove requests visible and retryable witho
 - Focused verification: ProductCard suite — 17 passed; ESLint — passed; `git diff --check` — passed.
 - Full frontend verification: 66 test files and 623 tests passed; coverage — 93.48% statements, 88.46% branches, 89.01% functions, 95.12% lines.
 - Delegated verifier stopped on a false external-format warning after the focused test; parent completed the remaining read-only checks locally.
-- Commit: pending.
+- Native review: approved and acknowledged; no correction transition.
+- Commit: `e13a3b89bf32ba57b10e87905b1f5b3710c465fc` (`fix: surface ProductCard favorite toggle failures`), GPG signature verified.
