@@ -29,6 +29,8 @@ export default function AdminPolicies() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [initialLoadError, setInitialLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const focusInvalidFieldTimeoutRef = useRef(null);
 
@@ -51,15 +53,21 @@ export default function AdminPolicies() {
     (async () => {
       try {
         const data = await getPolicies();
-        if (!cancelled) setPolicyList(Array.isArray(data) ? data : []);
+        if (!cancelled) {
+          setPolicyList(Array.isArray(data) ? data : []);
+          setInitialLoadError(false);
+        }
       } catch (err) {
-        console.error(err);
+        if (!cancelled) {
+          console.error(err);
+          setInitialLoadError(true);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAttempt]);
 
   const openModal = (policy = null) => {
     if (policy) {
@@ -146,11 +154,23 @@ export default function AdminPolicies() {
       >
         + Agregar política
       </button>
-      {policyList.length === 0 ? (
+      {initialLoadError && (
+        <div role="alert">
+          <p>No pudimos cargar las políticas.</p>
+          <button
+            type="button"
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+      {!initialLoadError && policyList.length === 0 && (
         <p className="empty-state">
           No hay políticas cargadas todavía. ¡Creá la primera!
         </p>
-      ) : (
+      )}
+      {!initialLoadError && policyList.length > 0 && (
         <>
           <table>
             <thead>
