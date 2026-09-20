@@ -1,4 +1,10 @@
-import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
+import {
+  customRender,
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+} from "../../test/test-utils";
 import AdminPolicies from "./AdminPolicies";
 import { get, post, put, del } from "../../services/api";
 
@@ -22,14 +28,64 @@ describe("AdminPolicies - listing", () => {
     renderAdminPolicies();
 
     expect(
-      await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!")
+      await screen.findByText(
+        "No hay políticas cargadas todavía. ¡Creá la primera!",
+      ),
     ).toBeInTheDocument();
+  });
+
+  it("shows an alert instead of the empty state when the initial load fails", async () => {
+    get.mockRejectedValue(new Error("Network error"));
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    renderAdminPolicies();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No pudimos cargar las políticas.",
+    );
+    expect(
+      screen.getByRole("button", { name: "Reintentar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "No hay políticas cargadas todavía. ¡Creá la primera!",
+      ),
+    ).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("retries the initial load and restores the successful empty state", async () => {
+    get
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce([]);
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderAdminPolicies();
+
+    await screen.findByRole("alert");
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(
+      await screen.findByText(
+        "No hay políticas cargadas todavía. ¡Creá la primera!",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+    consoleErrorSpy.mockRestore();
   });
 
   it("renders a row per policy with name and description", async () => {
     get.mockResolvedValue([
       policyFixture({ id: 1, name: "Check-in flexible" }),
-      policyFixture({ id: 2, name: "No mascotas", description: "No se permiten mascotas." }),
+      policyFixture({
+        id: 2,
+        name: "No mascotas",
+        description: "No se permiten mascotas.",
+      }),
     ]);
     renderAdminPolicies();
 
@@ -53,11 +109,15 @@ describe("AdminPolicies - create", () => {
     const user = userEvent.setup();
     renderAdminPolicies();
 
-    await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay políticas cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Nueva política" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Nueva política" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("field-name")).toHaveValue("");
   });
 
@@ -66,7 +126,9 @@ describe("AdminPolicies - create", () => {
     const user = userEvent.setup();
     renderAdminPolicies();
 
-    await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay políticas cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
     await user.click(screen.getByTestId("admin-save-btn"));
 
@@ -74,8 +136,12 @@ describe("AdminPolicies - create", () => {
     // AdminFeatures), and ALSO carries a description field (like
     // AdminCategories) — re-verified individually from validate(), not
     // assumed shared across the four modules.
-    expect(await screen.findByTestId("error-name")).toHaveTextContent("El nombre es obligatorio");
-    expect(screen.getByTestId("error-icon")).toHaveTextContent("El ícono es obligatorio");
+    expect(await screen.findByTestId("error-name")).toHaveTextContent(
+      "El nombre es obligatorio",
+    );
+    expect(screen.getByTestId("error-icon")).toHaveTextContent(
+      "El ícono es obligatorio",
+    );
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -85,11 +151,16 @@ describe("AdminPolicies - create", () => {
     const user = userEvent.setup();
     renderAdminPolicies();
 
-    await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay políticas cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     await user.type(screen.getByTestId("field-name"), "Check-in flexible");
-    await user.type(screen.getByTestId("field-description"), "Ingreso a partir de las 14hs.");
+    await user.type(
+      screen.getByTestId("field-description"),
+      "Ingreso a partir de las 14hs.",
+    );
     await user.click(screen.getByTestId("icon-picker-trigger"));
     await user.click(screen.getByTestId("icon-picker-item-clock"));
 
@@ -112,19 +183,25 @@ describe("AdminPolicies - create", () => {
 
 describe("AdminPolicies - edit", () => {
   it("opens the modal pre-filled with the selected policy's data", async () => {
-    get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+    ]);
     const user = userEvent.setup();
     renderAdminPolicies();
 
     await screen.findByText("Check-in flexible");
     await user.click(screen.getByTestId("row-edit-btn"));
 
-    expect(screen.getByRole("heading", { name: "Editar política" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Editar política" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("field-name")).toHaveValue("Check-in flexible");
   });
 
   it("shows an inline form error (not an alert) when the update request rejects", async () => {
-    get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+    ]);
     put.mockRejectedValue(new Error("No se pudo actualizar"));
     const user = userEvent.setup();
     renderAdminPolicies();
@@ -133,12 +210,16 @@ describe("AdminPolicies - edit", () => {
     await user.click(screen.getByTestId("row-edit-btn"));
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(await screen.findByText("No se pudo actualizar")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No se pudo actualizar"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
   });
 
   it("asks for confirm-cancel when there are unsaved changes and keeps the modal open on dismiss", async () => {
-    get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+    ]);
     const user = userEvent.setup();
     renderAdminPolicies();
 
@@ -160,7 +241,9 @@ describe("AdminPolicies - edit", () => {
 
 describe("AdminPolicies - delete", () => {
   it("shows the in-app confirm dialog and calls DELETE /policies/:id on accept, then refreshes the list", async () => {
-    get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+    ]);
     del.mockResolvedValue({});
     const user = userEvent.setup();
     renderAdminPolicies();
@@ -172,7 +255,7 @@ describe("AdminPolicies - delete", () => {
     // from the confirm-cancel dialog (unsaved-edit guard) that already exists
     // in this same screen via useConfirmCancel.
     expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
-      '¿Eliminar política "Check-in flexible"?'
+      '¿Eliminar política "Check-in flexible"?',
     );
     expect(del).not.toHaveBeenCalled();
 
@@ -184,12 +267,16 @@ describe("AdminPolicies - delete", () => {
       expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     });
     expect(
-      await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!")
+      await screen.findByText(
+        "No hay políticas cargadas todavía. ¡Creá la primera!",
+      ),
     ).toBeInTheDocument();
   });
 
   it("makes no DELETE request when the confirmation is dismissed", async () => {
-    get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+    ]);
     const user = userEvent.setup();
     renderAdminPolicies();
 
@@ -203,7 +290,9 @@ describe("AdminPolicies - delete", () => {
   });
 
   it("surfaces the request error via alert when DELETE rejects", async () => {
-    get.mockResolvedValue([policyFixture({ id: 1, name: "Check-in flexible" })]);
+    get.mockResolvedValue([
+      policyFixture({ id: 1, name: "Check-in flexible" }),
+    ]);
     del.mockRejectedValue(new Error("No se pudo eliminar"));
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     const user = userEvent.setup();
@@ -223,19 +312,35 @@ describe("AdminPolicies - delete", () => {
   it("keeps the dialog message scoped to the most recently clicked row when reopened for a different policy", async () => {
     get.mockResolvedValue([
       policyFixture({ id: 1, name: "Check-in flexible" }),
-      policyFixture({ id: 2, name: "No mascotas", description: "No se permiten mascotas." }),
+      policyFixture({
+        id: 2,
+        name: "No mascotas",
+        description: "No se permiten mascotas.",
+      }),
     ]);
     const user = userEvent.setup();
     renderAdminPolicies();
 
     await screen.findByText("Check-in flexible");
 
-    await user.click(screen.getByTestId("row-1").querySelector("[data-testid='row-delete-btn']"));
-    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar política "Check-in flexible"?');
+    await user.click(
+      screen
+        .getByTestId("row-1")
+        .querySelector("[data-testid='row-delete-btn']"),
+    );
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
+      '¿Eliminar política "Check-in flexible"?',
+    );
     await user.click(screen.getByTestId("confirm-delete-no"));
 
-    await user.click(screen.getByTestId("row-2").querySelector("[data-testid='row-delete-btn']"));
-    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar política "No mascotas"?');
+    await user.click(
+      screen
+        .getByTestId("row-2")
+        .querySelector("[data-testid='row-delete-btn']"),
+    );
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
+      '¿Eliminar política "No mascotas"?',
+    );
     expect(del).not.toHaveBeenCalled();
   });
 });
@@ -246,7 +351,9 @@ describe("AdminPolicies - invalid-field focus timeout cleanup", () => {
     const user = userEvent.setup();
     const { unmount } = renderAdminPolicies();
 
-    await screen.findByText("No hay políticas cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay políticas cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
