@@ -51,6 +51,7 @@ export default function AdminCategories() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleteError, setDeleteError] = useState("");
   const [categoriesLoadError, setCategoriesLoadError] = useState(false);
+  const categoryRequestSequence = useRef(0);
   const nameInputRef = useRef(null);
   const imageUrlInputRef = useRef(null);
 
@@ -66,14 +67,19 @@ export default function AdminCategories() {
   );
 
   const loadCategories = (isCancelled = () => false) => {
+    const requestId = categoryRequestSequence.current + 1;
+    categoryRequestSequence.current = requestId;
+
     getCategories()
       .then((data) => {
-        if (isCancelled()) return;
+        if (isCancelled() || requestId !== categoryRequestSequence.current)
+          return;
         setCatList(Array.isArray(data) ? data : []);
         setCategoriesLoadError(false);
       })
       .catch((err) => {
-        if (isCancelled()) return;
+        if (isCancelled() || requestId !== categoryRequestSequence.current)
+          return;
         console.error(err);
         setCategoriesLoadError(true);
       });
@@ -114,9 +120,17 @@ export default function AdminCategories() {
   };
 
   const refresh = () => {
+    const requestId = categoryRequestSequence.current + 1;
+    categoryRequestSequence.current = requestId;
+
     getCategories()
-      .then((data) => setCatList(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .then((data) => {
+        if (requestId !== categoryRequestSequence.current) return;
+        setCatList(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (requestId !== categoryRequestSequence.current) return;
+      });
   };
 
   const validate = () => {
