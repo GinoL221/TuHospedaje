@@ -1,4 +1,10 @@
-import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
+import {
+  customRender,
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+} from "../../test/test-utils";
 import AdminFeatures from "./AdminFeatures";
 import { get, post, put, del } from "../../services/api";
 
@@ -21,14 +27,48 @@ describe("AdminFeatures - listing", () => {
     renderAdminFeatures();
 
     expect(
-      await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!")
+      await screen.findByText(
+        "No hay características cargadas todavía. ¡Creá la primera!",
+      ),
     ).toBeInTheDocument();
+  });
+
+  it("shows an alert instead of the empty state when the initial load fails, then retries successfully", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    get.mockRejectedValueOnce(new Error("Network error"));
+    const user = userEvent.setup();
+    renderAdminFeatures();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No pudimos cargar las características.",
+    );
+    expect(
+      screen.getByRole("button", { name: "Reintentar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "No hay características cargadas todavía. ¡Creá la primera!",
+      ),
+    ).not.toBeInTheDocument();
+
+    get.mockResolvedValueOnce([featureFixture()]);
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(await screen.findByText("WiFi")).toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+    consoleErrorSpy.mockRestore();
   });
 
   it("renders a row per feature with name and icon code", async () => {
     get.mockResolvedValue([
       featureFixture({ id: 1, name: "WiFi" }),
-      featureFixture({ id: 2, name: "Pileta", icon: "fa-solid fa-water-ladder" }),
+      featureFixture({
+        id: 2,
+        name: "Pileta",
+        icon: "fa-solid fa-water-ladder",
+      }),
     ]);
     renderAdminFeatures();
 
@@ -52,11 +92,15 @@ describe("AdminFeatures - create", () => {
     const user = userEvent.setup();
     renderAdminFeatures();
 
-    await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay características cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Nueva característica" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Nueva característica" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("field-name")).toHaveValue("");
   });
 
@@ -65,7 +109,9 @@ describe("AdminFeatures - create", () => {
     const user = userEvent.setup();
     renderAdminFeatures();
 
-    await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay características cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
     await user.click(screen.getByTestId("admin-save-btn"));
 
@@ -73,8 +119,12 @@ describe("AdminFeatures - create", () => {
     // AdminCategories (only name required) and AdminPolicies (name + icon,
     // same as here) — each module's required-field set was re-verified
     // individually from its own validate() function, not assumed shared.
-    expect(await screen.findByTestId("error-name")).toHaveTextContent("El nombre es obligatorio");
-    expect(screen.getByTestId("error-icon")).toHaveTextContent("El ícono es obligatorio");
+    expect(await screen.findByTestId("error-name")).toHaveTextContent(
+      "El nombre es obligatorio",
+    );
+    expect(screen.getByTestId("error-icon")).toHaveTextContent(
+      "El ícono es obligatorio",
+    );
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -84,7 +134,9 @@ describe("AdminFeatures - create", () => {
     const user = userEvent.setup();
     renderAdminFeatures();
 
-    await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay características cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     await user.type(screen.getByTestId("field-name"), "WiFi");
@@ -97,7 +149,10 @@ describe("AdminFeatures - create", () => {
 
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(post).toHaveBeenCalledWith("/features", { name: "WiFi", icon: "wifi" });
+    expect(post).toHaveBeenCalledWith("/features", {
+      name: "WiFi",
+      icon: "wifi",
+    });
 
     await waitFor(() => {
       expect(screen.queryByTestId("admin-modal")).not.toBeInTheDocument();
@@ -115,7 +170,9 @@ describe("AdminFeatures - edit", () => {
     await screen.findByText("WiFi");
     await user.click(screen.getByTestId("row-edit-btn"));
 
-    expect(screen.getByRole("heading", { name: "Editar característica" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Editar característica" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("field-name")).toHaveValue("WiFi");
   });
 
@@ -129,7 +186,9 @@ describe("AdminFeatures - edit", () => {
     await user.click(screen.getByTestId("row-edit-btn"));
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(await screen.findByText("No se pudo actualizar")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No se pudo actualizar"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
   });
 
@@ -168,7 +227,7 @@ describe("AdminFeatures - delete", () => {
     // from the confirm-cancel dialog (unsaved-edit guard) that already exists
     // in this same screen via useConfirmCancel.
     expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
-      '¿Eliminar característica "WiFi"?'
+      '¿Eliminar característica "WiFi"?',
     );
     expect(del).not.toHaveBeenCalled();
 
@@ -180,7 +239,9 @@ describe("AdminFeatures - delete", () => {
       expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     });
     expect(
-      await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!")
+      await screen.findByText(
+        "No hay características cargadas todavía. ¡Creá la primera!",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -219,19 +280,35 @@ describe("AdminFeatures - delete", () => {
   it("keeps the dialog message scoped to the most recently clicked row when reopened for a different feature", async () => {
     get.mockResolvedValue([
       featureFixture({ id: 1, name: "WiFi" }),
-      featureFixture({ id: 2, name: "Pileta", icon: "fa-solid fa-water-ladder" }),
+      featureFixture({
+        id: 2,
+        name: "Pileta",
+        icon: "fa-solid fa-water-ladder",
+      }),
     ]);
     const user = userEvent.setup();
     renderAdminFeatures();
 
     await screen.findByText("WiFi");
 
-    await user.click(screen.getByTestId("row-1").querySelector("[data-testid='row-delete-btn']"));
-    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar característica "WiFi"?');
+    await user.click(
+      screen
+        .getByTestId("row-1")
+        .querySelector("[data-testid='row-delete-btn']"),
+    );
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
+      '¿Eliminar característica "WiFi"?',
+    );
     await user.click(screen.getByTestId("confirm-delete-no"));
 
-    await user.click(screen.getByTestId("row-2").querySelector("[data-testid='row-delete-btn']"));
-    expect(screen.getByTestId("confirm-delete")).toHaveTextContent('¿Eliminar característica "Pileta"?');
+    await user.click(
+      screen
+        .getByTestId("row-2")
+        .querySelector("[data-testid='row-delete-btn']"),
+    );
+    expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
+      '¿Eliminar característica "Pileta"?',
+    );
     expect(del).not.toHaveBeenCalled();
   });
 });
@@ -242,7 +319,9 @@ describe("AdminFeatures - invalid-field focus timeout cleanup", () => {
     const user = userEvent.setup();
     const { unmount } = renderAdminFeatures();
 
-    await screen.findByText("No hay características cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay características cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
