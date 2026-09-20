@@ -23,6 +23,16 @@ function renderAdminCategories(options) {
   return customRender(<AdminCategories />, options);
 }
 
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 describe("AdminCategories - listing", () => {
   it("renders the empty state when there are no categories", async () => {
     get.mockResolvedValue([]);
@@ -86,6 +96,38 @@ describe("AdminCategories - listing", () => {
     expect(await screen.findByText("Cabañas")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the latest categories when a superseded initial load rejects", async () => {
+    const initialLoad = deferred();
+    let initialLoadSettled = false;
+    initialLoad.promise.catch(() => {
+      initialLoadSettled = true;
+    });
+    get
+      .mockReturnValueOnce(initialLoad.promise)
+      .mockResolvedValueOnce([categoryFixture({ name: "Hoteles" })]);
+    post.mockResolvedValue(categoryFixture());
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await user.click(screen.getByTestId("admin-add-btn"));
+    await user.type(screen.getByTestId("field-name"), "Hoteles");
+    await user.type(
+      screen.getByTestId("field-image-url"),
+      "https://img.example.com/hoteles.jpg",
+    );
+    await user.click(screen.getByTestId("admin-save-btn"));
+
+    expect(await screen.findByText("Hoteles")).toBeInTheDocument();
+
+    initialLoad.reject(new Error("Network error"));
+
+    await waitFor(() => {
+      expect(initialLoadSettled).toBe(true);
+    });
+    expect(screen.getByText("Hoteles")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
 
