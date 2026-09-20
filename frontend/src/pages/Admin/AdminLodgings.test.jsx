@@ -41,6 +41,16 @@ function pageResponse(items, overrides = {}) {
 	};
 }
 
+function deferred() {
+	let resolve;
+	let reject;
+	const promise = new Promise((promiseResolve, promiseReject) => {
+		resolve = promiseResolve;
+		reject = promiseReject;
+	});
+	return { promise, resolve, reject };
+}
+
 function mockGetDefaults({
 	lodgings = [lodgingFixture()],
 	categories = [],
@@ -113,6 +123,30 @@ describe("AdminLodgings - listing", () => {
 				"No hay alojamientos cargados todavía. ¡Agregá el primero!",
 			),
 		).not.toBeInTheDocument();
+	});
+
+	it("keeps the latest successful search results when an earlier request rejects", async () => {
+		const initialRequest = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/admin")) {
+				const params = new URLSearchParams(endpoint.split("?")[1]);
+				return params.get("q")
+					? Promise.resolve(pageResponse([lodgingFixture({ name: "Lago Azul" })]))
+					: initialRequest.promise;
+			}
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderAdminLodgings();
+
+		await user.type(screen.getByLabelText("Buscar alojamientos"), "lago");
+
+		expect(await screen.findByText("Lago Azul")).toBeInTheDocument();
+		initialRequest.reject(new Error("Initial request failed"));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(screen.getByText("Lago Azul")).toBeInTheDocument();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
 	it("retries the failed lodging request with the current listing parameters", async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
 	deleteLodging,
 	getAdminLodgings,
@@ -24,8 +24,12 @@ export default function AdminLodgings() {
 	const [sortDir, setSortDir] = useState("asc");
 	const [search, setSearch] = useState("");
 	const [lodgingsError, setLodgingsError] = useState(false);
+	const lodgingRequestSequence = useRef(0);
 
 	const fetchLodgings = useCallback(() => {
+		const requestId = lodgingRequestSequence.current + 1;
+		lodgingRequestSequence.current = requestId;
+
 		getAdminLodgings({
 			page,
 			size: 10,
@@ -34,6 +38,8 @@ export default function AdminLodgings() {
 			q: search,
 		})
 			.then((data) => {
+				if (requestId !== lodgingRequestSequence.current) return;
+
 				setLodgingsError(false);
 				const items = Array.isArray(data?.items) ? data.items : [];
 				const nextTotalPages = data?.totalPages ?? 0;
@@ -47,7 +53,11 @@ export default function AdminLodgings() {
 				setLodgings(items);
 				setTotalPages(nextTotalPages);
 			})
-			.catch(() => setLodgingsError(true));
+			.catch(() => {
+				if (requestId !== lodgingRequestSequence.current) return;
+
+				setLodgingsError(true);
+			});
 	}, [page, search, sortDir, sortKey]);
 
 	const fetchData = (fetcher, setter) => {
