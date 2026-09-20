@@ -29,6 +29,8 @@ export default function AdminFeatures() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [initialLoadError, setInitialLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const focusInvalidFieldTimeoutRef = useRef(null);
 
@@ -48,15 +50,21 @@ export default function AdminFeatures() {
     (async () => {
       try {
         const data = await getFeatures();
-        if (!cancelled) setFeatureList(Array.isArray(data) ? data : []);
+        if (!cancelled) {
+          setFeatureList(Array.isArray(data) ? data : []);
+          setInitialLoadError(false);
+        }
       } catch (err) {
-        console.error(err);
+        if (!cancelled) {
+          console.error(err);
+          setInitialLoadError(true);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAttempt]);
 
   const openModal = (feat = null) => {
     if (feat) {
@@ -135,11 +143,23 @@ export default function AdminFeatures() {
       >
         + Agregar característica
       </button>
-      {featureList.length === 0 ? (
+      {initialLoadError && (
+        <div role="alert">
+          <p>No pudimos cargar las características.</p>
+          <button
+            type="button"
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+      {!initialLoadError && featureList.length === 0 && (
         <p className="empty-state">
           No hay características cargadas todavía. ¡Creá la primera!
         </p>
-      ) : (
+      )}
+      {!initialLoadError && featureList.length > 0 && (
         <>
           <table>
             <thead>
