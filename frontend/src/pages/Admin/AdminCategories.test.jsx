@@ -1,4 +1,10 @@
-import { customRender, fireEvent, screen, userEvent, waitFor } from "../../test/test-utils";
+import {
+  customRender,
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+} from "../../test/test-utils";
 import AdminCategories from "./AdminCategories";
 import { get, post, put, del } from "../../services/api";
 
@@ -23,14 +29,20 @@ describe("AdminCategories - listing", () => {
     renderAdminCategories();
 
     expect(
-      await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!")
+      await screen.findByText(
+        "No hay categorías cargadas todavía. ¡Creá la primera!",
+      ),
     ).toBeInTheDocument();
   });
 
   it("renders a row per category with name and description", async () => {
     get.mockResolvedValue([
       categoryFixture({ id: 1, name: "Cabañas" }),
-      categoryFixture({ id: 2, name: "Hoteles", description: "Alojamientos tipo hotel." }),
+      categoryFixture({
+        id: 2,
+        name: "Hoteles",
+        description: "Alojamientos tipo hotel.",
+      }),
     ]);
     renderAdminCategories();
 
@@ -46,6 +58,35 @@ describe("AdminCategories - listing", () => {
     await screen.findByText("Cabañas");
     expect(get).toHaveBeenCalledWith("/categories");
   });
+
+  it("shows a load error instead of the empty state when the initial request fails", async () => {
+    get.mockRejectedValueOnce(new Error("Network error"));
+    renderAdminCategories();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No pudimos cargar las categorías.",
+    );
+    expect(
+      screen.queryByText(
+        "No hay categorías cargadas todavía. ¡Creá la primera!",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("retries a failed initial request and renders the loaded categories", async () => {
+    get
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce([categoryFixture()]);
+    const user = userEvent.setup();
+    renderAdminCategories();
+
+    await screen.findByRole("alert");
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    expect(await screen.findByText("Cabañas")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("AdminCategories - create", () => {
@@ -54,11 +95,15 @@ describe("AdminCategories - create", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Nueva categoría" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Nueva categoría" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("field-name")).toHaveValue("");
   });
 
@@ -67,11 +112,15 @@ describe("AdminCategories - create", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
     await user.click(screen.getByTestId("admin-save-btn"));
 
-    expect(await screen.findByTestId("error-name")).toHaveTextContent("El nombre es obligatorio");
+    expect(await screen.findByTestId("error-name")).toHaveTextContent(
+      "El nombre es obligatorio",
+    );
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -80,7 +129,9 @@ describe("AdminCategories - create", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
     const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
 
@@ -96,12 +147,20 @@ describe("AdminCategories - create", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     await user.type(screen.getByTestId("field-name"), "Cabañas");
-    await user.type(screen.getByTestId("field-description"), "Alojamientos tipo cabaña.");
-    await user.type(screen.getByTestId("field-image-url"), "https://img.example.com/cabanas.jpg");
+    await user.type(
+      screen.getByTestId("field-description"),
+      "Alojamientos tipo cabaña.",
+    );
+    await user.type(
+      screen.getByTestId("field-image-url"),
+      "https://img.example.com/cabanas.jpg",
+    );
 
     get.mockResolvedValue([categoryFixture()]);
 
@@ -113,7 +172,7 @@ describe("AdminCategories - create", () => {
         name: "Cabañas",
         description: "Alojamientos tipo cabaña.",
         imageUrl: "https://img.example.com/cabanas.jpg",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -132,7 +191,9 @@ describe("AdminCategories - edit", () => {
     await screen.findByText("Cabañas");
     await user.click(screen.getByTestId("row-edit-btn"));
 
-    expect(screen.getByRole("heading", { name: "Editar categoría" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Editar categoría" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("field-name")).toHaveValue("Cabañas");
   });
 
@@ -152,7 +213,9 @@ describe("AdminCategories - edit", () => {
     // failure path below uses window.alert instead. Two different error
     // mechanisms coexist within this single file. Asserted as-is per spec
     // Risks; not unified here (no production change in this change).
-    expect(await screen.findByText("No se pudo actualizar")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No se pudo actualizar"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
   });
 
@@ -191,7 +254,7 @@ describe("AdminCategories - delete", () => {
     // window.confirm — same mechanism as AdminLodgings, but different from
     // AdminFeatures/AdminPolicies which use window.confirm for delete.
     expect(screen.getByTestId("confirm-delete")).toHaveTextContent(
-      '¿Eliminar la categoría "Cabañas"? Solo se puede eliminar si no tiene alojamientos asociados.'
+      '¿Eliminar la categoría "Cabañas"? Solo se puede eliminar si no tiene alojamientos asociados.',
     );
 
     get.mockResolvedValue([]);
@@ -203,7 +266,9 @@ describe("AdminCategories - delete", () => {
       expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
     });
     expect(
-      await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!")
+      await screen.findByText(
+        "No hay categorías cargadas todavía. ¡Creá la primera!",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -223,7 +288,11 @@ describe("AdminCategories - delete", () => {
 
   it("shows the backend policy error without claiming lodgings were unlinked", async () => {
     get.mockResolvedValue([categoryFixture({ id: 1, name: "Cabañas" })]);
-    del.mockRejectedValue(new Error("No se puede eliminar la categoría: 1 alojamiento(s) la están usando"));
+    del.mockRejectedValue(
+      new Error(
+        "No se puede eliminar la categoría: 1 alojamiento(s) la están usando",
+      ),
+    );
     const user = userEvent.setup();
     renderAdminCategories();
 
@@ -232,7 +301,9 @@ describe("AdminCategories - delete", () => {
     await user.click(screen.getByTestId("confirm-delete-yes"));
 
     expect(
-      await screen.findByText("No se puede eliminar la categoría: 1 alojamiento(s) la están usando"),
+      await screen.findByText(
+        "No se puede eliminar la categoría: 1 alojamiento(s) la están usando",
+      ),
     ).toHaveAttribute("role", "alert");
     expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
   });
@@ -244,7 +315,9 @@ describe("AdminCategories - representative image", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     expect(screen.getByTestId("field-image-url")).toBeRequired();
@@ -266,7 +339,9 @@ describe("AdminCategories - representative image", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     expect(screen.getByTestId("field-image-url")).toHaveValue("");
@@ -277,13 +352,17 @@ describe("AdminCategories - representative image", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
     await user.type(screen.getByTestId("field-name"), "Cabañas");
     await user.click(screen.getByTestId("admin-save-btn"));
 
     const fieldError = await screen.findByTestId("error-image-url");
-    expect(fieldError).toHaveTextContent("La imagen representativa es obligatoria");
+    expect(fieldError).toHaveTextContent(
+      "La imagen representativa es obligatoria",
+    );
     const field = screen.getByTestId("field-image-url");
     expect(field).toHaveAttribute("aria-invalid", "true");
     expect(field).toHaveAttribute("aria-describedby", "error-image-url");
@@ -295,14 +374,16 @@ describe("AdminCategories - representative image", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
     await user.type(screen.getByTestId("field-name"), "Cabañas");
     await user.type(screen.getByTestId("field-image-url"), "not-a-url");
     await user.click(screen.getByTestId("admin-save-btn"));
 
     expect(await screen.findByTestId("error-image-url")).toHaveTextContent(
-      "La imagen debe ser una URL https válida"
+      "La imagen debe ser una URL https válida",
     );
     expect(post).not.toHaveBeenCalled();
   });
@@ -312,21 +393,28 @@ describe("AdminCategories - representative image", () => {
     const user = userEvent.setup();
     renderAdminCategories();
 
-    await screen.findByText("No hay categorías cargadas todavía. ¡Creá la primera!");
+    await screen.findByText(
+      "No hay categorías cargadas todavía. ¡Creá la primera!",
+    );
     await user.click(screen.getByTestId("admin-add-btn"));
 
     expect(screen.queryByTestId("image-url-preview")).not.toBeInTheDocument();
 
-    await user.type(screen.getByTestId("field-image-url"), "https://img.example.com/cabana.jpg");
+    await user.type(
+      screen.getByTestId("field-image-url"),
+      "https://img.example.com/cabana.jpg",
+    );
 
     expect(screen.getByTestId("image-url-preview")).toHaveAttribute(
       "src",
-      "https://img.example.com/cabana.jpg"
+      "https://img.example.com/cabana.jpg",
     );
   });
 
   it("prefills the representative-image field when editing an existing category", async () => {
-    get.mockResolvedValue([categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" })]);
+    get.mockResolvedValue([
+      categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" }),
+    ]);
     const user = userEvent.setup();
     renderAdminCategories();
 
@@ -334,12 +422,14 @@ describe("AdminCategories - representative image", () => {
     await user.click(screen.getByTestId("row-edit-btn"));
 
     expect(screen.getByTestId("field-image-url")).toHaveValue(
-      "https://img.example.com/existing.jpg"
+      "https://img.example.com/existing.jpg",
     );
   });
 
   it("preserves the stored image when an edit omits the representative-image field", async () => {
-    get.mockResolvedValue([categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" })]);
+    get.mockResolvedValue([
+      categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" }),
+    ]);
     put.mockResolvedValue({});
     const user = userEvent.setup();
     renderAdminCategories();
@@ -351,13 +441,15 @@ describe("AdminCategories - representative image", () => {
 
     expect(put).toHaveBeenCalledWith(
       "/categories/1",
-      expect.objectContaining({ imageUrl: null })
+      expect.objectContaining({ imageUrl: null }),
     );
     expect(screen.queryByTestId("error-image-url")).not.toBeInTheDocument();
   });
 
   it("rejects an invalid replacement on edit without erasing the existing valid image", async () => {
-    get.mockResolvedValue([categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" })]);
+    get.mockResolvedValue([
+      categoryFixture({ imageUrl: "https://img.example.com/existing.jpg" }),
+    ]);
     const user = userEvent.setup();
     renderAdminCategories();
 
