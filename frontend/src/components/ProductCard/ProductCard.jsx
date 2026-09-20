@@ -15,6 +15,7 @@ export default function ProductCard({
 	const [optimisticFavorite, setOptimisticFavorite] = useState(null);
 	const [imgError, setImgError] = useState(false);
 	const [pending, setPending] = useState(false);
+	const [favoriteError, setFavoriteError] = useState(false);
 	const isFavorite = optimisticFavorite ?? defaultFavorite;
 
 	const imageUrl = imgError
@@ -26,6 +27,7 @@ export default function ProductCard({
 		e.stopPropagation();
 		if (pending) return;
 		const next = !isFavorite;
+		setFavoriteError(false);
 		setPending(true);
 		setOptimisticFavorite(next);
 		onFavoriteToggle?.(lodging.id, next);
@@ -38,6 +40,7 @@ export default function ProductCard({
 		} catch (err) {
 			console.error(err);
 			setOptimisticFavorite(null);
+			setFavoriteError(true);
 			onFavoriteToggle?.(lodging.id, !next);
 		} finally {
 			setPending(false);
@@ -70,6 +73,11 @@ export default function ProductCard({
 								stroke={isFavorite ? "var(--primary)" : "var(--secondary)"}
 							/>
 						</button>
+					)}
+					{favoriteError && (
+						<p className="favorite-error" role="alert">
+							No se pudo actualizar favoritos. Intentá nuevamente.
+						</p>
 					)}
 					{lodging.averageRating > 0 && (
 						<div className="card-rating-overlay">
