@@ -32,26 +32,49 @@ export default function AdminDashboard({ onTabChange }) {
   const [counts, setCounts] = useState({});
   const [recentLodgings, setRecentLodgings] = useState([]);
   const [recentReservations, setRecentReservations] = useState([]);
+  const [statsError, setStatsError] = useState(false);
+  const [lodgingsError, setLodgingsError] = useState(false);
+  const [reservationsError, setReservationsError] = useState(false);
 
-  useEffect(() => {
+  function loadStats() {
     // One call for all five cards. Counting used to mean downloading each table whole
     // and reading .length, which shipped every user record to render a number and — for
     // lodgings — reported the listing's result cap instead of the real total.
     getAdminStats()
-      .then(setCounts)
-      .catch(() =>
+      .then((stats) => {
+        setCounts(stats);
+        setStatsError(false);
+      })
+      .catch(() => {
         setCounts(
           Object.fromEntries(STATS.map(({ key }) => [key, UNAVAILABLE])),
-        ),
-      );
+        );
+        setStatsError(true);
+      });
+  }
 
+  function loadRecentLodgings() {
     getAdminLodgings({ size: RECENT_COUNT, direction: "desc" })
-      .then((page) => setRecentLodgings(page?.items ?? []))
-      .catch(() => {});
+      .then((page) => {
+        setRecentLodgings(page?.items ?? []);
+        setLodgingsError(false);
+      })
+      .catch(() => setLodgingsError(true));
+  }
 
+  function loadRecentReservations() {
     getAdminReservations({ size: RECENT_COUNT, direction: "desc" })
-      .then((page) => setRecentReservations(page?.items ?? []))
-      .catch(() => {});
+      .then((page) => {
+        setRecentReservations(page?.items ?? []);
+        setReservationsError(false);
+      })
+      .catch(() => setReservationsError(true));
+  }
+
+  useEffect(() => {
+    loadStats();
+    loadRecentLodgings();
+    loadRecentReservations();
   }, []);
 
   return (
@@ -77,7 +100,25 @@ export default function AdminDashboard({ onTabChange }) {
         ))}
       </div>
 
+      {statsError && (
+        <div role="alert">
+          <p>No pudimos cargar las estadísticas.</p>
+          <button type="button" onClick={loadStats}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
       <div className="dashboard-recent-container">
+        {lodgingsError && (
+          <div role="alert">
+            <p>No pudimos cargar los alojamientos recientes.</p>
+            <button type="button" onClick={loadRecentLodgings}>
+              Reintentar
+            </button>
+          </div>
+        )}
+
         {recentLodgings.length > 0 && (
           <div className="dashboard-recent">
             <h3 className="dashboard-recent-title">Últimos alojamientos</h3>
@@ -97,6 +138,15 @@ export default function AdminDashboard({ onTabChange }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {reservationsError && (
+          <div role="alert">
+            <p>No pudimos cargar las reservas recientes.</p>
+            <button type="button" onClick={loadRecentReservations}>
+              Reintentar
+            </button>
           </div>
         )}
 
