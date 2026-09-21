@@ -22,4 +22,4 @@ Align CI/compliance evidence and browser assertions with the declarative WhatsAp
 - Current correction validation: `frontend/node_modules/.bin/prettier --write` and `--check` ran only on `e2e/tests/whatsapp.spec.js`, `docs/markdown/compliance/close-user-story-gaps-traceability.md`, and `docs/markdown/compliance/close-user-story-gaps-browser-evidence.md`; `node --check e2e/tests/whatsapp.spec.js` and final `git diff --check` passed.
 - Final independent verification: passed; Prettier, Node syntax, diff whitespace, inventory, URL contract, and evidence wording all passed.
 - Playwright was not run locally because its configuration loads dotenv and the required services/credentials are unavailable.
-- Commit evidence: pending (commits are not authorized).
+- Work-unit commit: `6cef923a0c4ecd54a2c58b97839600cb2a1bdaaf` (`test: strengthen WhatsApp handoff evidence`, signed).
