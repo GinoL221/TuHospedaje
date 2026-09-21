@@ -8,610 +8,610 @@ import { get, post, postMultipart, put, patch, del, getCsrfToken } from "./api";
 // dynamic `import("./api")`, which re-evaluates the module against a
 // freshly stubbed `VITE_API_URL`.
 function mockFetchResolved({ ok = true, status = 200, json } = {}) {
-  return vi.fn().mockResolvedValue({
-    ok,
-    status,
-    json: json ?? (async () => ({})),
-  });
+	return vi.fn().mockResolvedValue({
+		ok,
+		status,
+		json: json ?? (async () => ({})),
+	});
 }
 
 beforeEach(() => {
-  document.cookie =
-    "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+	document.cookie =
+		"XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
-  document.cookie =
-    "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+	vi.unstubAllGlobals();
+	document.cookie =
+		"XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 });
 
 describe("api service - successful requests", () => {
-  it("GET resolves with the parsed JSON body", async () => {
-    const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
-    vi.stubGlobal("fetch", fetchMock);
+	it("GET resolves with the parsed JSON body", async () => {
+		const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await get("/lodgings");
+		const result = await get("/lodgings");
 
-    expect(result).toEqual({ data: 1 });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/lodgings"),
-      expect.objectContaining({ method: "GET" }),
-    );
-  });
+		expect(result).toEqual({ data: 1 });
+		expect(fetchMock).toHaveBeenCalledWith(
+			expect.stringContaining("/lodgings"),
+			expect.objectContaining({ method: "GET" }),
+		);
+	});
 
-  it("POST resolves with the parsed JSON body and serializes the request body", async () => {
-    const fetchMock = mockFetchResolved({ json: async () => ({ id: 1 }) });
-    vi.stubGlobal("fetch", fetchMock);
+	it("POST resolves with the parsed JSON body and serializes the request body", async () => {
+		const fetchMock = mockFetchResolved({ json: async () => ({ id: 1 }) });
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await post("/lodgings", { name: "Test" });
+		const result = await post("/lodgings", { name: "Test" });
 
-    expect(result).toEqual({ id: 1 });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/lodgings"),
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ name: "Test" }),
-      }),
-    );
-  });
+		expect(result).toEqual({ id: 1 });
+		expect(fetchMock).toHaveBeenCalledWith(
+			expect.stringContaining("/lodgings"),
+			expect.objectContaining({
+				method: "POST",
+				body: JSON.stringify({ name: "Test" }),
+			}),
+		);
+	});
 
-  it("PUT resolves with the parsed JSON body and serializes the request body", async () => {
-    const fetchMock = mockFetchResolved({
-      json: async () => ({ id: 1, name: "Updated" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("PUT resolves with the parsed JSON body and serializes the request body", async () => {
+		const fetchMock = mockFetchResolved({
+			json: async () => ({ id: 1, name: "Updated" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await put("/lodgings/1", { name: "Updated" });
+		const result = await put("/lodgings/1", { name: "Updated" });
 
-    expect(result).toEqual({ id: 1, name: "Updated" });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/lodgings/1"),
-      expect.objectContaining({
-        method: "PUT",
-        body: JSON.stringify({ name: "Updated" }),
-      }),
-    );
-  });
+		expect(result).toEqual({ id: 1, name: "Updated" });
+		expect(fetchMock).toHaveBeenCalledWith(
+			expect.stringContaining("/lodgings/1"),
+			expect.objectContaining({
+				method: "PUT",
+				body: JSON.stringify({ name: "Updated" }),
+			}),
+		);
+	});
 
-  it("DELETE resolves with the parsed JSON body and omits a request body", async () => {
-    const fetchMock = mockFetchResolved({
-      json: async () => ({ deleted: true }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("DELETE resolves with the parsed JSON body and omits a request body", async () => {
+		const fetchMock = mockFetchResolved({
+			json: async () => ({ deleted: true }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await del("/lodgings/1");
+		const result = await del("/lodgings/1");
 
-    expect(result).toEqual({ deleted: true });
-    const [, config] = fetchMock.mock.calls[0];
-    expect(config.method).toBe("DELETE");
-    expect(config.body).toBeUndefined();
-  });
+		expect(result).toEqual({ deleted: true });
+		const [, config] = fetchMock.mock.calls[0];
+		expect(config.method).toBe("DELETE");
+		expect(config.body).toBeUndefined();
+	});
 
-  it("PATCH sends an unsafe request without a body", async () => {
-    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
-    const fetchMock = mockFetchResolved({
-      json: async () => ({ status: "CANCELLED" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("PATCH sends an unsafe request without a body", async () => {
+		document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+		const fetchMock = mockFetchResolved({
+			json: async () => ({ status: "CANCELLED" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await patch("/reservations/1/cancel");
+		const result = await patch("/reservations/1/cancel");
 
-    expect(result).toEqual({ status: "CANCELLED" });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/reservations/1/cancel"),
-      expect.objectContaining({
-        method: "PATCH",
-        credentials: "include",
-        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-abc" }),
-      }),
-    );
-    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
-  });
+		expect(result).toEqual({ status: "CANCELLED" });
+		expect(fetchMock).toHaveBeenCalledWith(
+			expect.stringContaining("/reservations/1/cancel"),
+			expect.objectContaining({
+				method: "PATCH",
+				credentials: "include",
+				headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-abc" }),
+			}),
+		);
+		expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
+	});
 });
 
 describe("api service - 204 No Content", () => {
-  it("resolves with null and does not attempt to parse a body", async () => {
-    const jsonSpy = vi.fn();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({ ok: true, status: 204, json: jsonSpy });
-    vi.stubGlobal("fetch", fetchMock);
+	it("resolves with null and does not attempt to parse a body", async () => {
+		const jsonSpy = vi.fn();
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValue({ ok: true, status: 204, json: jsonSpy });
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await get("/lodgings/1");
+		const result = await get("/lodgings/1");
 
-    expect(result).toBeNull();
-    expect(jsonSpy).not.toHaveBeenCalled();
-  });
+		expect(result).toBeNull();
+		expect(jsonSpy).not.toHaveBeenCalled();
+	});
 });
 
 describe("api service - non-OK HTTP errors", () => {
-  it("rejects with the server error message when the body is JSON-parseable", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({ error: "msg" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("rejects with the server error message when the body is JSON-parseable", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({ error: "msg" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(get("/lodgings")).rejects.toThrow("msg");
-  });
+		await expect(get("/lodgings")).rejects.toThrow("msg");
+	});
 
-  it("rejects with a generic status message when the body is unparseable", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => {
-        throw new Error("invalid json");
-      },
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("rejects with a generic status message when the body is unparseable", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 500,
+			json: async () => {
+				throw new Error("invalid json");
+			},
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(get("/lodgings")).rejects.toThrow("Error 500");
-  });
+		await expect(get("/lodgings")).rejects.toThrow("Error 500");
+	});
 
-  it("rejects with the specific field validation message instead of the generic error label when fields is present", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({
-        error: "Error de validación",
-        status: 400,
-        fields: {
-          checkOutAfterCheckIn:
-            "La fecha de check-out debe ser posterior al check-in",
-        },
-      }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("rejects with the specific field validation message instead of the generic error label when fields is present", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({
+				error: "Error de validación",
+				status: 400,
+				fields: {
+					checkOutAfterCheckIn:
+						"La fecha de check-out debe ser posterior al check-in",
+				},
+			}),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/reservations", {})).rejects.toThrow(
-      "La fecha de check-out debe ser posterior al check-in",
-    );
-    await expect(post("/reservations", {})).rejects.not.toThrow(
-      "Error de validación",
-    );
-  });
+		await expect(post("/reservations", {})).rejects.toThrow(
+			"La fecha de check-out debe ser posterior al check-in",
+		);
+		await expect(post("/reservations", {})).rejects.not.toThrow(
+			"Error de validación",
+		);
+	});
 
-  it("joins multiple field validation messages when fields has more than one entry", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({
-        error: "Error de validación",
-        status: 400,
-        fields: {
-          checkOutAfterCheckIn:
-            "La fecha de check-out debe ser posterior al check-in",
-          guestPhone: "El teléfono es obligatorio",
-        },
-      }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("joins multiple field validation messages when fields has more than one entry", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({
+				error: "Error de validación",
+				status: 400,
+				fields: {
+					checkOutAfterCheckIn:
+						"La fecha de check-out debe ser posterior al check-in",
+					guestPhone: "El teléfono es obligatorio",
+				},
+			}),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/reservations", {})).rejects.toThrow(
-      "La fecha de check-out debe ser posterior al check-in El teléfono es obligatorio",
-    );
-  });
+		await expect(post("/reservations", {})).rejects.toThrow(
+			"La fecha de check-out debe ser posterior al check-in El teléfono es obligatorio",
+		);
+	});
 
-  it("falls back to errorData.error when fields is absent (no regression)", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({ error: "Error de validación", status: 400 }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("falls back to errorData.error when fields is absent (no regression)", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({ error: "Error de validación", status: 400 }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/reservations", {})).rejects.toThrow(
-      "Error de validación",
-    );
-  });
+		await expect(post("/reservations", {})).rejects.toThrow(
+			"Error de validación",
+		);
+	});
 
-  it("falls back to errorData.error when fields is an empty object (no regression)", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({
-        error: "Error de validación",
-        status: 400,
-        fields: {},
-      }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("falls back to errorData.error when fields is an empty object (no regression)", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({
+				error: "Error de validación",
+				status: 400,
+				fields: {},
+			}),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/reservations", {})).rejects.toThrow(
-      "Error de validación",
-    );
-  });
+		await expect(post("/reservations", {})).rejects.toThrow(
+			"Error de validación",
+		);
+	});
 
-  it("attaches errorData.code onto the thrown error when the server sends one", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({
-        error: "Ese email ya está registrado",
-        status: 400,
-        code: "duplicate_email",
-      }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("attaches errorData.code onto the thrown error when the server sends one", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({
+				error: "Ese email ya está registrado",
+				status: 400,
+				code: "duplicate_email",
+			}),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    expect.assertions(1);
-    await post("/auth/register", {}).catch((err) => {
-      expect(err.code).toBe("duplicate_email");
-    });
-  });
+		expect.assertions(1);
+		await post("/auth/register", {}).catch((err) => {
+			expect(err.code).toBe("duplicate_email");
+		});
+	});
 
-  it("leaves error.code undefined when the server does not send one (no regression)", async () => {
-    const fetchMock = mockFetchResolved({
-      ok: false,
-      status: 400,
-      json: async () => ({ error: "Error de validación", status: 400 }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("leaves error.code undefined when the server does not send one (no regression)", async () => {
+		const fetchMock = mockFetchResolved({
+			ok: false,
+			status: 400,
+			json: async () => ({ error: "Error de validación", status: 400 }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    expect.assertions(1);
-    await post("/reservations", {}).catch((err) => {
-      expect(err.code).toBeUndefined();
-    });
-  });
+		expect.assertions(1);
+		await post("/reservations", {}).catch((err) => {
+			expect(err.code).toBeUndefined();
+		});
+	});
 });
 
 describe("api service - credentials", () => {
-  it("sends credentials: 'include' on GET requests", async () => {
-    const fetchMock = mockFetchResolved();
-    vi.stubGlobal("fetch", fetchMock);
+	it("sends credentials: 'include' on GET requests", async () => {
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
 
-    await get("/lodgings");
+		await get("/lodgings");
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/lodgings"),
-      expect.objectContaining({ credentials: "include" }),
-    );
-  });
+		expect(fetchMock).toHaveBeenCalledWith(
+			expect.stringContaining("/lodgings"),
+			expect.objectContaining({ credentials: "include" }),
+		);
+	});
 
-  it("sends credentials: 'include' on POST/PUT/DELETE requests", async () => {
-    const fetchMock = mockFetchResolved();
-    vi.stubGlobal("fetch", fetchMock);
+	it("sends credentials: 'include' on POST/PUT/DELETE requests", async () => {
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
 
-    await post("/lodgings", { name: "Test" });
-    await put("/lodgings/1", { name: "Test" });
-    await del("/lodgings/1");
+		await post("/lodgings", { name: "Test" });
+		await put("/lodgings/1", { name: "Test" });
+		await del("/lodgings/1");
 
-    for (const [, config] of fetchMock.mock.calls) {
-      expect(config.credentials).toBe("include");
-    }
-  });
+		for (const [, config] of fetchMock.mock.calls) {
+			expect(config.credentials).toBe("include");
+		}
+	});
 });
 
 describe("api service - getCsrfToken", () => {
-  it("reads and URL-decodes the XSRF-TOKEN cookie value", () => {
-    document.cookie = "XSRF-TOKEN=abc%2Bdef%3Dghi; path=/";
+	it("reads and URL-decodes the XSRF-TOKEN cookie value", () => {
+		document.cookie = "XSRF-TOKEN=abc%2Bdef%3Dghi; path=/";
 
-    expect(getCsrfToken()).toBe("abc+def=ghi");
-  });
+		expect(getCsrfToken()).toBe("abc+def=ghi");
+	});
 
-  it("returns null when the XSRF-TOKEN cookie is absent", () => {
-    expect(getCsrfToken()).toBeNull();
-  });
+	it("returns null when the XSRF-TOKEN cookie is absent", () => {
+		expect(getCsrfToken()).toBeNull();
+	});
 
-  it("finds XSRF-TOKEN among multiple cookies", () => {
-    document.cookie = "other=value; path=/";
-    document.cookie = "XSRF-TOKEN=mytoken; path=/";
+	it("finds XSRF-TOKEN among multiple cookies", () => {
+		document.cookie = "other=value; path=/";
+		document.cookie = "XSRF-TOKEN=mytoken; path=/";
 
-    expect(getCsrfToken()).toBe("mytoken");
-  });
+		expect(getCsrfToken()).toBe("mytoken");
+	});
 });
 
 describe("api service - X-XSRF-TOKEN header", () => {
-  it("attaches X-XSRF-TOKEN on POST/PUT/DELETE from the XSRF-TOKEN cookie", async () => {
-    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
-    const fetchMock = mockFetchResolved();
-    vi.stubGlobal("fetch", fetchMock);
+	it("attaches X-XSRF-TOKEN on POST/PUT/DELETE from the XSRF-TOKEN cookie", async () => {
+		document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
 
-    await post("/lodgings", { name: "Test" });
-    await put("/lodgings/1", { name: "Test" });
-    await del("/lodgings/1");
+		await post("/lodgings", { name: "Test" });
+		await put("/lodgings/1", { name: "Test" });
+		await del("/lodgings/1");
 
-    for (const [, config] of fetchMock.mock.calls) {
-      expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-abc" });
-    }
-  });
+		for (const [, config] of fetchMock.mock.calls) {
+			expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-abc" });
+		}
+	});
 
-  it("does not attach X-XSRF-TOKEN on GET requests", async () => {
-    document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
-    const fetchMock = mockFetchResolved();
-    vi.stubGlobal("fetch", fetchMock);
+	it("does not attach X-XSRF-TOKEN on GET requests", async () => {
+		document.cookie = "XSRF-TOKEN=csrf-abc; path=/";
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
 
-    await get("/lodgings");
+		await get("/lodgings");
 
-    const [, config] = fetchMock.mock.calls[0];
-    expect(config.headers).not.toHaveProperty("X-XSRF-TOKEN");
-  });
+		const [, config] = fetchMock.mock.calls[0];
+		expect(config.headers).not.toHaveProperty("X-XSRF-TOKEN");
+	});
 
-  it("never sets an Authorization header", async () => {
-    const fetchMock = mockFetchResolved();
-    vi.stubGlobal("fetch", fetchMock);
+	it("never sets an Authorization header", async () => {
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
 
-    await get("/lodgings");
-    await post("/lodgings", { name: "Test" });
+		await get("/lodgings");
+		await post("/lodgings", { name: "Test" });
 
-    for (const [, config] of fetchMock.mock.calls) {
-      expect(config.headers).not.toHaveProperty("Authorization");
-    }
-  });
+		for (const [, config] of fetchMock.mock.calls) {
+			expect(config.headers).not.toHaveProperty("Authorization");
+		}
+	});
 });
 
 describe("api service - 401 unauthorized", () => {
-  it("dispatches auth:unauthorized once for a protected API 401 that still 401s after the refresh-and-retry attempt", async () => {
-    // Since PR4/WU5, a protected 401 first attempts a single refresh-and-retry
-    // (see the "refresh coordination" describe block below) before giving up.
-    // /auth/refresh itself succeeds here, but the retried request still 401s
-    // (e.g. some other reason invalidated the session) — the `alreadyRetried`
-    // guard must then dispatch auth:unauthorized exactly once, with no loop.
-    const fetchMock = vi.fn((url) => {
-      if (url.includes("/auth/refresh")) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({}),
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 401,
-        json: async () => ({}),
-      });
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("dispatches auth:unauthorized once for a protected API 401 that still 401s after the refresh-and-retry attempt", async () => {
+		// Since PR4/WU5, a protected 401 first attempts a single refresh-and-retry
+		// (see the "refresh coordination" describe block below) before giving up.
+		// /auth/refresh itself succeeds here, but the retried request still 401s
+		// (e.g. some other reason invalidated the session) — the `alreadyRetried`
+		// guard must then dispatch auth:unauthorized exactly once, with no loop.
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: async () => ({}),
+				});
+			}
+			return Promise.resolve({
+				ok: false,
+				status: 401,
+				json: async () => ({}),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const eventSpy = vi.fn();
-    window.addEventListener("auth:unauthorized", eventSpy);
+		const eventSpy = vi.fn();
+		window.addEventListener("auth:unauthorized", eventSpy);
 
-    await expect(get("/lodgings")).rejects.toThrow("Sesión expirada");
-    expect(eventSpy).toHaveBeenCalledTimes(1);
-    expect(eventSpy.mock.calls[0][0]).toBeInstanceOf(CustomEvent);
-    expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
-    const lodgingsCalls = fetchMock.mock.calls.filter(([url]) =>
-      url.includes("/lodgings"),
-    );
-    expect(lodgingsCalls).toHaveLength(2); // original + single retry, no loop
+		await expect(get("/lodgings")).rejects.toThrow("Sesión expirada");
+		expect(eventSpy).toHaveBeenCalledTimes(1);
+		expect(eventSpy.mock.calls[0][0]).toBeInstanceOf(CustomEvent);
+		expect(eventSpy.mock.calls[0][0].type).toBe("auth:unauthorized");
+		const lodgingsCalls = fetchMock.mock.calls.filter(([url]) =>
+			url.includes("/lodgings"),
+		);
+		expect(lodgingsCalls).toHaveLength(2); // original + single retry, no loop
 
-    window.removeEventListener("auth:unauthorized", eventSpy);
-  });
+		window.removeEventListener("auth:unauthorized", eventSpy);
+	});
 
-  it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: "No autenticado" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 401,
+			json: async () => ({ error: "No autenticado" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const eventSpy = vi.fn();
-    window.addEventListener("auth:unauthorized", eventSpy);
+		const eventSpy = vi.fn();
+		window.addEventListener("auth:unauthorized", eventSpy);
 
-    await expect(get("/auth/me")).rejects.toThrow("No autenticado");
-    expect(eventSpy).not.toHaveBeenCalled();
+		await expect(get("/auth/me")).rejects.toThrow("No autenticado");
+		expect(eventSpy).not.toHaveBeenCalled();
 
-    window.removeEventListener("auth:unauthorized", eventSpy);
-  });
+		window.removeEventListener("auth:unauthorized", eventSpy);
+	});
 
-  it("rejects with the real backend error message and does NOT dispatch auth:unauthorized for failed login", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: "Credenciales inválidas" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("rejects with the real backend error message and does NOT dispatch auth:unauthorized for failed login", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 401,
+			json: async () => ({ error: "Credenciales inválidas" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const eventSpy = vi.fn();
-    window.addEventListener("auth:unauthorized", eventSpy);
+		const eventSpy = vi.fn();
+		window.addEventListener("auth:unauthorized", eventSpy);
 
-    await expect(
-      post("/auth/login", { email: "a@a.com", password: "wrong" }),
-    ).rejects.toThrow("Credenciales inválidas");
-    expect(eventSpy).not.toHaveBeenCalled();
+		await expect(
+			post("/auth/login", { email: "a@a.com", password: "wrong" }),
+		).rejects.toThrow("Credenciales inválidas");
+		expect(eventSpy).not.toHaveBeenCalled();
 
-    window.removeEventListener("auth:unauthorized", eventSpy);
-  });
+		window.removeEventListener("auth:unauthorized", eventSpy);
+	});
 });
 
 describe("api service - refresh-and-retry does not rotate CSRF", () => {
-  it("reuses the existing X-XSRF-TOKEN on the retried request instead of fetching a new one", async () => {
-    document.cookie = "XSRF-TOKEN=csrf-original; path=/";
+	it("reuses the existing X-XSRF-TOKEN on the retried request instead of fetching a new one", async () => {
+		document.cookie = "XSRF-TOKEN=csrf-original; path=/";
 
-    const hitCounts = {};
-    const fetchMock = vi.fn((url) => {
-      if (url.includes("/auth/refresh")) {
-        // Refresh rotates the session cookies server-side but does NOT
-        // rotate the CSRF cookie (design ADR: "refresh does not rotate CSRF").
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({}),
-        });
-      }
-      hitCounts[url] = (hitCounts[url] || 0) + 1;
-      if (hitCounts[url] === 1) {
-        return Promise.resolve({
-          ok: false,
-          status: 401,
-          json: async () => ({}),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: async () => ({ status: "CANCELLED" }),
-      });
-    });
-    vi.stubGlobal("fetch", fetchMock);
+		const hitCounts = {};
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				// Refresh rotates the session cookies server-side but does NOT
+				// rotate the CSRF cookie (design ADR: "refresh does not rotate CSRF").
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: async () => ({}),
+				});
+			}
+			hitCounts[url] = (hitCounts[url] || 0) + 1;
+			if (hitCounts[url] === 1) {
+				return Promise.resolve({
+					ok: false,
+					status: 401,
+					json: async () => ({}),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				status: 200,
+				json: async () => ({ status: "CANCELLED" }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await patch("/reservations/1/cancel");
+		const result = await patch("/reservations/1/cancel");
 
-    expect(result).toEqual({ status: "CANCELLED" });
+		expect(result).toEqual({ status: "CANCELLED" });
 
-    const csrfBootstrapCalls = fetchMock.mock.calls.filter(([url]) =>
-      url.includes("/auth/csrf"),
-    );
-    expect(csrfBootstrapCalls).toHaveLength(0);
+		const csrfBootstrapCalls = fetchMock.mock.calls.filter(([url]) =>
+			url.includes("/auth/csrf"),
+		);
+		expect(csrfBootstrapCalls).toHaveLength(0);
 
-    const cancelCalls = fetchMock.mock.calls.filter(([url]) =>
-      url.includes("/reservations/1/cancel"),
-    );
-    expect(cancelCalls).toHaveLength(2);
-    for (const [, config] of cancelCalls) {
-      expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-original" });
-    }
-  });
+		const cancelCalls = fetchMock.mock.calls.filter(([url]) =>
+			url.includes("/reservations/1/cancel"),
+		);
+		expect(cancelCalls).toHaveLength(2);
+		for (const [, config] of cancelCalls) {
+			expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-original" });
+		}
+	});
 });
 
 describe("api service - request URL construction", () => {
-  it("builds the request URL from the real VITE_API_URL evaluated at module import time", async () => {
-    vi.resetModules();
-    vi.stubEnv("VITE_API_URL", "http://test-base");
+	it("builds the request URL from the real VITE_API_URL evaluated at module import time", async () => {
+		vi.resetModules();
+		vi.stubEnv("VITE_API_URL", "http://test-base");
 
-    const { get: scopedGet } = await import("./api");
+		const { get: scopedGet } = await import("./api");
 
-    const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
-    vi.stubGlobal("fetch", fetchMock);
+		const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
+		vi.stubGlobal("fetch", fetchMock);
 
-    await scopedGet("/lodgings");
+		await scopedGet("/lodgings");
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://test-base/lodgings",
-      expect.objectContaining({ method: "GET" }),
-    );
-  });
+		expect(fetchMock).toHaveBeenCalledWith(
+			"http://test-base/lodgings",
+			expect.objectContaining({ method: "GET" }),
+		);
+	});
 });
 
 describe("api service - ok response with unparseable body", () => {
-  it("resolves with null when res.ok is true but res.json() throws", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => {
-        throw new Error("invalid json");
-      },
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("resolves with null when res.ok is true but res.json() throws", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			json: async () => {
+				throw new Error("invalid json");
+			},
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const result = await get("/lodgings");
+		const result = await get("/lodgings");
 
-    expect(result).toBeNull();
-  });
+		expect(result).toBeNull();
+	});
 });
 
 describe("api service - multipart uploads", () => {
-  it("preserves CSRF and credentials while letting the browser set the multipart boundary", async () => {
-    document.cookie = "XSRF-TOKEN=csrf-upload; path=/";
-    const fetchMock = mockFetchResolved({
-      json: async () => ({ url: "https://example.com/image.png" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+	it("preserves CSRF and credentials while letting the browser set the multipart boundary", async () => {
+		document.cookie = "XSRF-TOKEN=csrf-upload; path=/";
+		const fetchMock = mockFetchResolved({
+			json: async () => ({ url: "https://example.com/image.png" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
 
-    const formData = new FormData();
-    formData.append(
-      "file",
-      new File(["image"], "image.png", { type: "image/png" }),
-    );
+		const formData = new FormData();
+		formData.append(
+			"file",
+			new File(["image"], "image.png", { type: "image/png" }),
+		);
 
-    await expect(postMultipart("/upload", formData)).resolves.toEqual({
-      url: "https://example.com/image.png",
-    });
+		await expect(postMultipart("/upload", formData)).resolves.toEqual({
+			url: "https://example.com/image.png",
+		});
 
-    const [, config] = fetchMock.mock.calls[0];
-    expect(config).toMatchObject({
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
-    expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-upload" });
-    expect(config.headers).not.toHaveProperty("Content-Type");
-    expect(config.signal).toBeInstanceOf(AbortSignal);
-  });
+		const [, config] = fetchMock.mock.calls[0];
+		expect(config).toMatchObject({
+			method: "POST",
+			credentials: "include",
+			body: formData,
+		});
+		expect(config.headers).toMatchObject({ "X-XSRF-TOKEN": "csrf-upload" });
+		expect(config.headers).not.toHaveProperty("Content-Type");
+		expect(config.signal).toBeInstanceOf(AbortSignal);
+	});
 });
 
 describe("api service - request timeout", () => {
-  /**
-   * A backend that accepts the connection and never answers leaves fetch pending
-   * forever. Without a deadline the caller's loading state never resolves, so the UI
-   * shows a spinner with no way out and no error to render.
-   */
-  function neverAnswers() {
-    return vi.fn(
-      (url, config) =>
-        new Promise((_resolve, reject) => {
-          config.signal?.addEventListener("abort", () => {
-            const aborted = new Error("The operation was aborted.");
-            aborted.name = "AbortError";
-            reject(aborted);
-          });
-        }),
-    );
-  }
+	/**
+	 * A backend that accepts the connection and never answers leaves fetch pending
+	 * forever. Without a deadline the caller's loading state never resolves, so the UI
+	 * shows a spinner with no way out and no error to render.
+	 */
+	function neverAnswers() {
+		return vi.fn(
+			(url, config) =>
+				new Promise((_resolve, reject) => {
+					config.signal?.addEventListener("abort", () => {
+						const aborted = new Error("The operation was aborted.");
+						aborted.name = "AbortError";
+						reject(aborted);
+					});
+				}),
+		);
+	}
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+	afterEach(() => {
+		vi.useRealTimers();
+	});
 
-  it("passes an abort signal to fetch", async () => {
-    const fetchMock = mockFetchResolved();
-    vi.stubGlobal("fetch", fetchMock);
+	it("passes an abort signal to fetch", async () => {
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
 
-    await get("/lodgings");
+		await get("/lodgings");
 
-    const [, config] = fetchMock.mock.calls[0];
-    expect(config.signal).toBeInstanceOf(AbortSignal);
-  });
+		const [, config] = fetchMock.mock.calls[0];
+		expect(config.signal).toBeInstanceOf(AbortSignal);
+	});
 
-  it("rejects with a user-facing message when the backend never answers", async () => {
-    vi.useFakeTimers();
-    vi.stubGlobal("fetch", neverAnswers());
+	it("rejects with a user-facing message when the backend never answers", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("fetch", neverAnswers());
 
-    const pending = get("/lodgings");
-    const assertion = expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
-    await vi.advanceTimersByTimeAsync(60_000);
+		const pending = get("/lodgings");
+		const assertion = expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
+		await vi.advanceTimersByTimeAsync(60_000);
 
-    await assertion;
-  });
+		await assertion;
+	});
 
-  it("does not surface the raw AbortError name to the caller", async () => {
-    vi.useFakeTimers();
-    vi.stubGlobal("fetch", neverAnswers());
+	it("does not surface the raw AbortError name to the caller", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("fetch", neverAnswers());
 
-    const pending = get("/lodgings");
-    const assertion = expect(pending).rejects.not.toThrow(/abort/i);
-    await vi.advanceTimersByTimeAsync(60_000);
+		const pending = get("/lodgings");
+		const assertion = expect(pending).rejects.not.toThrow(/abort/i);
+		await vi.advanceTimersByTimeAsync(60_000);
 
-    await assertion;
-  });
+		await assertion;
+	});
 
-  it("cancels a multipart upload when its caller aborts", async () => {
-    vi.stubGlobal("fetch", neverAnswers());
-    const controller = new AbortController();
-    const formData = new FormData();
-    formData.append(
-      "file",
-      new File(["image"], "image.png", { type: "image/png" }),
-    );
+	it("cancels a multipart upload when its caller aborts", async () => {
+		vi.stubGlobal("fetch", neverAnswers());
+		const controller = new AbortController();
+		const formData = new FormData();
+		formData.append(
+			"file",
+			new File(["image"], "image.png", { type: "image/png" }),
+		);
 
-    const pending = postMultipart("/upload", formData, {
-      signal: controller.signal,
-    });
-    controller.abort();
+		const pending = postMultipart("/upload", formData, {
+			signal: controller.signal,
+		});
+		controller.abort();
 
-    await expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
-  });
+		await expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
+	});
 
-  /** The deadline must be cleared on a normal response, not left armed. */
-  it("leaves a request that answered in time untouched when the deadline would have fired", async () => {
-    vi.useFakeTimers();
-    const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
-    vi.stubGlobal("fetch", fetchMock);
+	/** The deadline must be cleared on a normal response, not left armed. */
+	it("leaves a request that answered in time untouched when the deadline would have fired", async () => {
+		vi.useFakeTimers();
+		const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });
+		vi.stubGlobal("fetch", fetchMock);
 
-    await expect(get("/lodgings")).resolves.toEqual({ data: 1 });
-    expect(vi.getTimerCount()).toBe(0);
-  });
+		await expect(get("/lodgings")).resolves.toEqual({ data: 1 });
+		expect(vi.getTimerCount()).toBe(0);
+	});
 });
