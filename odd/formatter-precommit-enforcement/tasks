@@ -21,15 +21,15 @@
   - Evidence: 135 tracked frontend source files were formatted: 124 initial baseline files plus 11 omitted root-level files.
   - Compatibility adjustment: `frontend/src/publicShellContract.test.js` received one regex-only adjustment for Prettier's legal multiline CSS whitespace.
   - Preserved local files: the original local changes in `frontend/src/accountSharedAuditContract.test.jsx` and `frontend/src/services/lodgingService.js` were restored unchanged. The existing `frontend/src/components/ProductCard/ProductCard.css` change remains intact.
-  - Clean baseline validation passed: lint, full `format:check`, coverage for 66/66 files and 623/623 tests, hook installation/configuration checks, JSON/lockfile checks, and `git diff --check`.
+  - Final clean-worktree validation passed: ESLint, full `format:check`, coverage for 66/66 files and 621/621 tests, hook syntax/execution checks, and `git diff --check`; CI was not executed.
 - [ ] Track the deferred WhatsApp open-redirect finding as a separate security task.
   - Scope boundary: this finding remains separate from the formatter work and needs separate security remediation and validation.
 - [x] Prepare the clean formatter baseline and commit candidate while preserving unrelated local changes.
   - Native review inspect/start reached the provider, but no review authority was created because the complete 141-file candidate exceeded the provider reviewer context budget (`lens_context_budget_exceeded`).
   - The candidate must be split into smaller reviewable work units/commits before review.
-- [ ] Commit the remaining formatter work units after explicit commit authorization.
+- [x] Commit the remaining formatter work units after explicit commit authorization.
   - Signed work units completed so far: `12981cb` frontend shell, `848db66` shared components, `be2a062` lodging presentation, `96dd67a` admin shell/catalog, `44262f2` admin dashboard/features, `1f99356` CI Node pin, `1f71e26` admin lodging/policy pages, `9a7f528` admin reservations/users, `8377708` lodging form/table components, `37cb972` authentication guards, `90618ed` route loading components, `db5f35b` authentication context, `d42e2dc` authentication/search hooks, `d6c88ef` recommendation hooks, `c0ec9fd` rating eligibility tests, `adc981a` table data hooks, `a160bec` booking form components, `69d1e89` booking flow components, `eaf85f1` favorites/category pages, `145c9e9` home page, `a28dc4e` login/reservations pages, `b7c8a85` not-found/register pages, `6e45baf` unauthorized pages, `e865d5e` product detail page, `6011278` admin catalog services, `8d15624` API/auth services, `cc46f43` category/favorite services, `08b22ed` lodging/rating/refresh services, `2cacc2c` upload/date utilities, `0e20496` reservation utility maps, and `83724c3` public shell contract test fix.
-  - Only the two protected local files remain modified; final validation is pending.
+  - Only the two protected local files remain modified; final validation passed.
 
 ## Scope constraints
 
@@ -70,3 +70,4 @@
 - The 5-file upload/date utility slice (`uploadService.js`, `uploadService.test.js`, `test-utils.test.jsx`, `dateRange.js`, and `dateRange.test.js`) was reviewed and acknowledged under lineage `review-bb1900c25e161b1a` for target `sha256:60882a21092cdb393ceae5380f90f67da4651a9bea22b0611b30f65541198f5f`. Targeted Prettier check and `git diff --check` passed on the corrected worktree rerun; the signed commit is `2cacc2c`.
 - The 2-file reservation utility slice (`iconMap.js` and `reservationPresentation.js`) was reviewed and acknowledged under lineage `review-391482ce43356288` for target `sha256:16846fc3fab95cf7b64f17661c1d09365e32d70950c04bc91b90ef328e57a99c`. Targeted Prettier check and `git diff --check` passed; the signed commit is `0e20496`.
 - The focused `publicShellContract.test.js` regex fix was reviewed and acknowledged under lineage `review-9007ec6cb67155fc` for target `sha256:fcaaeee780957cc5e37d77e5f4fc987952beec6688af87042d1fef9ada43f0d4`. Targeted Prettier check, the 4-test contract suite, and `git diff --check` passed; the signed commit is `83724c3`.
+- Final clean-worktree validation after `83724c3` and `c922253`: `npm run lint`, `npm run format:check`, and `npm run coverage` passed (66 files, 621 tests); hook syntax/execution and `git diff --check` passed. Only `accountSharedAuditContract.test.jsx` and `lodgingService.js` remain modified.
