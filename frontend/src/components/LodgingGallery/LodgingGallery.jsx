@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	ChevronUp,
+} from "lucide-react";
 import GalleryModal from "../GalleryModal/GalleryModal";
 import "./LodgingGallery.css";
 
@@ -12,7 +17,10 @@ export default function LodgingGallery({ images = [], name }) {
 	const thumbnailStripRef = useRef(null);
 	const thumbnailRefs = useRef([]);
 	const previewImages = images.slice(0, 5);
-	const previewIndex = Math.min(currentIndex, Math.max(previewImages.length - 1, 0));
+	const previewIndex = Math.min(
+		currentIndex,
+		Math.max(previewImages.length - 1, 0),
+	);
 
 	useEffect(() => {
 		if (!window.matchMedia?.("(max-width: 768px)").matches) return;
