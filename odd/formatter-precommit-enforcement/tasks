@@ -28,8 +28,11 @@
   - Compatibility adjustment: `frontend/src/publicShellContract.test.js` received one regex-only adjustment for Prettier's legal multiline CSS whitespace.
   - Preserved local files: the original local changes in `frontend/src/accountSharedAuditContract.test.jsx` and `frontend/src/services/lodgingService.js` were restored unchanged. The existing `frontend/src/components/ProductCard/ProductCard.css` change remains intact.
   - Final clean-worktree validation passed: ESLint, full `format:check`, coverage for 66/66 files and 621/621 tests, hook syntax/execution checks, and `git diff --check`; CI was not executed.
-- [ ] Track the deferred WhatsApp open-redirect finding as a separate security task.
-  - Scope boundary: this finding remains separate from the formatter work and needs separate security remediation and validation.
+- [x] Close the deferred WhatsApp open-redirect security finding.
+  - Implementation: `WhatsAppButton.jsx` validates the fixed `https://wa.me` URL and renders `target="_blank"` with `rel="noopener noreferrer"`; no `window.open` remains.
+  - Signed commits: implementation `6928067`; dependent tests `349cdfc`.
+  - Review: native review lineages `review-ca9fcf726e096e65` and `review-079edb5325fbca8d` approved and acknowledged.
+  - Validation: frontend coverage passed for 66 files / 621 tests. E2E was not run because it requires environment and external services.
 - [x] Prepare the clean formatter baseline and commit candidate while preserving unrelated local changes.
   - Native review inspect/start reached the provider, but no review authority was created because the complete 141-file candidate exceeded the provider reviewer context budget (`lens_context_budget_exceeded`).
   - The candidate must be split into smaller reviewable work units/commits before review.

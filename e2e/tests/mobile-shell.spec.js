@@ -67,14 +67,14 @@ test.describe('Mobile shell — WhatsApp placement', () => {
   test.describe('at 320px', () => {
     test.use({ viewport: { width: 320, height: 844 } });
 
-    test('the WhatsApp button stays visible and reachable with no horizontal overflow', async ({ page, homePage }) => {
+    test('the WhatsApp link stays visible and reachable with no horizontal overflow', async ({ page, homePage }) => {
       await homePage.open('/');
-      const button = page.getByRole('button', { name: 'Contactar por WhatsApp' });
-      await expect(button).toBeVisible();
-      await expectTouchTarget(button);
+      const link = page.getByRole('link', { name: 'Contactar por WhatsApp' });
+      await expect(link).toBeVisible();
+      await expectTouchTarget(link);
       await expectNoHorizontalOverflow(page);
 
-      const box = await button.boundingBox();
+      const box = await link.boundingBox();
       const viewportWidth = page.viewportSize()?.width ?? 320;
       // Right/lower region: right edge within the viewport, positioned in
       // the lower half of the visible screen.
@@ -86,10 +86,10 @@ test.describe('Mobile shell — WhatsApp placement', () => {
   test.describe('at 390px', () => {
     test.use({ viewport: { width: 390, height: 844 } });
 
-    test('the WhatsApp button stays visible with no horizontal overflow', async ({ page, homePage }) => {
+    test('the WhatsApp link stays visible with no horizontal overflow', async ({ page, homePage }) => {
       await homePage.open('/');
-      const button = page.getByRole('button', { name: 'Contactar por WhatsApp' });
-      await expect(button).toBeVisible();
+      const link = page.getByRole('link', { name: 'Contactar por WhatsApp' });
+      await expect(link).toBeVisible();
       await expectNoHorizontalOverflow(page);
     });
   });

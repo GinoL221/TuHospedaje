@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: maven
       - name: Generate per-run backend test secrets
         run: |
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
-          node-version: '20.19'
+          node-version: "20.19"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -88,13 +88,13 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: maven
           cache-dependency-path: backend/pom.xml
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '20.19'
+          node-version: "20.19"
           cache: npm
           cache-dependency-path: |
             frontend/package-lock.json
@@ -156,10 +156,10 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: http://localhost:8080/api
-          # Must satisfy WhatsAppButton's PHONE_PATTERN (/^[1-9]\d{7,14}$/)
-          # or the
-          # button falls into its "not configured" state before ever calling
-          # window.open, breaking tests/whatsapp.spec.js's handoff assertions.
+          # Must satisfy WhatsAppButton's PHONE_PATTERN (/^[1-9]\d{7,14}$/).
+          # Invalid or missing build-time configuration intentionally renders no
+          # WhatsApp control; Vitest covers that branch. The E2E spec asserts
+          # the rendered declarative wa.me link contract.
           VITE_WHATSAPP_NUMBER: "5491123456789"
         run: |
           npm ci
@@ -294,7 +294,7 @@ jobs:
         with:
           image-ref: ${{ steps.images.outputs.backend }}
           format: table
-          exit-code: '1'
+          exit-code: "1"
           ignore-unfixed: true
           severity: HIGH,CRITICAL
 
@@ -303,7 +303,7 @@ jobs:
         with:
           image-ref: ${{ steps.images.outputs.frontend }}
           format: table
-          exit-code: '1'
+          exit-code: "1"
           ignore-unfixed: true
           severity: HIGH,CRITICAL
 

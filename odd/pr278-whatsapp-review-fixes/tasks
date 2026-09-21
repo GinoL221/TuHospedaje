@@ -1,0 +1,25 @@
+# PR #278 WhatsApp review fixes
+
+## Goal
+
+Align CI/compliance evidence and browser assertions with the declarative WhatsApp handoff required by US #34.
+
+## Tasks
+
+- [x] Update stale CI and compliance evidence to describe the current declarative handoff.
+- [x] Strengthen the shared anonymous/authenticated WhatsApp E2E URL contract.
+- [x] Run focused checks and review the resulting candidate.
+- [x] Accept the workspace's automatic Markdown table normalization after targeted cleanup was reapplied by the formatter.
+
+## Evidence
+
+- Stale imperative-handoff claims are superseded or obsolete; no new browser run is claimed.
+- The shared E2E helper derives the rendered declarative link for anonymous and authenticated flows and validates the configurable 8–15-digit path, empty hash, only `text` query parameter, and exact decoded message; focused browser evidence remains pending CI.
+- `frontend/node_modules/.bin/prettier --write .github/workflows/ci.yml docs/markdown/compliance/close-user-story-gaps-browser-evidence.md docs/markdown/compliance/close-user-story-gaps-traceability.md e2e/tests/whatsapp.spec.js`: passed; formatted exactly the four scoped supported files.
+- `frontend/node_modules/.bin/prettier --check .github/workflows/ci.yml docs/markdown/compliance/close-user-story-gaps-browser-evidence.md docs/markdown/compliance/close-user-story-gaps-traceability.md e2e/tests/whatsapp.spec.js`: passed; all matched files use Prettier code style.
+- `node --check e2e/tests/whatsapp.spec.js`: passed.
+- `git diff --check`: passed.
+- Current correction validation: `frontend/node_modules/.bin/prettier --write` and `--check` ran only on `e2e/tests/whatsapp.spec.js`, `docs/markdown/compliance/close-user-story-gaps-traceability.md`, and `docs/markdown/compliance/close-user-story-gaps-browser-evidence.md`; `node --check e2e/tests/whatsapp.spec.js` and final `git diff --check` passed.
+- Final independent verification: passed; Prettier, Node syntax, diff whitespace, inventory, URL contract, and evidence wording all passed.
+- Playwright was not run locally because its configuration loads dotenv and the required services/credentials are unavailable.
+- Work-unit commit: `6cef923a0c4ecd54a2c58b97839600cb2a1bdaaf` (`test: strengthen WhatsApp handoff evidence`, signed).
