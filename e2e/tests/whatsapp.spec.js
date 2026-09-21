@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('../fixtures/fixtures');
+const { test, expect } = require("../fixtures/fixtures");
 
 /**
  * WU10 — WhatsApp handoff feedback (US-34.1, US-34.2, US-34.3).
@@ -12,28 +12,58 @@ const { test, expect } = require('../fixtures/fixtures');
  * `vi.stubEnv`) — see the traceability matrix.
  */
 
+const PRELOADED_MESSAGE =
+  "Hola, quiero hacer una consulta sobre un alojamiento de TuHospedaje.";
+
 /** @param {import('@playwright/test').Page} page */
 function whatsappLink(page) {
-  return page.getByRole('link', { name: 'Contactar por WhatsApp' });
+  return page.getByRole("link", { name: "Contactar por WhatsApp" });
 }
 
-test.describe('WhatsApp handoff', () => {
-  test('the declarative link is visible and has the secure WhatsApp destination for an anonymous visitor', async ({ page, homePage }) => {
-    await homePage.open('/');
+/** @param {ReturnType<typeof whatsappLink>} link */
+async function expectDeclarativeWhatsAppContract(link) {
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", "noopener noreferrer");
 
-    const link = whatsappLink(page);
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', expect.stringContaining('noopener noreferrer'));
-    await expect(link).toHaveAttribute('href', expect.stringMatching(/^https:\/\/wa\.me\//));
+  const href = await link.getAttribute("href");
+  expect(href).not.toBeNull();
+
+  const url = new URL(href);
+  expect(url.protocol).toBe("https:");
+  expect(url.hostname).toBe("wa.me");
+  expect(url.port).toBe("");
+  expect(url.username).toBe("");
+  expect(url.password).toBe("");
+  expect(url.pathname).toMatch(/^\/[1-9]\d{7,14}$/);
+  expect(url.hash).toBe("");
+  expect([...url.searchParams.keys()]).toEqual(["text"]);
+  expect(url.searchParams.get("text")).toBe(PRELOADED_MESSAGE);
+}
+
+test.describe("WhatsApp handoff", () => {
+  test("the declarative link has the secure WhatsApp contract for an anonymous visitor", async ({
+    page,
+    homePage,
+  }) => {
+    await homePage.open("/");
+
+    await expectDeclarativeWhatsAppContract(whatsappLink(page));
   });
 
-  test.describe('authenticated', () => {
-    test.skip(!process.env.TEST_USER_EMAIL, 'Set TEST_USER_EMAIL and TEST_USER_PASSWORD in .env');
+  test.describe("authenticated", () => {
+    test.skip(
+      !process.env.TEST_USER_EMAIL,
+      "Requires CI-provided test-user credentials",
+    );
 
-    test('the link remains available with equivalent behavior when logged in', async ({ page, authUser }) => {
-      await page.goto('/');
-      await expect(whatsappLink(page)).toBeVisible();
+    test("the declarative link has the equivalent secure contract when logged in", async ({
+      page,
+      authUser,
+    }) => {
+      await page.goto("/");
+
+      await expectDeclarativeWhatsAppContract(whatsappLink(page));
     });
   });
 });
