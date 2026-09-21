@@ -27,7 +27,7 @@ describe("public shell contract", () => {
 
 	it("defines the global scroll and responsive clearance contract in layout.css", () => {
 		expect(rule(layoutCss, ":root")).toMatch(
-			/--site-scroll-clearance:\s*calc\(var\(--site-header-height\) \+ var\(--site-scroll-gap\)\)/,
+			/--site-scroll-clearance:\s*calc\(\s*var\(--site-header-height\)\s*\+\s*var\(--site-scroll-gap\)\s*\)/,
 		);
 		expect(rule(layoutCss, "html")).toMatch(
 			/scroll-padding-top:\s*var\(--site-scroll-clearance\)/,
