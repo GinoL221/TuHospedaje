@@ -1,84 +1,76 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import WhatsAppButton from "./WhatsAppButton";
 
-function makeFakeWindow({ throwOnLocation = false } = {}) {
-	const fakeWindow = { opener: "not-null" };
-	Object.defineProperty(fakeWindow, "location", {
-		set() {
-			if (throwOnLocation) {
-				throw new Error("blocked by browser policy");
-			}
-		},
-		configurable: true,
-	});
-	return fakeWindow;
+const HANDOFF_URL =
+	"https://wa.me/5491122334455?text=Hola%2C%20quiero%20hacer%20una%20consulta%20sobre%20un%20alojamiento%20de%20TuHospedaje.";
+
+function getHandoffLink() {
+	return screen.getByRole("link", { name: "Contactar por WhatsApp" });
 }
 
 describe("WhatsAppButton - universal visibility", () => {
 	afterEach(() => {
 		vi.unstubAllEnvs();
-		vi.restoreAllMocks();
 	});
 
-	it("renders an accessible button for anonymous visitors even without configuration", () => {
+	it("renders an accessible link for anonymous visitors even without configuration", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "");
 		render(<WhatsAppButton />);
-		expect(
-			screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-		).toBeInTheDocument();
+
+		expect(getHandoffLink()).toBeInTheDocument();
+		expect(getHandoffLink()).toHaveAttribute("href", "#");
+		expect(getHandoffLink()).toHaveAttribute("aria-disabled", "true");
 	});
 
 	it("renders the same accessible control regardless of authentication state", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
 		render(<WhatsAppButton />);
-		expect(
-			screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-		).toBeInTheDocument();
+
+		expect(getHandoffLink()).toBeInTheDocument();
 	});
 });
 
 describe("WhatsAppButton - valid configuration handoff", () => {
 	afterEach(() => {
 		vi.unstubAllEnvs();
-		vi.restoreAllMocks();
 	});
 
-	it("opens a blank window synchronously, isolates opener, and assigns the wa.me URL", async () => {
-		const user = userEvent.setup();
-		const fakeWindow = makeFakeWindow();
-		const openSpy = vi.spyOn(window, "open").mockReturnValue(fakeWindow);
+	it("uses a validated wa.me link with secure new-window attributes", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
-
 		render(<WhatsAppButton />);
-		await user.click(
-			screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-		);
 
-		expect(openSpy).toHaveBeenCalledWith("", "_blank");
-		expect(fakeWindow.opener).toBeNull();
+		const link = getHandoffLink();
+		expect(link).toHaveAttribute("href", HANDOFF_URL);
+		expect(link).toHaveAttribute("target", "_blank");
+		expect(link).toHaveAttribute("rel", "noopener noreferrer");
 	});
 
-	it("reports only that the handoff was initiated, never that a message was sent or delivered", async () => {
-		const user = userEvent.setup();
-		vi.spyOn(window, "open").mockReturnValue(makeFakeWindow());
+	it("reports only that the handoff was initiated, never that a message was sent or delivered", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
-
 		render(<WhatsAppButton />);
-		await user.click(
-			screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-		);
 
-		const feedback = await screen.findByRole("status");
+		fireEvent.click(getHandoffLink());
+
+		const feedback = screen.getByRole("status");
 		expect(feedback).toHaveTextContent(/abrió/i);
 		expect(feedback.textContent).not.toMatch(/enviad|entregad|leíd/i);
+	});
+
+	it("keeps reporting handoff initiation when the link is activated again", () => {
+		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
+		render(<WhatsAppButton />);
+
+		const link = getHandoffLink();
+		fireEvent.click(link);
+		fireEvent.click(link);
+
+		expect(screen.getByRole("status")).toHaveTextContent(/abrió/i);
 	});
 });
 
 describe("WhatsAppButton - invalid or missing configuration", () => {
 	afterEach(() => {
 		vi.unstubAllEnvs();
-		vi.restoreAllMocks();
 	});
 
 	it.each([
@@ -87,82 +79,15 @@ describe("WhatsAppButton - invalid or missing configuration", () => {
 		["too long", "1234567890123456"],
 		["leading zero", "0491122334455"],
 		["non-digit characters", "54911abc34455"],
-	])("never opens a URL for %s configuration", async (_label, value) => {
-		const user = userEvent.setup();
-		const openSpy = vi.spyOn(window, "open").mockReturnValue(makeFakeWindow());
+	])("does not provide a handoff URL for %s configuration", (_label, value) => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", value);
-
 		render(<WhatsAppButton />);
-		await user.click(
-			screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-		);
 
-		expect(openSpy).not.toHaveBeenCalled();
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			/no está disponible/i,
-		);
-	});
-});
-
-describe("WhatsAppButton - detectable handoff failures", () => {
-	afterEach(() => {
-		vi.unstubAllEnvs();
-		vi.restoreAllMocks();
-	});
-
-	it("handles window.open returning null without throwing", async () => {
-		const user = userEvent.setup();
-		vi.spyOn(window, "open").mockReturnValue(null);
-		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
-
-		render(<WhatsAppButton />);
-		await expect(
-			user.click(
-				screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-			),
-		).resolves.not.toThrow();
-
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			/no pudimos abrir whatsapp/i,
-		);
-	});
-
-	it("catches a window.open exception without crashing", async () => {
-		const user = userEvent.setup();
-		vi.spyOn(window, "open").mockImplementation(() => {
-			throw new Error("blocked by browser policy");
-		});
-		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
-
-		render(<WhatsAppButton />);
-		await expect(
-			user.click(
-				screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-			),
-		).resolves.not.toThrow();
-
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			/no pudimos abrir whatsapp/i,
-		);
-	});
-
-	it("catches a URL-assignment exception without crashing", async () => {
-		const user = userEvent.setup();
-		vi.spyOn(window, "open").mockReturnValue(
-			makeFakeWindow({ throwOnLocation: true }),
-		);
-		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
-
-		render(<WhatsAppButton />);
-		await expect(
-			user.click(
-				screen.getByRole("button", { name: "Contactar por WhatsApp" }),
-			),
-		).resolves.not.toThrow();
-
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			/no pudimos abrir whatsapp/i,
-		);
+		const link = getHandoffLink();
+		expect(link).toHaveAttribute("href", "#");
+		expect(link).toHaveAttribute("aria-disabled", "true");
+		fireEvent.click(link);
+		expect(screen.getByRole("alert")).toHaveTextContent(/no está disponible/i);
 	});
 });
 
@@ -175,10 +100,8 @@ describe("WhatsAppButton - fixed lower-right placement", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
 		render(<WhatsAppButton />);
 
-		const button = screen.getByRole("button", {
-			name: "Contactar por WhatsApp",
-		});
-		expect(button.closest(".whatsapp-button-wrapper")).not.toBeNull();
-		expect(button).toHaveClass("whatsapp-button");
+		const link = getHandoffLink();
+		expect(link.closest(".whatsapp-button-wrapper")).not.toBeNull();
+		expect(link).toHaveClass("whatsapp-button");
 	});
 });
