@@ -12,11 +12,6 @@ const FEEDBACK = {
 		ariaLive: "polite",
 		text: "Se abrió el acceso a WhatsApp; completá el envío allí.",
 	},
-	invalid_configuration: {
-		role: "alert",
-		ariaLive: "assertive",
-		text: "El contacto por WhatsApp no está disponible en este momento.",
-	},
 };
 
 function readConfiguredNumber() {
@@ -53,9 +48,11 @@ function buildHandoffUrl(digits) {
 
 export default function WhatsAppButton() {
 	const handoffUrl = buildHandoffUrl(readConfiguredNumber());
-	const [status, setStatus] = useState(
-		handoffUrl ? null : "invalid_configuration",
-	);
+	const [status, setStatus] = useState(null);
+
+	if (!handoffUrl) {
+		return null;
+	}
 
 	const handleClick = () => {
 		setStatus("handoff_requested");
@@ -77,27 +74,16 @@ export default function WhatsAppButton() {
 
 	return (
 		<div className="whatsapp-button-wrapper">
-			{handoffUrl ? (
-				<a
-					href={handoffUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					onClick={handleClick}
-					aria-label="Contactar por WhatsApp"
-					className="whatsapp-button"
-				>
-					{icon}
-				</a>
-			) : (
-				<button
-					type="button"
-					disabled
-					aria-label="Contactar por WhatsApp"
-					className="whatsapp-button"
-				>
-					{icon}
-				</button>
-			)}
+			<a
+				href={handoffUrl}
+				target="_blank"
+				rel="noopener noreferrer"
+				onClick={handleClick}
+				aria-label="Contactar por WhatsApp"
+				className="whatsapp-button"
+			>
+				{icon}
+			</a>
 			{feedback && (
 				<p
 					role={feedback.role}

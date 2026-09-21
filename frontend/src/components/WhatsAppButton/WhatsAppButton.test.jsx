@@ -13,17 +13,16 @@ describe("WhatsAppButton - universal visibility", () => {
 		vi.unstubAllEnvs();
 	});
 
-	it("renders a disabled button without configuration", () => {
+	it("renders no WhatsApp control without configuration", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "");
-		render(<WhatsAppButton />);
+		const { container } = render(<WhatsAppButton />);
 
-		const button = screen.getByRole("button", {
-			name: "Contactar por WhatsApp",
-		});
-		expect(button).toBeDisabled();
+		expect(container).toBeEmptyDOMElement();
 		expect(
 			screen.queryByRole("link", { name: "Contactar por WhatsApp" }),
 		).toBeNull();
+		expect(screen.queryByRole("button")).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 
 	it("renders the same accessible control regardless of authentication state", () => {
@@ -83,19 +82,16 @@ describe("WhatsAppButton - invalid or missing configuration", () => {
 		["too long", "1234567890123456"],
 		["leading zero", "0491122334455"],
 		["non-digit characters", "54911abc34455"],
-	])("renders a disabled button for %s configuration", (_label, value) => {
+	])("renders no WhatsApp control for %s configuration", (_label, value) => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", value);
-		render(<WhatsAppButton />);
+		const { container } = render(<WhatsAppButton />);
 
-		const button = screen.getByRole("button", {
-			name: "Contactar por WhatsApp",
-		});
-		expect(button).toBeDisabled();
-		expect(button).not.toHaveAttribute("href");
+		expect(container).toBeEmptyDOMElement();
 		expect(
 			screen.queryByRole("link", { name: "Contactar por WhatsApp" }),
 		).toBeNull();
-		expect(screen.getByRole("alert")).toHaveTextContent(/no está disponible/i);
+		expect(screen.queryByRole("button")).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 });
 

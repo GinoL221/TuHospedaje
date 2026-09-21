@@ -2,14 +2,15 @@
 
 ## Goal
 
-Remove the `href="#"` fallback from the WhatsApp handoff so invalid configuration cannot expose an unintended navigation target.
+Honor US #34 while removing the `href="#"` fallback from the WhatsApp handoff: only a validated link is rendered, and invalid configuration renders no WhatsApp control.
 
 ## Tasks
 
 - [x] Render the WhatsApp link only when the validated handoff URL exists.
-- [x] Render an accessible, non-navigating disabled button when configuration is invalid.
+- [x] Keep the valid handoff as a declarative link with its preloaded message.
+- [x] Render no WhatsApp control when configuration is missing or invalid, as required by US #34.
 - [x] Update focused component and dependent assertions.
-- [x] Run frontend checks, native review, and a signed work-unit commit.
+- [ ] Run frontend checks, native review, and a work-unit commit.
 
 ## Constraints
 
@@ -19,8 +20,6 @@ Remove the `href="#"` fallback from the WhatsApp handoff so invalid configuratio
 
 ## Evidence
 
-- User selected the disabled-button fallback on 2026-09-21.
-- Implementation and tests committed with GPG signature as `bbff4e5`.
-- Native review `review-211b799d0a679939` was approved and acknowledged.
-- Focused tests passed: 2 files, 15 tests; ESLint, Prettier, and `git diff --check` passed.
-- The commit hook's Gitleaks scan found no leaks in approximately 4 KB of staged content. E2E remains unrun because it requires environment configuration and external services.
+- The earlier disabled-button fallback was superseded after reconciling issue #277 with the authoritative US #34 acceptance criteria.
+- The previous implementation and tests were committed with GPG signature as `bbff4e5` and reviewed under `review-211b799d0a679939`.
+- Focused tests, Prettier, ESLint, and `git diff --check` pass for the correction; native review and a new work-unit commit remain pending.
