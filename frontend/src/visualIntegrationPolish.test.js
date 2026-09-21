@@ -12,9 +12,7 @@ function rule(css, selector) {
 function luminance(hex) {
 	const channels = hex.match(/[a-f\d]{2}/gi).map((channel) => {
 		const value = Number.parseInt(channel, 16) / 255;
-		return value <= 0.04045
-			? value / 12.92
-			: ((value + 0.055) / 1.055) ** 2.4;
+		return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
 	});
 	return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
 }
@@ -51,7 +49,9 @@ describe("approved visual integration contracts", () => {
 
 		expect(source).toMatch(/registerLocale\("es", es\)/);
 		expect(source.match(/locale="es"/g)).toHaveLength(2);
-		expect(source.match(/popperClassName="home-datepicker-popper"/g)).toHaveLength(2);
+		expect(
+			source.match(/popperClassName="home-datepicker-popper"/g),
+		).toHaveLength(2);
 		expect(rule(css, ".home .react-datepicker__navigation")).toMatch(
 			/width:\s*44px/,
 		);
@@ -66,8 +66,14 @@ describe("approved visual integration contracts", () => {
 	it("optically aligns the Home calendar chevrons symmetrically", () => {
 		const css = readCss("src/pages/Home/Home.css");
 		const icon = rule(css, ".home .react-datepicker__navigation-icon");
-		const chevron = rule(css, ".home .react-datepicker__navigation-icon::before");
-		const next = rule(css, ".home .react-datepicker__navigation-icon--next::before");
+		const chevron = rule(
+			css,
+			".home .react-datepicker__navigation-icon::before",
+		);
+		const next = rule(
+			css,
+			".home .react-datepicker__navigation-icon--next::before",
+		);
 		const previous = rule(
 			css,
 			".home .react-datepicker__navigation-icon--previous::before",

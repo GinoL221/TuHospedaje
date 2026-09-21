@@ -65,7 +65,9 @@ export default function ProductCard({
 							onClick={toggleFavorite}
 							disabled={pending}
 							aria-busy={pending}
-							aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+							aria-label={
+								isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+							}
 						>
 							<Heart
 								size={20}

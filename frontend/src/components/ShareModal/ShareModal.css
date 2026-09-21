@@ -71,7 +71,9 @@
   justify-content: center;
   border-radius: 50%;
   color: var(--secondary);
-  transition: background 200ms ease, color 200ms ease;
+  transition:
+    background 200ms ease,
+    color 200ms ease;
 }
 
 .share-modal .modal-close:hover {
@@ -178,7 +180,9 @@
   font-size: 0.86rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 200ms ease, color 200ms ease;
+  transition:
+    background 200ms ease,
+    color 200ms ease;
 }
 
 .share-copy-btn:hover {
@@ -231,7 +235,9 @@
   font-size: 0.9rem;
   color: var(--secondary);
   background: color-mix(in srgb, var(--share-brand) 8%, var(--bg));
-  transition: background 200ms ease, color 200ms ease;
+  transition:
+    background 200ms ease,
+    color 200ms ease;
 }
 
 .share-btn:hover {

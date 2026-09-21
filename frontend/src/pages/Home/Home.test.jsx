@@ -54,7 +54,12 @@ const lodgingFixture = {
 	pricePerNight: 100,
 	imageUrls: [],
 };
-const categoryFixture = { id: 1, name: "Cabaña", icon: "tree-pine", imageUrl: null };
+const categoryFixture = {
+	id: 1,
+	name: "Cabaña",
+	icon: "tree-pine",
+	imageUrl: null,
+};
 
 function recommendationsPage({
 	lodgings = [lodgingFixture],
@@ -84,13 +89,22 @@ function mockGetDefaults({
 			// Echo the requested page back as currentPage, like the real
 			// backend does for an in-range request (see RecommendationPageResponse).
 			const requestedPage =
-				Number(new URL(endpoint, "http://localhost").searchParams.get("page")) || 0;
-			return Promise.resolve({ ...recommendations, currentPage: requestedPage });
+				Number(
+					new URL(endpoint, "http://localhost").searchParams.get("page"),
+				) || 0;
+			return Promise.resolve({
+				...recommendations,
+				currentPage: requestedPage,
+			});
 		}
 		if (endpoint.startsWith("/lodgings?category="))
 			return Promise.resolve(categoryLodgings);
 		if (endpoint.startsWith("/lodgings/search"))
-			return Promise.resolve({ lodgings: categoryLodgings, totalItems: categoryLodgings.length, catalogItems: categoryLodgings.length });
+			return Promise.resolve({
+				lodgings: categoryLodgings,
+				totalItems: categoryLodgings.length,
+				catalogItems: categoryLodgings.length,
+			});
 		if (endpoint === "/categories") return Promise.resolve(categories);
 		if (endpoint === "/favorites") return Promise.resolve(favorites);
 		if (endpoint.startsWith("/lodgings/cities")) return Promise.resolve([]);
@@ -188,10 +202,9 @@ describe("Home - pending list transition", () => {
 
 		expect(await screen.findByText("Hotel La Perla")).toBeInTheDocument();
 		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
-		expect(screen.getByRole("list", { name: "Recomendaciones" })).toHaveAttribute(
-			"aria-busy",
-			"false",
-		);
+		expect(
+			screen.getByRole("list", { name: "Recomendaciones" }),
+		).toHaveAttribute("aria-busy", "false");
 	});
 
 	it("keeps the previous page visible and busy until the next page arrives", async () => {
@@ -213,10 +226,9 @@ describe("Home - pending list transition", () => {
 		await user.click(screen.getByRole("button", { name: "Siguiente" }));
 
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
-		expect(screen.getByRole("list", { name: "Recomendaciones" })).toHaveAttribute(
-			"aria-busy",
-			"true",
-		);
+		expect(
+			screen.getByRole("list", { name: "Recomendaciones" }),
+		).toHaveAttribute("aria-busy", "true");
 
 		pending.resolve(
 			recommendationsPage({
@@ -238,7 +250,7 @@ describe("Home - pending list transition", () => {
 
 		const pending = deferred();
 		get.mockImplementation((endpoint) => {
-		if (endpoint.startsWith("/lodgings/search")) return pending.promise;
+			if (endpoint.startsWith("/lodgings/search")) return pending.promise;
 			if (endpoint.startsWith("/lodgings/recommendations"))
 				return Promise.resolve(recommendationsPage());
 			if (endpoint === "/categories") return Promise.resolve([categoryFixture]);
@@ -248,9 +260,15 @@ describe("Home - pending list transition", () => {
 		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
 
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
-		expect(screen.getByRole("list", { name: "Recomendaciones" })).toHaveAttribute("aria-busy", "false");
+		expect(
+			screen.getByRole("list", { name: "Recomendaciones" }),
+		).toHaveAttribute("aria-busy", "false");
 
-		pending.resolve({ lodgings: [{ ...lodgingFixture, id: 4, name: "Cabaña Filtrada" }], totalItems: 1, catalogItems: 1 });
+		pending.resolve({
+			lodgings: [{ ...lodgingFixture, id: 4, name: "Cabaña Filtrada" }],
+			totalItems: 1,
+			catalogItems: 1,
+		});
 
 		expect(await screen.findByText("Cabaña Filtrada")).toBeInTheDocument();
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
@@ -284,7 +302,10 @@ describe("Home - explicit refresh and catalog reset", () => {
 		const resetFixture = { ...lodgingFixture, id: 9, name: "Depto Centro" };
 		get.mockImplementation((endpoint) => {
 			if (endpoint.startsWith("/lodgings/recommendations")) {
-				const requestedPage = new URL(endpoint, "http://localhost").searchParams.get("page");
+				const requestedPage = new URL(
+					endpoint,
+					"http://localhost",
+				).searchParams.get("page");
 				return Promise.resolve(
 					requestedPage === "1"
 						? recommendationsPage({
@@ -315,12 +336,16 @@ describe("Home - explicit refresh and catalog reset", () => {
 		expect(await screen.findByText("Depto Centro")).toBeInTheDocument();
 		expect(screen.queryByText("Casa de Playa")).not.toBeInTheDocument();
 		expect(screen.queryByText(/Página/)).not.toBeInTheDocument();
-		expect(JSON.parse(sessionStorage.getItem("tuhospedaje.recommendations.v1"))).toEqual({
+		expect(
+			JSON.parse(sessionStorage.getItem("tuhospedaje.recommendations.v1")),
+		).toEqual({
 			seed: FIXED_SEED,
 			revision: "rev-2",
 		});
 		expect(
-			get.mock.calls.filter(([endpoint]) => endpoint.startsWith("/lodgings/recommendations")),
+			get.mock.calls.filter(([endpoint]) =>
+				endpoint.startsWith("/lodgings/recommendations"),
+			),
 		).toHaveLength(2);
 	});
 
@@ -364,24 +389,51 @@ describe("Home - explicit refresh and catalog reset", () => {
 
 describe("Home - category filter compatibility", () => {
 	it("searches encoded city, repeated categories, and dates while keeping categories and recommendations visible", async () => {
-		mockGetDefaults({ categories: [categoryFixture, { id: 2, name: "Hotel", icon: "hotel" }] });
+		mockGetDefaults({
+			categories: [categoryFixture, { id: 2, name: "Hotel", icon: "hotel" }],
+		});
 		get.mockImplementation((endpoint) => {
-			if (endpoint.startsWith("/lodgings/search")) return Promise.resolve({ lodgings: [], totalItems: 0, catalogItems: 3 });
-			if (endpoint.startsWith("/lodgings/recommendations")) return Promise.resolve(recommendationsPage());
-			if (endpoint === "/categories") return Promise.resolve([categoryFixture, { id: 2, name: "Hotel", icon: "hotel" }]);
+			if (endpoint.startsWith("/lodgings/search"))
+				return Promise.resolve({
+					lodgings: [],
+					totalItems: 0,
+					catalogItems: 3,
+				});
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories")
+				return Promise.resolve([
+					categoryFixture,
+					{ id: 2, name: "Hotel", icon: "hotel" },
+				]);
 			return Promise.resolve([]);
 		});
 		const user = userEvent.setup();
-		renderHome({ route: "/?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=" });
+		renderHome({
+			route:
+				"/?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=",
+		});
 
-		expect(await screen.findByText("0 resultados de 3 alojamientos")).toBeInTheDocument();
-		expect(screen.getByRole("heading", { name: "Categorías" })).toBeInTheDocument();
-		expect(screen.getByRole("heading", { name: "Recomendaciones" })).toBeInTheDocument();
-		expect(get).toHaveBeenCalledWith("/lodgings/search?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=");
+		expect(
+			await screen.findByText("0 resultados de 3 alojamientos"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Categorías" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Recomendaciones" }),
+		).toBeInTheDocument();
+		expect(get).toHaveBeenCalledWith(
+			"/lodgings/search?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=",
+		);
 
 		await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
-		await waitFor(() => expect(get).toHaveBeenCalledWith("/lodgings/search?city=San+Mart%C3%ADn&checkIn=2026-08-01&checkOut="));
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(
+				"/lodgings/search?city=San+Mart%C3%ADn&checkIn=2026-08-01&checkOut=",
+			),
+		);
 	});
 
 	it("calls the category-filtered endpoint (not recommendations) when a category is clicked", async () => {
@@ -397,7 +449,9 @@ describe("Home - category filter compatibility", () => {
 		await waitFor(() =>
 			expect(get).toHaveBeenCalledWith("/lodgings/search?categories=1"),
 		);
-		expect(get).not.toHaveBeenCalledWith(expect.stringContaining("/lodgings/recommendations"));
+		expect(get).not.toHaveBeenCalledWith(
+			expect.stringContaining("/lodgings/recommendations"),
+		);
 	});
 
 	it("shows Limpiar filtros when a category is active and hides it after deselection", async () => {
@@ -545,7 +599,9 @@ describe("Home - loading failure, retry, and repeated failure", () => {
 		expect(await screen.findByRole("alert")).toBeInTheDocument();
 		expect(screen.queryByTestId("product-card")).not.toBeInTheDocument();
 		expect(
-			screen.queryByText("No hay alojamientos cargados todavía. Volvé más tarde."),
+			screen.queryByText(
+				"No hay alojamientos cargados todavía. Volvé más tarde.",
+			),
 		).not.toBeInTheDocument();
 	});
 });
@@ -603,10 +659,9 @@ describe("Home - search form", () => {
 		expect(input).toHaveAttribute("aria-activedescendant", activeOption.id);
 
 		await user.keyboard("{ArrowDown}");
-		expect(screen.getByRole("option", { name: "Buenos Aires" })).toHaveAttribute(
-			"aria-selected",
-			"true",
-		);
+		expect(
+			screen.getByRole("option", { name: "Buenos Aires" }),
+		).toHaveAttribute("aria-selected", "true");
 
 		await user.keyboard("{ArrowUp}{Enter}");
 		expect(input).toHaveValue("Bariloche");
@@ -751,9 +806,7 @@ describe("Home - favorites", () => {
 		const card = await screen.findByTestId("product-card");
 		await waitFor(() => expect(card).toHaveAttribute("data-favorite", "true"));
 
-		await user.click(
-			screen.getByRole("button", { name: "Toggle favorite" }),
-		);
+		await user.click(screen.getByRole("button", { name: "Toggle favorite" }));
 
 		expect(card).toHaveAttribute("data-favorite", "false");
 		await user.click(screen.getByRole("button", { name: "Toggle favorite" }));

@@ -1,13 +1,13 @@
 import { get, post, del } from "./api";
 
 export function getFavorites() {
-  return get("/favorites");
+	return get("/favorites");
 }
 
 export function addFavorite(lodgingId) {
-  return post(`/favorites/${lodgingId}`);
+	return post(`/favorites/${lodgingId}`);
 }
 
 export function removeFavorite(lodgingId) {
-  return del(`/favorites/${lodgingId}`);
+	return del(`/favorites/${lodgingId}`);
 }

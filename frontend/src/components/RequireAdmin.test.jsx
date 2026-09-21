@@ -1,95 +1,106 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { act } from "@testing-library/react";
-import { customRender, screen, makeAuthValue, mockAdmin } from "../test/test-utils";
+import {
+	customRender,
+	screen,
+	makeAuthValue,
+	mockAdmin,
+} from "../test/test-utils";
 import RequireAdmin from "./RequireAdmin";
 
 function LoginSentinel() {
-  const location = useLocation();
-  return (
-    <div data-testid="login-sentinel">
-      login page
-      <span data-testid="redirect-from">{location.state?.from?.pathname}</span>
-      <span data-testid="redirect-message">{location.state?.message}</span>
-    </div>
-  );
+	const location = useLocation();
+	return (
+		<div data-testid="login-sentinel">
+			login page
+			<span data-testid="redirect-from">{location.state?.from?.pathname}</span>
+			<span data-testid="redirect-message">{location.state?.message}</span>
+		</div>
+	);
 }
 
 function UnauthorizedSentinel() {
-  return <div data-testid="unauthorized-sentinel">unauthorized page</div>;
+	return <div data-testid="unauthorized-sentinel">unauthorized page</div>;
 }
 
 function AdminSentinel() {
-  return <div data-testid="admin-sentinel">admin content</div>;
+	return <div data-testid="admin-sentinel">admin content</div>;
 }
 
 function renderGuardedRoute({ authValue, route = "/admin" } = {}) {
-  return customRender(
-    <Routes>
-      <Route path="/login" element={<LoginSentinel />} />
-      <Route path="/unauthorized" element={<UnauthorizedSentinel />} />
-      <Route element={<RequireAdmin />}>
-        <Route path="/admin" element={<AdminSentinel />} />
-      </Route>
-    </Routes>,
-    { authValue, route }
-  );
+	return customRender(
+		<Routes>
+			<Route path="/login" element={<LoginSentinel />} />
+			<Route path="/unauthorized" element={<UnauthorizedSentinel />} />
+			<Route element={<RequireAdmin />}>
+				<Route path="/admin" element={<AdminSentinel />} />
+			</Route>
+		</Routes>,
+		{ authValue, route },
+	);
 }
 
 describe("RequireAdmin - unauthenticated user", () => {
-  it("redirects to /login passing state.from and a Spanish prompt message", () => {
-    renderGuardedRoute({ authValue: null });
+	it("redirects to /login passing state.from and a Spanish prompt message", () => {
+		renderGuardedRoute({ authValue: null });
 
-    expect(screen.getByTestId("login-sentinel")).toBeInTheDocument();
-    expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
-    expect(screen.getByTestId("redirect-from")).toHaveTextContent("/admin");
-    expect(screen.getByTestId("redirect-message")).toHaveTextContent(
-      "Necesitás iniciar sesión para continuar. Si no tenés cuenta, podés registrarte."
-    );
-  });
+		expect(screen.getByTestId("login-sentinel")).toBeInTheDocument();
+		expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
+		expect(screen.getByTestId("redirect-from")).toHaveTextContent("/admin");
+		expect(screen.getByTestId("redirect-message")).toHaveTextContent(
+			"Necesitás iniciar sesión para continuar. Si no tenés cuenta, podés registrarte.",
+		);
+	});
 });
 
 describe("RequireAdmin - authenticated non-admin user", () => {
-  it("redirects to /unauthorized without exposing the admin content", () => {
-    renderGuardedRoute();
+	it("redirects to /unauthorized without exposing the admin content", () => {
+		renderGuardedRoute();
 
-    expect(screen.getByTestId("unauthorized-sentinel")).toBeInTheDocument();
-    expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
-  });
+		expect(screen.getByTestId("unauthorized-sentinel")).toBeInTheDocument();
+		expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
+	});
 });
 
 describe("RequireAdmin - authenticated admin user", () => {
-  it("renders the nested Outlet content, no redirect occurs", () => {
-    renderGuardedRoute({ authValue: makeAuthValue({ user: mockAdmin }) });
+	it("renders the nested Outlet content, no redirect occurs", () => {
+		renderGuardedRoute({ authValue: makeAuthValue({ user: mockAdmin }) });
 
-    expect(screen.getByTestId("admin-sentinel")).toBeInTheDocument();
-    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("unauthorized-sentinel")).not.toBeInTheDocument();
-  });
+		expect(screen.getByTestId("admin-sentinel")).toBeInTheDocument();
+		expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("unauthorized-sentinel"),
+		).not.toBeInTheDocument();
+	});
 });
 
 describe("RequireAdmin - session bootstrap still in flight (loading=true, user=null)", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+	afterEach(() => {
+		vi.useRealTimers();
+	});
 
-  it("does not redirect to /login while loading, even though user is still null", () => {
-    renderGuardedRoute({ authValue: makeAuthValue({ user: null, loading: true }) });
+	it("does not redirect to /login while loading, even though user is still null", () => {
+		renderGuardedRoute({
+			authValue: makeAuthValue({ user: null, loading: true }),
+		});
 
-    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
-  });
+		expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
+	});
 
-  it("renders an accessible loading indicator while loading", () => {
-    renderGuardedRoute({ authValue: makeAuthValue({ user: null, loading: true }) });
+	it("renders an accessible loading indicator while loading", () => {
+		renderGuardedRoute({
+			authValue: makeAuthValue({ user: null, loading: true }),
+		});
 
-    act(() => vi.advanceTimersByTime(150));
+		act(() => vi.advanceTimersByTime(150));
 
-    expect(screen.getByRole("status")).toHaveTextContent("Cargando página…");
-    expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
-  });
+		expect(screen.getByRole("status")).toHaveTextContent("Cargando página…");
+		expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("admin-sentinel")).not.toBeInTheDocument();
+	});
 });

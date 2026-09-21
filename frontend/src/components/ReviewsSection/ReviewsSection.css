@@ -1,34 +1,58 @@
 .ratings-section {
-  --review-space-1: 8px; --review-space-2: 16px; --review-space-3: 24px;
-  --review-surface: var(--surface-raised); --review-error: var(--product-danger, var(--secondary));
-  --review-error-bg: var(--product-danger-bg, color-mix(in srgb, var(--secondary) 6%, var(--bg)));
-  --review-error-border: var(--product-danger-border, color-mix(in srgb, var(--secondary) 28%, transparent));
-  box-sizing: border-box; min-width: 0;
-  margin-top: var(--review-space-3); padding: var(--review-space-3);
-  background: var(--review-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+  --review-space-1: 8px;
+  --review-space-2: 16px;
+  --review-space-3: 24px;
+  --review-surface: var(--surface-raised);
+  --review-error: var(--product-danger, var(--secondary));
+  --review-error-bg: var(
+    --product-danger-bg,
+    color-mix(in srgb, var(--secondary) 6%, var(--bg))
+  );
+  --review-error-border: var(
+    --product-danger-border,
+    color-mix(in srgb, var(--secondary) 28%, transparent)
+  );
+  box-sizing: border-box;
+  min-width: 0;
+  margin-top: var(--review-space-3);
+  padding: var(--review-space-3);
+  background: var(--review-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .ratings-header {
-  display: flex; flex-wrap: wrap; align-items: center;
-  gap: var(--review-space-1) var(--review-space-2); min-width: 0;
-  margin-bottom: var(--review-space-3); padding: var(--review-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--review-space-1) var(--review-space-2);
+  min-width: 0;
+  margin-bottom: var(--review-space-3);
+  padding: var(--review-space-2);
   border: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent);
-  border-radius: var(--radius-sm); background: color-mix(in srgb, var(--accent) 6%, var(--review-surface));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 6%, var(--review-surface));
 }
 
 .ratings-section h2 {
-  margin: 0 0 var(--review-space-2); color: var(--secondary); font-size: var(--type-h2-size);
-  font-weight: var(--type-h2-weight); line-height: var(--type-h2-line-height);
+  margin: 0 0 var(--review-space-2);
+  color: var(--secondary);
+  font-size: var(--type-h2-size);
+  font-weight: var(--type-h2-weight);
+  line-height: var(--type-h2-line-height);
 }
 
 .avg-score {
-  font-size: var(--type-h1-size); font-weight: var(--type-h1-weight);
-  line-height: var(--type-h1-line-height); color: var(--secondary);
+  font-size: var(--type-h1-size);
+  font-weight: var(--type-h1-weight);
+  line-height: var(--type-h1-line-height);
+  color: var(--secondary);
 }
 
 .stars-display,
 .review-stars {
-  font-size: 1.5rem; line-height: 1;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .star-filled {
@@ -39,45 +63,84 @@
   color: color-mix(in srgb, var(--secondary) 28%, var(--review-surface));
 }
 
-.star-selector button.star-filled { color: var(--action-primary-accent); }
-.star-selector button.star-empty { color: color-mix(in srgb, var(--secondary) 28%, var(--review-surface)); }
+.star-selector button.star-filled {
+  color: var(--action-primary-accent);
+}
+.star-selector button.star-empty {
+  color: color-mix(in srgb, var(--secondary) 28%, var(--review-surface));
+}
 
 .reviews-count {
-  color: var(--secondary); font-size: var(--type-label-size); line-height: var(--type-label-line-height);
+  color: var(--secondary);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line-height);
 }
 
 .review-form {
-  box-sizing: border-box; min-width: 0; margin-bottom: var(--review-space-3); padding: var(--review-space-2);
+  box-sizing: border-box;
+  min-width: 0;
+  margin-bottom: var(--review-space-3);
+  padding: var(--review-space-2);
   background: var(--bg);
   border: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent);
-  border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .review-form h3,
 .reviews-list-title {
-  margin: 0 0 var(--review-space-2); color: var(--secondary); font-size: var(--type-body-size);
-  font-weight: 600; line-height: var(--type-body-line-height);
+  margin: 0 0 var(--review-space-2);
+  color: var(--secondary);
+  font-size: var(--type-body-size);
+  font-weight: 600;
+  line-height: var(--type-body-line-height);
 }
 
 .star-selector {
-  display: flex; flex-wrap: wrap; gap: var(--review-space-1); min-inline-size: 0;
-  margin: 0 0 var(--review-space-2); padding: 0; border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--review-space-1);
+  min-inline-size: 0;
+  margin: 0 0 var(--review-space-2);
+  padding: 0;
+  border: 0;
 }
 
 .star-selector legend,
 .review-form > label {
-  display: block; margin-bottom: var(--review-space-1); color: var(--secondary);
-  font-size: var(--type-label-size); font-weight: var(--type-label-weight); line-height: var(--type-label-line-height);
+  display: block;
+  margin-bottom: var(--review-space-1);
+  color: var(--secondary);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+  line-height: var(--type-label-line-height);
 }
 
-.star-selector legend { width: 100%; }
+.star-selector legend {
+  width: 100%;
+}
 
 .star-selector button {
-  box-sizing: border-box; min-width: 44px; min-height: 44px; display: inline-flex;
-  align-items: center; justify-content: center; background: none; border: 1px solid transparent;
-  border-radius: var(--radius-sm); padding: 4px; font: inherit; font-size: 1.5rem; line-height: 1;
-  cursor: pointer; color: inherit; touch-action: manipulation;
-  transition: color var(--transition), background-color var(--transition), box-shadow var(--transition);
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  touch-action: manipulation;
+  transition:
+    color var(--transition),
+    background-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .star-selector button:focus-visible {
@@ -86,33 +149,59 @@
 }
 
 .eligibility-status {
-  color: var(--text); font-size: var(--type-body-size); line-height: var(--type-body-line-height);
+  color: var(--text);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
   margin: 0 0 var(--review-space-2);
 }
 
 .ratings-alert,
 .eligibility-alert,
 .submit-error {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--review-space-1);
-  box-sizing: border-box; min-width: 0; margin: 0 0 var(--review-space-2); padding: var(--review-space-1) var(--review-space-2);
-  background: var(--review-error-bg); border: 1px solid var(--review-error-border);
-  border-left: 4px solid var(--review-error); border-radius: var(--radius-sm);
-  font-size: var(--type-label-size); line-height: var(--type-label-line-height); color: var(--review-error);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--review-space-1);
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0 0 var(--review-space-2);
+  padding: var(--review-space-1) var(--review-space-2);
+  background: var(--review-error-bg);
+  border: 1px solid var(--review-error-border);
+  border-left: 4px solid var(--review-error);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line-height);
+  color: var(--review-error);
 }
 
 .ratings-alert p,
 .eligibility-alert p,
 .submit-error {
-  min-width: 0; margin: 0; font-weight: 600; overflow-wrap: anywhere;
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .ratings-alert button,
 .eligibility-alert button {
-  box-sizing: border-box; min-width: 44px; min-height: 44px; flex: 0 0 auto;
-  background: var(--action-primary-bg); color: var(--action-primary-fg); border: none;
-  padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font: inherit;
-  font-weight: 600; touch-action: manipulation;
-  transition: background-color var(--transition), box-shadow var(--transition);
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  flex: 0 0 auto;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  touch-action: manipulation;
+  transition:
+    background-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .ratings-alert button:hover,
@@ -121,16 +210,29 @@
 }
 
 .review-form textarea {
-  box-sizing: border-box; width: 100%; min-height: calc(var(--review-space-3) * 4); padding: var(--review-space-1) var(--review-space-2);
-  border: 1px solid color-mix(in srgb, var(--secondary) 28%, transparent); border-radius: var(--radius-sm);
-  font: inherit; font-size: var(--type-body-size); line-height: var(--type-body-line-height); resize: vertical;
-  background: var(--review-surface); color: var(--text); outline: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(var(--review-space-3) * 4);
+  padding: var(--review-space-1) var(--review-space-2);
+  border: 1px solid color-mix(in srgb, var(--secondary) 28%, transparent);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
+  resize: vertical;
+  background: var(--review-surface);
+  color: var(--text);
+  outline: none;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .review-form textarea:focus-visible {
-  outline: 3px solid var(--action-primary-focus); outline-offset: 2px;
-  border-color: var(--action-primary-focus); box-shadow: 0 0 0 1px var(--action-primary-focus);
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
+  border-color: var(--action-primary-focus);
+  box-shadow: 0 0 0 1px var(--action-primary-focus);
 }
 
 .review-form textarea[aria-invalid="true"] {
@@ -138,11 +240,23 @@
 }
 
 .btn-submit-review {
-  box-sizing: border-box; min-height: 44px; margin-top: var(--review-space-2);
-  background-color: var(--action-primary-bg); color: var(--action-primary-fg); border: none;
-  box-shadow: inset 0 -3px var(--action-primary-accent); padding: var(--review-space-1) var(--review-space-2); border-radius: var(--radius-sm);
-  cursor: pointer; font: inherit; font-weight: 600; line-height: var(--type-body-line-height);
-  touch-action: manipulation; transition: background-color var(--transition), box-shadow var(--transition);
+  box-sizing: border-box;
+  min-height: 44px;
+  margin-top: var(--review-space-2);
+  background-color: var(--action-primary-bg);
+  color: var(--action-primary-fg);
+  border: none;
+  box-shadow: inset 0 -3px var(--action-primary-accent);
+  padding: var(--review-space-1) var(--review-space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  line-height: var(--type-body-line-height);
+  touch-action: manipulation;
+  transition:
+    background-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .btn-submit-review:hover:not(:disabled) {
@@ -168,44 +282,72 @@
 
 .ratings-alert button:focus-visible,
 .eligibility-alert button:focus-visible {
-  outline: 3px solid var(--action-primary-focus); outline-offset: 2px;
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 
 .ratings-loading,
 .reviews-empty-state {
-  box-sizing: border-box; min-width: 0; margin: 0; padding: var(--review-space-2);
-  border: 1px dashed color-mix(in srgb, var(--secondary) 28%, transparent); border-radius: var(--radius-sm);
-  color: var(--secondary); font-size: var(--type-body-size); line-height: var(--type-body-line-height);
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: var(--review-space-2);
+  border: 1px dashed color-mix(in srgb, var(--secondary) 28%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--secondary);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
   overflow-wrap: anywhere;
 }
 
 .reviews-list {
-  display: flex; flex-direction: column; gap: var(--review-space-2); min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--review-space-2);
+  min-width: 0;
 }
 
 .review-item {
-  box-sizing: border-box; min-width: 0; padding: var(--review-space-2);
-  border: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent); border-left: 4px solid var(--accent);
-  border-radius: var(--radius-md); background: var(--review-surface);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--review-space-2);
+  border: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--review-surface);
 }
 
 .review-header {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start;
-  gap: var(--review-space-1) var(--review-space-2); min-width: 0; margin-bottom: var(--review-space-1);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--review-space-1) var(--review-space-2);
+  min-width: 0;
+  margin-bottom: var(--review-space-1);
 }
 
 .review-header strong {
-  min-width: 0; color: var(--secondary); overflow-wrap: anywhere;
+  min-width: 0;
+  color: var(--secondary);
+  overflow-wrap: anywhere;
 }
 
 .review-date {
-  margin-left: auto; color: var(--secondary); font-size: var(--type-caption-size);
-  line-height: var(--type-caption-line-height); overflow-wrap: anywhere;
+  margin-left: auto;
+  color: var(--secondary);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line-height);
+  overflow-wrap: anywhere;
 }
 
 .review-comment {
-  min-width: 0; margin: var(--review-space-1) 0 0; color: var(--text);
-  font-size: var(--type-body-size); line-height: var(--type-body-line-height); overflow-wrap: anywhere;
+  min-width: 0;
+  margin: var(--review-space-1) 0 0;
+  color: var(--text);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 480px) {
@@ -226,5 +368,7 @@
   .ratings-alert button,
   .eligibility-alert button,
   .review-form textarea,
-  .btn-submit-review { transition: none; }
+  .btn-submit-review {
+    transition: none;
+  }
 }

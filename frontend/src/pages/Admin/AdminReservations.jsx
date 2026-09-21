@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { getAdminReservations } from "../../services/reservationService";
 import SortableTh from "../../components/SortableTh/SortableTh";
 import Pagination from "../../components/Pagination/Pagination";
-import { hasReservationNotes, reservationCreatedAtLabel } from "../../utils/reservationPresentation";
+import {
+	hasReservationNotes,
+	reservationCreatedAtLabel,
+} from "../../utils/reservationPresentation";
 
 const PAGE_SIZE = 10;
 
@@ -173,23 +176,48 @@ export default function AdminReservations() {
 					<table data-testid="reservations-table">
 						<thead>
 							<tr>
-								<SortableTh columnKey="id" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}>
+								<SortableTh
+									columnKey="id"
+									sortKey={sortKey}
+									sortDir={sortDir}
+									onSort={handleSort}
+								>
 									ID
 								</SortableTh>
 								<th>Alojamiento</th>
 								<th>Huésped</th>
 								<th>Creación</th>
 								<th>Notas</th>
-								<SortableTh columnKey="checkIn" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}>
+								<SortableTh
+									columnKey="checkIn"
+									sortKey={sortKey}
+									sortDir={sortDir}
+									onSort={handleSort}
+								>
 									Check-in
 								</SortableTh>
-								<SortableTh columnKey="checkOut" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}>
+								<SortableTh
+									columnKey="checkOut"
+									sortKey={sortKey}
+									sortDir={sortDir}
+									onSort={handleSort}
+								>
 									Check-out
 								</SortableTh>
-								<SortableTh columnKey="totalPrice" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}>
+								<SortableTh
+									columnKey="totalPrice"
+									sortKey={sortKey}
+									sortDir={sortDir}
+									onSort={handleSort}
+								>
 									Total
 								</SortableTh>
-								<SortableTh columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}>
+								<SortableTh
+									columnKey="status"
+									sortKey={sortKey}
+									sortDir={sortDir}
+									onSort={handleSort}
+								>
 									Estado
 								</SortableTh>
 							</tr>
@@ -206,7 +234,9 @@ export default function AdminReservations() {
 									<td>{r.checkOut}</td>
 									<td>${r.totalPrice}</td>
 									<td>
-										<span className={`status-badge status-${r.status.toLowerCase()}`}>
+										<span
+											className={`status-badge status-${r.status.toLowerCase()}`}
+										>
 											{STATUS_CONFIG[r.status]?.rowLabel ?? r.status}
 										</span>
 									</td>
@@ -214,7 +244,11 @@ export default function AdminReservations() {
 							))}
 						</tbody>
 					</table>
-					<Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+					<Pagination
+						page={page}
+						totalPages={totalPages}
+						onPageChange={handlePageChange}
+					/>
 				</>
 			)}
 		</>

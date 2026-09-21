@@ -31,7 +31,9 @@ describe("account and shared surfaces visual contract", () => {
 		expect(favorites).toMatch(
 			/\.empty-state\.error \{[^}]*color:\s*var\(--favorites-danger\);/,
 		);
-		expect(favorites).toMatch(/\.btn-remove-fav \{[^}]*color:\s*var\(--secondary\);/s);
+		expect(favorites).toMatch(
+			/\.btn-remove-fav \{[^}]*color:\s*var\(--secondary\);/s,
+		);
 		expect(favorites).toContain("var(--action-primary-fg)");
 	});
 
@@ -69,7 +71,7 @@ describe("account and shared surfaces visual contract", () => {
 
 		expect(login).toContain("navigate(from, { replace: true })");
 		expect(register).toContain('err.code === "duplicate_email"');
-		expect(favorites).toContain("from \"../../services/favoriteService\"");
+		expect(favorites).toContain('from "../../services/favoriteService"');
 		expect(favoriteService).toContain("del(`/favorites/${lodgingId}`)");
 		expect(reservations).toContain('reservation.status === "CONFIRMED"');
 		expect(unauthorized).toContain(

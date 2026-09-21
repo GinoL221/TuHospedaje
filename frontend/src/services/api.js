@@ -24,26 +24,26 @@ const TIMEOUT_MESSAGE = "La solicitud tardó demasiado. Intentá de nuevo.";
 // into the refresh coordinator). These must not trigger the global
 // auth:unauthorized redirect from this same branch.
 const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
-  "/auth/login",
-  "/auth/register",
-  "/auth/me",
-  "/auth/csrf",
-  "/auth/refresh",
+	"/auth/login",
+	"/auth/register",
+	"/auth/me",
+	"/auth/csrf",
+	"/auth/refresh",
 ]);
 
 // Reads the XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository
 // (non-httpOnly by design, readable from JS) and URL-decodes its value —
 // Spring URL-encodes the raw token before writing the cookie.
 export function getCsrfToken() {
-  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+	const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+	return match ? decodeURIComponent(match[1]) : null;
 }
 
 export async function bootstrapCsrf() {
-  await request("GET", "/auth/csrf");
-  if (!getCsrfToken()) {
-    throw new Error("CSRF token was not issued");
-  }
+	await request("GET", "/auth/csrf");
+	if (!getCsrfToken()) {
+		throw new Error("CSRF token was not issued");
+	}
 }
 
 /**
@@ -53,97 +53,97 @@ export async function bootstrapCsrf() {
  * deadline behind.
  */
 async function fetchWithDeadline(url, config, externalSignal) {
-  const controller = new AbortController();
-  const abortFromCaller = () => controller.abort();
-  externalSignal?.addEventListener("abort", abortFromCaller, { once: true });
-  if (externalSignal?.aborted) controller.abort();
+	const controller = new AbortController();
+	const abortFromCaller = () => controller.abort();
+	externalSignal?.addEventListener("abort", abortFromCaller, { once: true });
+	if (externalSignal?.aborted) controller.abort();
 
-  const deadline = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    return await fetch(url, { ...config, signal: controller.signal });
-  } catch (err) {
-    // AbortError is the browser's word for it, not something to show a person — but it
-    // stays attached as `cause` so a debugger can still see what actually happened.
-    if (err?.name === "AbortError") {
-      throw new Error(TIMEOUT_MESSAGE, { cause: err });
-    }
-    throw err;
-  } finally {
-    clearTimeout(deadline);
-    externalSignal?.removeEventListener("abort", abortFromCaller);
-  }
+	const deadline = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+	try {
+		return await fetch(url, { ...config, signal: controller.signal });
+	} catch (err) {
+		// AbortError is the browser's word for it, not something to show a person — but it
+		// stays attached as `cause` so a debugger can still see what actually happened.
+		if (err?.name === "AbortError") {
+			throw new Error(TIMEOUT_MESSAGE, { cause: err });
+		}
+		throw err;
+	} finally {
+		clearTimeout(deadline);
+		externalSignal?.removeEventListener("abort", abortFromCaller);
+	}
 }
 
 async function request(
-  method,
-  endpoint,
-  data,
-  alreadyRetried = false,
-  options = {},
+	method,
+	endpoint,
+	data,
+	alreadyRetried = false,
+	options = {},
 ) {
-  const { multipart = false, signal } = options;
-  const headers = multipart ? {} : { "Content-Type": "application/json" };
-  if (UNSAFE_METHODS.has(method)) {
-    const csrfToken = getCsrfToken();
-    if (csrfToken) {
-      headers["X-XSRF-TOKEN"] = csrfToken;
-    }
-  }
+	const { multipart = false, signal } = options;
+	const headers = multipart ? {} : { "Content-Type": "application/json" };
+	if (UNSAFE_METHODS.has(method)) {
+		const csrfToken = getCsrfToken();
+		if (csrfToken) {
+			headers["X-XSRF-TOKEN"] = csrfToken;
+		}
+	}
 
-  const config = { method, headers, credentials: "include" };
-  if (data) {
-    config.body = multipart ? data : JSON.stringify(data);
-  }
+	const config = { method, headers, credentials: "include" };
+	if (data) {
+		config.body = multipart ? data : JSON.stringify(data);
+	}
 
-  const res = await fetchWithDeadline(`${API_BASE}${endpoint}`, config, signal);
+	const res = await fetchWithDeadline(`${API_BASE}${endpoint}`, config, signal);
 
-  if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
-    if (!alreadyRetried) {
-      // Coalesce this 401 with any other concurrent one behind a single
-      // in-flight /auth/refresh call, then retry the original request ONCE.
-      // `ensureRefreshed` itself dispatches auth:unauthorized (exactly once,
-      // shared across every waiting caller) if the refresh fails, so we
-      // simply propagate that rejection here without dispatching again.
-      await ensureRefreshed();
-      return request(method, endpoint, data, true, options);
-    }
-    window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-    throw new Error("Sesión expirada");
-  }
+	if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
+		if (!alreadyRetried) {
+			// Coalesce this 401 with any other concurrent one behind a single
+			// in-flight /auth/refresh call, then retry the original request ONCE.
+			// `ensureRefreshed` itself dispatches auth:unauthorized (exactly once,
+			// shared across every waiting caller) if the refresh fails, so we
+			// simply propagate that rejection here without dispatching again.
+			await ensureRefreshed();
+			return request(method, endpoint, data, true, options);
+		}
+		window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+		throw new Error("Sesión expirada");
+	}
 
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    const fieldMessages =
-      errorData.fields && Object.keys(errorData.fields).length > 0
-        ? Object.values(errorData.fields).join(" ")
-        : null;
-    const serverMessage =
-      fieldMessages ||
-      (typeof errorData.error === "string" && errorData.error.trim()
-        ? errorData.error
-        : null);
-    const error = new Error(serverMessage || `Error ${res.status}`);
-    error.code = errorData.code;
-    error.status = res.status;
-    error.hasServerMessage = Boolean(serverMessage);
-    throw error;
-  }
+	if (!res.ok) {
+		const errorData = await res.json().catch(() => ({}));
+		const fieldMessages =
+			errorData.fields && Object.keys(errorData.fields).length > 0
+				? Object.values(errorData.fields).join(" ")
+				: null;
+		const serverMessage =
+			fieldMessages ||
+			(typeof errorData.error === "string" && errorData.error.trim()
+				? errorData.error
+				: null);
+		const error = new Error(serverMessage || `Error ${res.status}`);
+		error.code = errorData.code;
+		error.status = res.status;
+		error.hasServerMessage = Boolean(serverMessage);
+		throw error;
+	}
 
-  if (res.status === 204) return null;
+	if (res.status === 204) return null;
 
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+	try {
+		return await res.json();
+	} catch {
+		return null;
+	}
 }
 
 export function get(endpoint) {
-  return request("GET", endpoint);
+	return request("GET", endpoint);
 }
 
 export function post(endpoint, data) {
-  return request("POST", endpoint, data);
+	return request("POST", endpoint, data);
 }
 
 /**
@@ -151,20 +151,20 @@ export function post(endpoint, data) {
  * deadline. Do not set Content-Type here: the browser must generate the boundary.
  */
 export function postMultipart(endpoint, formData, { signal } = {}) {
-  return request("POST", endpoint, formData, false, {
-    multipart: true,
-    signal,
-  });
+	return request("POST", endpoint, formData, false, {
+		multipart: true,
+		signal,
+	});
 }
 
 export function put(endpoint, data) {
-  return request("PUT", endpoint, data);
+	return request("PUT", endpoint, data);
 }
 
 export function patch(endpoint, data) {
-  return request("PATCH", endpoint, data);
+	return request("PATCH", endpoint, data);
 }
 
 export function del(endpoint) {
-  return request("DELETE", endpoint);
+	return request("DELETE", endpoint);
 }

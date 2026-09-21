@@ -1,11 +1,27 @@
 .hotel-card {
   --product-card-surface: var(--surface-raised);
-  --product-card-border: color-mix(in srgb, var(--content-strong) 16%, transparent);
+  --product-card-border: color-mix(
+    in srgb,
+    var(--content-strong) 16%,
+    transparent
+  );
   --product-card-focus: var(--action-primary-focus);
-  --product-card-overlay: color-mix(in srgb, var(--content-strong) 88%, transparent);
+  --product-card-overlay: color-mix(
+    in srgb,
+    var(--content-strong) 88%,
+    transparent
+  );
   --product-card-rating-filled: var(--action-primary-accent);
-  --product-card-rating-empty: color-mix(in srgb, var(--surface-page) 45%, transparent);
-  --product-card-favorite-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  --product-card-rating-empty: color-mix(
+    in srgb,
+    var(--surface-page) 45%,
+    transparent
+  );
+  --product-card-favorite-surface: color-mix(
+    in srgb,
+    var(--surface-raised) 92%,
+    transparent
+  );
   box-sizing: border-box;
   background-color: var(--product-card-surface);
   border: 1px solid var(--product-card-border);
@@ -16,7 +32,9 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition), box-shadow var(--transition);
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition);
 }
 
 .hotel-card:hover {
@@ -97,7 +115,11 @@
 }
 
 .ov-star-half {
-  background: linear-gradient(to right, var(--product-card-rating-filled) 50%, var(--product-card-rating-empty) 50%);
+  background: linear-gradient(
+    to right,
+    var(--product-card-rating-filled) 50%,
+    var(--product-card-rating-empty) 50%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

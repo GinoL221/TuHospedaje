@@ -13,11 +13,11 @@
  * @returns {Date}
  */
 export function minCheckoutDate(checkIn) {
-  if (!checkIn) {
-    return new Date();
-  }
+	if (!checkIn) {
+		return new Date();
+	}
 
-  const nextDay = new Date(checkIn);
-  nextDay.setDate(nextDay.getDate() + 1);
-  return nextDay;
+	const nextDay = new Date(checkIn);
+	nextDay.setDate(nextDay.getDate() + 1);
+	return nextDay;
 }
