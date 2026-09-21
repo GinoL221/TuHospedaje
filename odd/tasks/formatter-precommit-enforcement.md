@@ -6,6 +6,10 @@ Add deterministic frontend formatting with Prettier, preserve the existing Gitle
 
 ## Tasks
 
+- [ ] Correct the PR #276 frontend CI formatting failure for `frontend/src/accountSharedAuditContract.test.jsx` and `frontend/src/services/lodgingService.js`.
+  - Pending: CI found both committed files unformatted; native review, signed commit, push, and CI rerun remain parent-owned.
+  - Targeted verification: `npx prettier --check src/accountSharedAuditContract.test.jsx src/services/lodgingService.js` passed; `git diff --check` passed.
+
 - [x] Add the frontend Prettier configuration, scripts, dependencies, and staged-file hook integration while preserving Gitleaks.
   - Evidence: `frontend/.prettierrc.json`, `frontend/.prettierignore`, `frontend/scripts/pre-commit.sh`, `frontend/package.json`, and `frontend/package-lock.json`.
   - Dependencies: Prettier 3.9.6, lint-staged 16.4.0 (Node 20 compatible), simple-git-hooks 2.14.0.
