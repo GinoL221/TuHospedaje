@@ -127,13 +127,10 @@ describe("ProductCard - favorite toggle success", () => {
 });
 
 describe("ProductCard - favorite toggle rollback on failure", () => {
-	it("reverts isFavorite and re-notifies the parent when the request fails", async () => {
+	it("reverts a failed add, re-notifies the parent, and shows item-scoped feedback", async () => {
 		addFavorite.mockRejectedValue(new Error("network error"));
 		const onFavoriteToggle = vi.fn();
 		const user = userEvent.setup();
-		// Silence the expected console.error from ProductCard's catch block —
-		// this is existing production behavior (logs instead of surfacing UI
-		// error state), characterized as-is per spec Risks policy.
 		const consoleErrorSpy = vi
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
@@ -150,11 +147,78 @@ describe("ProductCard - favorite toggle rollback on failure", () => {
 		const button = await screen.findByRole("button", {
 			name: "Agregar a favoritos",
 		});
-		expect(button).toBeInTheDocument();
 		expect(button).not.toBeDisabled();
 		expect(onFavoriteToggle).toHaveBeenNthCalledWith(1, 1, true);
 		expect(onFavoriteToggle).toHaveBeenNthCalledWith(2, 1, false);
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"No se pudo actualizar favoritos. Intentá nuevamente.",
+		);
 
+		consoleErrorSpy.mockRestore();
+	});
+
+	it("reverts a failed remove, re-notifies the parent, and shows item-scoped feedback", async () => {
+		removeFavorite.mockRejectedValue(new Error("network error"));
+		const onFavoriteToggle = vi.fn();
+		const user = userEvent.setup();
+		const consoleErrorSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+
+		renderProductCard(
+			{ defaultFavorite: true, onFavoriteToggle },
+			{ authValue: makeAuthValue() },
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Quitar de favoritos" }),
+		);
+
+		const button = await screen.findByRole("button", {
+			name: "Quitar de favoritos",
+		});
+		expect(button).not.toBeDisabled();
+		expect(onFavoriteToggle).toHaveBeenNthCalledWith(1, 1, false);
+		expect(onFavoriteToggle).toHaveBeenNthCalledWith(2, 1, true);
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"No se pudo actualizar favoritos. Intentá nuevamente.",
+		);
+
+		consoleErrorSpy.mockRestore();
+	});
+
+	it("clears failure feedback when retrying and keeps it cleared after success", async () => {
+		let resolveRetry;
+		addFavorite
+			.mockRejectedValueOnce(new Error("network error"))
+			.mockReturnValueOnce(
+				new Promise((resolve) => {
+					resolveRetry = resolve;
+				}),
+			);
+		const user = userEvent.setup();
+		const consoleErrorSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+
+		renderProductCard({}, { authValue: makeAuthValue() });
+
+		await user.click(
+			screen.getByRole("button", { name: "Agregar a favoritos" }),
+		);
+		await screen.findByRole("alert");
+
+		await user.click(
+			screen.getByRole("button", { name: "Agregar a favoritos" }),
+		);
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(addFavorite).toHaveBeenCalledTimes(2);
+
+		resolveRetry(undefined);
+		await screen.findByRole("button", { name: "Quitar de favoritos" });
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 		consoleErrorSpy.mockRestore();
 	});
 });
