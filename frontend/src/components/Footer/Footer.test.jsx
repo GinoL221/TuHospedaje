@@ -42,6 +42,7 @@ describe("Footer - content", () => {
 	});
 
 	it("mounts the single always-visible WhatsApp control inside the footer", () => {
+		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
 		render(<Footer />);
 
 		const footer = screen.getByRole("contentinfo");

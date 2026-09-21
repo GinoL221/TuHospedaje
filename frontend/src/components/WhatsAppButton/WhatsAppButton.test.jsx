@@ -13,13 +13,17 @@ describe("WhatsAppButton - universal visibility", () => {
 		vi.unstubAllEnvs();
 	});
 
-	it("renders an accessible link for anonymous visitors even without configuration", () => {
+	it("renders a disabled button without configuration", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "");
 		render(<WhatsAppButton />);
 
-		expect(getHandoffLink()).toBeInTheDocument();
-		expect(getHandoffLink()).toHaveAttribute("href", "#");
-		expect(getHandoffLink()).toHaveAttribute("aria-disabled", "true");
+		const button = screen.getByRole("button", {
+			name: "Contactar por WhatsApp",
+		});
+		expect(button).toBeDisabled();
+		expect(
+			screen.queryByRole("link", { name: "Contactar por WhatsApp" }),
+		).toBeNull();
 	});
 
 	it("renders the same accessible control regardless of authentication state", () => {
@@ -79,14 +83,18 @@ describe("WhatsAppButton - invalid or missing configuration", () => {
 		["too long", "1234567890123456"],
 		["leading zero", "0491122334455"],
 		["non-digit characters", "54911abc34455"],
-	])("does not provide a handoff URL for %s configuration", (_label, value) => {
+	])("renders a disabled button for %s configuration", (_label, value) => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", value);
 		render(<WhatsAppButton />);
 
-		const link = getHandoffLink();
-		expect(link).toHaveAttribute("href", "#");
-		expect(link).toHaveAttribute("aria-disabled", "true");
-		fireEvent.click(link);
+		const button = screen.getByRole("button", {
+			name: "Contactar por WhatsApp",
+		});
+		expect(button).toBeDisabled();
+		expect(button).not.toHaveAttribute("href");
+		expect(
+			screen.queryByRole("link", { name: "Contactar por WhatsApp" }),
+		).toBeNull();
 		expect(screen.getByRole("alert")).toHaveTextContent(/no está disponible/i);
 	});
 });
