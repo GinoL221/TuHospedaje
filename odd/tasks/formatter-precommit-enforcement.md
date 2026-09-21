@@ -11,8 +11,19 @@ Add deterministic frontend formatting with Prettier, preserve the existing Gitle
   - Dependencies: Prettier 3.9.6, lint-staged 16.4.0 (Node 20 compatible), simple-git-hooks 2.14.0.
   - Validation: dependency/lockfile checks and `sh -n frontend/scripts/pre-commit.sh` passed; the initial source baseline had 136 Prettier violations.
 - [x] Add frontend lint and format checks to CI.
-  - Evidence: `.github/workflows/ci.yml` runs `npm run lint` and `npm run format:check` after `npm ci` and before coverage in the frontend job.
-  - Validation: `git diff --check` passed; workflow diff contains only the two intended steps.
+  - Evidence: `.github/workflows/ci.yml` runs `npm run lint` and `npm run format:check` after `npm ci` and before coverage in the frontend job; both setup-node entries are pinned to Node `20.19`.
+  - Validation: workflow diff contains only the two intended steps; read-only verification found no exact `node-version: '20'` entries and `git diff --check` passed. CI was not executed.
+  - Review: natively reviewed and acknowledged under lineage `review-6700ccfd5e7b6940` across risk, resilience, readability, and reliability lenses for target `sha256:c2860dcfd6c9820d62bc2809243d531d42983bba1871789b2b22bac511d9bbee`.
+  - Signed commit: `1f99356` (`ci: pin frontend jobs to Node 20.19`).
+- [x] Correct the staged-file hook execution directory.
+  - Evidence: `frontend/scripts/pre-commit.sh` enters `frontend` before `npm exec -- lint-staged`.
+  - Validation: `sh -n frontend/scripts/pre-commit.sh` and `git diff --check` passed.
+  - Review: natively reviewed and acknowledged under lineage `review-a3df00a2cfa74fa7` for target `sha256:eadc1e0f39772986ec1909f41d9a0bb45469961a178413ef9b489a429da97a15`.
+- [x] Review the 14-file presentation/interactions formatting slice.
+  - Scope: LodgingGallery, ProductCard, ReviewsSection, ShareModal, and WhatsAppButton.
+  - Validation: targeted Prettier check and `git diff --check` passed.
+  - Review: natively reviewed and acknowledged under lineage `review-ea95ab9d7c0c5abe` for target `sha256:a989b0211099aee1452fab07daff3aceffd50d7a89cfcb64549f6c21a2dfeb50`.
+  - State: signed commit `be2a062` (`style: format lodging presentation components`).
 - [x] Apply and verify the separate frontend formatting baseline while preserving local changes.
   - Evidence: 135 tracked frontend source files were formatted: 124 initial baseline files plus 11 omitted root-level files.
   - Compatibility adjustment: `frontend/src/publicShellContract.test.js` received one regex-only adjustment for Prettier's legal multiline CSS whitespace.
@@ -23,8 +34,9 @@ Add deterministic frontend formatting with Prettier, preserve the existing Gitle
 - [x] Prepare the clean formatter baseline and commit candidate while preserving unrelated local changes.
   - Native review inspect/start reached the provider, but no review authority was created because the complete 141-file candidate exceeded the provider reviewer context budget (`lens_context_budget_exceeded`).
   - The candidate must be split into smaller reviewable work units/commits before review.
-- [ ] Commit the completed formatter work unit after explicit commit authorization.
-  - Commit authorization is still pending.
+- [ ] Commit the remaining formatter work units after explicit commit authorization.
+  - Signed work units completed so far: `12981cb` frontend shell, `848db66` shared components, `be2a062` lodging presentation, `96dd67a` admin shell/catalog, `44262f2` admin dashboard/features, and `1f99356` CI Node pin.
+  - Remaining baseline files still need separate reviewable slices, signed commits, and final validation.
 
 ## Constraints
 
@@ -38,3 +50,11 @@ Add deterministic frontend formatting with Prettier, preserve the existing Gitle
 - Investigation: `frontend/package.json` has ESLint and tests but no formatter or hook manager.
 - Investigation: `.github/workflows/ci.yml` runs frontend coverage but no lint or format check.
 - Investigation: local `.git/hooks/pre-commit` runs Gitleaks and must be preserved or chained.
+
+## Latest evidence
+
+- The versioned hook now enters `frontend` before running `npm exec -- lint-staged`; `sh -n frontend/scripts/pre-commit.sh` and `git diff --check` passed. The correction was natively reviewed and acknowledged under lineage `review-a3df00a2cfa74fa7` for target `sha256:eadc1e0f39772986ec1909f41d9a0bb45469961a178413ef9b489a429da97a15`.
+- Both CI `setup-node` entries are pinned to Node `20.19`; read-only verification found no exact `node-version: '20'` entries and `git diff --check` passed. CI execution has not been claimed. The change was reviewed and acknowledged under lineage `review-6700ccfd5e7b6940` across all four lenses and committed with signature as `1f99356`.
+- The 14-file presentation/interactions formatting slice covering LodgingGallery, ProductCard, ReviewsSection, ShareModal, and WhatsAppButton was reviewed and acknowledged under lineage `review-ea95ab9d7c0c5abe` for target `sha256:a989b0211099aee1452fab07daff3aceffd50d7a89cfcb64549f6c21a2dfeb50`. Targeted Prettier check and `git diff --check` passed. The signed commit is `be2a062`.
+- The 5-file admin shell/catalog formatting slice (`Admin.css`, `Admin.jsx`, `Admin.test.jsx`, `AdminCategories.jsx`, and `AdminCategories.test.jsx`) was reviewed and acknowledged under lineage `review-6640974d5b899b8c` for target `sha256:941d20a0e8932643ca8162930bc1e0f493a1457ac3892eb446f8ef6bc44ea82d`. Targeted Prettier check and `git diff --check` passed. The signed commit is `96dd67a`.
+- A 16-file admin candidate exceeded the native reviewer context budget and created no authority; it was split into smaller candidates. The 4-file dashboard/features slice (`AdminDashboard.jsx`, `AdminDashboard.test.jsx`, `AdminFeatures.jsx`, and `AdminFeatures.test.jsx`) was reviewed and acknowledged under lineage `review-29cc803d4be1070b0` for target `sha256:03faad26e00e1b53b3b04f3c48e2e1dda1ec7ae0827f66af3aeab7a7e7a43a76`. Targeted Prettier check and `git diff --check` passed. The signed commit is `44262f2`.
