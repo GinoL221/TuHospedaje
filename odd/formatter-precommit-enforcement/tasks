@@ -1,8 +1,10 @@
 # Formatter and pre-commit enforcement tasks
 
-- [ ] Correct the PR #276 frontend CI formatting failure for `frontend/src/accountSharedAuditContract.test.jsx` and `frontend/src/services/lodgingService.js`.
-  - Pending: CI found both committed files unformatted; native review, signed commit, push, and CI rerun remain parent-owned.
-  - Targeted verification: `npx prettier --check src/accountSharedAuditContract.test.jsx src/services/lodgingService.js` passed; `git diff --check` passed.
+- [x] Correct the PR #276 frontend CI formatting failure for `frontend/src/accountSharedAuditContract.test.jsx` and `frontend/src/services/lodgingService.js`.
+  - Review: native review lineage `review-4cd7fa89f447b1c2` approved and acknowledged.
+  - Signed commit: `ddb5165` (`style: format preserved frontend files`).
+  - Validation: targeted Prettier 2/2, full format check, focused Vitest 2 files / 21 tests, and `git diff --check` passed.
+  - Parent-owned: push and CI rerun remain parent-owned.
 
 - [x] Add the frontend Prettier configuration, scripts, dependencies, and staged-file hook integration while preserving Gitleaks.
   - Evidence: frontend Prettier config, ignore file, versioned Gitleaks-first hook, package scripts, and lockfile dependencies.
