@@ -87,13 +87,18 @@ export default function useCityAutocomplete() {
 			event.preventDefault();
 			setShowSuggestions(true);
 			setActiveSuggestionIndex((current) => {
-				if (event.key === "ArrowDown") return (current + 1) % suggestions.length;
+				if (event.key === "ArrowDown")
+					return (current + 1) % suggestions.length;
 				return current <= 0 ? suggestions.length - 1 : current - 1;
 			});
 			return;
 		}
 
-		if (event.key === "Enter" && showSuggestions && activeSuggestionIndex >= 0) {
+		if (
+			event.key === "Enter" &&
+			showSuggestions &&
+			activeSuggestionIndex >= 0
+		) {
 			event.preventDefault();
 			selectCity(suggestions[activeSuggestionIndex]);
 		}
