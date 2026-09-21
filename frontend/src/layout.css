@@ -2,7 +2,9 @@
 :root {
   --site-header-height: 120px;
   --site-scroll-gap: 16px;
-  --site-scroll-clearance: calc(var(--site-header-height) + var(--site-scroll-gap));
+  --site-scroll-clearance: calc(
+    var(--site-header-height) + var(--site-scroll-gap)
+  );
 }
 
 html {
@@ -157,7 +159,10 @@ html {
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .site-header .header-register-cta:hover {
@@ -283,7 +288,7 @@ footer .page-container {
   }
 
   .tagline {
-    font-size: 0.80rem;
+    font-size: 0.8rem;
     white-space: normal;
   }
 

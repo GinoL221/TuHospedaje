@@ -167,7 +167,9 @@
   cursor: pointer;
   text-align: center;
   text-decoration: none;
-  transition: background-color var(--transition), color var(--transition);
+  transition:
+    background-color var(--transition),
+    color var(--transition);
 }
 
 .confirmation-actions .btn-ghost:hover {

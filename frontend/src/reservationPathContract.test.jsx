@@ -12,7 +12,9 @@ describe("reservation path visual contract", () => {
 		const product = readSource("pages/ProductDetail/ProductDetail.css");
 		const bookingPage = readSource("pages/Booking/BookingPage.jsx");
 		const booking = readSource("pages/Booking/BookingPage.css");
-		const confirmationPage = readSource("pages/Booking/BookingConfirmation.jsx");
+		const confirmationPage = readSource(
+			"pages/Booking/BookingConfirmation.jsx",
+		);
 		const confirmation = readSource("pages/Booking/BookingConfirmation.css");
 		const reviews = readSource("components/ReviewsSection/ReviewsSection.css");
 

@@ -8,7 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import "./styles/datepicker.css";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+	<StrictMode>
+		<App />
+	</StrictMode>,
 );

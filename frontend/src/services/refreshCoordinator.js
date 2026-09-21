@@ -12,15 +12,15 @@ let inFlightRefresh = null;
 // shared promise chain, not once per waiting caller) before the rejection
 // propagates to every awaiter.
 export function ensureRefreshed() {
-  if (!inFlightRefresh) {
-    inFlightRefresh = post("/auth/refresh")
-      .catch((error) => {
-        window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-        throw error;
-      })
-      .finally(() => {
-        inFlightRefresh = null;
-      });
-  }
-  return inFlightRefresh;
+	if (!inFlightRefresh) {
+		inFlightRefresh = post("/auth/refresh")
+			.catch((error) => {
+				window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+				throw error;
+			})
+			.finally(() => {
+				inFlightRefresh = null;
+			});
+	}
+	return inFlightRefresh;
 }

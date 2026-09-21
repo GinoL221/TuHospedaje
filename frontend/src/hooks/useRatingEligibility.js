@@ -10,31 +10,31 @@ import { getRatingEligibility } from "../services/ratingService";
  * status: idle | loading | eligible | ineligible | error
  */
 export default function useRatingEligibility(lodgingId) {
-  const [status, setStatus] = useState("idle");
-  const generationRef = useRef(0);
-  const mountedRef = useRef(true);
+	const [status, setStatus] = useState("idle");
+	const generationRef = useRef(0);
+	const mountedRef = useRef(true);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
 
-  const load = useCallback(() => {
-    const generation = ++generationRef.current;
-    setStatus("loading");
+	const load = useCallback(() => {
+		const generation = ++generationRef.current;
+		setStatus("loading");
 
-    return getRatingEligibility(lodgingId)
-      .then((data) => {
-        if (!mountedRef.current || generation !== generationRef.current) return;
-        setStatus(data.eligible ? "eligible" : "ineligible");
-      })
-      .catch(() => {
-        if (!mountedRef.current || generation !== generationRef.current) return;
-        setStatus("error");
-      });
-  }, [lodgingId]);
+		return getRatingEligibility(lodgingId)
+			.then((data) => {
+				if (!mountedRef.current || generation !== generationRef.current) return;
+				setStatus(data.eligible ? "eligible" : "ineligible");
+			})
+			.catch(() => {
+				if (!mountedRef.current || generation !== generationRef.current) return;
+				setStatus("error");
+			});
+	}, [lodgingId]);
 
-  return { status, load };
+	return { status, load };
 }

@@ -86,9 +86,18 @@
   flex-shrink: 0;
 }
 
-.reservation-status.confirmed { background: #e6f9f0; color: var(--reservation-success); }
-.reservation-status.pending   { background: #fff7e6; color: var(--reservation-warning); }
-.reservation-status.cancelled { background: #fde8e8; color: var(--reservation-danger); }
+.reservation-status.confirmed {
+  background: #e6f9f0;
+  color: var(--reservation-success);
+}
+.reservation-status.pending {
+  background: #fff7e6;
+  color: var(--reservation-warning);
+}
+.reservation-status.cancelled {
+  background: #fde8e8;
+  color: var(--reservation-danger);
+}
 
 /* BODY */
 .reservation-card-body {

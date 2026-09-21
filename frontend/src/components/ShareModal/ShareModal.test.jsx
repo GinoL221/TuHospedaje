@@ -38,7 +38,10 @@ describe("ShareModal", () => {
 		expect(modalHeader).toHaveClass("share-header");
 		expect(modalHeader).not.toHaveClass("site-header");
 		expect(dialog).toContainElement(modalHeader);
-		expect(closeButton.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+		expect(closeButton.querySelector("svg")).toHaveAttribute(
+			"aria-hidden",
+			"true",
+		);
 		expect(closeButton).toHaveFocus();
 	});
 
@@ -62,10 +65,9 @@ describe("ShareModal", () => {
 	it("renders the existing lodging image and readable lodging summary", () => {
 		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
 
-		expect(screen.getByRole("img", { name: "Cabaña del Lago" })).toHaveAttribute(
-			"src",
-			"https://example.com/cabana.jpg",
-		);
+		expect(
+			screen.getByRole("img", { name: "Cabaña del Lago" }),
+		).toHaveAttribute("src", "https://example.com/cabana.jpg");
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(screen.getByText("Bariloche")).toBeInTheDocument();
 		expect(screen.queryByText(window.location.href)).not.toBeInTheDocument();
@@ -170,7 +172,9 @@ describe("ShareModal", () => {
 			`Una estadía para compartir ${window.location.href}`,
 		);
 		expect(
-			screen.getByText("El contenido fue copiado. Completá la publicación en Instagram."),
+			screen.getByText(
+				"El contenido fue copiado. Completá la publicación en Instagram.",
+			),
 		).toHaveAttribute("aria-live", "polite");
 	});
 
@@ -201,10 +205,11 @@ describe("ShareModal", () => {
 		const closeButton = screen.getByRole("button", { name: "Cerrar" });
 		const copyButton = screen.getByRole("button", { name: "Copiar enlace" });
 		const messageInput = screen.getByLabelText("Mensaje para compartir");
-		const links = ["Facebook", "Twitter", "WhatsApp", "Instagram"].map((name) =>
-			name === "Instagram"
-				? screen.getByRole("button", { name })
-				: screen.getByRole("link", { name }),
+		const links = ["Facebook", "Twitter", "WhatsApp", "Instagram"].map(
+			(name) =>
+				name === "Instagram"
+					? screen.getByRole("button", { name })
+					: screen.getByRole("link", { name }),
 		);
 
 		expect(closeButton).toHaveFocus();
@@ -262,7 +267,9 @@ describe("ShareModal", () => {
 	it("restores focus to the trigger when unmounted", async () => {
 		const user = userEvent.setup();
 		const { rerender } = render(<button>Compartir alojamiento</button>);
-		const trigger = screen.getByRole("button", { name: "Compartir alojamiento" });
+		const trigger = screen.getByRole("button", {
+			name: "Compartir alojamiento",
+		});
 		await user.click(trigger);
 
 		rerender(

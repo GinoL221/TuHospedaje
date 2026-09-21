@@ -178,7 +178,10 @@ export default function ProductDetail() {
 			<LodgingGallery images={lodging.imageUrls} name={lodging.name} />
 
 			{lodging.pricePerNight && (
-				<section className="booking-section" aria-label="Reservar este alojamiento">
+				<section
+					className="booking-section"
+					aria-label="Reservar este alojamiento"
+				>
 					<div className="price-display">
 						<strong>${lodging.pricePerNight.toLocaleString()}</strong> / noche
 					</div>
@@ -193,7 +196,8 @@ export default function ProductDetail() {
 							Comprobando disponibilidad...
 						</p>
 					)}
-					{(availabilityStatus === "error" || availabilityStatus === "stale") && (
+					{(availabilityStatus === "error" ||
+						availabilityStatus === "stale") && (
 						<div
 							id={availabilityMessageId}
 							className="availability-alert"
@@ -229,7 +233,8 @@ export default function ProductDetail() {
 							aria-live="assertive"
 							aria-atomic="true"
 						>
-							Las fechas seleccionadas ya no están disponibles. Elegí otro rango.
+							Las fechas seleccionadas ya no están disponibles. Elegí otro
+							rango.
 						</p>
 					)}
 
@@ -291,8 +296,8 @@ export default function ProductDetail() {
 
 					{nights > 0 && (
 						<p className="total-estimate">
-							Total estimado: <strong>${total.toLocaleString()}</strong> ({nights}{" "}
-							noches)
+							Total estimado: <strong>${total.toLocaleString()}</strong> (
+							{nights} noches)
 						</p>
 					)}
 
@@ -329,7 +334,10 @@ export default function ProductDetail() {
 				</section>
 			)}
 
-			<section className="description" aria-labelledby="product-description-title">
+			<section
+				className="description"
+				aria-labelledby="product-description-title"
+			>
 				<h2 id="product-description-title">Descripción</h2>
 				<p>{lodging.description}</p>
 			</section>

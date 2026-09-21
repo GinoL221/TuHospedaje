@@ -1,4 +1,9 @@
-import { customRender, screen, userEvent, waitFor } from "../../test/test-utils";
+import {
+	customRender,
+	screen,
+	userEvent,
+	waitFor,
+} from "../../test/test-utils";
 import AdminReservations from "./AdminReservations";
 import { getAdminReservations } from "../../services/reservationService";
 
@@ -15,10 +20,10 @@ const reservationFixture = (overrides = {}) => ({
 	checkIn: "2026-07-01",
 	checkOut: "2026-07-05",
 	totalPrice: 400,
-  status: "CONFIRMED",
-  createdAt: "2026-06-20T14:30:00",
-  createdAtDerived: false,
-  notes: "Necesito una cuna",
+	status: "CONFIRMED",
+	createdAt: "2026-06-20T14:30:00",
+	createdAtDerived: false,
+	notes: "Necesito una cuna",
 	...overrides,
 });
 
@@ -33,7 +38,7 @@ describe("AdminReservations - listing", () => {
 			() =>
 				new Promise((resolve) => {
 					resolveFetch = resolve;
-				})
+				}),
 		);
 
 		renderAdminReservations();
@@ -42,22 +47,39 @@ describe("AdminReservations - listing", () => {
 
 		resolveFetch({ items: [], currentPage: 0, totalItems: 0, totalPages: 0 });
 		await waitFor(() => {
-			expect(screen.queryByText("Cargando reservas...")).not.toBeInTheDocument();
+			expect(
+				screen.queryByText("Cargando reservas..."),
+			).not.toBeInTheDocument();
 		});
 	});
 
 	it("renders the empty state when there are no reservations", async () => {
-		getAdminReservations.mockResolvedValue({ items: [], currentPage: 0, totalItems: 0, totalPages: 0 });
+		getAdminReservations.mockResolvedValue({
+			items: [],
+			currentPage: 0,
+			totalItems: 0,
+			totalPages: 0,
+		});
 		renderAdminReservations();
 
-		expect(await screen.findByText("No hay reservas registradas.")).toBeInTheDocument();
+		expect(
+			await screen.findByText("No hay reservas registradas."),
+		).toBeInTheDocument();
 	});
 
-  it("renders a row per reservation with lodging, guest, dates, total and status", async () => {
+	it("renders a row per reservation with lodging, guest, dates, total and status", async () => {
 		getAdminReservations.mockResolvedValue({
 			items: [
-				reservationFixture({ id: 1, lodgingName: "Cabaña del Lago", status: "CONFIRMED" }),
-				reservationFixture({ id: 2, lodgingName: "Hotel Centro", status: "CANCELLED" }),
+				reservationFixture({
+					id: 1,
+					lodgingName: "Cabaña del Lago",
+					status: "CONFIRMED",
+				}),
+				reservationFixture({
+					id: 2,
+					lodgingName: "Hotel Centro",
+					status: "CANCELLED",
+				}),
 			],
 			currentPage: 0,
 			totalItems: 2,
@@ -79,7 +101,10 @@ describe("AdminReservations - listing", () => {
 
 	it("shows exact creation time and notes for each reservation", async () => {
 		getAdminReservations.mockResolvedValue({
-			items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1,
+			items: [reservationFixture()],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
 		});
 		renderAdminReservations();
 
@@ -90,8 +115,16 @@ describe("AdminReservations - listing", () => {
 
 	it("labels derived creation time as estimated and omits blank notes", async () => {
 		getAdminReservations.mockResolvedValue({
-			items: [reservationFixture({ createdAt: "2026-07-01T00:00:00", createdAtDerived: true, notes: " " })],
-			currentPage: 0, totalItems: 1, totalPages: 1,
+			items: [
+				reservationFixture({
+					createdAt: "2026-07-01T00:00:00",
+					createdAtDerived: true,
+					notes: " ",
+				}),
+			],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
 		});
 		renderAdminReservations();
 
@@ -101,7 +134,12 @@ describe("AdminReservations - listing", () => {
 	});
 
 	it("fetches from the admin reservations endpoint on mount", async () => {
-		getAdminReservations.mockResolvedValue({ items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1 });
+		getAdminReservations.mockResolvedValue({
+			items: [reservationFixture()],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
+		});
 		renderAdminReservations();
 
 		await screen.findByText("Cabaña del Lago");
@@ -116,16 +154,27 @@ describe("AdminReservations - listing", () => {
 	});
 
 	it("shows an error state and recovers after retry", async () => {
-		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const consoleErrorSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
 		getAdminReservations
 			.mockRejectedValueOnce(new Error("fail"))
-			.mockResolvedValueOnce({ items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1 });
+			.mockResolvedValueOnce({
+				items: [reservationFixture()],
+				currentPage: 0,
+				totalItems: 1,
+				totalPages: 1,
+			});
 
 		const user = userEvent.setup();
 		renderAdminReservations();
 
-		expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar las reservas.");
-		expect(screen.queryByText("No hay reservas registradas.")).not.toBeInTheDocument();
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"No se pudieron cargar las reservas.",
+		);
+		expect(
+			screen.queryByText("No hay reservas registradas."),
+		).not.toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: "Reintentar" }));
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
@@ -176,7 +225,13 @@ describe("AdminReservations - listing", () => {
 		getAdminReservations.mockImplementation((params) => {
 			if (params.sort === "status" && params.direction === "asc") {
 				return Promise.resolve({
-					items: [reservationFixture({ id: 2, lodgingName: "Hotel Centro", status: "CANCELLED" })],
+					items: [
+						reservationFixture({
+							id: 2,
+							lodgingName: "Hotel Centro",
+							status: "CANCELLED",
+						}),
+					],
 					currentPage: 0,
 					totalItems: 1,
 					totalPages: 1,
@@ -207,13 +262,18 @@ describe("AdminReservations - listing", () => {
 	it("refetches even when reset returns to the current defaults", async () => {
 		let resolveRefetch;
 		getAdminReservations
-			.mockResolvedValueOnce({ items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1 })
+			.mockResolvedValueOnce({
+				items: [reservationFixture()],
+				currentPage: 0,
+				totalItems: 1,
+				totalPages: 1,
+			})
 			.mockImplementationOnce(
 				() =>
 					new Promise((resolve) => {
 						resolveRefetch = resolve;
-					})
-				);
+					}),
+			);
 
 		const user = userEvent.setup();
 		renderAdminReservations();
@@ -226,7 +286,12 @@ describe("AdminReservations - listing", () => {
 		});
 		expect(screen.getByText("Cargando reservas...")).toBeInTheDocument();
 
-		resolveRefetch({ items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1 });
+		resolveRefetch({
+			items: [reservationFixture()],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
+		});
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(screen.queryByText("Cargando reservas...")).not.toBeInTheDocument();
 	});
@@ -255,7 +320,10 @@ describe("AdminReservations - listing", () => {
 		await screen.findByText("Cabaña del Lago");
 		await user.click(screen.getByRole("button", { name: "Siguiente" }));
 		await screen.findByText("Cabaña del Lago");
-		await user.selectOptions(screen.getByLabelText("Filtrar por estado"), "CONFIRMED");
+		await user.selectOptions(
+			screen.getByLabelText("Filtrar por estado"),
+			"CONFIRMED",
+		);
 		await user.type(screen.getByLabelText("Buscar reservas"), "juan");
 
 		await waitFor(() => {
@@ -270,7 +338,12 @@ describe("AdminReservations - listing", () => {
 
 describe("AdminReservations - read-only scope", () => {
 	it("renders no create/edit/delete controls anywhere in the document", async () => {
-		getAdminReservations.mockResolvedValue({ items: [reservationFixture()], currentPage: 0, totalItems: 1, totalPages: 1 });
+		getAdminReservations.mockResolvedValue({
+			items: [reservationFixture()],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
+		});
 		renderAdminReservations();
 
 		await screen.findByText("Cabaña del Lago");
@@ -280,6 +353,8 @@ describe("AdminReservations - read-only scope", () => {
 		expect(screen.queryByTestId("row-edit-btn")).not.toBeInTheDocument();
 		expect(screen.queryByTestId("row-delete-btn")).not.toBeInTheDocument();
 		expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
-		expect(screen.queryByRole("button", { name: /eliminar|editar|agregar/i })).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /eliminar|editar|agregar/i }),
+		).not.toBeInTheDocument();
 	});
 });

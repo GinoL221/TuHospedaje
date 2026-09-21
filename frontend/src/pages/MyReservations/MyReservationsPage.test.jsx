@@ -2,248 +2,248 @@ import userEvent from "@testing-library/user-event";
 import { customRender, screen } from "../../test/test-utils";
 import MyReservationsPage from "./MyReservationsPage";
 import {
-  cancelReservation,
-  getMyReservations,
+	cancelReservation,
+	getMyReservations,
 } from "../../services/reservationService";
 
 vi.mock("../../services/reservationService");
 
 const reservationFixture = {
-  id: 1,
-  lodgingId: 10,
-  lodgingName: "Cabaña del Lago",
-  city: "Bariloche",
-  status: "CONFIRMED",
-  checkIn: "2026-07-01",
-  checkOut: "2026-07-04",
-  guestName: "Test User",
-  guestEmail: "test@example.com",
-  guestPhone: "123456",
-  totalPrice: 300,
-  createdAt: "2026-06-20T14:30:00",
-  createdAtDerived: false,
-  notes: "Necesito una cuna",
+	id: 1,
+	lodgingId: 10,
+	lodgingName: "Cabaña del Lago",
+	city: "Bariloche",
+	status: "CONFIRMED",
+	checkIn: "2026-07-01",
+	checkOut: "2026-07-04",
+	guestName: "Test User",
+	guestEmail: "test@example.com",
+	guestPhone: "123456",
+	totalPrice: 300,
+	createdAt: "2026-06-20T14:30:00",
+	createdAtDerived: false,
+	notes: "Necesito una cuna",
 };
 
 describe("MyReservationsPage - reservation list", () => {
-  beforeEach(() => {
-    vi.setSystemTime(new Date("2026-06-30T15:00:00-03:00"));
-  });
+	beforeEach(() => {
+		vi.setSystemTime(new Date("2026-06-30T15:00:00-03:00"));
+	});
 
-  afterEach(() => vi.useRealTimers());
+	afterEach(() => vi.useRealTimers());
 
-  it("renders the user's reservations with nights computed from checkIn/checkOut", async () => {
-    getMyReservations.mockResolvedValue([reservationFixture]);
-    customRender(<MyReservationsPage />);
+	it("renders the user's reservations with nights computed from checkIn/checkOut", async () => {
+		getMyReservations.mockResolvedValue([reservationFixture]);
+		customRender(<MyReservationsPage />);
 
-    expect(screen.getByText("Cargando reservas...")).toBeInTheDocument();
+		expect(screen.getByText("Cargando reservas...")).toBeInTheDocument();
 
-    expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
-    expect(getMyReservations).toHaveBeenCalledWith();
-    expect(screen.getByText("3 noches")).toBeInTheDocument();
-    expect(screen.getByText("Total:")).toBeInTheDocument();
-    expect(screen.getByText("$300")).toBeInTheDocument();
-  });
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(getMyReservations).toHaveBeenCalledWith();
+		expect(screen.getByText("3 noches")).toBeInTheDocument();
+		expect(screen.getByText("Total:")).toBeInTheDocument();
+		expect(screen.getByText("$300")).toBeInTheDocument();
+	});
 
-  it("shows a singular count label and singular night label for one reservation", async () => {
-    getMyReservations.mockResolvedValue([
-      { ...reservationFixture, checkIn: "2026-07-01", checkOut: "2026-07-02" },
-    ]);
-    customRender(<MyReservationsPage />);
+	it("shows a singular count label and singular night label for one reservation", async () => {
+		getMyReservations.mockResolvedValue([
+			{ ...reservationFixture, checkIn: "2026-07-01", checkOut: "2026-07-02" },
+		]);
+		customRender(<MyReservationsPage />);
 
-    expect(await screen.findByText("1 reserva")).toBeInTheDocument();
-    expect(screen.getByText("1 noche")).toBeInTheDocument();
-  });
+		expect(await screen.findByText("1 reserva")).toBeInTheDocument();
+		expect(screen.getByText("1 noche")).toBeInTheDocument();
+	});
 
-  it("shows exact creation time and non-empty notes", async () => {
-    getMyReservations.mockResolvedValue([reservationFixture]);
-    customRender(<MyReservationsPage />);
+	it("shows exact creation time and non-empty notes", async () => {
+		getMyReservations.mockResolvedValue([reservationFixture]);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByText("Fecha de creación: 20/06/2026 14:30"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Notas: Necesito una cuna")).toBeInTheDocument();
-  });
+		expect(
+			await screen.findByText("Fecha de creación: 20/06/2026 14:30"),
+		).toBeInTheDocument();
+		expect(screen.getByText("Notas: Necesito una cuna")).toBeInTheDocument();
+	});
 
-  it("shows the reservation confirmation number", async () => {
-    getMyReservations.mockResolvedValue([{ ...reservationFixture, id: 842 }]);
-    customRender(<MyReservationsPage />);
+	it("shows the reservation confirmation number", async () => {
+		getMyReservations.mockResolvedValue([{ ...reservationFixture, id: 842 }]);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByText("Número de reserva: 842"),
-    ).toBeInTheDocument();
-  });
+		expect(
+			await screen.findByText("Número de reserva: 842"),
+		).toBeInTheDocument();
+	});
 
-  it("labels derived creation time as estimated and omits blank notes", async () => {
-    getMyReservations.mockResolvedValue([
-      {
-        ...reservationFixture,
-        createdAt: "2026-07-01T00:00:00",
-        createdAtDerived: true,
-        notes: " ",
-      },
-    ]);
-    customRender(<MyReservationsPage />);
+	it("labels derived creation time as estimated and omits blank notes", async () => {
+		getMyReservations.mockResolvedValue([
+			{
+				...reservationFixture,
+				createdAt: "2026-07-01T00:00:00",
+				createdAtDerived: true,
+				notes: " ",
+			},
+		]);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByText("Fecha estimada: 01/07/2026 00:00"),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/^Notas:/)).not.toBeInTheDocument();
-  });
+		expect(
+			await screen.findByText("Fecha estimada: 01/07/2026 00:00"),
+		).toBeInTheDocument();
+		expect(screen.queryByText(/^Notas:/)).not.toBeInTheDocument();
+	});
 
-  it("keeps long reservation content visible and addressable", async () => {
-    const longReservation = {
-      ...reservationFixture,
-      lodgingName:
-        "Alojamiento con un nombre excepcionalmente largo para pantallas pequeñas",
-      guestEmail: "persona.con.un.correo.muy.largo@subdominio.example.com",
-      guestPhone: "+54 9 11 5555 1234 9876",
-      checkIn: "2026-07-01",
-      checkOut: "2026-07-31",
-      totalPrice: 1234567,
-    };
-    getMyReservations.mockResolvedValue([longReservation]);
-    customRender(<MyReservationsPage />);
+	it("keeps long reservation content visible and addressable", async () => {
+		const longReservation = {
+			...reservationFixture,
+			lodgingName:
+				"Alojamiento con un nombre excepcionalmente largo para pantallas pequeñas",
+			guestEmail: "persona.con.un.correo.muy.largo@subdominio.example.com",
+			guestPhone: "+54 9 11 5555 1234 9876",
+			checkIn: "2026-07-01",
+			checkOut: "2026-07-31",
+			totalPrice: 1234567,
+		};
+		getMyReservations.mockResolvedValue([longReservation]);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByText(longReservation.lodgingName),
-    ).toBeInTheDocument();
-    expect(screen.getByText(longReservation.guestEmail)).toBeInTheDocument();
-    expect(screen.getByText(longReservation.guestPhone)).toBeInTheDocument();
-    expect(screen.getByText("01/07/2026 → 31/07/2026")).toBeInTheDocument();
-    expect(screen.getByText("30 noches")).toBeInTheDocument();
-    expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
-    expect(
-      screen.getByText(/^\$\d{1,3}(?:[,.]\d{3})+$/, {
-        selector: ".reservation-total strong",
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Ver alojamiento/ }),
-    ).toHaveAttribute("href", "/lodgings/10");
-    expect(
-      screen.getByRole("button", { name: "Cancelar reserva" }),
-    ).toBeInTheDocument();
-  });
+		expect(
+			await screen.findByText(longReservation.lodgingName),
+		).toBeInTheDocument();
+		expect(screen.getByText(longReservation.guestEmail)).toBeInTheDocument();
+		expect(screen.getByText(longReservation.guestPhone)).toBeInTheDocument();
+		expect(screen.getByText("01/07/2026 → 31/07/2026")).toBeInTheDocument();
+		expect(screen.getByText("30 noches")).toBeInTheDocument();
+		expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
+		expect(
+			screen.getByText(/^\$\d{1,3}(?:[,.]\d{3})+$/, {
+				selector: ".reservation-total strong",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /Ver alojamiento/ }),
+		).toHaveAttribute("href", "/lodgings/10");
+		expect(
+			screen.getByRole("button", { name: "Cancelar reserva" }),
+		).toBeInTheDocument();
+	});
 
-  it("offers cancellation only for confirmed reservations before check-in", async () => {
-    getMyReservations.mockResolvedValue([
-      reservationFixture,
-      {
-        ...reservationFixture,
-        id: 2,
-        lodgingName: "Cancelled",
-        status: "CANCELLED",
-      },
-      {
-        ...reservationFixture,
-        id: 3,
-        lodgingName: "Today",
-        checkIn: "2026-06-30",
-      },
-    ]);
-    customRender(<MyReservationsPage />);
+	it("offers cancellation only for confirmed reservations before check-in", async () => {
+		getMyReservations.mockResolvedValue([
+			reservationFixture,
+			{
+				...reservationFixture,
+				id: 2,
+				lodgingName: "Cancelled",
+				status: "CANCELLED",
+			},
+			{
+				...reservationFixture,
+				id: 3,
+				lodgingName: "Today",
+				checkIn: "2026-06-30",
+			},
+		]);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByRole("button", { name: "Cancelar reserva" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getAllByRole("button", { name: "Cancelar reserva" }),
-    ).toHaveLength(1);
-  });
+		expect(
+			await screen.findByRole("button", { name: "Cancelar reserva" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getAllByRole("button", { name: "Cancelar reserva" }),
+		).toHaveLength(1);
+	});
 
-  it("requires confirmation, prevents duplicate requests, and replaces the cancelled row", async () => {
-    const user = userEvent.setup();
-    let resolveCancellation;
-    cancelReservation.mockReturnValue(
-      new Promise((resolve) => {
-        resolveCancellation = resolve;
-      }),
-    );
-    getMyReservations.mockResolvedValue([reservationFixture]);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    customRender(<MyReservationsPage />);
+	it("requires confirmation, prevents duplicate requests, and replaces the cancelled row", async () => {
+		const user = userEvent.setup();
+		let resolveCancellation;
+		cancelReservation.mockReturnValue(
+			new Promise((resolve) => {
+				resolveCancellation = resolve;
+			}),
+		);
+		getMyReservations.mockResolvedValue([reservationFixture]);
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		customRender(<MyReservationsPage />);
 
-    const button = await screen.findByRole("button", {
-      name: "Cancelar reserva",
-    });
-    await user.click(button);
+		const button = await screen.findByRole("button", {
+			name: "Cancelar reserva",
+		});
+		await user.click(button);
 
-    expect(window.confirm).toHaveBeenCalled();
-    expect(button).toBeDisabled();
-    expect(button).toHaveTextContent("Cancelando...");
-    await user.click(button);
-    expect(cancelReservation).toHaveBeenCalledTimes(1);
+		expect(window.confirm).toHaveBeenCalled();
+		expect(button).toBeDisabled();
+		expect(button).toHaveTextContent("Cancelando...");
+		await user.click(button);
+		expect(cancelReservation).toHaveBeenCalledTimes(1);
 
-    resolveCancellation({ ...reservationFixture, status: "CANCELLED" });
-    expect(await screen.findByText("CANCELLED")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Cancelar reserva" }),
-    ).not.toBeInTheDocument();
-  });
+		resolveCancellation({ ...reservationFixture, status: "CANCELLED" });
+		expect(await screen.findByText("CANCELLED")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Cancelar reserva" }),
+		).not.toBeInTheDocument();
+	});
 
-  it("does not cancel when confirmation is declined", async () => {
-    const user = userEvent.setup();
-    getMyReservations.mockResolvedValue([reservationFixture]);
-    vi.spyOn(window, "confirm").mockReturnValue(false);
-    customRender(<MyReservationsPage />);
+	it("does not cancel when confirmation is declined", async () => {
+		const user = userEvent.setup();
+		getMyReservations.mockResolvedValue([reservationFixture]);
+		vi.spyOn(window, "confirm").mockReturnValue(false);
+		customRender(<MyReservationsPage />);
 
-    await user.click(
-      await screen.findByRole("button", { name: "Cancelar reserva" }),
-    );
+		await user.click(
+			await screen.findByRole("button", { name: "Cancelar reserva" }),
+		);
 
-    expect(cancelReservation).not.toHaveBeenCalled();
-  });
+		expect(cancelReservation).not.toHaveBeenCalled();
+	});
 
-  it("keeps the row usable and shows an inline error when cancellation fails", async () => {
-    const user = userEvent.setup();
-    getMyReservations.mockResolvedValue([reservationFixture]);
-    cancelReservation.mockRejectedValue(new Error("Intentá nuevamente."));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    customRender(<MyReservationsPage />);
+	it("keeps the row usable and shows an inline error when cancellation fails", async () => {
+		const user = userEvent.setup();
+		getMyReservations.mockResolvedValue([reservationFixture]);
+		cancelReservation.mockRejectedValue(new Error("Intentá nuevamente."));
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		customRender(<MyReservationsPage />);
 
-    await user.click(
-      await screen.findByRole("button", { name: "Cancelar reserva" }),
-    );
+		await user.click(
+			await screen.findByRole("button", { name: "Cancelar reserva" }),
+		);
 
-    expect(await screen.findByText("Intentá nuevamente.")).toBeInTheDocument();
-    expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Cancelar reserva" }),
-    ).toBeEnabled();
-  });
+		expect(await screen.findByText("Intentá nuevamente.")).toBeInTheDocument();
+		expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Cancelar reserva" }),
+		).toBeEnabled();
+	});
 });
 
 describe("MyReservationsPage - empty state", () => {
-  it("shows a CTA to explore lodgings when there are no reservations", async () => {
-    getMyReservations.mockResolvedValue([]);
-    customRender(<MyReservationsPage />);
+	it("shows a CTA to explore lodgings when there are no reservations", async () => {
+		getMyReservations.mockResolvedValue([]);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByText("No tenés reservas todavía."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Explorar alojamientos" }),
-    ).toHaveAttribute("href", "/");
-  });
+		expect(
+			await screen.findByText("No tenés reservas todavía."),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "Explorar alojamientos" }),
+		).toHaveAttribute("href", "/");
+	});
 });
 
 describe("MyReservationsPage - fetch failure", () => {
-  it("renders the error message instead of the list when the fetch rejects", async () => {
-    getMyReservations.mockRejectedValue(
-      new Error("No se pudieron cargar las reservas."),
-    );
-    customRender(<MyReservationsPage />);
+	it("renders the error message instead of the list when the fetch rejects", async () => {
+		getMyReservations.mockRejectedValue(
+			new Error("No se pudieron cargar las reservas."),
+		);
+		customRender(<MyReservationsPage />);
 
-    expect(
-      await screen.findByText("No se pudieron cargar las reservas."),
-    ).toBeInTheDocument();
-    // The current implementation only suppresses the "no reservations" empty
-    // state when there's an error (`!error && reservations.length === 0`),
-    // but it does not render the reservations list either since the array
-    // stays empty after a rejected fetch — no crash, error renders alone.
-    expect(
-      screen.queryByText("No tenés reservas todavía."),
-    ).not.toBeInTheDocument();
-  });
+		expect(
+			await screen.findByText("No se pudieron cargar las reservas."),
+		).toBeInTheDocument();
+		// The current implementation only suppresses the "no reservations" empty
+		// state when there's an error (`!error && reservations.length === 0`),
+		// but it does not render the reservations list either since the array
+		// stays empty after a rejected fetch — no crash, error renders alone.
+		expect(
+			screen.queryByText("No tenés reservas todavía."),
+		).not.toBeInTheDocument();
+	});
 });

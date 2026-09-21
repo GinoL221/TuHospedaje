@@ -47,7 +47,10 @@ describe("useHomeRecommendations", () => {
 	it("restores the stored snapshot and survives unavailable storage reads and writes", async () => {
 		sessionStorage.setItem(
 			STORAGE_ID,
-			JSON.stringify({ seed: "stored-seed-0123456789", revision: "rev-stored" }),
+			JSON.stringify({
+				seed: "stored-seed-0123456789",
+				revision: "rev-stored",
+			}),
 		);
 		getRecommendations.mockResolvedValue(page());
 		const { result } = renderHook(() => useHomeRecommendations());
@@ -91,14 +94,21 @@ describe("useHomeRecommendations", () => {
 			result.current.refresh();
 		});
 		await waitFor(() => expect(getRecommendations).toHaveBeenCalledTimes(2));
-		expect(getRecommendations.mock.calls[1][0]).toMatchObject({ page: 0, revision: undefined });
-		expect(getRecommendations.mock.calls[1][0].seed).toMatch(/^[A-Za-z0-9_-]{16,64}$/);
+		expect(getRecommendations.mock.calls[1][0]).toMatchObject({
+			page: 0,
+			revision: undefined,
+		});
+		expect(getRecommendations.mock.calls[1][0].seed).toMatch(
+			/^[A-Za-z0-9_-]{16,64}$/,
+		);
 	});
 
 	it("keeps snapshot identity across pagination and applies a server reset without duplicate fetching", async () => {
 		getRecommendations
 			.mockResolvedValueOnce(page({ totalPages: 2 }))
-			.mockResolvedValueOnce(page({ currentPage: 0, totalPages: 1, revision: "rev-2", reset: true }));
+			.mockResolvedValueOnce(
+				page({ currentPage: 0, totalPages: 1, revision: "rev-2", reset: true }),
+			);
 		const { result } = renderHook(() => useHomeRecommendations());
 
 		await settleInitial(result);
@@ -123,7 +133,9 @@ describe("useHomeRecommendations", () => {
 		const firstPageLodgings = [{ id: 7, name: "First page" }];
 		const secondPageLodgings = [{ id: 36, name: "Second page" }];
 		getRecommendations
-			.mockResolvedValueOnce(page({ lodgings: firstPageLodgings, totalPages: 2 }))
+			.mockResolvedValueOnce(
+				page({ lodgings: firstPageLodgings, totalPages: 2 }),
+			)
 			.mockReturnValueOnce(secondPage.promise)
 			.mockReturnValueOnce(returnedFirstPage.promise);
 		const { result } = renderHook(() => useHomeRecommendations());
@@ -134,7 +146,9 @@ describe("useHomeRecommendations", () => {
 		expect(result.current.lodgings).toEqual(firstPageLodgings);
 
 		await act(async () => {
-			secondPage.resolve(page({ lodgings: secondPageLodgings, currentPage: 1, totalPages: 2 }));
+			secondPage.resolve(
+				page({ lodgings: secondPageLodgings, currentPage: 1, totalPages: 2 }),
+			);
 			await secondPage.promise;
 		});
 		await waitFor(() => expect(result.current.page).toBe(1));
@@ -144,7 +158,9 @@ describe("useHomeRecommendations", () => {
 		expect(result.current.lodgings).toEqual(secondPageLodgings);
 
 		await act(async () => {
-			returnedFirstPage.resolve(page({ lodgings: firstPageLodgings, totalPages: 2 }));
+			returnedFirstPage.resolve(
+				page({ lodgings: firstPageLodgings, totalPages: 2 }),
+			);
 			await returnedFirstPage.promise;
 		});
 		await waitFor(() => expect(result.current.page).toBe(0));
@@ -168,13 +184,19 @@ describe("useHomeRecommendations", () => {
 		await settleInitial(result);
 		expect(result.current.listGeneration).toBe(1);
 		act(() => result.current.setPage(1));
-		expect(result.current.lodgings).toEqual([{ id: 1, name: "Cabaña del Lago" }]);
+		expect(result.current.lodgings).toEqual([
+			{ id: 1, name: "Cabaña del Lago" },
+		]);
 		expect(result.current.listBusy).toBe(true);
 		act(() => result.current.setPage(0));
-		await waitFor(() => expect(result.current.lodgings).toEqual([{ id: 3, name: "Newest" }]));
+		await waitFor(() =>
+			expect(result.current.lodgings).toEqual([{ id: 3, name: "Newest" }]),
+		);
 
 		await act(async () => {
-			next.resolve(page({ lodgings: [{ id: 2, name: "Stale" }], currentPage: 1 }));
+			next.resolve(
+				page({ lodgings: [{ id: 2, name: "Stale" }], currentPage: 1 }),
+			);
 			await next.promise;
 		});
 		expect(result.current.lodgings).toEqual([{ id: 3, name: "Newest" }]);
@@ -185,14 +207,18 @@ describe("useHomeRecommendations", () => {
 		getRecommendations
 			.mockResolvedValueOnce(page())
 			.mockRejectedValueOnce(new Error("network down"))
-			.mockResolvedValueOnce(page({ lodgings: [{ id: 8, name: "Recovered" }] }));
+			.mockResolvedValueOnce(
+				page({ lodgings: [{ id: 8, name: "Recovered" }] }),
+			);
 		const { result } = renderHook(() => useHomeRecommendations());
 
 		await settleInitial(result);
 		crypto.randomUUID.mockReturnValue("22222222-2222-4222-8222-222222222222");
 		await act(async () => result.current.refresh());
 		await waitFor(() => expect(result.current.status).toBe("error"));
-		expect(result.current.lodgings).toEqual([{ id: 1, name: "Cabaña del Lago" }]);
+		expect(result.current.lodgings).toEqual([
+			{ id: 1, name: "Cabaña del Lago" },
+		]);
 
 		await act(async () => result.current.retry());
 		await settleInitial(result);
