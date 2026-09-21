@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./WhatsAppButton.css";
 
 const PHONE_PATTERN = /^[1-9]\d{7,14}$/;
+const WHATSAPP_ORIGIN = "https://wa.me";
 
 const FIXED_MESSAGE =
 	"Hola, quiero hacer una consulta sobre un alojamiento de TuHospedaje.";
@@ -37,7 +38,7 @@ function buildHandoffUrl(digits) {
 	try {
 		const url = new URL(
 			`/${digits}?text=${encodeURIComponent(FIXED_MESSAGE)}`,
-			"https://wa.me",
+			WHATSAPP_ORIGIN,
 		);
 
 		return isTrustedWhatsAppUrl(url) ? url.href : null;
