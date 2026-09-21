@@ -45,13 +45,13 @@ describe("Footer - content", () => {
 		render(<Footer />);
 
 		const footer = screen.getByRole("contentinfo");
-		const whatsappButton = screen.getByRole("button", {
+		const whatsappLink = screen.getByRole("link", {
 			name: "Contactar por WhatsApp",
 		});
 
-		expect(footer).toContainElement(whatsappButton);
+		expect(footer).toContainElement(whatsappLink);
 		expect(
-			screen.getAllByRole("button", { name: "Contactar por WhatsApp" }),
+			screen.getAllByRole("link", { name: "Contactar por WhatsApp" }),
 		).toHaveLength(1);
 	});
 });
