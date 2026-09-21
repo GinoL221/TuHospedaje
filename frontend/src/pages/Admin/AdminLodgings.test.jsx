@@ -82,7 +82,9 @@ describe("AdminLodgings - listing", () => {
 			screen.getByRole("heading", { name: "Lista de productos" }),
 		).toBeInTheDocument();
 		expect(screen.getAllByRole("columnheader")).toHaveLength(3);
-		expect(screen.getByRole("columnheader", { name: /Id/ })).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: /Id/ }),
+		).toBeInTheDocument();
 		expect(
 			screen.getByRole("columnheader", { name: /Nombre/ }),
 		).toBeInTheDocument();
@@ -106,7 +108,9 @@ describe("AdminLodgings - listing", () => {
 		mockGetDefaults();
 		get.mockImplementation((endpoint) => {
 			if (endpoint.startsWith("/lodgings/admin")) {
-				return Promise.reject(new Error("No se pudieron cargar los alojamientos"));
+				return Promise.reject(
+					new Error("No se pudieron cargar los alojamientos"),
+				);
 			}
 			return Promise.resolve([]);
 		});
@@ -131,7 +135,9 @@ describe("AdminLodgings - listing", () => {
 			if (endpoint.startsWith("/lodgings/admin")) {
 				const params = new URLSearchParams(endpoint.split("?")[1]);
 				return params.get("q")
-					? Promise.resolve(pageResponse([lodgingFixture({ name: "Lago Azul" })]))
+					? Promise.resolve(
+							pageResponse([lodgingFixture({ name: "Lago Azul" })]),
+						)
 					: initialRequest.promise;
 			}
 			return Promise.resolve([]);
@@ -228,7 +234,9 @@ describe("AdminLodgings - listing", () => {
 						pageResponse([], { currentPage: 1, totalItems: 10, totalPages: 1 }),
 					);
 				}
-				return Promise.resolve(pageResponse([lodgingFixture()], { totalPages: 2 }));
+				return Promise.resolve(
+					pageResponse([lodgingFixture()], { totalPages: 2 }),
+				);
 			}
 			if (endpoint === "/categories") return Promise.resolve([]);
 			if (endpoint === "/features") return Promise.resolve([]);
@@ -449,7 +457,9 @@ describe("AdminLodgings - edit", () => {
 			screen.getByRole("heading", { name: "Editar alojamiento" }),
 		).toBeInTheDocument();
 		expect(screen.getByTestId("field-name")).toHaveValue("Cabaña del Lago");
-		expect(screen.getByTestId("field-email")).toHaveValue("contacto@cabana.com");
+		expect(screen.getByTestId("field-email")).toHaveValue(
+			"contacto@cabana.com",
+		);
 	});
 
 	it("shows an inline form error (not an alert) when the update request rejects", async () => {
@@ -469,7 +479,9 @@ describe("AdminLodgings - edit", () => {
 		// a blocking window.alert for its own failure path — the two Admin CRUD
 		// screens use different, inconsistent error UX. Asserted as-is per spec
 		// Risks; not unified here (no production change in this change).
-		expect(await screen.findByText("No se pudo actualizar")).toBeInTheDocument();
+		expect(
+			await screen.findByText("No se pudo actualizar"),
+		).toBeInTheDocument();
 		expect(screen.getByTestId("admin-modal")).toBeInTheDocument();
 	});
 
