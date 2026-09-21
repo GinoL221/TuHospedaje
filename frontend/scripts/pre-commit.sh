@@ -7,4 +7,5 @@ fi
 
 gitleaks git --pre-commit --staged --redact --no-banner . || exit $?
 
-exec npm --prefix frontend exec -- lint-staged
+cd frontend || exit 1
+exec npm exec -- lint-staged

@@ -1,5 +1,11 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+	BrowserRouter,
+	Routes,
+	Route,
+	useLocation,
+	Navigate,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
 import RequireAuth from "./components/RequireAuth";
@@ -16,8 +22,12 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail/ProductDetail"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const FavoritesPage = lazy(() => import("./pages/Favorites/FavoritesPage"));
 const BookingPage = lazy(() => import("./pages/Booking/BookingPage"));
-const BookingConfirmationPage = lazy(() => import("./pages/Booking/BookingConfirmation"));
-const MyReservationsPage = lazy(() => import("./pages/MyReservations/MyReservationsPage"));
+const BookingConfirmationPage = lazy(
+	() => import("./pages/Booking/BookingConfirmation"),
+);
+const MyReservationsPage = lazy(
+	() => import("./pages/MyReservations/MyReservationsPage"),
+);
 const Unauthorized = lazy(() => import("./pages/Unauthorized/Unauthorized"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 
@@ -26,65 +36,76 @@ const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 // alias redirects to the canonical destination.
 const ADMIN_PATH_PREFIXES = ["/administración", "/admin"];
 function isAdminPath(pathname) {
-  return ADMIN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+	return ADMIN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 function AppLayout() {
 	const location = useLocation();
 	const { pathname } = location;
-  const isAdmin = isAdminPath(pathname);
+	const isAdmin = isAdminPath(pathname);
 
-  return (
-    <>
-      {!isAdmin && (
-        <div className="public-shell">
-          <Header />
-        </div>
-      )}
-      <RouteChunkErrorBoundary resetKey={pathname}>
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-				<Route path="/search" element={<Navigate to={{ pathname: "/", search: location.search }} replace />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/lodgings/:id" element={<ProductDetail />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
+	return (
+		<>
+			{!isAdmin && (
+				<div className="public-shell">
+					<Header />
+				</div>
+			)}
+			<RouteChunkErrorBoundary resetKey={pathname}>
+				<Suspense fallback={<RouteLoadingFallback />}>
+					<Routes>
+						<Route path="/" element={<Home />} />
+						<Route
+							path="/search"
+							element={
+								<Navigate
+									to={{ pathname: "/", search: location.search }}
+									replace
+								/>
+							}
+						/>
+						<Route path="/login" element={<LoginPage />} />
+						<Route path="/register" element={<RegisterPage />} />
+						<Route path="/lodgings/:id" element={<ProductDetail />} />
+						<Route path="/unauthorized" element={<Unauthorized />} />
 
-            <Route element={<RequireAuth />}>
-              <Route path="/booking/:lodgingId" element={<BookingPage />} />
-              <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
-              <Route path="/my-reservations" element={<MyReservationsPage />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-            </Route>
+						<Route element={<RequireAuth />}>
+							<Route path="/booking/:lodgingId" element={<BookingPage />} />
+							<Route
+								path="/booking/confirmation"
+								element={<BookingConfirmationPage />}
+							/>
+							<Route path="/my-reservations" element={<MyReservationsPage />} />
+							<Route path="/favorites" element={<FavoritesPage />} />
+						</Route>
 
-            <Route element={<RequireAdmin />}>
-              <Route path="/administración" element={<Admin />} />
-              <Route
-                path="/admin"
-                element={<Navigate to="/administración" replace />}
-              />
-            </Route>
+						<Route element={<RequireAdmin />}>
+							<Route path="/administración" element={<Admin />} />
+							<Route
+								path="/admin"
+								element={<Navigate to="/administración" replace />}
+							/>
+						</Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </RouteChunkErrorBoundary>
-      {!isAdmin && (
-        <div className="public-shell">
-          <Footer />
-        </div>
-      )}
-    </>
-  );
+						<Route path="*" element={<NotFound />} />
+					</Routes>
+				</Suspense>
+			</RouteChunkErrorBoundary>
+			{!isAdmin && (
+				<div className="public-shell">
+					<Footer />
+				</div>
+			)}
+		</>
+	);
 }
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppLayout />
-      </AuthProvider>
-    </BrowserRouter>
-  );
+	return (
+		<BrowserRouter>
+			<AuthProvider>
+				<AppLayout />
+			</AuthProvider>
+		</BrowserRouter>
+	);
 }

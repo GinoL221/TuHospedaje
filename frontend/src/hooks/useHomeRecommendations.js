@@ -1,4 +1,10 @@
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import {
+	startTransition,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { getRecommendations } from "../services/lodgingService";
 
 const RECOMMENDATIONS_STORAGE_ID = "tuhospedaje.recommendations.v1";
@@ -42,7 +48,9 @@ export default function useHomeRecommendations() {
 	const [recSeed, setRecSeed] = useState(
 		() => readStoredRecommendationSession()?.seed ?? createRecommendationSeed(),
 	);
-	const revisionRef = useRef(readStoredRecommendationSession()?.revision ?? null);
+	const revisionRef = useRef(
+		readStoredRecommendationSession()?.revision ?? null,
+	);
 	const [status, setStatus] = useState("idle");
 	const [listBusy, setListBusy] = useState(false);
 	const [listGeneration, setListGeneration] = useState(0);
@@ -50,7 +58,10 @@ export default function useHomeRecommendations() {
 	const skipResetPageFetchRef = useRef(false);
 
 	useEffect(() => {
-		writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
+		writeStoredRecommendationSession({
+			seed: recSeed,
+			revision: revisionRef.current,
+		});
 	}, [recSeed]);
 
 	const fetchRecommendations = useCallback(() => {
@@ -60,11 +71,18 @@ export default function useHomeRecommendations() {
 			setListBusy(true);
 		});
 
-		getRecommendations({ seed: recSeed, page, revision: revisionRef.current ?? undefined })
+		getRecommendations({
+			seed: recSeed,
+			page,
+			revision: revisionRef.current ?? undefined,
+		})
 			.then((data) => {
 				if (requestId !== requestIdRef.current) return;
 				revisionRef.current = data.revision ?? revisionRef.current;
-				writeStoredRecommendationSession({ seed: recSeed, revision: revisionRef.current });
+				writeStoredRecommendationSession({
+					seed: recSeed,
+					revision: revisionRef.current,
+				});
 				setLodgings(data.lodgings || []);
 				setTotalPages(data.totalPages || 1);
 				setListGeneration((generation) => generation + 1);
@@ -77,7 +95,9 @@ export default function useHomeRecommendations() {
 				});
 				setPage((previousPage) => {
 					const actualPage =
-						typeof data.currentPage === "number" ? data.currentPage : previousPage;
+						typeof data.currentPage === "number"
+							? data.currentPage
+							: previousPage;
 					if (data.reset && previousPage !== actualPage) {
 						skipResetPageFetchRef.current = true;
 					}

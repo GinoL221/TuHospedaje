@@ -9,8 +9,7 @@
   box-sizing: border-box;
   gap: var(--product-space-3);
   padding: calc(var(--site-header-height) + var(--product-space-3))
-    clamp(var(--product-space-2), 4vw, 48px)
-    clamp(40px, 6vw, 72px);
+    clamp(var(--product-space-2), 4vw, 48px) clamp(40px, 6vw, 72px);
   overflow-x: hidden;
 }
 
@@ -199,7 +198,9 @@
   line-height: var(--type-label-line-height);
   font-family: inherit;
   touch-action: manipulation;
-  transition: background-color var(--transition), box-shadow var(--transition);
+  transition:
+    background-color var(--transition),
+    box-shadow var(--transition);
 }
 .availability-alert button:hover {
   background: var(--action-primary-hover-bg);
@@ -251,7 +252,9 @@
   color: var(--text);
   outline: none;
   cursor: pointer;
-  transition: border-color var(--transition), box-shadow var(--transition),
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
     background-color var(--transition);
 }
 .date-pickers input::placeholder {
@@ -400,8 +403,12 @@
 .product-detail .availability-alert button:focus-visible,
 .product-detail .login-prompt a:focus-visible,
 .product-detail .date-pickers input:focus-visible,
-.product-detail .product-datepicker-popper .react-datepicker__navigation:focus-visible,
-.product-detail .product-datepicker-popper .react-datepicker__day:focus-visible {
+.product-detail
+  .product-datepicker-popper
+  .react-datepicker__navigation:focus-visible,
+.product-detail
+  .product-datepicker-popper
+  .react-datepicker__day:focus-visible {
   outline: 3px solid var(--action-primary-focus);
   outline-offset: 2px;
 }
@@ -473,7 +480,9 @@
 }
 
 .product-detail .product-datepicker-popper .react-datepicker__day:hover,
-.product-detail .product-datepicker-popper .react-datepicker__day--keyboard-selected {
+.product-detail
+  .product-datepicker-popper
+  .react-datepicker__day--keyboard-selected {
   background: var(--bg);
   color: var(--secondary);
   box-shadow: inset 0 0 0 2px var(--accent);
@@ -498,9 +507,9 @@
 }
 
 @media (max-width: 480px) {
-	.policies-grid {
-		grid-template-columns: minmax(0, 1fr);
-	}
+  .policies-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
   .detail-header {
     flex-wrap: wrap;
@@ -526,7 +535,9 @@
     left: 0 !important;
     transform: none !important;
     z-index: 1001;
-    max-height: calc(100dvh - var(--site-header-height) - var(--product-space-2));
+    max-height: calc(
+      100dvh - var(--site-header-height) - var(--product-space-2)
+    );
     overflow-x: hidden;
     overflow-y: auto;
   }

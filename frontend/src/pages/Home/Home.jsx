@@ -143,7 +143,9 @@ export default function Home() {
 							{showSuggestions && (
 								<ul
 									id="city-suggestions-listbox"
-									className={"city-suggestions" + (loadingCities ? " is-pending" : "")}
+									className={
+										"city-suggestions" + (loadingCities ? " is-pending" : "")
+									}
 									role="listbox"
 									aria-label="Sugerencias de ciudades"
 									aria-busy={loadingCities}
@@ -164,7 +166,11 @@ export default function Home() {
 											id={`city-suggestion-${index}`}
 											role="option"
 											aria-selected={activeSuggestionIndex === index}
-											className={activeSuggestionIndex === index ? "is-active" : undefined}
+											className={
+												activeSuggestionIndex === index
+													? "is-active"
+													: undefined
+											}
 											onMouseEnter={() => activateSuggestion(index)}
 											onMouseDown={() => selectCity(c)}
 										>

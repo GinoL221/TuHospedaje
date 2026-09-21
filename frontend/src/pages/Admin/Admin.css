@@ -216,7 +216,10 @@
   color: var(--secondary);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .admin-table-controls button:hover {
@@ -292,7 +295,9 @@
   background: var(--action-primary-bg);
   color: var(--action-primary-fg);
   border: none;
-  box-shadow: var(--shadow-lg), inset 0 -3px var(--action-primary-accent);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 -3px var(--action-primary-accent);
   padding: 14px 22px;
   border-radius: 50px;
   cursor: pointer;
@@ -306,7 +311,9 @@
   transform: translateY(-2px);
 }
 .btn-fab:active {
-  box-shadow: var(--shadow-lg), inset 0 -4px var(--action-primary-accent);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 -4px var(--action-primary-accent);
 }
 .btn-fab:focus-visible {
   outline: 3px solid var(--action-primary-focus);
@@ -717,9 +724,16 @@ textarea.input-error {
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 @keyframes shake {
-  0%,  100% { transform: translateX(0); }
-  25%        { transform: translateX(-4px); }
-  75%        { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 .feature-checkboxes {
   display: flex;

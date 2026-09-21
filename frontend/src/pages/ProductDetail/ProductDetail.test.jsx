@@ -139,7 +139,9 @@ describe("ProductDetail - rendering lodging detail", () => {
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(getLodging).toHaveBeenCalledWith("1");
 		expect(screen.getByText("Bariloche, Argentina")).toBeInTheDocument();
-		expect(screen.getByText("Una cabaña con vista al lago.")).toBeInTheDocument();
+		expect(
+			screen.getByText("Una cabaña con vista al lago."),
+		).toBeInTheDocument();
 	});
 
 	it("shows a lodging load error and retries the same lodging successfully", async () => {
@@ -181,7 +183,11 @@ describe("ProductDetail - rendering lodging detail", () => {
 		);
 
 		expect(screen.getByText("Cargando...")).toHaveAttribute("role", "status");
-		nextLodging.resolve({ ...lodgingFixture, id: 2, name: "Cabaña del Bosque" });
+		nextLodging.resolve({
+			...lodgingFixture,
+			id: 2,
+			name: "Cabaña del Bosque",
+		});
 		expect(await screen.findByText("Cabaña del Bosque")).toBeInTheDocument();
 		expect(
 			screen.queryByText("No pudimos cargar el alojamiento."),
@@ -221,10 +227,9 @@ describe("ProductDetail - header navigation placement", () => {
 				(child) => child.getAttribute("aria-label") || child.textContent,
 			),
 		).toEqual(["Cabaña del LagoBariloche, Argentina", "Compartir", "Volver"]);
-		expect(screen.getByRole("main", { name: "Cabaña del Lago" })).toHaveAttribute(
-			"aria-labelledby",
-			"product-detail-title",
-		);
+		expect(
+			screen.getByRole("main", { name: "Cabaña del Lago" }),
+		).toHaveAttribute("aria-labelledby", "product-detail-title");
 		expect(
 			screen.getByRole("region", { name: "Reservar este alojamiento" }),
 		).toBeInTheDocument();
@@ -785,7 +790,10 @@ describe("ProductDetail - GalleryModal", () => {
 	it("navigates to the clicked thumbnail's real image when multiple images exist", async () => {
 		const multiImageLodging = {
 			...lodgingFixture,
-			imageUrls: ["https://example.com/img.jpg", "https://example.com/img2.jpg"],
+			imageUrls: [
+				"https://example.com/img.jpg",
+				"https://example.com/img2.jpg",
+			],
 		};
 		mockGetDefaults({ lodging: multiImageLodging });
 		const user = userEvent.setup();
@@ -804,7 +812,10 @@ describe("ProductDetail - GalleryModal", () => {
 	it("changes the main image with bounded arrows without opening the modal", async () => {
 		const multiImageLodging = {
 			...lodgingFixture,
-			imageUrls: ["https://example.com/img.jpg", "https://example.com/img2.jpg"],
+			imageUrls: [
+				"https://example.com/img.jpg",
+				"https://example.com/img2.jpg",
+			],
 		};
 		mockGetDefaults({ lodging: multiImageLodging });
 		const user = userEvent.setup();
@@ -819,7 +830,9 @@ describe("ProductDetail - GalleryModal", () => {
 		await user.click(next);
 
 		expect(
-			screen.getByRole("button", { name: "Abrir galería" }).querySelector("img"),
+			screen
+				.getByRole("button", { name: "Abrir galería" })
+				.querySelector("img"),
 		).toHaveAttribute("src", "https://example.com/img2.jpg");
 		expect(next).toBeDisabled();
 		expect(previous).not.toBeDisabled();
@@ -843,7 +856,10 @@ describe("ProductDetail - GalleryModal", () => {
 			mockGetDefaults({
 				lodging: {
 					...lodgingFixture,
-					imageUrls: ["https://example.com/img.jpg", "https://example.com/img2.jpg"],
+					imageUrls: [
+						"https://example.com/img.jpg",
+						"https://example.com/img2.jpg",
+					],
 				},
 			});
 			const user = userEvent.setup();
@@ -859,10 +875,9 @@ describe("ProductDetail - GalleryModal", () => {
 				block: "nearest",
 				behavior: "auto",
 			});
-			expect(screen.getByRole("button", { name: "Ver imagen 2" })).toHaveAttribute(
-				"aria-current",
-				"true",
-			);
+			expect(
+				screen.getByRole("button", { name: "Ver imagen 2" }),
+			).toHaveAttribute("aria-current", "true");
 		} finally {
 			Element.prototype.scrollIntoView = originalScrollIntoView;
 			window.matchMedia = originalMatchMedia;
@@ -889,7 +904,9 @@ describe("ProductDetail - Features detail", () => {
 		expect(
 			screen.getAllByRole("img", { name: /Cabaña del Lago - \d/ }),
 		).toHaveLength(3);
-		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(2);
+		expect(screen.getAllByRole("button", { name: /Ver imagen/ })).toHaveLength(
+			2,
+		);
 	});
 
 	it("renders up to four existing secondary images and opens every image from Ver más", async () => {

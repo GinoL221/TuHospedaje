@@ -24,9 +24,11 @@ beforeEach(() => {
 	observers = [];
 	headerHeight = 72;
 	vi.stubGlobal("ResizeObserver", ResizeObserverMock);
-	vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
-		height: headerHeight,
-	}));
+	vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+		() => ({
+			height: headerHeight,
+		}),
+	);
 });
 
 afterEach(() => {
@@ -56,7 +58,9 @@ describe("Header - authenticated user", () => {
 		customRender(<Header />);
 
 		expect(
-			screen.getByRole("link", { name: "Encuentra tu lugar ideal al mejor precio" }),
+			screen.getByRole("link", {
+				name: "Encuentra tu lugar ideal al mejor precio",
+			}),
 		).toHaveAttribute("href", "/");
 	});
 
@@ -87,7 +91,9 @@ describe("Header - authenticated user", () => {
 
 		expect(username).toHaveClass("nav-username");
 		expect(username).not.toHaveClass("nav-link");
-		expect(screen.queryByRole("link", { name: "Test" })).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: "Test" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("exposes the authenticated header styling hooks without loading an auth page", () => {
@@ -120,19 +126,34 @@ describe("Header - unauthenticated user", () => {
 		const user = userEvent.setup();
 		const { unmount } = customRender(<Header />, { authValue: null });
 
-		expect(document.documentElement.style.getPropertyValue("--site-header-height")).toBe("72px");
-		expect(document.documentElement.style.getPropertyValue("--site-scroll-clearance")).toBe("calc(72px + var(--site-scroll-gap))");
+		expect(
+			document.documentElement.style.getPropertyValue("--site-header-height"),
+		).toBe("72px");
+		expect(
+			document.documentElement.style.getPropertyValue(
+				"--site-scroll-clearance",
+			),
+		).toBe("calc(72px + var(--site-scroll-gap))");
 
 		headerHeight = 184;
 		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
 		observers.at(-1).callback();
 
-		expect(document.documentElement.style.getPropertyValue("--site-header-height")).toBe("184px");
-		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute("aria-expanded", "true");
+		expect(
+			document.documentElement.style.getPropertyValue("--site-header-height"),
+		).toBe("184px");
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
 
 		unmount();
-		expect(document.documentElement.style.getPropertyValue("--site-header-height")).toBe("");
-		expect(observers.every((observer) => observer.disconnect.mock.calls.length > 0)).toBe(true);
+		expect(
+			document.documentElement.style.getPropertyValue("--site-header-height"),
+		).toBe("");
+		expect(
+			observers.every((observer) => observer.disconnect.mock.calls.length > 0),
+		).toBe(true);
 	});
 
 	it("opens and closes the mobile menu from the hamburger button", async () => {
@@ -140,15 +161,21 @@ describe("Header - unauthenticated user", () => {
 		customRender(<Header />, { authValue: null });
 
 		const menuButton = screen.getByRole("button", { name: "Abrir menú" });
-		const menu = screen.getByRole("link", { name: "Iniciar sesión" }).parentElement;
+		const menu = screen.getByRole("link", {
+			name: "Iniciar sesión",
+		}).parentElement;
 
 		expect(menu).not.toHaveClass("nav-links--open");
 		await user.click(menuButton);
-		expect(screen.getByRole("button", { name: "Cerrar menú" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Cerrar menú" }),
+		).toBeInTheDocument();
 		expect(menu).toHaveClass("nav-links--open");
 
 		await user.click(screen.getByRole("button", { name: "Cerrar menú" }));
-		expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Abrir menú" }),
+		).toBeInTheDocument();
 		expect(menu).not.toHaveClass("nav-links--open");
 	});
 
@@ -159,7 +186,9 @@ describe("Header - unauthenticated user", () => {
 		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
 		await user.click(screen.getByRole("link", { name: "Iniciar sesión" }));
 
-		expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Abrir menú" }),
+		).toBeInTheDocument();
 	});
 
 	it("does not show 'Mis reservas' link", () => {
