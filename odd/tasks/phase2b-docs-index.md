@@ -34,6 +34,8 @@ Do not modify the root `README.md`, `frontend/README.md`, `DESIGN.md`, `docs/mar
 - `git status --short` shows only `docs/README.md`, `odd/tasks/phase2b-docs-index.md`, and `odd/phase2b-docs-index/tasks` as intended untracked paths.
 - `git diff --check` passed.
 - No `.env` or backend secret was inspected; application tests were not required for this documentation-only unit.
+- Clean candidate work-unit commit: `c7026dbf89b789ec538f7d4dd64f44717d99a74d` (`docs: add documentation index`), based directly on `c6f50499`.
+- Native review lineage `review-39d645f6431689ec` approved and acknowledged for the exact three-path candidate; authority burned with `gentle-ai.review-acknowledged/v1`.
 
 ## Acceptance criteria
 
