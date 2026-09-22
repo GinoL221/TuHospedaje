@@ -1,0 +1,18 @@
+# Phase 2B-C root README task projection
+
+- [x] State the product purpose, academic scope, current stack, and supported prerequisites without unsupported claims.
+- [x] Make the local Docker Compose workflow authoritative: include the required `deploy/dev.env` setup, the base and overlay files, loopback endpoints, and destructive development-only volume cleanup.
+- [x] Remove the stale production-future wording and the misleading database-only Compose command from the primary setup path.
+- [x] Correct production Compose guidance to use immutable prebuilt image references and remove the unsupported local `compose ... build` step; retain the external TLS and persistent-volume boundaries.
+- [x] Keep manual backend/frontend startup, demo-seed, canonical-assets, migration, backup/restore, and operational guidance concise and linked to their source runbooks.
+- [x] Keep testing commands and documentation links accurate without duplicating the frontend package README or claiming unavailable external evidence.
+- [x] Validate exact scope, relative links, Compose command references, forbidden stale wording, and `git diff --check`.
+- [ ] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
+
+## Evidence
+
+- Root README rewritten as a concise project entry point with supported local, host, production, testing, and documentation workflows.
+- Development commands use `compose.yaml` plus `compose.dev.yaml`; production uses immutable image references and no Compose build step.
+- 18 relative links resolve; 13 Compose commands use the expected overlays; stale forbidden patterns are absent.
+- Scope is exactly `README.md`, `odd/tasks/phase2b-root-readme.md`, and this task projection; `git diff --check` passed.
+- No `.env` or `.env.example` file was read or modified; Compose and application tests were not run.
