@@ -12,7 +12,7 @@ Reconcile `DESIGN.md` and the current architecture/ADR document `docs/markdown/p
 - [x] Keep `DESIGN.md`'s logo, contrast, Inter, iconography, voice, accessibility, and implementation-status statements subordinate to the identity manual without rewriting historical evidence.
 - [x] Preserve current architecture and administrative-table status in project-definition, including the distinction between historical client-side claims and current server-driven areas.
 - [x] Validate cross-document consistency, forbidden dark-mode claims, link targets, exact scope, and `git diff --check`.
-- [ ] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
+- [x] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
 
 ## Latest evidence
 
@@ -22,6 +22,8 @@ Reconcile `DESIGN.md` and the current architecture/ADR document `docs/markdown/p
 - Corrected the DESIGN logo status: the manual's proportional `1x` clear-space rule remains normative, while the current fixed `8px` spacing is recorded as pending visual verification rather than equivalent compliance.
 - Read-only verification passed: exact four-path scope, relative links, bilingual dark-mode checks, ADR 4.6 direction, DESIGN authority/status checks, administrative-table status, and `git diff --check`.
 - No source, test, workflow, Compose, historical report, audit, product, identity-manual, PDF, `.env`, or `.env.example` file was modified or read for secrets. Application tests were intentionally out of scope.
+- Work-unit commit: `7dd0019360ea35fa6c1b3821926c756527566649` (`docs: reconcile design and architecture records`), based directly on `c6f50499`.
+- Native review lineage `review-e011ea2442869f17` approved and acknowledged for target `sha256:69b4133b224f98ac4e036511e3f74e1faaee6cf7453d9c1df4594486af9c268c`; authority burned with `gentle-ai.review-acknowledged/v1`.
 
 ## Acceptance criteria
 
