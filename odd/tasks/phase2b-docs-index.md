@@ -35,7 +35,7 @@ Do not modify the root `README.md`, `frontend/README.md`, `DESIGN.md`, `docs/mar
 - `git diff --check` passed.
 - No `.env` or backend secret was inspected; application tests were not required for this documentation-only unit.
 - Clean candidate work-unit commit: `c7026dbf89b789ec538f7d4dd64f44717d99a74d` (`docs: add documentation index`), based directly on `c6f50499`.
-- Native review lineage `review-39d645f6431689ec` approved and acknowledged for the exact three-path candidate; authority burned with `gentle-ai.review-acknowledged/v1`.
+- Native review lineage `review-23fd8a2a67f75c89` approved and acknowledged for the final exact three-path candidate `sha256:21dc64f36a55d6ff9751f9c377782b861d2f856d0a936354cdd68f75d45417a8`; authority burned with `gentle-ai.review-acknowledged/v1`.
 
 ## Acceptance criteria
 
