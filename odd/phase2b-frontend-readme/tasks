@@ -1,0 +1,17 @@
+# Phase 2B frontend README tasks
+
+- [x] Replace the generic Vite README content with TuHospedaje-specific onboarding and scope.
+- [x] Document installation, development, production build/preview, lint, test, coverage, and formatting scripts exactly as defined by `frontend/package.json`.
+- [x] State the supported Node engine constraint without claiming Node 18 compatibility.
+- [x] Document only the observed public environment variable names `VITE_API_URL` and `VITE_WHATSAPP_NUMBER`; never include values or read `.env` files.
+- [x] Describe the frontend entry point, routing, authentication guards, component/page/hook/service organization, and shared API behavior with exact paths.
+- [x] Describe Vitest/jsdom setup, colocated tests, coverage output/thresholds, and the fact that Playwright E2E lives outside this package.
+- [x] Validate the focused documentation diff and record exact evidence.
+
+## Evidence
+
+- Vite template replaced; all nine npm scripts match `frontend/package.json`.
+- Locked Node requirement `^20.19.0 || >=22.12.0` and only the two observed public `VITE_` names are documented, without values.
+- All 22 relative links resolve; unsupported claims are absent.
+- Scope contains only the README and the two intended ODD task artifacts.
+- `git diff --check` passed; no `.env`, backend secret, or application test was accessed.
