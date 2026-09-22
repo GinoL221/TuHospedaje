@@ -15,3 +15,5 @@
 - All 22 relative links resolve; unsupported claims are absent.
 - Scope contains only the README and the two intended ODD task artifacts.
 - `git diff --check` passed; no `.env`, backend secret, or application test was accessed.
+- Work-unit commit: `80c19512e412dce9bceb45d3c71dd283a3787a8e` (`docs: document frontend package`), based directly on `c6f50499`.
+- Native review lineage `review-bbab3c9c66f37b93` approved and acknowledged for target `sha256:01c562e6bc982f75a2827d342ff334a4cded4b217d0b1f2a343561a42137e973`; authority burned with `gentle-ai.review-acknowledged/v1`. The reviewer returned one informational, non-blocking `R3-readme-install-dir` advisory.

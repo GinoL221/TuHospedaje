@@ -36,6 +36,8 @@ Do not modify the root `README.md`, `docs/README.md`, `DESIGN.md`, source code, 
 - All 22 relative Markdown links resolve in the candidate tree; unsupported claims and the generic template are absent.
 - Scope verification found only `frontend/README.md`, `odd/tasks/phase2b-frontend-readme.md`, and `odd/phase2b-frontend-readme/tasks` changed.
 - `git diff --check` passed. No `.env`, backend secret, or application test was accessed; tests were intentionally out of scope for this documentation-only unit.
+- Work-unit commit: `80c19512e412dce9bceb45d3c71dd283a3787a8e` (`docs: document frontend package`), based directly on `c6f50499`.
+- Native review lineage `review-bbab3c9c66f37b93` approved and acknowledged for target `sha256:01c562e6bc982f75a2827d342ff334a4cded4b217d0b1f2a343561a42137e973`; authority burned with `gentle-ai.review-acknowledged/v1`. The reviewer returned one informational, non-blocking `R3-readme-install-dir` advisory.
 
 ## Acceptance criteria
 
