@@ -7,7 +7,7 @@
 - [x] Keep manual backend/frontend startup, demo-seed, canonical-assets, migration, backup/restore, and operational guidance concise and linked to their source runbooks.
 - [x] Keep testing commands and documentation links accurate without duplicating the frontend package README or claiming unavailable external evidence.
 - [x] Validate exact scope, relative links, Compose command references, forbidden stale wording, and `git diff --check`.
-- [ ] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
+- [x] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
 
 ## Evidence
 
@@ -16,3 +16,5 @@
 - 18 relative links resolve; 13 Compose commands use the expected overlays; stale forbidden patterns are absent.
 - Scope is exactly `README.md`, `odd/tasks/phase2b-root-readme.md`, and this task projection; `git diff --check` passed.
 - No `.env` or `.env.example` file was read or modified; Compose and application tests were not run.
+- Work-unit commit: `ec392f49da30b099387988ff41cab03209005513` (`docs: simplify root README`), based directly on `c6f50499`.
+- Native review lineage `review-a395429e6eca70a2` approved and acknowledged for target `sha256:039f4b6b849d677a784317cd39b3526fa99dcc8ec725b68af5d238b80a8be84a`; authority burned with `gentle-ai.review-acknowledged/v1`.

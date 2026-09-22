@@ -13,7 +13,7 @@ Replace the root README's duplicated and contradictory setup guidance with a con
 - [x] Keep manual backend/frontend startup, demo-seed, canonical-assets, migration, backup/restore, and operational guidance concise and linked to their source runbooks.
 - [x] Keep testing commands and documentation links accurate without duplicating the frontend package README or claiming unavailable external evidence.
 - [x] Validate exact scope, relative links, Compose command references, forbidden stale wording, and `git diff --check`.
-- [ ] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
+- [x] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
 
 ## Latest evidence
 
@@ -24,6 +24,8 @@ Replace the root README's duplicated and contradictory setup guidance with a con
 - Read-only verification passed: 18 relative links resolve, 13 Compose commands use the correct overlays, forbidden stale patterns are absent, endpoint-table duplication is absent, and unsupported production-delivery claims are absent.
 - Current uncommitted scope is exactly `README.md`, `odd/tasks/phase2b-root-readme.md`, and `odd/phase2b-root-readme/tasks`; `git diff --check` passed.
 - `.env` and `.env.example` files were not read or modified; Compose and application tests were intentionally out of scope for this documentation-only unit.
+- Work-unit commit: `ec392f49da30b099387988ff41cab03209005513` (`docs: simplify root README`), based directly on `c6f50499`.
+- Native review lineage `review-a395429e6eca70a2` approved and acknowledged for target `sha256:039f4b6b849d677a784317cd39b3526fa99dcc8ec725b68af5d238b80a8be84a`; authority burned with `gentle-ai.review-acknowledged/v1`.
 
 ## Acceptance criteria
 
