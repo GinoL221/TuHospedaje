@@ -1,0 +1,31 @@
+# Phase 2A academic traceability reconciliation
+
+## Goal
+
+Update the compliance traceability and browser-evidence documents so the official Digital House US #1–#35 requirements, current `product.md` scope, and revision-bound evidence are reconciled without promoting historical or provider-bound claims to current proof.
+
+## Tasks
+
+- [x] Build the official US #1–#35 matrix with authority, scope relation, disposition, evidence, and limitations.
+- [x] Mark US #36–#43 as later increments outside the official 35-story matrix.
+- [x] Reconcile current CI run `35661433657` on commit `c6f50499b6f7d8fde2567cfae80eab35cc1dad06` with the browser-evidence document.
+- [x] Correct WhatsApp evidence wording and retain its handoff-only provider boundary.
+- [x] Record partial/non-verifiable boundaries for uploads/images, favorites stubs, external share/WhatsApp execution, and reservation email recipient delivery.
+- [x] Run focused documentation validation and review the final diff.
+
+## Constraints
+
+- Preserve US #19 as explicitly optional/non-evaluated.
+- Resolve US #3 as product/lodging registration and US #21 as category creation with title, description, and representative image.
+- Do not claim Mailtrap delivery, WhatsApp delivery/read status, canonical JPEG publication, or real-backend favorites E2E without observed evidence.
+- Keep US #36–#43 separate from the official matrix.
+- Do not access `.env` or backend secrets.
+- Do not modify source code, tests, workflows, Sprint reports, or historical evidence artifacts in this work unit.
+
+## Evidence
+
+- Original Digital House PDFs supplied by the user: Sprint 1–4; final verification matched US #3 and US #21 wording and criteria.
+- Current main CI: run `35661433657` at `c6f50499b6f7d8fde2567cfae80eab35cc1dad06`; backend 651, frontend 621, Chromium 58, Firefox 58, mobile Chromium 31; two mobile booking scenarios passed on retry.
+- Python reconciliation assertions and `git diff --check`: passed.
+- Final delegated verification: passed with no remaining issues.
+- Work-unit commit: pending explicit commit authorization.
