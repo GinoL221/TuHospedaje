@@ -34,7 +34,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 **TuHospedaje** es una plataforma web centralizada de reservas de alojamiento enfocada en **alojamientos turísticos**.
 El propósito principal del negocio es resolver la fricción entre los usuarios que buscan hospedaje de calidad y los administradores que necesitan gestionar su catálogo de manera eficiente. La plataforma permite a los clientes finales explorar un catálogo dinámico y detallado, mientras que provee a los administradores un panel de control intuitivo para crear, actualizar y dar de baja alojamientos.
 - **Nombre Oficial:** TuHospedaje
-- **Identidad Visual:** Isologotipo institucional con soporte nativo para esquemas de colores claro y oscuro.
+- **Identidad Visual:** Isologotipo institucional para el tema claro vigente. El modo oscuro es trabajo futuro y no está soportado ni aprobado en la versión actual.
 - **Ubicación del recurso:** `frontend/src/assets/images/TuHospedaje_Isologotipo.png`
 
 ## 2. Alcance del Proyecto y Hoja de Ruta (Roadmap)
@@ -69,16 +69,7 @@ La solución adopta una arquitectura desacoplada basada en el patrón de diseño
 | **Protocolo** | API RESTful en `http://localhost:8080/api/` |
 
 ### 3.2. Estándar de Diseño del Frontend
-La interfaz se construye con **CSS Puro** mediante **Variables Dinámicas (Custom Properties)**. Las variables están preparadas para soportar un intercambio de temas claro/oscuro mediante el atributo `data-theme` en el DOM. La tabla siguiente muestra los valores definidos para cada tema:
-| Elemento | Paleta Light (Clara) | Paleta Dark (Oscura) |
-|----------|---------------------|----------------------|
-| Background (Fondo) | `#f4f4f9` | `#05050a` |
-| Text (Texto Principal) | `#333333` | `#cccccc` |
-| Primary (Acciones/Botones) | `#ff6b35` | `#ff5500` |
-| Secondary (Componentes/Nav) | `#264653` | `#abccd8` |
-| Accent (Destacados/Badges) | `#2a9d8f` | `#62d5c8` |
-
-Referencia visual de la paleta: [Paleta de colores TuHospedaje](../diseno/Paleta_de_colores_TuHospedaje.pdf).
+La interfaz vigente usa **CSS puro** mediante **Custom Properties** para el tema claro y los estados de la aplicación. La identidad visual, la paleta aprobada y las reglas de contraste están definidas por el [Manual de Identidad Visual](../diseno/manual-identidad.md); `DESIGN.md` traduce esas reglas y registra el estado de implementación. El modo oscuro no tiene una paleta aprobada ni una ruta de activación y queda como trabajo futuro; este documento no define valores dark ni afirma soporte nativo.
 
 ## 4. Decisiones Arquitectónicas Clave (ADR)
 ### 4.1. Uso del Dominio Semántico `Lodging`
@@ -100,8 +91,10 @@ El Frontend se desacopla del entorno de ejecución utilizando variables de entor
 ### 4.5. Bean Validation Declarativa
 Se adopta la validación de entrada de datos mediante anotaciones declarativas JSR 380 en los DTOs y objetos Request. Las peticiones son interceptadas con `@Valid` a nivel de controlador de Spring Boot y cualquier error de validación es procesado de forma centralizada por el `GlobalExceptionHandler` capturando la excepción `MethodArgumentNotValidException`, permitiendo retornar respuestas HTTP 400 (Bad Request) estandarizadas y limpias para el cliente.
 
-### 4.6. Sistema Unificado de Íconos
-Se unifica la carga de iconos en el frontend mediante el uso directo de SVGs o de la librería Lucide React. Esto asegura la resolución óptima en dispositivos de alta densidad de píxeles (HiDPI), facilidad de adaptación de estilos responsivos mediante CSS y una mejora en los bundles mediante el "tree-shaking" nativo de Vite al omitir iconos no utilizados.
+### 4.6. Dirección de iconografía
+La dirección vigente es [Lucide](../diseno/manual-identidad.md#6-iconografía), de acuerdo con el Manual de Identidad Visual. Sus iconos vectoriales mantienen tamaños y etiquetas accesibles consistentes; el tree-shaking de Vite evita incluir iconos no utilizados.
+
+El repositorio todavía conserva SVG inline, imágenes de Icons8, glifos de texto, estrellas y otros mecanismos heredados en superficies concretas. Esas excepciones son deuda de implementación registrada en `DESIGN.md`; no constituyen una alternativa normativa equivalente ni cambian la dirección Lucide.
 
 ### 4.7. Tablas admin client-side (decisión histórica)
 El alcance original de esta definición eligió el ordenamiento y la paginación client-side mediante `useTableData` para las tablas administrativas, incluida `AdminLodgings`. Esta decisión conserva el contexto histórico del proyecto.

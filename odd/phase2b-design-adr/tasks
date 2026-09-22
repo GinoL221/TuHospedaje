@@ -1,0 +1,17 @@
+# Phase 2B-D design and ADR task projection
+
+- [x] Preserve the authority hierarchy: the identity manual defines brand rules, `DESIGN.md` translates them and records implementation/debt, and project-definition records architecture/ADR context.
+- [x] Remove the project-definition claim that the product supports a native dark theme and remove its unapproved dark palette values; state that dark mode is future work and not supported.
+- [x] Reconcile ADR 4.6 so Lucide is the current iconography direction and legacy SVG/glyph mechanisms remain implementation debt recorded in `DESIGN.md`.
+- [x] Keep `DESIGN.md`'s logo, contrast, Inter, iconography, voice, accessibility, and implementation-status statements subordinate to the identity manual without rewriting historical evidence.
+- [x] Preserve current architecture and administrative-table status in project-definition, including the distinction between historical client-side claims and current server-driven areas.
+- [x] Validate cross-document consistency, forbidden dark-mode claims, link targets, exact scope, and `git diff --check`.
+- [ ] Record validation evidence, commit the work unit with a Conventional Commit, and complete the native review gate without pushing or cleaning worktrees.
+
+## Evidence
+
+- Identity manual v2.0 and its PDF remain unchanged as authority.
+- Project-definition no longer claims native light/dark support, a dark palette, or `data-theme` activation; dark mode is future work and unsupported.
+- ADR 4.6 names Lucide as the current direction and classifies legacy icon mechanisms as implementation debt.
+- DESIGN preserves the manual's `1x` logo rule and marks fixed `8px` spacing as pending visual verification.
+- Exact four-path scope, links, cross-document checks, and `git diff --check` passed; no application tests were run.
