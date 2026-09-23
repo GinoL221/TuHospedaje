@@ -1,0 +1,10 @@
+# Last enabled administrator invariant task projection
+
+- [x] Add failing unit tests for last-admin rejection, allowed multi-admin transitions, promotions/re-enables, and no-op behavior.
+- [x] Add failing HTTP integration tests for the stable `409` response and unchanged persisted state.
+- [x] Add failing MariaDB concurrency tests for simultaneous demotions and disables, including same-target races.
+- [x] Add the stable coordination row, Flyway index, pessimistic repository queries, domain exception, handler/messages, OpenAPI response, and service guard.
+- [x] Preserve valid disable-session revocation and prove rejected/no-op operations do not revoke sessions or emit disable events.
+- [x] Run focused tests and independent verification: 664 tests, JaCoCo, and diff-check passed; LSP had no findings but could not confirm clean files.
+- [ ] Commit the coherent implementation and tests as one Conventional Commit work unit under the user-authorized ~629-line size exception.
+- [ ] Run the native review gate for the exact commit and record final evidence without pushing or cleaning worktrees.
