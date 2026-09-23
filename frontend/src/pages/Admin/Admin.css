@@ -248,6 +248,10 @@
   gap: 20px;
 }
 .stat-card {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-left: 3px solid var(--accent);

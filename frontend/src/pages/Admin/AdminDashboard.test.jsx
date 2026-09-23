@@ -184,25 +184,45 @@ describe("AdminDashboard - stat count", () => {
 });
 
 describe("AdminDashboard - tab navigation", () => {
-	it("calls onTabChange with the correct tab key when a stat card is clicked", async () => {
+	it("uses a native button and calls onTabChange once when a stat card is clicked", async () => {
 		mockGetDefaults();
 		const onTabChange = vi.fn();
 		const user = userEvent.setup();
 		render(<AdminDashboard onTabChange={onTabChange} />);
 
-		await user.click(
-			screen.getByText("Alojamientos").closest('[role="button"]'),
-		);
+		const card = screen.getByRole("button", { name: /Alojamientos/ });
+		expect(card.tagName).toBe("BUTTON");
+		await user.click(card);
+		expect(onTabChange).toHaveBeenCalledTimes(1);
 		expect(onTabChange).toHaveBeenCalledWith("lodgings");
 	});
 
-	it("calls onTabChange with reservations tab when that card is clicked", async () => {
+	it("calls onTabChange once when a stat card is activated with Enter", async () => {
 		mockGetDefaults();
 		const onTabChange = vi.fn();
 		const user = userEvent.setup();
 		render(<AdminDashboard onTabChange={onTabChange} />);
 
-		await user.click(screen.getByText("Reservas").closest('[role="button"]'));
+		const card = screen.getByRole("button", { name: /Categorías/ });
+		await user.click(card);
+		onTabChange.mockClear();
+		await user.keyboard("{Enter}");
+		expect(onTabChange).toHaveBeenCalledTimes(1);
+		expect(onTabChange).toHaveBeenCalledWith("categories");
+	});
+
+	it("calls onTabChange once when a stat card is activated with Space", async () => {
+		mockGetDefaults();
+		const onTabChange = vi.fn();
+		const user = userEvent.setup();
+		render(<AdminDashboard onTabChange={onTabChange} />);
+
+		const card = screen.getByText("Reservas").closest(".stat-card");
+		expect(card).not.toBeNull();
+		await user.click(card);
+		onTabChange.mockClear();
+		await user.keyboard("[Space]");
+		expect(onTabChange).toHaveBeenCalledTimes(1);
 		expect(onTabChange).toHaveBeenCalledWith("reservations");
 	});
 });

@@ -1,0 +1,11 @@
+# Admin dashboard native stat buttons
+
+- [x] Convert stat cards to native buttons with focused click, Enter, and Space tests while preserving layout styles.
+- [ ] Run focused/full frontend verification, record evidence, and complete the native review gate.
+
+## Evidence
+
+- RED: native-element and Space-activation assertions failed.
+- GREEN and independent verification: 15/15 focused tests passed; click, Enter, and Space activate exactly once.
+- JSX semantics and the minimal four-declaration CSS reset passed focused diff review and `git diff --check`.
+- Browser visual verification remains pending/not run.

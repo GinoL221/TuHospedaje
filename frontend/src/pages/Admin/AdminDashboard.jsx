@@ -85,18 +85,16 @@ export default function AdminDashboard({ onTabChange }) {
 
 			<div className="dashboard-grid">
 				{STATS.map(({ key, label, icon: Icon, tab }) => (
-					<div
+					<button
 						key={key}
+						type="button"
 						className="stat-card"
-						role="button"
-						tabIndex={0}
 						onClick={() => tab && onTabChange(tab)}
-						onKeyDown={(e) => e.key === "Enter" && tab && onTabChange(tab)}
 					>
 						<Icon size={32} className="stat-icon" />
 						<span className="stat-count">{counts[key] ?? "…"}</span>
 						<span className="stat-label">{label}</span>
-					</div>
+					</button>
 				))}
 			</div>
 
