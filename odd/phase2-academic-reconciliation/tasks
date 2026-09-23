@@ -28,4 +28,5 @@ Update the compliance traceability and browser-evidence documents so the officia
 - Current main CI: run `35661433657` at `c6f50499b6f7d8fde2567cfae80eab35cc1dad06`; backend 651, frontend 621, Chromium 58, Firefox 58, mobile Chromium 31; two mobile booking scenarios passed on retry.
 - Python reconciliation assertions and `git diff --check`: passed.
 - Final delegated verification: passed with no remaining issues.
-- Work-unit commit: pending explicit commit authorization.
+- Signed work-unit commit: `8473fa4179242cc7ae5a415f217c697d6ca0bb4b`; tree preserved from the native-approved candidate `review-d4f64acd712d4f0d`.
+- Publication revalidation against `origin/main` `c48345f21f6270b4138581b17622f4bcc936b657`: clean/disjoint/no-conflict, documentation assertions passed, and `git diff --check` passed.

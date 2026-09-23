@@ -52,4 +52,5 @@ Update the compliance traceability and browser-evidence documents so the officia
 - `git diff --check`: passed.
 - Final delegated verification: passed; no remaining issues.
 - Local Playwright is deferred because required credentials/services are unavailable.
-- Work-unit commit: pending explicit commit authorization.
+- Signed work-unit commit: `8473fa4179242cc7ae5a415f217c697d6ca0bb4b` (`docs: reconcile academic traceability evidence`); its tree is byte-identical to the candidate approved by native review `review-d4f64acd712d4f0d`.
+- Publication revalidation against `origin/main` `c48345f21f6270b4138581b17622f4bcc936b657`: clean worktree, disjoint four-path diff, no merge conflict, documentation assertions passed, and `git diff --check` passed.
