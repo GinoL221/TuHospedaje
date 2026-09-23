@@ -16,5 +16,6 @@
 - 18 relative links resolve; 13 Compose commands use the expected overlays; stale forbidden patterns are absent.
 - Scope is exactly `README.md`, `odd/tasks/phase2b-root-readme.md`, and this task projection; `git diff --check` passed.
 - No `.env` or `.env.example` file was read or modified; Compose and application tests were not run.
-- Work-unit commit: `ec392f49da30b099387988ff41cab03209005513` (`docs: simplify root README`), based directly on `c6f50499`.
-- Native review lineage `review-a395429e6eca70a2` approved and acknowledged for target `sha256:039f4b6b849d677a784317cd39b3526fa99dcc8ec725b68af5d238b80a8be84a`; authority burned with `gentle-ai.review-acknowledged/v1`.
+- Signed commits: `fbed9d53f43f775d535efb695fece862e565d1e8` and `9c99a8eb7e0ce871aa774611d8928df4ee98fb93`; final candidate tree preserved byte-for-byte.
+- Final native review `review-84205efafcf15b37` approved and acknowledged target `sha256:70d5a6a756c1fb89600278814c7b693dd0f3589ebbc3d362b084ae60838cce98`.
+- Publication revalidation against `origin/main` `a0c063445d0fdd42c1021e7e0d046efc1f8540e4`: disjoint/no-conflict, 18 links and 13 Compose commands verified, content/metadata assertions and `git diff --check` passed.

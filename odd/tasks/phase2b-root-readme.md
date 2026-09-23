@@ -24,8 +24,9 @@ Replace the root README's duplicated and contradictory setup guidance with a con
 - Read-only verification passed: 18 relative links resolve, 13 Compose commands use the correct overlays, forbidden stale patterns are absent, endpoint-table duplication is absent, and unsupported production-delivery claims are absent.
 - Current uncommitted scope is exactly `README.md`, `odd/tasks/phase2b-root-readme.md`, and `odd/phase2b-root-readme/tasks`; `git diff --check` passed.
 - `.env` and `.env.example` files were not read or modified; Compose and application tests were intentionally out of scope for this documentation-only unit.
-- Work-unit commit: `ec392f49da30b099387988ff41cab03209005513` (`docs: simplify root README`), based directly on `c6f50499`.
-- Native review lineage `review-a395429e6eca70a2` approved and acknowledged for target `sha256:039f4b6b849d677a784317cd39b3526fa99dcc8ec725b68af5d238b80a8be84a`; authority burned with `gentle-ai.review-acknowledged/v1`.
+- Signed commit sequence, based directly on `c6f50499`: `fbed9d53f43f775d535efb695fece862e565d1e8` (`docs: simplify root README`) and `9c99a8eb7e0ce871aa774611d8928df4ee98fb93` (`docs: record root README evidence`). Signing preserved the final candidate tree byte-for-byte.
+- Final native review lineage `review-84205efafcf15b37` approved and acknowledged target `sha256:70d5a6a756c1fb89600278814c7b693dd0f3589ebbc3d362b084ae60838cce98`.
+- Publication revalidation against `origin/main` `a0c063445d0fdd42c1021e7e0d046efc1f8540e4`: clean/disjoint three-path diff, no merge conflict, 18 links and 13 Compose commands verified, content/metadata assertions passed, and `git diff --check` passed.
 
 ## Acceptance criteria
 
