@@ -36,8 +36,9 @@ Do not modify the root `README.md`, `docs/README.md`, `DESIGN.md`, source code, 
 - All 22 relative Markdown links resolve in the candidate tree; unsupported claims and the generic template are absent.
 - Scope verification found only `frontend/README.md`, `odd/tasks/phase2b-frontend-readme.md`, and `odd/phase2b-frontend-readme/tasks` changed.
 - `git diff --check` passed. No `.env`, backend secret, or application test was accessed; tests were intentionally out of scope for this documentation-only unit.
-- Work-unit commit: `80c19512e412dce9bceb45d3c71dd283a3787a8e` (`docs: document frontend package`), based directly on `c6f50499`.
-- Native review lineage `review-bbab3c9c66f37b93` approved and acknowledged for target `sha256:01c562e6bc982f75a2827d342ff334a4cded4b217d0b1f2a343561a42137e973`; authority burned with `gentle-ai.review-acknowledged/v1`. The reviewer returned one informational, non-blocking `R3-readme-install-dir` advisory.
+- Signed commit sequence, based directly on `c6f50499`: `25b4ab743d3ffaf75891b4127ff18520d659ac1c` (`docs: document frontend package`) and `2915a23d9d6d73277940235f421fff0bfecdf62d` (`docs: record frontend README evidence`). Signing preserved the final candidate tree byte-for-byte.
+- Final native review lineage `review-3657430edf189ba3` approved and acknowledged target `sha256:11e7c3b10fe1d9d134965f2c2b29af9db88741fc16e71478f214e94bd46a8805`; `R3-readme-install-dir` remained informational and non-blocking.
+- Publication revalidation against `origin/main` `b0ec87f824e3c307c277af943778a34d7b119879`: clean/disjoint three-path diff, no merge conflict, all nine scripts and 22 relative links verified, locked Vite Node requirement confirmed from `frontend/package-lock.json`, content assertions passed, and `git diff --check` passed.
 
 ## Acceptance criteria
 
