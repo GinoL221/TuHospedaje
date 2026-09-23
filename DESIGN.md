@@ -50,7 +50,7 @@ Maintain at least `1x` clear space on every side, where `x` is the rendered capi
 
 The available assets are transparent and polychromatic. There is no approved monochrome or inverse asset. Do not simulate one with CSS, filters, or recoloring. See [Identity Manual v2.0, section 2](docs/diseno/manual-identidad.md#2-sistema-de-logotipos).
 
-**Implemented:** Header and Footer use the byte-equivalent official `TuHospedaje_Isologotipo.png` asset with automatic aspect ratio, `contain` fitting, a `140px` minimum width, and `8px` clear space. Header exposes an accessible TuHospedaje home name.
+**Implemented:** Header and Footer use the byte-equivalent official `TuHospedaje_Isologotipo.png` asset with automatic aspect ratio, `contain` fitting, a `140px` minimum width, and an accessible TuHospedaje home name. The current implementation records `8px` CSS spacing, but that fixed value does not substitute for the manual's proportional `1x` clear-space rule; compliance with the rendered `1x` measurement remains pending visual verification.
 
 ### Color and contrast
 
