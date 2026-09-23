@@ -1,476 +1,218 @@
 # TuHospedaje
 
-Plataforma web para la búsqueda y reserva de alojamientos turísticos. Permite a los usuarios explorar hospedajes por ciudad y fechas, guardar favoritos, hacer reservas, y recibir confirmación por email. Los administradores gestionan alojamientos, categorías, características, políticas e imágenes vía Cloudinary.
+TuHospedaje es una plataforma web para descubrir y reservar alojamientos turísticos. Permite explorar por ciudad y fechas, consultar disponibilidad, guardar favoritos, reservar y administrar el catálogo.
 
-Proyecto final integrador — Digital House.
+Es el proyecto final integrador de Digital House. El alcance académico corresponde a los Sprints 1–4; pasarelas de pago, chat interno y mapas en vivo quedan fuera de esta entrega. La definición funcional está en [`product.md`](product.md).
 
----
+## Stack
 
-## Tecnologías
+- **Backend:** Java 17, Spring Boot 3.5, Spring Security/JWT, Spring Data JPA y MariaDB.
+- **Frontend:** React 19, Vite 8, React Router y Lucide React.
+- **E2E:** Playwright para Chromium, Firefox y mobile Chromium.
+- **Servicios opcionales:** Cloudinary para imágenes y SMTP para email. La configuración SMTP no prueba por sí sola la entrega del proveedor o la llegada al buzón.
 
-### Backend
-- Java 17
-- Spring Boot 3.5
-- Spring Security + JWT (jjwt 0.12.6)
-- Spring Data JPA / MariaDB
-- Cloudinary
-- Spring Mail (Mailtrap)
-- Testcontainers (tests de integración)
+## Requisitos
 
-### Frontend
-- React 19 + Vite 8
-- React Router 7
-- Lucide React
-- jwt-decode
+- Java 17 o superior.
+- Node.js `^20.19.0 || >=22.12.0` para Vite 8.
+- Docker Compose v2 para el flujo contenedorizado.
+- Python 3 únicamente si vas a cargar el seed demo y necesitás generar un hash bcrypt.
 
-### E2E
-- Playwright (Chromium + Firefox + mobile Chromium)
+## Inicio rápido
 
----
+### Desarrollo completo con Docker Compose
 
-## Instalación local
+Este es el flujo recomendado para desarrollo. Levanta MariaDB, backend y frontend con el código montado desde el working tree. El stack usa puertos de loopback: MariaDB `127.0.0.1:3307`, backend `127.0.0.1:8080` y Vite `127.0.0.1:5173`.
 
-### Requisitos
-- Java 17+
-- Node.js 18+
-- MariaDB
-- Maven (o usar el wrapper incluido)
-
-### Clonar el repositorio
-```bash
-git clone https://github.com/GinoL221/tuhospedaje.git
-cd tuhospedaje
-```
-
----
-
-### Development with Docker Compose
-
-The Compose workflow starts MariaDB, Spring Boot, and Vite in containers while source remains mounted from the working tree. It is intended for local development only; production Compose procedures arrive in a later change.
-
-1. Copy the tracked template and fill values locally. Do not commit `deploy/dev.env`:
+1. Copiá la plantilla local y completá sus valores. No commitees `deploy/dev.env`:
 
    ```bash
    cp deploy/dev.env.example deploy/dev.env
    ```
 
-   `DEV_JWT_SECRET` must be Base64 and decode to at least 32 bytes. `DEV_SESSION_REFRESH_KEY` and database passwords must be non-empty development-only values.
-
-2. Validate and start the schema-only default stack:
+2. Validá la composición y levantá los servicios:
 
    ```bash
-   docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml config --quiet
-   docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml up --build
+   docker compose --env-file deploy/dev.env \
+     -f compose.yaml -f compose.dev.yaml config --quiet
+   docker compose --env-file deploy/dev.env \
+     -f compose.yaml -f compose.dev.yaml up --build
    ```
 
-   The database, backend, and frontend bind only to loopback by default: MariaDB at `127.0.0.1:3307`, backend at `127.0.0.1:8080`, and Vite at `127.0.0.1:5173`. Backend Java changes under `backend/src/main` or `backend/pom.xml` restart Maven; frontend changes use Vite HMR. The default database receives schema migrations only and has no demo rows.
+   Este flujo aplica sólo las migraciones de esquema. No carga filas demo.
 
-3. Use demo data only through the isolated seed overlay. It requires `DEV_ADMIN_PASSWORD_HASH` in the current shell or `deploy/dev.env` and uses the separate `tuhospedaje-dev-seeded` project and volume:
+3. Para detenerlo sin borrar la base:
 
    ```bash
-   DEV_ADMIN_PASSWORD_HASH='<bcrypt-hash-for-the-development-admin>' \
-     docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
-
-   Generate the bcrypt value with the disposable virtual-environment command in [Demo data (optional)](#datos-de-demo-opcional); do not put a plaintext password in the environment file.
+   docker compose --env-file deploy/dev.env \
+     -f compose.yaml -f compose.dev.yaml down
    ```
 
-4. Mount canonical assets only when required. The host path must be absolute and exists only on the developer machine:
+   Para eliminar la base descartable de desarrollo, agregá `-v`. Nunca uses `down -v` sobre producción.
 
-   ```bash
-   CANONICAL_ASSETS_HOST_DIR=/absolute/path/to/canonical-lodging-images \
-     docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml -f compose.dev-assets.yaml up --build
-   ```
+### Datos demo opcionales
 
-   Combine the seed and assets overlays by adding both `-f compose.dev-seed.yaml` and `-f compose.dev-assets.yaml`.
+El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH`; generá el hash con una contraseña de desarrollo que no uses en otro entorno:
 
-5. Check reachability after startup:
+```bash
+python3 -m venv /tmp/bcrypt-venv
+/tmp/bcrypt-venv/bin/pip install --quiet bcrypt
+export DEV_ADMIN_PASSWORD_HASH=$(/tmp/bcrypt-venv/bin/python3 -c \
+  "import bcrypt, getpass; print(bcrypt.hashpw(getpass.getpass().encode(), bcrypt.gensalt(10)).decode())")
+```
 
-   ```bash
-   curl -fsS http://127.0.0.1:8080/actuator/health/readiness
-   curl -fsS http://127.0.0.1:5173/
-   curl -fsS http://127.0.0.1:8080/api/lodgings
-   ```
+Después, levantá el overlay:
 
-   To remove a disposable development database, stop only the matching project and remove its volume. This is destructive and development-only:
+```bash
+docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
+```
 
-   ```bash
-   docker compose --env-file deploy/dev.env -f compose.yaml -f compose.dev.yaml down -v
-   ```
+El usuario administrador demo es `admin@tuhospedaje.com`; la contraseña es la que usaste para generar el hash. Si una migración demo falla a mitad de camino, recreá únicamente la base del proyecto seeded antes de reintentar:
 
-   For the seed project, add `-f compose.dev-seed.yaml` to the same command. Never use `down -v` for a production deployment.
+```bash
+docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml down -v
+```
 
----
+### Imágenes canónicas opcionales
 
-### Production with Docker Compose
+Los JPEG maestros no forman parte del repositorio. Para montarlos de forma local, `CANONICAL_ASSETS_HOST_DIR` debe ser una ruta absoluta existente en tu máquina:
 
-Production uses immutable backend and frontend image references, a persistent MariaDB volume, and HTTP on the frontend only. Put TLS termination, certificates, and the public HTTPS reverse proxy outside Compose. The external proxy must preserve `Host` and send `X-Forwarded-Proto: https`.
+```bash
+CANONICAL_ASSETS_HOST_DIR=/ruta/absoluta/a/canonical-lodging-images \
+  docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml -f compose.dev-assets.yaml up --build
+```
 
-1. Copy and fill the untracked operator file. Never commit it:
+Podés combinar `compose.dev-seed.yaml` y `compose.dev-assets.yaml` en el mismo comando cuando necesites ambos overlays.
+
+### Ejecución manual en el host
+
+Si preferís ejecutar backend y frontend fuera de contenedores, levantá sólo la base con los mismos archivos de desarrollo; no uses `docker compose up -d db` sin el overlay de desarrollo:
+
+```bash
+docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml up -d db
+```
+
+Configurá los archivos locales a partir de [`backend/.env.example`](backend/.env.example) y [`frontend/.env.example`](frontend/.env.example). Luego iniciá cada proceso en su propio terminal:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+El backend queda disponible en `http://localhost:8080` y Vite en `http://localhost:5173`. Para scripts y estructura del paquete frontend, consultá [`frontend/package.json`](frontend/package.json).
+
+## Producción con Docker Compose
+
+El Compose de producción ejecuta imágenes ya construidas y referenciadas por `BACKEND_IMAGE` y `FRONTEND_IMAGE`. `compose.prod.yaml` no contiene instrucciones `build`: publicá las imágenes desde tu pipeline y usá tags inmutables o digests.
+
+1. Copiá la plantilla del operador y completá sus valores fuera del repositorio:
 
    ```bash
    cp deploy/prod.env.example deploy/prod.env
    ```
 
-   Set `BACKEND_IMAGE` and `FRONTEND_IMAGE` to immutable tags or digests. `VITE_API_URL=/api` is built into the frontend image; changing it or `VITE_WHATSAPP_NUMBER` requires rebuilding and publishing the frontend image.
-
-2. Resolve configuration and build images before starting services:
+2. Validá la configuración sin levantar servicios:
 
    ```bash
-   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml config --quiet
-   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml build
+   docker compose --env-file deploy/prod.env \
+     -f compose.yaml -f compose.prod.yaml config --quiet
    ```
 
-3. Start the database and wait for its healthcheck, then explicitly provision separate runtime and Flyway accounts. Provisioning is not an automatic application dependency:
+3. Levantá la base, esperá el healthcheck y provisioná las cuentas de runtime y Flyway:
 
    ```bash
-   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml up -d db
-   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml ps
-   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml --profile provision run --rm db-provision
-   docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml up -d backend frontend
+   docker compose --env-file deploy/prod.env \
+     -f compose.yaml -f compose.prod.yaml up -d db
+   docker compose --env-file deploy/prod.env \
+     -f compose.yaml -f compose.prod.yaml ps
+   docker compose --env-file deploy/prod.env \
+     -f compose.yaml -f compose.prod.yaml --profile provision run --rm db-provision
    ```
 
-4. Verify the HTTP boundary:
+4. Levantá backend y frontend con las imágenes configuradas:
 
    ```bash
-   curl -fsS http://127.0.0.1:${PROD_HTTP_PORT:-8080}/nginx-health
-   curl -fsS http://127.0.0.1:${PROD_HTTP_PORT:-8080}/
-   curl -fsS http://127.0.0.1:${PROD_HTTP_PORT:-8080}/api/lodgings
+   docker compose --env-file deploy/prod.env \
+     -f compose.yaml -f compose.prod.yaml up -d backend frontend
    ```
 
-   Backend readiness is internal to the Compose networks. Do not publish its port. Browser cookie and authentication checks must use the external HTTPS origin, for example `BASE_URL=https://<test-origin>`.
+   Sólo el frontend publica el puerto HTTP configurado (por defecto `127.0.0.1:8080`). El backend permanece dentro de las redes Compose. TLS, certificados y el reverse proxy HTTPS quedan fuera de Compose; el proxy externo debe conservar `Host` y enviar `X-Forwarded-Proto: https`.
 
-The `tuhospedaje-prod-db` volume persists across Compose recreation. Backups, restore testing, and retention are operator responsibilities. Routine shutdown keeps data:
-
-```bash
-docker compose --env-file deploy/prod.env -f compose.yaml -f compose.prod.yaml down
-```
-
-Never use `down -v` in production. It is development-only. For credential rotation, stop backend writes, update the external env file, run `db-provision` again, then recreate backend. To roll back, select earlier immutable image references and recreate services; Flyway migrations are not reversed by an image rollback.
-
----
-
-### Backend (`/backend`)
-
-#### Crear la base de datos
-
-Local uses MariaDB 10.11 on port **3307** so it matches CI/Testcontainers and does not touch a host MariaDB on 3306.
+El volumen `tuhospedaje-prod-db` persiste entre recreaciones. Para una detención normal:
 
 ```bash
-docker compose up -d db
+docker compose --env-file deploy/prod.env \
+  -f compose.yaml -f compose.prod.yaml down
 ```
 
-The `dev` profile connects to `jdbc:mariadb://localhost:3307/tuhospedaje_dev`. The
-database name must contain a standalone `dev` or `test` segment — it gates the demo
-seed below.
+No uses `down -v` en producción. El backup, la restauración y la retención se operan con el [runbook de MariaDB](ops/mariadb/README.md); este README no declara que exista evidencia de una ejecución productiva.
 
-#### Configurar variables de entorno
-```bash
-cp backend/.env.example backend/.env
-```
+## Desarrollo sin Compose: configuración y migraciones
 
-**Archivo `.env` (backend):**
-```dotenv
-# Base de datos
-DB_USERNAME=tuhospedaje
-DB_PASSWORD=your_password
+- El backend usa [`backend/.env.example`](backend/.env.example) como plantilla de configuración local.
+- El frontend usa [`frontend/.env.example`](frontend/.env.example); las variables públicas observadas incluyen `VITE_API_URL` y, opcionalmente, `VITE_WHATSAPP_NUMBER`.
+- Flyway aplica `db/migration/V1__baseline_schema.sql` en una base nueva. Las migraciones aplicadas no se editan: agregá una migración versionada nueva.
+- La política de adopción y rollback del esquema está en [`docs/markdown/migrations/migration-rollback-policy.md`](docs/markdown/migrations/migration-rollback-policy.md).
+- Para producción, la cuenta de aplicación y la cuenta de migración son distintas; `compose.prod.yaml` exige ambas configuraciones.
 
-# JWT — must be Base64-encoded and decode to at least 256 bits (32 bytes).
-# A plain passphrase will NOT work. Generate one with: openssl rand -base64 48
-JWT_SECRET=change-me-generate-with-openssl-rand-base64-48
+## Pruebas
 
-# CORS — URL del frontend
-CORS_ALLOWED_ORIGINS=http://localhost:5173
+### Backend
 
-# Cloudinary (requerido para upload de imágenes)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Email (opcional — false deshabilita SMTP)
-MAIL_SMTP_ENABLED=false
-MAILTRAP_HOST=sandbox.smtp.mailtrap.io
-MAILTRAP_PORT=2525
-MAILTRAP_USERNAME=your_username
-MAILTRAP_PASSWORD=your_password
-
-# Canonical lodging masters for the local dev profile (optional).
-# Default: ~/TuHospedajeAssets/canonical-lodging-images
-# Override when the external asset directory is mounted elsewhere.
-TUHOSPEDAJE_CANONICAL_ASSETS_ROOT=/home/your-user/TuHospedajeAssets/canonical-lodging-images
-```
-
-> Para desarrollo local existe un perfil `dev` con defaults seguros (sin secretos reales).
-> Activar con: `SPRING_PROFILES_ACTIVE=dev`
->
-> Con el perfil `dev`, el backend sirve los masters JPEG externos en
-> `http://localhost:8080/canonical-lodging-images/**`. El seed demo usa esas URLs
-> locales y conserva los binarios fuera del repositorio. El root por defecto es
-> `~/TuHospedajeAssets/canonical-lodging-images`; podés cambiarlo con
-> `TUHOSPEDAJE_CANONICAL_ASSETS_ROOT`.
-
-#### Datos de demo (opcional)
-
-Con el schema solo (sección anterior), el catálogo arranca vacío. Para cargar el seed
-de demostración (38 alojamientos, 6 categorías, 8 características, 6 políticas y un
-usuario admin) hay que habilitar explícitamente la migración de desarrollo y generar
-el hash bcrypt del admin — nunca se commitea en texto plano:
-
-```bash
-python3 -m venv /tmp/bcrypt-venv && /tmp/bcrypt-venv/bin/pip install --quiet bcrypt
-export DEV_ADMIN_PASSWORD_HASH=$(/tmp/bcrypt-venv/bin/python3 -c "import bcrypt; print(bcrypt.hashpw(b'Admin1', bcrypt.gensalt(10)).decode())")
-export SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/dev
-```
-
-> A plain `pip install bcrypt` fails on distros that mark the system Python as
-> externally managed (PEP 668, e.g. current Debian/Ubuntu). The disposable venv
-> above avoids that regardless of how the OS packages Python.
-
-Con esas dos variables exportadas, corré el backend normalmente (paso siguiente). El
-seed se aplica una sola vez; si falla a mitad de camino o cambia de versión, hay que
-recrear la base (`docker compose down -v && docker compose up -d db`) antes de
-reintentar — las migraciones de `db/dev` no son transaccionales en MariaDB.
-
-Credencial del admin demo: **`admin@tuhospedaje.com`** / **`Admin1`**.
-
-#### Correr el backend
 ```bash
 cd backend
-./mvnw spring-boot:run
-```
-> Disponible en `http://localhost:8080`
-
-#### Operación del outbox de bienvenida
-
-El registro persiste el email de bienvenida y responde sin esperar el envío SMTP. Los eventos `email_outbox.*` incluyen solo el tipo `WELCOME`, identificadores de correlación y estados acotados; no incluyen destinatarios, nombres, asunto, cuerpo HTML, credenciales ni tokens.
-
-`DELIVERED` indica únicamente que el servidor SMTP aceptó la entrega para su envío. No prueba entrega del proveedor, llegada al buzón, recepción por la persona destinataria ni lectura. Salidas históricas de consola, observaciones de Mailtrap, US #19 y PR #80 no son evidencia de aceptación.
-
-#### Ciclo de vida del esquema
-
-Flyway aplica `db/migration/V1__baseline_schema.sql` en una base vacía y Hibernate valida el mapeo sin crear ni cambiar tablas. Los perfiles default y `prod` no cargan usuarios ni datos demo.
-
-1. Para un entorno nuevo o descartable, creá la base y ejecutá el backend: Flyway aplica V1 automáticamente.
-2. Para un cambio de esquema posterior, agregá una migración versionada nueva; nunca edites una migración ya aplicada.
-3. Para revertir un despliegue en una base descartable, revertí la configuración de la aplicación y recreá la base desde el proceso anterior.
-
-En producción, `DB_USERNAME`/`DB_PASSWORD` pertenecen a la cuenta de ejecución, sin permisos DDL. Flyway se ejecuta en cada inicio, por eso `DB_MIGRATION_USERNAME`/`DB_MIGRATION_PASSWORD` deben estar disponibles en cada inicio y reinicio para una cuenta distinta, limitada al DDL/DML necesario para migrar. Rotá esas credenciales periódicamente; no revoques ni deshabilites la cuenta después de una migración. El perfil `prod` falla al iniciar si faltan y no usa las credenciales de la aplicación como reemplazo.
-
-#### Adopción controlada de una base existente
-
-`baseline-on-migrate=false` sigue siendo el valor seguro. Una base no vacía creada por Hibernate requiere una adopción manual y planificada:
-
-1. Detené todas las instancias de la aplicación y bloqueá escrituras. Tomá un backup restaurable y verificá la restauración en un entorno aislado.
-2. Compará tablas, columnas, índices, claves y restricciones contra `V1__baseline_schema.sql`. Continuá únicamente si el esquema coincide exactamente y no hay una tabla `flyway_schema_history` parcial.
-3. Con una versión compatible de Flyway y credenciales administrativas temporales, creá una configuración efímera que no exponga la contraseña en los argumentos del proceso y ejecutá una sola vez:
-   ```bash
-   FLYWAY_CONF=$(mktemp)
-   chmod 600 "$FLYWAY_CONF"
-   trap 'rm -f "$FLYWAY_CONF"' EXIT
-   printf 'flyway.url=%s\nflyway.user=%s\nflyway.password=%s\nflyway.baselineVersion=1\nflyway.baselineDescription=existing schema adoption\n' \
-     "$DB_URL" "$DB_ADMIN_USER" "$DB_ADMIN_PASSWORD" >"$FLYWAY_CONF"
-   flyway -configFiles="$FLYWAY_CONF" baseline
-   rm -f "$FLYWAY_CONF"
-   trap - EXIT
-   ```
-4. Verificá que `flyway_schema_history` contenga un baseline exitoso en versión 1. Iniciá una instancia con las credenciales normales y confirmá que `migrate` no intenta ejecutar V1 y que Hibernate valida el esquema.
-5. Quitá las credenciales administrativas temporales y recién entonces reabrí escrituras.
-
-La frontera de rollback termina antes de ejecutar `baseline`: ante cualquier diferencia o error, no modifiques el esquema, restaurá el backup en una base nueva y volvé a la versión anterior de la aplicación. Después de registrar el baseline no borres ni edites manualmente `flyway_schema_history`; restaurá el backup completo para deshacer la adopción.
-
-MariaDB puede confirmar cada sentencia DDL aunque una migración completa falle. En una base nueva no descartable, ante un fallo de V1: detené todas las instancias y bloqueá escrituras; guardá los logs; inspeccioná `flyway_schema_history` y compará el esquema real con V1 sin ejecutar `repair` ni reintentar. Restaurá el backup verificado en una base nueva, o eliminá y recreá la base únicamente si confirmaste que no contiene datos que deban conservarse. Corregí la causa fuera de producción y ejecutá V1 desde cero sobre esa base restaurada o recreada. No habilites `baseline-on-migrate`: puede adoptar por accidente el esquema equivocado.
-
----
-
-### Frontend (`/frontend`)
-
-#### Configurar variables de entorno
-```bash
-cp frontend/.env.example frontend/.env
+./mvnw -B verify
 ```
 
-**Archivo `.env` (frontend):**
-```dotenv
-VITE_API_URL=http://localhost:8080/api
+### Frontend
 
-# Opcional — si no se define, el botón flotante de WhatsApp no se muestra.
-VITE_WHATSAPP_NUMBER=5491112345678
-```
-
-#### Correr el frontend
 ```bash
 cd frontend
-npm install
-npm run dev
-```
-> Disponible en `http://localhost:5173`
-
----
-
-## Endpoints (API REST)
-
-> Swagger UI disponible en: `http://localhost:8080/swagger-ui/index.html`
-
-### Autenticación
-
-| Método | Endpoint              | Descripción               | Auth       |
-|--------|-----------------------|---------------------------|------------|
-| POST   | /api/auth/register    | Registro — JWT entregado en cookie `ACCESS_TOKEN` HttpOnly | ❌ Público |
-| POST   | /api/auth/login       | Login — JWT entregado en cookie `ACCESS_TOKEN` HttpOnly (no expuesto en el body) | ❌ Público |
-| POST   | /api/auth/logout      | Limpia la cookie de sesión (requiere CSRF válido) | ❌ Público |
-| GET    | /api/auth/me          | Identidad de la sesión autenticada | ✅ Autenticado |
-| GET    | /api/auth/csrf        | Bootstrap explícito del token CSRF | ✅ Autenticado |
-| POST   | /api/auth/refresh     | Rota `REFRESH_TOKEN` por un nuevo `ACCESS_TOKEN` (CSRF-exempt: cookie httpOnly) | ❌ Público |
-| POST   | /api/auth/password    | Cambia la contraseña y revoca todas las sesiones de refresh propias | ✅ Autenticado |
-
-Las mutaciones usan protección CSRF vía cookie `XSRF-TOKEN` + header `X-XSRF-TOKEN`. Las sesiones de refresh (persistencia, rotación y detección de replay) están **activas por defecto** (`app.session.refresh.enabled=true`) e integradas al flujo HTTP completo: login/registro emiten una cookie `REFRESH_TOKEN` httpOnly además del `ACCESS_TOKEN`, `POST /api/auth/refresh` la intercambia por un nuevo `ACCESS_TOKEN` y rota el refresh token, y logout/cambio de contraseña revocan la sesión (o familia de sesiones) correspondiente.
-
-### Alojamientos
-
-| Método | Endpoint                          | Descripción                                       | Auth        |
-|--------|-----------------------------------|---------------------------------------------------|-------------|
-| GET    | /api/lodgings                     | Listar (soporta `page`, `size`, `category`)       | ❌ Público  |
-| GET    | /api/lodgings/random              | Lista aleatoria                                   | ❌ Público  |
-| GET    | /api/lodgings/{id}                | Detalle de alojamiento                            | ❌ Público  |
-| GET    | /api/lodgings/search              | Buscar por ciudad, fechas, huéspedes, precio      | ❌ Público  |
-| GET    | /api/lodgings/cities              | Ciudades disponibles (con filtro `?q=`)           | ❌ Público  |
-| GET    | /api/lodgings/{id}/availability   | Disponibilidad para un rango de fechas            | ❌ Público  |
-| POST   | /api/lodgings                     | Crear alojamiento                                 | ✅ ADMIN    |
-| PUT    | /api/lodgings/{id}                | Actualizar alojamiento                            | ✅ ADMIN    |
-| DELETE | /api/lodgings/{id}                | Eliminar alojamiento                              | ✅ ADMIN    |
-
-### Categorías
-
-| Método | Endpoint               | Descripción           | Auth       |
-|--------|------------------------|-----------------------|------------|
-| GET    | /api/categories        | Listar categorías     | ❌ Público |
-| GET    | /api/categories/{id}   | Detalle de categoría  | ❌ Público |
-| POST   | /api/categories        | Crear categoría       | ✅ ADMIN   |
-| PUT    | /api/categories/{id}   | Actualizar categoría  | ✅ ADMIN   |
-| DELETE | /api/categories/{id}   | Eliminar categoría    | ✅ ADMIN   |
-
-### Características (Features)
-
-| Método | Endpoint             | Descripción              | Auth       |
-|--------|----------------------|--------------------------|------------|
-| GET    | /api/features        | Listar características   | ❌ Público |
-| GET    | /api/features/{id}   | Detalle                  | ❌ Público |
-| POST   | /api/features        | Crear característica     | ✅ ADMIN   |
-| PUT    | /api/features/{id}   | Actualizar               | ✅ ADMIN   |
-| DELETE | /api/features/{id}   | Eliminar                 | ✅ ADMIN   |
-
-### Políticas
-
-| Método | Endpoint             | Descripción      | Auth       |
-|--------|----------------------|------------------|------------|
-| GET    | /api/policies        | Listar políticas | ❌ Público |
-| GET    | /api/policies/{id}   | Detalle          | ❌ Público |
-| POST   | /api/policies        | Crear política   | ✅ ADMIN   |
-| PUT    | /api/policies/{id}   | Actualizar       | ✅ ADMIN   |
-| DELETE | /api/policies/{id}   | Eliminar         | ✅ ADMIN   |
-
-### Favoritos
-
-| Método | Endpoint                      | Descripción                        | Auth           |
-|--------|-------------------------------|------------------------------------|----------------|
-| GET    | /api/favorites                | Mis favoritos                      | ✅ Autenticado |
-| POST   | /api/favorites/{lodgingId}    | Agregar a favoritos                | ✅ Autenticado |
-| DELETE | /api/favorites/{lodgingId}    | Quitar de favoritos                | ✅ Autenticado |
-
-### Reservas
-
-| Método | Endpoint                  | Descripción                        | Auth           |
-|--------|---------------------------|------------------------------------|----------------|
-| POST   | /api/reservations         | Crear reserva                      | ✅ Autenticado |
-| GET    | /api/reservations/{id}    | Detalle de reserva                 | ✅ Autenticado |
-| GET    | /api/reservations/my      | Mis reservas                       | ✅ Autenticado |
-| GET    | /api/reservations         | Todas las reservas                 | ✅ ADMIN       |
-| PATCH  | /api/reservations/{id}/cancel | Cancelar reserva propia (antes del check-in) | ✅ Autenticado |
-
-### Calificaciones
-
-| Método | Endpoint                          | Descripción              | Auth           |
-|--------|-----------------------------------|--------------------------|----------------|
-| POST   | /api/ratings                      | Calificar alojamiento    | ✅ Autenticado |
-| GET    | /api/ratings/lodging/{lodgingId}  | Calificaciones del alojamiento | ❌ Público |
-
-### Usuarios
-
-| Método | Endpoint               | Descripción                   | Auth     |
-|--------|------------------------|-------------------------------|----------|
-| GET    | /api/users             | Listar usuarios               | ✅ ADMIN |
-| PUT    | /api/users/{id}/role   | Cambiar rol de usuario        | ✅ ADMIN |
-
-### Imágenes
-
-| Método | Endpoint      | Descripción                      | Auth     |
-|--------|---------------|----------------------------------|----------|
-| POST   | /api/upload   | Subir imagen a Cloudinary        | ✅ ADMIN |
-
----
-
-## Testing
-
-### Backend (JUnit + Testcontainers)
-```bash
-cd backend
-./mvnw test
+npm ci
+npm run lint
+npm run format:check
+npm run coverage
 ```
 
-### E2E — Playwright (requiere backend y frontend corriendo)
+Los scripts disponibles están declarados en [`frontend/package.json`](frontend/package.json). `npm run format` modifica archivos; `npm run format:check` sólo verifica el formato.
+
+### E2E con Playwright
+
+Requiere backend y frontend corriendo, además de una base con los datos necesarios para el escenario:
+
 ```bash
 cd e2e
-npm install
+npm ci
+npx playwright install
 npx playwright test
 ```
 
-Reportes generados en `e2e/playwright-report/`.
+También podés ejecutar un proyecto específico con `npm run test:chrome`. La configuración usa `BASE_URL` y está en [`e2e/playwright.config.js`](e2e/playwright.config.js). Los reportes se generan en `e2e/playwright-report/`.
 
-El escenario de imágenes canónicas se habilita de forma local con:
+El escenario de imágenes canónicas requiere los masters externos y `CANONICAL_ASSETS_E2E=1`; el CI no los incluye porque esos JPEG permanecen fuera del repositorio.
 
-```bash
-CANONICAL_ASSETS_E2E=1 npx playwright test tests/canonical-lodging-images.spec.js --project=chromium
-```
+## Documentación y recorridos
 
-El CI genérico lo omite porque los archivos JPEG canónicos maestros permanecen fuera del repositorio.
+- [`product.md`](product.md): alcance funcional y recorridos académicos actuales.
+- [`docs/diseno/manual-identidad.md`](docs/diseno/manual-identidad.md): autoridad de identidad visual.
+- [`docs/markdown/sprint-4/academic-demo-guide.md`](docs/markdown/sprint-4/academic-demo-guide.md): guía de demostración académica.
+- [`docs/markdown/sprint-4/sprint-4-test-plan.md`](docs/markdown/sprint-4/sprint-4-test-plan.md): plan de pruebas del Sprint 4.
+- [`docs/markdown/sprint-4/sprint-4-report.md`](docs/markdown/sprint-4/sprint-4-report.md): reporte histórico del Sprint 4.
+- [`docs/markdown/project-definition.md`](docs/markdown/project-definition.md): definición y decisiones documentales del proyecto.
+- [`docs/markdown/backend-security-hardening/backend-security-hardening-report.md`](docs/markdown/backend-security-hardening/backend-security-hardening-report.md): decisiones y controles de seguridad documentados.
+- [`ops/mariadb/README.md`](ops/mariadb/README.md): backup y verificación de restore en un target aislado.
 
-El workflow de CI ejecuta los proyectos `chromium`, `firefox` y `mobile-chromium`. En Sprint 4, `mobile-chromium` cubre el shell responsive y el flujo de reservas en viewport móvil.
-
----
-
-## Documentación
-
-- `docs/diseno/` — manual de identidad visual y paleta de colores
-- `docs/markdown/project-definition.md` — definición del proyecto (alcance, roadmap, ADRs)
-- `docs/markdown/sprint-{1..4}/` — reporte y test plan de cada sprint
-- `docs/markdown/sprint-2/` — incluye el modelo de datos (`.mmd` / `.svg`)
-- `docs/entregables/` — PDFs de la definición del proyecto, reports y test plans
-
----
-
-## Sprints
-
-| Sprint   | Estado          | Descripción                                                                    |
-|----------|-----------------|--------------------------------------------------------------------------------|
-| Sprint 1 | ✅ Completado   | Base del sistema, catálogo de alojamientos, panel de administración            |
-| Sprint 2 | ✅ Completado   | Autenticación JWT, roles, categorías, Cloudinary                               |
-| Sprint 3 | ✅ Completado   | Búsqueda, favoritos, galería con modal viewer, CRUD policies, íconos Lucide    |
-| Sprint 4 | ✅ Completado   | Motor de reservas, historial, WhatsApp, email de confirmación, autenticación segura, cancelación de reservas, suite E2E y cobertura responsive/móvil de reservas |
-
-## Ramas
-
-- `main` — integración final
-- `sprint-1` — base del sistema (congelada)
-- `sprint-2` — auth + categorías (congelada)
-- `sprint-3` — búsqueda + favoritos (congelada)
-- `sprint-4` — reservas, autenticación segura, cancelación de reservas y E2E (congelada; integrada a `main` mediante el merge commit `8a3fd43`, PR #36)
-
----
-
-## Autor
-
-- [@GinoL221](https://github.com/GinoL221)
-
----
+La documentación fechada y los reportes de CI describen revisiones concretas; no deben interpretarse como evidencia de un entorno productivo actual sin una verificación nueva.
 
 ## Licencia
 
