@@ -34,7 +34,7 @@ Do not change `Home.jsx`, backend code, routes, UI copy, workflows, environment 
 
 - [x] Add the optional signal contract to the API and lodging service with focused red/green tests.
 - [x] Cancel and invalidate stale autocomplete requests with focused race, short-input, selection, and unmount tests.
-- [ ] Run focused and full frontend verification, record evidence, and complete the native review gate.
+- [x] Run focused and full frontend verification, record evidence, and complete the native review gate.
 
 ## Acceptance criteria
 
@@ -81,3 +81,5 @@ Do not change `Home.jsx`, backend code, routes, UI copy, workflows, environment 
 - `git diff --check` passed for the committed candidate and the pending evidence update.
 - LSP probing reported no diagnostics, but all six files remained unconfirmed because the server is silent on a clean re-check.
 - Browser, provider, and backend tests were not run because this unit changes only frontend request/autocomplete behavior and has no provider or backend boundary.
+- Signed verification evidence commit: `65180de3c86ef54a1d10730fe80a90f8c0bae819` (`test: record autocomplete cancellation verification`).
+- Native review `review-f5fbf4d629258310` approved and acknowledged target `sha256:42b734a0a11251a2166da32de8285f3cd071d06f8a6dcc561205d1e33903e1a4`; authority burned with `gentle-ai.review-acknowledged/v1`.
