@@ -48,7 +48,7 @@ class ReservationMigrationIntegrationTest {
                     .migrate()
                     .migrationsExecuted;
 
-            assertThat(migrationsExecuted).isEqualTo(1);
+            assertThat(migrationsExecuted).isEqualTo(2);
             assertThat(jdbcTemplate.queryForObject(
                     "SELECT notes FROM reservations WHERE id = 1", String.class)).isNull();
             assertThat(jdbcTemplate.queryForObject(

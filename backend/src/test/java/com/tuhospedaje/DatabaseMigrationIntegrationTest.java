@@ -212,7 +212,7 @@ class DatabaseMigrationIntegrationTest {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
 assertThat(probeJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(8);
+                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(9);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories", Integer.class)).isEqualTo(6);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM features", Integer.class)).isEqualTo(8);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM policies", Integer.class)).isEqualTo(6);
@@ -348,7 +348,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .locations("classpath:db/migration")
                     .load();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(7);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(8);
 
             JdbcTemplate independentJdbcTemplate = new JdbcTemplate(
                     new org.springframework.jdbc.datasource.DriverManagerDataSource(
@@ -363,6 +363,21 @@ assertThat(probeJdbcTemplate.queryForObject(
                       AND column_name IN ('price_per_night', 'max_guests')
                       AND is_nullable = 'NO'
                     """, Integer.class)).isEqualTo(2);
+            assertThat(independentJdbcTemplate.queryForList("""
+                    SELECT column_name
+                    FROM information_schema.statistics
+                    WHERE table_schema = DATABASE()
+                      AND table_name = 'users'
+                      AND index_name = 'IX_users_role_enabled_id'
+                    ORDER BY seq_in_index
+                    """, String.class)).containsExactly("role", "enabled", "id");
+            assertThat(independentJdbcTemplate.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_schema = DATABASE() AND table_name = 'admin_invariant_lock'
+                    """, Integer.class)).isEqualTo(1);
+            assertThat(independentJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM admin_invariant_lock WHERE id = 1", Integer.class)).isEqualTo(1);
 
             try (ConfigurableApplicationContext context = new SpringApplicationBuilder(BackendApplication.class)
                     .properties("spring.main.web-application-type=none")
@@ -407,7 +422,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                     .locations("classpath:db/migration")
                     .load()
-                    .migrate().migrationsExecuted).isEqualTo(5);
+                    .migrate().migrationsExecuted).isEqualTo(6);
 
             assertLodgingPriceAndCapacity(template, "both-missing@example.com", "190.00", 4);
             assertLodgingPriceAndCapacity(template, "capacity-missing@example.com", "250.75", 4);
