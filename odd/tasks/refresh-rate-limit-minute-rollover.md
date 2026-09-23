@@ -17,7 +17,7 @@ Do not change production rate-limit behavior, clocks, session/JWT configuration,
 ## Tasks
 
 - [x] Add bounded attempt headroom to the valid-credential IP-ceiling test and preserve fresh-family isolation.
-- [ ] Run focused/full backend verification, record evidence, and complete the native review gate.
+- [x] Run focused/full backend verification, record evidence, and complete the native review gate.
 
 ## Acceptance criteria
 
@@ -52,4 +52,7 @@ Do not change production rate-limit behavior, clocks, session/JWT configuration,
 - User-authorized verification with a generated process-only `JWT_SECRET` passed 664/664 tests, generated the JaCoCo report for 86 classes, and passed all coverage checks.
 - Full `git diff --check HEAD` passed and the working tree was clean.
 - LSP reported no diagnostics but was inconclusive because the Java server is silent on clean re-checks.
+- Verification evidence commit: `2ebaa04aad4387f1c271ee16bb568cb4b26d4e6b` (`docs: record refresh rollover verification`). GPG again failed with `Vida máxima`; the user explicitly authorized this commit without a signature.
+- Native review `review-59a14d739f4f324e` approved and acknowledged target `sha256:4961f1c926f410b968c1c66888d68c19a7155f1187532a14d3870d95b72ec33b`.
+- Review advisories `R2-bounded-window-assumption`, `R3-minute-rollover-bound`, and `R4-minute-rollover-third-window` are informational and all describe the documented three-or-more-window residual risk; no correction was opened.
 - Residual risk: the bounded guarantee does not cover execution spanning three or more minute windows.
