@@ -1,7 +1,7 @@
 # Admin dashboard native stat buttons
 
 - [x] Convert stat cards to native buttons with focused click, Enter, and Space tests while preserving layout styles.
-- [ ] Run focused/full frontend verification, record evidence, and complete the native review gate.
+- [x] Run focused/full frontend verification, record evidence, and complete the native review gate.
 
 ## Evidence
 
@@ -11,4 +11,6 @@
 - Signed work-unit commit: `af82ffc359657b84df7f3e232a7288ac38057dcc`.
 - ESLint passed; full frontend suite passed 630/630 tests across 66 files.
 - LSP reported zero diagnostics in the two changed JavaScript files; full diff check passed.
-- Browser visual verification remains pending/not run.
+- Signed verification commit: `f4eff6d607829143712b55acf1d029023867f71c`.
+- Native review `review-209db0865746dd3d` approved and acknowledged target `sha256:737c0f613bfa50adb63b0d2635d1ae6a7c8e9b154859aaf2124c00db69c3e5f5`.
+- Browser visual verification was not run.
