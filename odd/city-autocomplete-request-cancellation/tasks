@@ -1,11 +1,12 @@
 # City autocomplete request cancellation
 
 - [x] Add the optional signal contract to the API and lodging service with focused red/green tests.
-- [ ] Cancel and invalidate stale autocomplete requests with focused race, short-input, selection, and unmount tests.
+- [x] Cancel and invalidate stale autocomplete requests with focused race, short-input, selection, and unmount tests.
 - [ ] Run focused and full frontend verification, record evidence, and complete the native review gate.
 
 ## Evidence
 
 - Request signal contract: RED observed in three focused assertions; GREEN and independent verification passed 52/52 tests.
 - GET preserves caller `AbortError`, deadline timeouts retain their message, 401 retry remains signal-connected, and `getCities` forwards the optional signal.
-- Focused `git diff --check` passed; no packages were installed.
+- Focused `git diff --check` passed; signed work-unit commit `df90417880858064a748a453c86659d2814441c0`; no packages were installed.
+- Autocomplete lifecycle: 11/11 focused hook tests and independent diff review passed, including stale resolution after abort, short input, selection, unmount, cancellation silence, and loading ownership.

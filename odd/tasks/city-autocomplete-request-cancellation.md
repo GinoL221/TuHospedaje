@@ -33,7 +33,7 @@ Do not change `Home.jsx`, backend code, routes, UI copy, workflows, environment 
 ## Tasks
 
 - [x] Add the optional signal contract to the API and lodging service with focused red/green tests.
-- [ ] Cancel and invalidate stale autocomplete requests with focused race, short-input, selection, and unmount tests.
+- [x] Cancel and invalidate stale autocomplete requests with focused race, short-input, selection, and unmount tests.
 - [ ] Run focused and full frontend verification, record evidence, and complete the native review gate.
 
 ## Acceptance criteria
@@ -62,4 +62,12 @@ Do not change `Home.jsx`, backend code, routes, UI copy, workflows, environment 
 - GREEN: `npm --prefix frontend test -- src/services/api.test.js src/services/lodgingService.test.js` passed 52/52 tests.
 - Independent verification confirmed one-argument compatibility, caller-abort distinction, deadline timeout preservation, signal continuity across 401 refresh/retry, and `getCities` forwarding.
 - `git diff --check` passed for the four task paths.
+- Signed work-unit commit: `df90417880858064a748a453c86659d2814441c0` (`fix: propagate request cancellation signals`).
 - The worktree reuses the root frontend dependency installation through a local ignored symlink only after verifying identical `package-lock.json` hashes; no packages were installed.
+
+### Autocomplete lifecycle
+
+- Focused hook verification passed 11/11 tests.
+- The tests cover out-of-order deferred responses, a transport that resolves after abort, active-request cancellation for short input/selection/unmount, cancellation silence, and loading ownership.
+- Independent diff review confirmed one active request, current-request identity guards, preserved debounce/blur/selection/keyboard behavior, and unchanged real-error empty-list behavior.
+- `git diff --check` passed for the hook and its tests.
