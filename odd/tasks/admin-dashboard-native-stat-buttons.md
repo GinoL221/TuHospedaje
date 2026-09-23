@@ -50,4 +50,8 @@ Do not change API calls, dashboard data loading, tab identifiers, other Admin co
 - Tests confirm native button semantics and exactly one expected tab callback for click, Enter, and Space.
 - Independent diff review confirmed `type="button"`, removal of manual role/tabIndex/keydown behavior, unchanged mappings/children, and a four-declaration CSS reset.
 - Focused `git diff --check` passed.
+- Signed work-unit commit: `af82ffc359657b84df7f3e232a7288ac38057dcc` (`fix: use native admin stat buttons`).
+- Full frontend verification: ESLint passed; 66 files and 630 tests passed.
+- LSP diagnostics: two changed JavaScript files clean with zero diagnostics.
+- Full `git diff --check HEAD` passed.
 - No real-browser or pixel-level visual verification has been run.
