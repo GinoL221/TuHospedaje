@@ -42,6 +42,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
     private String adminAuthHeader;
     private String userAuthHeader;
+    private Long adminId;
     private Long regularUserId;
 
     @BeforeEach
@@ -56,6 +57,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
 
         User savedAdmin = userRepository.save(admin);
         adminAuthHeader = jwtService.generateToken(savedAdmin);
+        adminId = savedAdmin.getId();
 
         User regularUser = User.builder()
                 .firstName("Regular")
@@ -107,6 +109,45 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(regularUserId))
                 .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
+
+    @Test
+    void shouldRejectDemotingTheOnlyEnabledAdminWithStableConflictResponse() throws Exception {
+        RoleRequest request = new RoleRequest();
+        request.setRole("USER");
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/users/{id}/role", adminId)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.code").value("last_enabled_admin"))
+                .andExpect(jsonPath("$.error").value("At least one enabled administrator must remain."));
+
+        assertThat(userRepository.findById(adminId).orElseThrow().getRole()).isEqualTo(RoleEnum.ADMIN);
+    }
+
+    @Test
+    void shouldRejectDisablingTheOnlyEnabledAdminWithStableConflictResponse() throws Exception {
+        UserStatusRequest request = new UserStatusRequest(false);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(patch("/api/users/{id}/enabled", adminId)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.code").value("last_enabled_admin"))
+                .andExpect(jsonPath("$.error").value("At least one enabled administrator must remain."));
+
+        assertThat(userRepository.findById(adminId).orElseThrow().isEnabled()).isTrue();
     }
 
     @Test
