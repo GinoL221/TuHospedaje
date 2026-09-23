@@ -71,3 +71,13 @@ Do not change `Home.jsx`, backend code, routes, UI copy, workflows, environment 
 - The tests cover out-of-order deferred responses, a transport that resolves after abort, active-request cancellation for short input/selection/unmount, cancellation silence, and loading ownership.
 - Independent diff review confirmed one active request, current-request identity guards, preserved debounce/blur/selection/keyboard behavior, and unchanged real-error empty-list behavior.
 - `git diff --check` passed for the hook and its tests.
+- Signed work-unit commit: `02d87d968b1d431fe2381b3766850f07b49a8ad0` (`fix: cancel stale city autocomplete requests`).
+
+### Final verification
+
+- Focused candidate tests passed 63/63 across the API, lodging service, and autocomplete hook suites.
+- Full frontend tests passed 629/629 across 66 files.
+- Frontend ESLint passed with no findings.
+- `git diff --check` passed for the committed candidate and the pending evidence update.
+- LSP probing reported no diagnostics, but all six files remained unconfirmed because the server is silent on a clean re-check.
+- Browser, provider, and backend tests were not run because this unit changes only frontend request/autocomplete behavior and has no provider or backend boundary.
