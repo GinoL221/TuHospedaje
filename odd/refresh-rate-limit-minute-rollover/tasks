@@ -9,4 +9,7 @@
 - The test now uses 12 bounded attempts; across at most two minute windows, one bucket must receive the blocking sixth hit.
 - Fresh valid user/family isolation remains per attempt on one IP.
 - Writer and independent focused verification each passed 8/8 tests; focused diff checks passed.
+- Work-unit commit `0bb4affb5310b6b5a40e621caf4735b68b33e4ab` is intentionally unsigned after explicit user authorization following GPG `Vida máxima`.
+- Full verification with a generated process-only `JWT_SECRET` passed 664/664 tests and all JaCoCo coverage checks across 86 analyzed classes.
+- Full diff check passed; LSP returned no findings but could not confirm a clean Java re-check.
 - Three-or-more-window execution remains outside the bounded guarantee.

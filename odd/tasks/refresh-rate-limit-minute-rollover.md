@@ -47,4 +47,9 @@ Do not change production rate-limit behavior, clocks, session/JWT configuration,
 - Each attempt keeps IP `10.2.1.9` and creates a distinct valid user/family.
 - Focused class passed 8/8 tests with zero failures, errors, or skips after the user-authorized cleanup of a corrupted generated `backend/target` class.
 - Independent verification repeated 8/8 focused tests, confirmed a test-only 10-addition/3-deletion diff, and passed focused `git diff --check`.
+- Work-unit commit: `0bb4affb5310b6b5a40e621caf4735b68b33e4ab` (`test: tolerate refresh rate-limit rollover`). GPG failed with `Vida máxima`; the user explicitly authorized this commit without a signature.
+- The first full-suite attempt ran 664 tests but ended with four configuration errors because `JWT_SECRET` was absent; no test assertion failed.
+- User-authorized verification with a generated process-only `JWT_SECRET` passed 664/664 tests, generated the JaCoCo report for 86 classes, and passed all coverage checks.
+- Full `git diff --check HEAD` passed and the working tree was clean.
+- LSP reported no diagnostics but was inconclusive because the Java server is silent on clean re-checks.
 - Residual risk: the bounded guarantee does not cover execution spanning three or more minute windows.
