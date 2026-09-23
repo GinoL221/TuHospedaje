@@ -44,7 +44,10 @@ describe("useCityAutocomplete", () => {
 		expect(result.current.showSuggestions).toBe(false);
 
 		await advanceDebounce();
-		expect(getCities).toHaveBeenCalledWith("Ba");
+		expect(getCities).toHaveBeenCalledWith(
+			"Ba",
+			expect.objectContaining({ signal: expect.any(AbortSignal) }),
+		);
 		expect(result.current.loadingCities).toBe(true);
 		expect(result.current.showSuggestions).toBe(true);
 
@@ -108,6 +111,124 @@ describe("useCityAutocomplete", () => {
 			await vi.advanceTimersByTimeAsync(200);
 		});
 		expect(getCities).not.toHaveBeenCalled();
+	});
+
+	it("ignores an older request that resolves after the current request", async () => {
+		const first = deferred();
+		const second = deferred();
+		getCities
+			.mockReturnValueOnce(first.promise)
+			.mockReturnValueOnce(second.promise);
+		const { result } = renderHook(() => useCityAutocomplete());
+
+		act(() => result.current.handleCityChange("Ba"));
+		await advanceDebounce();
+		const firstSignal = getCities.mock.calls[0][1].signal;
+
+		act(() => result.current.handleCityChange("Bar"));
+		await advanceDebounce();
+		expect(firstSignal.aborted).toBe(true);
+
+		await act(async () => {
+			second.resolve(["Bariloche"]);
+			await second.promise;
+		});
+		expect(result.current.suggestions).toEqual(["Bariloche"]);
+		expect(result.current.loadingCities).toBe(false);
+
+		await act(async () => {
+			first.resolve(["Buenos Aires"]);
+			await first.promise;
+		});
+		expect(result.current.suggestions).toEqual(["Bariloche"]);
+		expect(result.current.loadingCities).toBe(false);
+	});
+
+	it("aborts an active request when city input becomes too short", async () => {
+		const pending = deferred();
+		getCities.mockReturnValueOnce(pending.promise);
+		const { result } = renderHook(() => useCityAutocomplete());
+
+		act(() => result.current.handleCityChange("Ba"));
+		await advanceDebounce();
+		const signal = getCities.mock.calls[0][1].signal;
+
+		act(() => result.current.handleCityChange("B"));
+		expect(signal.aborted).toBe(true);
+		expect(result.current.loadingCities).toBe(false);
+
+		await act(async () => {
+			pending.resolve(["Buenos Aires"]);
+			await pending.promise;
+		});
+		expect(result.current.suggestions).toEqual([]);
+		expect(result.current.loadingCities).toBe(false);
+	});
+
+	it("aborts an active request when selecting a city", async () => {
+		const pending = deferred();
+		getCities.mockReturnValueOnce(pending.promise);
+		const { result } = renderHook(() => useCityAutocomplete());
+
+		act(() => result.current.handleCityChange("Ba"));
+		await advanceDebounce();
+		const signal = getCities.mock.calls[0][1].signal;
+
+		act(() => result.current.selectCity("Bariloche"));
+		expect(signal.aborted).toBe(true);
+		expect(result.current.city).toBe("Bariloche");
+		expect(result.current.loadingCities).toBe(false);
+	});
+
+	it("aborts an active request on unmount", async () => {
+		const pending = deferred();
+		getCities.mockReturnValueOnce(pending.promise);
+		const { result, unmount } = renderHook(() => useCityAutocomplete());
+
+		act(() => result.current.handleCityChange("Ba"));
+		await advanceDebounce();
+		const signal = getCities.mock.calls[0][1].signal;
+
+		unmount();
+		expect(signal.aborted).toBe(true);
+	});
+
+	it("keeps retained suggestions and loading ownership when cancellation rejects", async () => {
+		getCities.mockResolvedValueOnce(["Bariloche"]);
+		const cancelled = deferred();
+		const current = deferred();
+		getCities
+			.mockReturnValueOnce(cancelled.promise)
+			.mockReturnValueOnce(current.promise);
+		const { result } = renderHook(() => useCityAutocomplete());
+
+		act(() => result.current.handleCityChange("Ba"));
+		await advanceDebounce();
+		await act(async () => {});
+		act(() => result.current.activateSuggestion(0));
+
+		act(() => result.current.handleCityChange("Bar"));
+		await advanceDebounce();
+		act(() => result.current.handleCityChange("Bari"));
+		await advanceDebounce();
+
+		await act(async () => {
+			cancelled.reject(new DOMException("Aborted", "AbortError"));
+			await cancelled.promise.catch(() => {});
+		});
+		expect(result.current.suggestions).toEqual(["Bariloche"]);
+		expect(result.current.activeSuggestionIndex).toBe(-1);
+		expect(result.current.loadingCities).toBe(true);
+
+		await act(async () => {
+			current.resolve(["Bariloche", "Bariloche Centro"]);
+			await current.promise;
+		});
+		expect(result.current.suggestions).toEqual([
+			"Bariloche",
+			"Bariloche Centro",
+		]);
+		expect(result.current.loadingCities).toBe(false);
 	});
 
 	it("selects cities and resets the active option", () => {

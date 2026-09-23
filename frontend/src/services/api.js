@@ -54,17 +54,22 @@ export async function bootstrapCsrf() {
  */
 async function fetchWithDeadline(url, config, externalSignal) {
 	const controller = new AbortController();
-	const abortFromCaller = () => controller.abort();
+	let abortedByCaller = false;
+	const abortFromCaller = () => {
+		if (!controller.signal.aborted) {
+			abortedByCaller = true;
+			controller.abort();
+		}
+	};
 	externalSignal?.addEventListener("abort", abortFromCaller, { once: true });
-	if (externalSignal?.aborted) controller.abort();
+	if (externalSignal?.aborted) abortFromCaller();
 
 	const deadline = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 	try {
 		return await fetch(url, { ...config, signal: controller.signal });
 	} catch (err) {
-		// AbortError is the browser's word for it, not something to show a person — but it
-		// stays attached as `cause` so a debugger can still see what actually happened.
 		if (err?.name === "AbortError") {
+			if (abortedByCaller) throw err;
 			throw new Error(TIMEOUT_MESSAGE, { cause: err });
 		}
 		throw err;
@@ -138,8 +143,8 @@ async function request(
 	}
 }
 
-export function get(endpoint) {
-	return request("GET", endpoint);
+export function get(endpoint, { signal } = {}) {
+	return request("GET", endpoint, undefined, false, { signal });
 }
 
 export function post(endpoint, data) {

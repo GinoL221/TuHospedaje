@@ -12,6 +12,13 @@ export default function useCityAutocomplete() {
 	const [loadingCities, setLoadingCities] = useState(false);
 	const debounceRef = useRef();
 	const skipSearchForCityRef = useRef(null);
+	const activeRequestRef = useRef(null);
+
+	function invalidateActiveRequest() {
+		const activeRequest = activeRequestRef.current;
+		activeRequestRef.current = null;
+		activeRequest?.controller.abort();
+	}
 
 	useEffect(() => {
 		clearTimeout(debounceRef.current);
@@ -25,41 +32,60 @@ export default function useCityAutocomplete() {
 		if (city.length < 2) return;
 
 		debounceRef.current = setTimeout(() => {
+			const request = { controller: new AbortController() };
+			activeRequestRef.current = request;
 			setLoadingCities(true);
 			setShowSuggestions(true);
-			getCities(city)
+			getCities(city, { signal: request.controller.signal })
 				.then((data) => {
+					if (activeRequestRef.current !== request) return;
+					activeRequestRef.current = null;
 					setSuggestions(Array.isArray(data) ? data : []);
 					setActiveSuggestionIndex(-1);
 					setLoadingCities(false);
 				})
-				.catch(() => {
+				.catch((error) => {
+					if (activeRequestRef.current !== request) return;
+					activeRequestRef.current = null;
+					if (
+						request.controller.signal.aborted ||
+						error?.name === "AbortError"
+					) {
+						setLoadingCities(false);
+						return;
+					}
 					setSuggestions([]);
 					setActiveSuggestionIndex(-1);
 					setLoadingCities(false);
 				});
 		}, DEBOUNCE_MS);
 
-		return () => clearTimeout(debounceRef.current);
+		return () => {
+			clearTimeout(debounceRef.current);
+			invalidateActiveRequest();
+		};
 	}, [city]);
 
 	function handleCityChange(value) {
+		invalidateActiveRequest();
 		skipSearchForCityRef.current = null;
 		setCity(value);
 		setActiveSuggestionIndex(-1);
+		setLoadingCities(false);
 		if (value.length < 2) {
 			setSuggestions([]);
 			setShowSuggestions(false);
-			setLoadingCities(false);
 		}
 	}
 
 	function selectCity(value) {
 		clearTimeout(debounceRef.current);
+		invalidateActiveRequest();
 		skipSearchForCityRef.current = value;
 		setCity(value);
 		setShowSuggestions(false);
 		setActiveSuggestionIndex(-1);
+		setLoadingCities(false);
 	}
 
 	function handleCityFocus() {

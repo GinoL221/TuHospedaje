@@ -135,6 +135,17 @@ describe("lodgingService - getCities", () => {
 
 		expect(get).toHaveBeenCalledWith("/lodgings/cities?q=San%20Mart%C3%ADn");
 	});
+
+	it("forwards the caller signal to the API client", async () => {
+		get.mockResolvedValue([]);
+		const controller = new AbortController();
+
+		await getCities("Ba", { signal: controller.signal });
+
+		expect(get).toHaveBeenCalledWith("/lodgings/cities?q=Ba", {
+			signal: controller.signal,
+		});
+	});
 });
 
 describe("lodgingService - getRecommendations", () => {
