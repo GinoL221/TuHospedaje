@@ -380,6 +380,53 @@ describe("api service - 401 unauthorized", () => {
 		window.removeEventListener("auth:unauthorized", eventSpy);
 	});
 
+	it("keeps the caller signal connected across a successful refresh-and-retry", async () => {
+		const controller = new AbortController();
+		const addAbortListener = vi.spyOn(controller.signal, "addEventListener");
+		let lodgingsAttempts = 0;
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: async () => ({}),
+				});
+			}
+			lodgingsAttempts += 1;
+			return Promise.resolve(
+				lodgingsAttempts === 1
+					? { ok: false, status: 401, json: async () => ({}) }
+					: { ok: true, status: 200, json: async () => ({ data: 1 }) },
+			);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		await expect(
+			get("/lodgings", { signal: controller.signal }),
+		).resolves.toEqual({
+			data: 1,
+		});
+
+		expect(lodgingsAttempts).toBe(2);
+		expect(addAbortListener).toHaveBeenCalledTimes(2);
+		expect(addAbortListener).toHaveBeenNthCalledWith(
+			1,
+			"abort",
+			expect.any(Function),
+			{
+				once: true,
+			},
+		);
+		expect(addAbortListener).toHaveBeenNthCalledWith(
+			2,
+			"abort",
+			expect.any(Function),
+			{
+				once: true,
+			},
+		);
+	});
+
 	it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized", async () => {
 		const fetchMock = vi.fn().mockResolvedValue({
 			ok: false,
@@ -566,6 +613,21 @@ describe("api service - request timeout", () => {
 		expect(config.signal).toBeInstanceOf(AbortSignal);
 	});
 
+	it("forwards a caller signal through GET requests", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("fetch", neverAnswers());
+		const controller = new AbortController();
+
+		const pending = get("/lodgings", { signal: controller.signal });
+		const assertion = expect(pending).rejects.toMatchObject({
+			name: "AbortError",
+		});
+		controller.abort();
+		await vi.advanceTimersByTimeAsync(60_000);
+
+		await assertion;
+	});
+
 	it("rejects with a user-facing message when the backend never answers", async () => {
 		vi.useFakeTimers();
 		vi.stubGlobal("fetch", neverAnswers());
@@ -588,7 +650,7 @@ describe("api service - request timeout", () => {
 		await assertion;
 	});
 
-	it("cancels a multipart upload when its caller aborts", async () => {
+	it("keeps caller-requested aborts distinguishable from deadline timeouts", async () => {
 		vi.stubGlobal("fetch", neverAnswers());
 		const controller = new AbortController();
 		const formData = new FormData();
@@ -602,7 +664,7 @@ describe("api service - request timeout", () => {
 		});
 		controller.abort();
 
-		await expect(pending).rejects.toThrow(/tard(ó|o) demasiado/i);
+		await expect(pending).rejects.toMatchObject({ name: "AbortError" });
 	});
 
 	/** The deadline must be cleared on a normal response, not left armed. */

@@ -29,8 +29,9 @@ export function searchLodgings(params) {
 	return get(`/lodgings/search${query}`);
 }
 
-export function getCities(query) {
-	return get(`/lodgings/cities?q=${encodeURIComponent(query)}`);
+export function getCities(query, { signal } = {}) {
+	const endpoint = `/lodgings/cities?q=${encodeURIComponent(query)}`;
+	return signal ? get(endpoint, { signal }) : get(endpoint);
 }
 
 // Fixed page size of 8 fills two desktop rows of four cards; the backend
