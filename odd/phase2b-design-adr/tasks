@@ -15,5 +15,6 @@
 - ADR 4.6 names Lucide as the current direction and classifies legacy icon mechanisms as implementation debt.
 - DESIGN preserves the manual's `1x` logo rule and marks fixed `8px` spacing as pending visual verification.
 - Exact four-path scope, links, cross-document checks, and `git diff --check` passed; no application tests were run.
-- Work-unit commit: `7dd0019360ea35fa6c1b3821926c756527566649` (`docs: reconcile design and architecture records`), based directly on `c6f50499`.
-- Native review lineage `review-e011ea2442869f17` approved and acknowledged for target `sha256:69b4133b224f98ac4e036511e3f74e1faaee6cf7453d9c1df4594486af9c268c`; authority burned with `gentle-ai.review-acknowledged/v1`.
+- Signed commits: `9de07252a204a63330337550a7e9d15f663a4172` and `02e89082cedaa43298c8c4ac87797c3862f45e68`; final candidate tree preserved byte-for-byte.
+- Final native review `review-7db9d2078e98b40c` approved and acknowledged target `sha256:c4b0022effc11e5459d627febd56fd37a752e0b4656f63c02dd3ae0aeb77a282`; `R3-stale-review-target` remained informational/non-blocking.
+- Publication revalidation against `origin/main` `87f679b0fd2e11540d1a3168a78ea402b8dd7e1c`: disjoint/no-conflict, seven links resolved, identity manual unchanged, content assertions and `git diff --check` passed.

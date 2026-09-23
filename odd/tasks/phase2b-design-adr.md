@@ -22,8 +22,9 @@ Reconcile `DESIGN.md` and the current architecture/ADR document `docs/markdown/p
 - Corrected the DESIGN logo status: the manual's proportional `1x` clear-space rule remains normative, while the current fixed `8px` spacing is recorded as pending visual verification rather than equivalent compliance.
 - Read-only verification passed: exact four-path scope, relative links, bilingual dark-mode checks, ADR 4.6 direction, DESIGN authority/status checks, administrative-table status, and `git diff --check`.
 - No source, test, workflow, Compose, historical report, audit, product, identity-manual, PDF, `.env`, or `.env.example` file was modified or read for secrets. Application tests were intentionally out of scope.
-- Work-unit commit: `7dd0019360ea35fa6c1b3821926c756527566649` (`docs: reconcile design and architecture records`), based directly on `c6f50499`.
-- Native review lineage `review-e011ea2442869f17` approved and acknowledged for target `sha256:69b4133b224f98ac4e036511e3f74e1faaee6cf7453d9c1df4594486af9c268c`; authority burned with `gentle-ai.review-acknowledged/v1`.
+- Signed commit sequence, based directly on `c6f50499`: `9de07252a204a63330337550a7e9d15f663a4172` (`docs: reconcile design and architecture records`) and `02e89082cedaa43298c8c4ac87797c3862f45e68` (`docs: record design ADR evidence`). Signing preserved the final candidate tree byte-for-byte.
+- Final native review lineage `review-7db9d2078e98b40c` approved and acknowledged target `sha256:c4b0022effc11e5459d627febd56fd37a752e0b4656f63c02dd3ae0aeb77a282`; `R3-stale-review-target` remained informational and non-blocking.
+- Publication revalidation against `origin/main` `87f679b0fd2e11540d1a3168a78ea402b8dd7e1c`: clean/disjoint four-path diff, no merge conflict, seven relative links resolved, identity manual unchanged, content assertions passed, and `git diff --check` passed.
 
 ## Acceptance criteria
 
