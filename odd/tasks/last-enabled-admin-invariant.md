@@ -32,8 +32,8 @@ The initial design locked only the mutable enabled-admin set. A deterministic Ma
 - [x] Add the stable coordination row, Flyway index, pessimistic repository queries, domain exception, handler/messages, OpenAPI response, and service guard.
 - [x] Preserve valid disable-session revocation and prove rejected/no-op operations do not revoke sessions or emit disable events.
 - [x] Run focused unit and integration tests, the backend verification suite, migration checks, and static diagnostics. Independent verification passed 664 tests, JaCoCo coverage, and `git diff --check`; LSP reported no findings but all 12 files were inconclusive because the server cannot confirm a clean re-check.
-- [ ] Commit the coherent implementation and tests as one Conventional Commit work unit.
-- [ ] Run the native review gate for the exact commit and record final evidence without pushing or cleaning worktrees.
+- [x] Commit the coherent implementation and tests as one Conventional Commit work unit: `6494757aed560e81d964ec91790dd0ba79389c44` (`fix: preserve at least one enabled admin`). The user-authorized history rewrite successfully signed the commit with GPG.
+- [x] Run the native review gate for the exact commit and record final evidence without pushing or cleaning worktrees. Review `review-95093ba400a47900` approved and acknowledged target `sha256:45a183e55216d69d66f7d79f71d7068e71fcb3064831a40cc587c505b428f20b`.
 
 ## Acceptance criteria
 
@@ -53,6 +53,15 @@ The initial design locked only the mutable enabled-admin set. A deterministic Ma
 - Focused concurrency test: `./mvnw -Dtest=UserAdminInvariantConcurrencyIntegrationTest test`.
 - Backend suite: `./mvnw -B verify`.
 - `git diff --check`, LSP diagnostics, exact-scope inspection, and native review.
+
+## Evidence
+
+- Focused final verification: 31 tests passed.
+- Independent backend verification: 664 tests passed with zero failures/errors/skips; JaCoCo passed.
+- `git diff --check`: passed.
+- LSP: no findings returned; all 12 queried Java files remained inconclusive because the server cannot affirm a clean re-check.
+- Native review: approved and acknowledgement burned for `review-95093ba400a47900`.
+- Push/merge/cleanup: not performed.
 
 ## Delivery
 

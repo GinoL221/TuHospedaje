@@ -6,5 +6,5 @@
 - [x] Add the stable coordination row, Flyway index, pessimistic repository queries, domain exception, handler/messages, OpenAPI response, and service guard.
 - [x] Preserve valid disable-session revocation and prove rejected/no-op operations do not revoke sessions or emit disable events.
 - [x] Run focused tests and independent verification: 664 tests, JaCoCo, and diff-check passed; LSP had no findings but could not confirm clean files.
-- [ ] Commit the coherent implementation and tests as one Conventional Commit work unit under the user-authorized ~629-line size exception.
-- [ ] Run the native review gate for the exact commit and record final evidence without pushing or cleaning worktrees.
+- [x] Commit the coherent implementation and tests under the authorized size exception: `6494757aed560e81d964ec91790dd0ba79389c44` (GPG signed).
+- [x] Complete native review `review-95093ba400a47900`: approved and acknowledged; no push or cleanup performed.
