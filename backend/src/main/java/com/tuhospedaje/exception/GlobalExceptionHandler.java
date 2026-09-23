@@ -189,6 +189,15 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", resolveMessage("error.optimistic_lock", locale), "status", 409));
     }
 
+    @ExceptionHandler(LastEnabledAdminException.class)
+    public ResponseEntity<Map<String, Object>> handleLastEnabledAdmin(LastEnabledAdminException ex, Locale locale) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", resolveMessage("error.user.last_enabled_admin", locale),
+                        "status", 409,
+                        "code", LastEnabledAdminException.ERROR_CODE));
+    }
+
     @ExceptionHandler(PessimisticLockingFailureException.class)
     public ResponseEntity<Map<String, Object>> handlePessimisticLock(PessimisticLockingFailureException ex, Locale locale) {
         log.warn("Pessimistic lock contention: {}", ex.getMessage());

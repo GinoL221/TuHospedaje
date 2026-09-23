@@ -1,0 +1,18 @@
+# Phase 2B documentation index tasks
+
+- [x] Create `docs/README.md` with a concise navigation purpose and a non-normative index disclaimer.
+- [x] Document the source-of-truth hierarchy and distinguish normative guidance, technical guidance, historical reports, and revision-bound evidence.
+- [x] Link to current scope, design authority, architecture/ADR context, compliance evidence, audits, migrations, Sprint materials, and deliverable PDFs using valid repository-relative paths.
+- [x] Call out evidence boundaries without claiming Mailtrap delivery, canonical JPEG publication, production backup/restore, dark-mode support, or current CI beyond the cited revision.
+- [x] Validate links and Markdown structure without reading or requiring `.env` or backend secrets.
+- [x] Review the focused diff and record the exact validation evidence.
+
+## Evidence
+
+- `docs/README.md` contains the authority hierarchy, navigation categories, historical/evidence boundaries, and external Digital House PDF qualification.
+- All relative Markdown, PDF, and directory links introduced by the index resolve in the candidate tree.
+- Scope verification found only the three intended paths: `docs/README.md`, `odd/tasks/phase2b-docs-index.md`, and `odd/phase2b-docs-index/tasks`.
+- `git diff --check` passed.
+- Signed commits: `e4b3bb53cdb608a7bf64e57ce97d64e742652bc6`, `1700a6b8f5fc558b139161e390da524aafbf20a1`, and `dfc47f7654ab71b166ccfd54f799637dcd1a8e0c`; final candidate tree preserved byte-for-byte.
+- Final native review `review-6c1950e1bff8db77` approved and acknowledged the exact three-path candidate; `R3-stale-review-provenance` remained informational/non-blocking.
+- Publication revalidation against `origin/main` `e4f5da9a3ee9f45bd0194984a7b50a62d688991a`: disjoint/no-conflict, 37 links (29 unique targets) resolved, content assertions and `git diff --check` passed.

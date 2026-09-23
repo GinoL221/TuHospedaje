@@ -58,7 +58,8 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Validation error — role field is missing or blank", content = @Content),
             @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token", content = @Content),
             @ApiResponse(responseCode = "403", description = "Authenticated user does not have ADMIN role", content = @Content),
-            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content)
+            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content),
+            @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be demoted", content = @Content)
     })
     @PutMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
@@ -78,7 +79,8 @@ public class UserController {
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
             @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token", content = @Content),
             @ApiResponse(responseCode = "403", description = "Authenticated user does not have ADMIN role", content = @Content),
-            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content)
+            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content),
+            @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be disabled", content = @Content)
     })
     @PatchMapping("/{id}/enabled")
     @PreAuthorize("hasRole('ADMIN')")
