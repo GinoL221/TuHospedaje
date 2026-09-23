@@ -34,8 +34,9 @@ Do not modify the root `README.md`, `frontend/README.md`, `DESIGN.md`, `docs/mar
 - `git status --short` shows only `docs/README.md`, `odd/tasks/phase2b-docs-index.md`, and `odd/phase2b-docs-index/tasks` as intended untracked paths.
 - `git diff --check` passed.
 - No `.env` or backend secret was inspected; application tests were not required for this documentation-only unit.
-- Clean candidate work-unit commit: `c7026dbf89b789ec538f7d4dd64f44717d99a74d` (`docs: add documentation index`), based directly on `c6f50499`.
-- Native review lineage `review-23fd8a2a67f75c89` approved and acknowledged for the final exact three-path candidate `sha256:21dc64f36a55d6ff9751f9c377782b861d2f856d0a936354cdd68f75d45417a8`; authority burned with `gentle-ai.review-acknowledged/v1`.
+- Signed commit sequence, based directly on `c6f50499`: `e4b3bb53cdb608a7bf64e57ce97d64e742652bc6` (`docs: add documentation index`), `1700a6b8f5fc558b139161e390da524aafbf20a1` (`docs: record documentation index evidence`), and `dfc47f7654ab71b166ccfd54f799637dcd1a8e0c` (`docs: correct review evidence reference`). Signing preserved the final candidate tree byte-for-byte.
+- Final native review lineage `review-6c1950e1bff8db77` approved and acknowledged the exact three-path candidate; its `R3-stale-review-provenance` advisory was informational and non-blocking.
+- Publication revalidation against `origin/main` `e4f5da9a3ee9f45bd0194984a7b50a62d688991a`: clean/disjoint three-path diff, no merge conflict, 37 relative links covering 29 unique targets all resolved, content assertions passed, and `git diff --check` passed.
 
 ## Acceptance criteria
 
