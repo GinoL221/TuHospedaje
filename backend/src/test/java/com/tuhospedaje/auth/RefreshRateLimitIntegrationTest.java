@@ -35,8 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * refresh-per-family-per-minute=3}: I-2/I-3/I-6/I-7 need at least
  * {@code FAMILY_LIMIT + 1 = 4} refresh calls against the SAME IP to trip the family
  * ceiling, which must happen strictly before the IP ceiling would ever trip on that same
- * IP. I-1 uses its own dedicated IP and enough attempts (6) to trip the IP ceiling
- * instead, with no family ever resolved (garbage credential).
+ * IP. I-1 uses its own dedicated IP and enough attempts to trip the IP ceiling
+ * instead, with no family ever resolved (garbage credential). I-1b allows a bounded
+ * number of extra attempts because its real register/login/refresh flow can cross an
+ * epoch-minute boundary and start a new IP bucket.
  */
 @SpringBootTest(properties = {
         "app.session.refresh.enabled=true",
@@ -49,6 +51,9 @@ class RefreshRateLimitIntegrationTest extends AbstractIntegrationTest {
 
     private static final int FAMILY_LIMIT = 3;
     private static final int IP_LIMIT = 5;
+    // Twelve bounded attempts guarantee that, across at most two minute windows, one
+    // receives the blocking sixth hit needed to exceed the IP ceiling.
+    private static final int IP_LIMIT_ATTEMPTS_WITH_ROLLOVER_TOLERANCE = (IP_LIMIT + 1) * 2;
 
     @Autowired
     private MockMvc mockMvc;
@@ -153,11 +158,13 @@ class RefreshRateLimitIntegrationTest extends AbstractIntegrationTest {
     // validity" half-proven. Each iteration here is a genuinely valid, distinct family
     // (fresh register+login), rotated exactly once — well under FAMILY_LIMIT=3 for any
     // single family — so only the IP counter, not the family counter, can plausibly trip.
+    // The bounded extra attempts cover at most two minute windows during the
+    // register/login/refresh flow without sleeping or retrying indefinitely.
     @Test
     void ipCeilingExceededWithValidCredentialsAlsoReturns429WithRetryAfter() throws Exception {
         String ip = "10.2.1.9";
         MvcResult blocked = null;
-        for (int i = 1; i <= IP_LIMIT + 1; i++) {
+        for (int i = 1; i <= IP_LIMIT_ATTEMPTS_WITH_ROLLOVER_TOLERANCE; i++) {
             Cookie refreshTokenCookie = loginAndGetCookies(ip, "i1b-valid-" + i + "@test.com")[1];
             MvcResult result = refresh(ip, refreshTokenCookie);
             if (result.getResponse().getStatus() == 429) {

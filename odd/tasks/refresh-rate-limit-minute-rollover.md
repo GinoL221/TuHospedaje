@@ -1,0 +1,50 @@
+# Refresh rate-limit minute rollover
+
+## Goal
+Make the valid-credential refresh IP-rate-limit integration test tolerate a real fixed-window minute rollover without weakening its full HTTP-chain assertion.
+
+## Scope
+
+Test code:
+- `backend/src/test/java/com/tuhospedaje/auth/RefreshRateLimitIntegrationTest.java`
+
+Task evidence:
+- `odd/tasks/refresh-rate-limit-minute-rollover.md`
+- `odd/refresh-rate-limit-minute-rollover/tasks`
+
+Do not change production rate-limit behavior, clocks, session/JWT configuration, refresh-family semantics, workflow files, environment files, or unrelated tests.
+
+## Tasks
+
+- [x] Add bounded attempt headroom to the valid-credential IP-ceiling test and preserve fresh-family isolation.
+- [ ] Run focused/full backend verification, record evidence, and complete the native review gate.
+
+## Acceptance criteria
+
+- The valid-credential IP-ceiling test is not limited to exactly `IP_LIMIT + 1` attempts against the real system clock.
+- Each attempt still registers and logs in a distinct user/family on the same IP.
+- The test still requires an eventual HTTP `429`, `Retry-After`, and the expected JSON error/status body.
+- Attempt count remains bounded and follows the existing integration-test precedent.
+- Comments describe rollover tolerance accurately and no longer claim exactly six attempts.
+- No production file changes.
+- No environment file or secret is read or changed.
+
+## Verification plan
+
+- Observed RED: CI run `35925301333`, backend job `107398841839`, failed only `RefreshRateLimitIntegrationTest.ipCeilingExceededWithValidCredentialsAlsoReturns429WithRetryAfter` because no `429` appeared across six attempts.
+- Focused class: `./mvnw -B -Dtest=RefreshRateLimitIntegrationTest test` from `backend/`.
+- Full backend: `./mvnw -B verify` from `backend/`.
+- `git diff --check`.
+- LSP diagnostics for the changed Java test.
+
+## Evidence
+
+### Bounded rollover tolerance
+
+- RED: CI run `35925301333`, backend job `107398841839`, ran 664 tests and failed only the valid-credential IP-ceiling test because no `429` appeared in exactly six attempts.
+- Root cause: six requests can split across a real epoch-minute boundary, resetting the fixed-window bucket before any bucket receives its sixth hit.
+- The test now allows `(IP_LIMIT + 1) * 2 = 12` attempts. Across at most two windows, pigeonhole reasoning guarantees one bucket receives at least six attempts.
+- Each attempt keeps IP `10.2.1.9` and creates a distinct valid user/family.
+- Focused class passed 8/8 tests with zero failures, errors, or skips after the user-authorized cleanup of a corrupted generated `backend/target` class.
+- Independent verification repeated 8/8 focused tests, confirmed a test-only 10-addition/3-deletion diff, and passed focused `git diff --check`.
+- Residual risk: the bounded guarantee does not cover execution spanning three or more minute windows.

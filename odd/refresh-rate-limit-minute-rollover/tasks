@@ -1,0 +1,12 @@
+# Refresh rate-limit minute rollover
+
+- [x] Add bounded attempt headroom to the valid-credential IP-ceiling test and preserve fresh-family isolation.
+- [ ] Run focused/full backend verification, record evidence, and complete the native review gate.
+
+## Evidence
+
+- RED: CI run `35925301333` failed only the valid-credential refresh IP-limit test after six attempts crossed a real fixed-window boundary.
+- The test now uses 12 bounded attempts; across at most two minute windows, one bucket must receive the blocking sixth hit.
+- Fresh valid user/family isolation remains per attempt on one IP.
+- Writer and independent focused verification each passed 8/8 tests; focused diff checks passed.
+- Three-or-more-window execution remains outside the bounded guarantee.
