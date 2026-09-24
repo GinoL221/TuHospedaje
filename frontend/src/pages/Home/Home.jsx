@@ -131,6 +131,7 @@ export default function Home() {
 								onBlur={handleCityBlur}
 								onKeyDown={handleCityKeyDown}
 								role="combobox"
+								aria-label="Ciudad"
 								aria-autocomplete="list"
 								aria-expanded={showSuggestions}
 								aria-controls="city-suggestions-listbox"
@@ -189,6 +190,7 @@ export default function Home() {
 								endDate={checkOut}
 								minDate={new Date()}
 								placeholderText="Check-in"
+								ariaLabel="Check-in"
 								dateFormat="dd/MM/yyyy"
 								locale="es"
 								popperClassName="home-datepicker-popper"
@@ -203,6 +205,7 @@ export default function Home() {
 								endDate={checkOut}
 								minDate={checkIn || new Date()}
 								placeholderText="Check-out"
+								ariaLabel="Check-out"
 								dateFormat="dd/MM/yyyy"
 								locale="es"
 								popperClassName="home-datepicker-popper"
