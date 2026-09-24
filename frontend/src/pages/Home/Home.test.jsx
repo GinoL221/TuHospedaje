@@ -16,12 +16,20 @@ const { registerLocaleMock } = vi.hoisted(() => ({
 
 vi.mock("react-datepicker", () => ({
 	registerLocale: registerLocaleMock,
-	default: ({ placeholderText, onChange, locale, popperClassName }) => (
+	default: ({
+		placeholderText,
+		ariaLabel,
+		selected,
+		onChange,
+		locale,
+		popperClassName,
+	}) => (
 		<input
-			aria-label={placeholderText}
+			aria-label={ariaLabel}
 			data-testid={`datepicker-${placeholderText}`}
 			data-locale={locale}
 			data-popper-class={popperClassName}
+			value={selected ? selected.toISOString().slice(0, 10) : ""}
 			onChange={(e) =>
 				onChange(e.target.value ? new Date(e.target.value) : null)
 			}
@@ -644,7 +652,7 @@ describe("Home - search form", () => {
 		});
 		const user = userEvent.setup();
 		renderHome();
-		const input = screen.getByRole("combobox", { name: "" });
+		const input = screen.getByRole("combobox", { name: "Ciudad" });
 
 		await user.type(input, "Ba");
 		const listbox = await screen.findByRole("listbox", {
@@ -672,6 +680,30 @@ describe("Home - search form", () => {
 		await screen.findByRole("option", { name: "Buenos Aires" });
 		fireEvent.mouseDown(screen.getByRole("option", { name: "Buenos Aires" }));
 		expect(input).toHaveValue("Buenos Aires");
+	});
+
+	it("keeps accessible search field names after filling the form", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderHome();
+
+		const city = screen.getByRole("combobox", { name: "Ciudad" });
+		const checkIn = screen.getByRole("textbox", { name: "Check-in" });
+		const checkOut = screen.getByRole("textbox", { name: "Check-out" });
+
+		await user.type(city, "Bariloche");
+		fireEvent.change(checkIn, { target: { value: "2026-07-10" } });
+		fireEvent.change(checkOut, { target: { value: "2026-07-15" } });
+
+		expect(screen.getByRole("combobox", { name: "Ciudad" })).toHaveValue(
+			"Bariloche",
+		);
+		expect(screen.getByRole("textbox", { name: "Check-in" })).toHaveValue(
+			"2026-07-10",
+		);
+		expect(screen.getByRole("textbox", { name: "Check-out" })).toHaveValue(
+			"2026-07-15",
+		);
 	});
 
 	it("registers and applies the Spanish locale to both date pickers", async () => {

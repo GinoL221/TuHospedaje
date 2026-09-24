@@ -1,0 +1,9 @@
+# Home search accessible names
+
+- [x] Add explicit accessible names to city and date inputs with tests that fail before implementation and use the datepicker's real `ariaLabel` prop.
+- [ ] Verify focused/full frontend checks and native review; record results and commits.
+
+## Evidence
+
+- RED: two missing accessible-name assertions failed. GREEN: 29/29 focused tests; independent rerun: 29/29.
+- Independent diff review confirmed test mock forwards `ariaLabel` and production placeholders/behavior remain unchanged; focused diff check passed.
