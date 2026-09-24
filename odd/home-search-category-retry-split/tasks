@@ -2,12 +2,14 @@
 
 - [x] Deliver search failure/retry UX with hook, Home UI, and tests as a verified <=400-line commit.
 - [x] Deliver category failure/retry UX with Home UI and tests as a verified <=400-line commit.
-- [ ] Run complete frontend checks and candidate reviews; record evidence and boundaries.
+- [x] Run complete frontend checks and candidate reviews; record evidence and boundaries.
 
 Original completed branch `fix/home-search-category-error-retry` at `fea5191030cf7e01dbd890cde180ee0e66cd3554` remains untouched. New split branch starts at `origin/main` `8206cf4a7d8b4a5b733c45d98fa6ae163885d797`.
 
 First slice: commit `5475eb4affecae9e42986a5133063ac63dd1509e` (`fix: show Home search failures with retry`), signed and approved by native review `review-eaa19f60d451faaa`. That approval applies only to the first commit.
 
-Second slice: RED focused Home/hook tests failed as expected (43 passed, 2 failed: missing category failure alert); GREEN passed after implementation (45 passed, 0 failed). Independent full frontend 642/642, lint, build and diff check passed; Home source/tests match original final bytes. The second slice has no commit or native review approval yet.
+Second slice: RED focused Home/hook tests failed as expected (43 passed, 2 failed: missing category failure alert); GREEN passed after implementation (45 passed, 0 failed). Independent full frontend 642/642, lint, build and diff check passed; Home source/tests match original final bytes. Signed commit `be48aacae0e55977ec5980fac7c8898db9b652d0` has 161 changed lines and native review `review-17e0873be4c438ed` approved and acknowledged.
+
+Both committed slices separately reviewed. Changed-file LSP: 0 findings, 4 inconclusive. CI/browser/provider checks not run. Original branch/worktree remains untouched; no remote publication.
 
 First-slice evidence remains: RED 2 search failures, GREEN 41/41; independent full suite 638/638, lint, build, and diff check passed.

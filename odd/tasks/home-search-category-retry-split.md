@@ -12,7 +12,7 @@ Rebuild the verified Home request-failure change as two independently reviewable
 ## Tasks
 - [x] Deliver search failure/retry UI, hook, and tests as one verified commit at or below 400 changed lines.
 - [x] Deliver category failure/retry UI and tests as a separate verified commit at or below 400 changed lines.
-- [ ] Run complete frontend checks and read-only review of both new commit candidates; record exact evidence and slice boundaries.
+- [x] Run complete frontend checks and native review of both new commit candidates; record exact evidence and slice boundaries.
 
 ## Verification
 - Test first candidate on its own branch head with focused Home/hook tests, lint, build, diff check.
@@ -29,4 +29,7 @@ Rebuild the verified Home request-failure change as two independently reviewable
 - Second slice RED: `npm --prefix frontend test -- src/pages/Home/Home.test.jsx src/hooks/useHomeSearchResults.test.js` failed as expected before the category implementation (43 passed, 2 failed: category failure alerts absent).
 - Second slice GREEN: the same focused command passed after implementation (45 passed, 0 failed). It covers category failure versus valid empty response, independent retry recovery, stale retry completion, and unmount completion guards.
 - Independent verification passed: focused 45/45, full frontend 642/642 across 66 files, ESLint, Vite build (2,153 modules), and diff check. Home source/test files match the preserved original final revision byte-for-byte; the second diff does not change search or recommendations.
-- Second slice has no commit or native review approval yet; neither is implied by the first slice approval.
+- Second slice signed commit: `be48aacae0e55977ec5980fac7c8898db9b652d0` (`fix: show Home category loading failures with retry`), 161 changed lines against `5475eb4affecae9e42986a5133063ac63dd1509e`; approved and acknowledged native review `review-17e0873be4c438ed`.
+- First slice: 378 changed lines against `origin/main`, approved and acknowledged native review `review-eaa19f60d451faaa`. Both reviews bound only their committed slices.
+- Changed-file LSP probe reported zero diagnostics but all four files inconclusive (push-only server cannot confirm clean); full ESLint, build, and tests passed at each candidate head. CI, browser and provider checks have not run.
+- Original completed branch/worktree remains unchanged; no issue, push, PR, merge or cleanup performed.
