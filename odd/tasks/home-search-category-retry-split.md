@@ -14,7 +14,7 @@ Rebuild the verified Home request-failure change as two independently reviewable
 - [x] Deliver category failure/retry UI and tests as a separate verified commit at or below 400 changed lines.
 - [x] Run complete frontend checks and native review of both new commit candidates; record exact evidence and slice boundaries.
 - [x] Remove the assertion-free category unmount test, state the actual coverage boundary, and reverify/review the correction.
-- [ ] Replace the category nested ternary with explicit state selection; preserve all three rendered states, then verify and review a separate commit in the category slice.
+- [x] Replace the category nested ternary with explicit state selection; preserve all three rendered states, then verify and review a separate commit in the category slice.
 
 ## Verification
 - Test first candidate on its own branch head with focused Home/hook tests, lint, build, diff check.
@@ -39,4 +39,5 @@ Rebuild the verified Home request-failure change as two independently reviewable
 - Reverification after fixing a blank-line Prettier failure: focused 44/44, full frontend 641/641 across 66 files, ESLint, format check, Vite build (2,153 modules), coverage and `git diff --check` passed. Coverage: statements 93.42% (threshold 85%), branches 88.71% (80%), functions 89.44% (74%), lines 95.08% (87%). No production change.
 - Signed follow-up work-unit commit `4c928d363c4694b89427dc2f57b6d7390911e09d` (25 diff lines) is approved and acknowledged in native review `review-e3e50076ff1372dc`. Category PR slice currently totals 160 diff lines against `5475eb4affecae9e42986a5133063ac63dd1509e`, including passive evidence commit `2142d17b387b21d60245f6731da1b02d617c8a96`.
 - Before this follow-up, all-server diagnostics showed two clean files, two with auxiliary findings, none inconclusive. The candidate-caused category nested-ternary warning was addressed by choosing `categoryContent` through explicit error/empty/list branches; a fresh Home.jsx probe reports only an informational Spanish typo suggestion, with no nested-ternary warning.
-- Independent post-format verification: focused 44/44 and full frontend 641/641 across 66 files; ESLint, Prettier format check, Vite build (2,153 modules), coverage thresholds and diff check passed. Coverage: statements 93.44% (85% required), branches 88.71% (80%), functions 89.44% (74%), lines 95.10% (87%). The category slice measures 198 changed lines against the first slice before this evidence update. Commit and native review pending.
+- Independent post-format verification: focused 44/44 and full frontend 641/641 across 66 files; ESLint, Prettier format check, Vite build (2,153 modules), coverage thresholds and diff check passed. Coverage: statements 93.44% (85% required), branches 88.71% (80%), functions 89.44% (74%), lines 95.10% (87%).
+- Signed render-cleanup work-unit commit `9d9dc74e84f5b72448f7d17d5a172a74a08adc0a` changed 61 lines; native review `review-5c09e498b52359be` approved and acknowledged. The category PR slice is 201 changed lines against `5475eb4affecae9e42986a5133063ac63dd1509e` before this final evidence note. No issue, push or PR created.

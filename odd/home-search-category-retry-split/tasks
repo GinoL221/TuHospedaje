@@ -4,7 +4,7 @@
 - [x] Deliver category failure/retry UX with Home UI and tests as a verified <=400-line commit.
 - [x] Run complete frontend checks and candidate reviews; record evidence and boundaries.
 - [x] Remove assertion-free category unmount test, document its evidence boundary, and reverify/review the correction.
-- [ ] Replace category nested ternary with explicit state selection; behavior and independent checks pass, commit/review pending.
+- [x] Replace category nested ternary with explicit state selection; behavior and independent checks pass, commit/review completed.
 
 Original completed branch `fix/home-search-category-error-retry` at `fea5191030cf7e01dbd890cde180ee0e66cd3554` remains untouched. New split branch starts at `origin/main` `8206cf4a7d8b4a5b733c45d98fa6ae163885d797`.
 
@@ -14,6 +14,6 @@ Second slice: RED focused Home/hook tests failed as expected (43 passed, 2 faile
 
 Both committed slices separately reviewed. The test follow-up removed the assertion-free unmount test; mounted stale-retry assertion remains. Independent focused 44/44, full 641/641, lint, format check, build, coverage thresholds and diff check passed. Signed commit `4c928d363c4694b89427dc2f57b6d7390911e09d` and native review `review-e3e50076ff1372dc` approved and acknowledged; passive evidence commit `2142d17b387b21d60245f6731da1b02d617c8a96` brings category slice to 160 lines. A fresh all-server probe found 2 clean and 2 with auxiliary findings, 0 inconclusive: category nested ternary warning plus informational Spanish typo suggestions. CI/browser/provider checks not run. Original branch/worktree remains untouched; no remote publication.
 
-Category render follow-up: explicit error/empty/list selection keeps markup and initial loading behavior; independent focused 44/44, full frontend 641/641, lint, format, build, coverage thresholds and diff check pass. All-server Home.jsx probe no longer reports nested ternary; one informational Spanish typo suggestion remains. Commit/review pending.
+Category render follow-up: explicit error/empty/list selection keeps markup and initial loading behavior; independent focused 44/44, full frontend 641/641, lint, format, build, coverage thresholds and diff check pass. All-server Home.jsx probe no longer reports nested ternary; one informational Spanish typo suggestion remains. Signed commit `9d9dc74e84f5b72448f7d17d5a172a74a08adc0a`, native review `review-5c09e498b52359be` approved and acknowledged. Second slice: 201 lines before final evidence note.
 
 First-slice evidence remains: RED 2 search failures, GREEN 41/41; independent full suite 638/638, lint, build, and diff check passed.
