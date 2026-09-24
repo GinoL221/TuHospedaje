@@ -37,3 +37,7 @@ Keep placeholders, locale, city autocomplete semantics, date picker behavior, qu
 - GREEN: focused Home suite passed 29/29; independent verification repeated 29/29.
 - Independent review of the 2-file diff (+38/-3) confirmed city `aria-label` and DatePicker `ariaLabel` props, unchanged placeholders, locale, autocomplete, and submission.
 - Focused `git diff --check` passed.
+- Signed work-unit commit: `855b02c75ccfb824e07d5a048f50d48bd13762d9` (`fix: name home search inputs`).
+- Full frontend verification passed: ESLint and 631/631 tests across 66 files; `git diff --check HEAD` passed.
+- LSP reported seven informational spelling suggestions for existing Spanish text/test values, with no error or warning diagnostics.
+- Real-browser verification was not run.
