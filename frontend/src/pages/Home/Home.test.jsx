@@ -173,7 +173,7 @@ function deferred() {
 		resolve = res;
 		reject = rej;
 	});
-	return { promise, reject, resolve };
+	return { promise, resolve, reject };
 }
 
 describe("Home - pending list transition", () => {
@@ -616,7 +616,7 @@ describe("Home - loading failure, retry, and repeated failure", () => {
 	});
 });
 
-describe("Home - search request failures", () => {
+describe("Home - search and category loading failures", () => {
 	it("shows a search failure without false zero results and recovers only through its retry", async () => {
 		let searchAttempts = 0;
 		get.mockImplementation((endpoint) => {
@@ -641,6 +641,9 @@ describe("Home - search request failures", () => {
 		const searchAlert = await screen.findByRole("alert");
 		expect(searchAlert).toHaveTextContent("No pudimos realizar la búsqueda.");
 		expect(searchAlert.closest("section")).not.toHaveAttribute("aria-live");
+		expect(searchAlert).not.toHaveTextContent(
+			"No pudimos cargar las categorías.",
+		);
 		expect(
 			screen.queryByText(/0 resultados de 0 alojamientos/),
 		).not.toBeInTheDocument();
@@ -669,6 +672,53 @@ describe("Home - search request failures", () => {
 		);
 		expect(
 			screen.queryByText("No pudimos realizar la búsqueda."),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows a category failure without its empty message and recovers independently", async () => {
+		let categoryAttempts = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/categories") {
+				categoryAttempts += 1;
+				return categoryAttempts === 1
+					? Promise.reject(new Error("categories unavailable"))
+					: Promise.resolve([categoryFixture]);
+			}
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		const categoryAlert = await screen.findByRole("alert");
+		expect(categoryAlert).toHaveTextContent(
+			"No pudimos cargar las categorías.",
+		);
+		expect(
+			screen.queryByText("No hay categorías disponibles."),
+		).not.toBeInTheDocument();
+
+		await user.click(
+			within(categoryAlert).getByRole("button", { name: "Reintentar" }),
+		);
+		expect(
+			await screen.findByRole("button", { name: /Cabaña/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText("No pudimos cargar las categorías."),
+		).not.toBeInTheDocument();
+	});
+
+	it("keeps a successful empty category list distinct from a category error", async () => {
+		mockGetDefaults({ categories: [] });
+		renderHome();
+
+		expect(
+			await screen.findByText("No hay categorías disponibles."),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText("No pudimos cargar las categorías."),
 		).not.toBeInTheDocument();
 	});
 
@@ -713,6 +763,58 @@ describe("Home - search request failures", () => {
 		expect(
 			screen.queryByText("No pudimos realizar la búsqueda."),
 		).not.toBeInTheDocument();
+	});
+
+	it("ignores an older category retry result after a later retry succeeds", async () => {
+		const firstRetry = deferred();
+		let categoryAttempts = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/categories") {
+				categoryAttempts += 1;
+				if (categoryAttempts === 1) return Promise.reject(new Error("failed"));
+				if (categoryAttempts === 2) return firstRetry.promise;
+				return Promise.resolve([categoryFixture]);
+			}
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderHome();
+
+		const categoryAlert = await screen.findByRole("alert");
+		await user.click(
+			within(categoryAlert).getByRole("button", { name: "Reintentar" }),
+		);
+		await user.click(
+			within(screen.getByRole("alert")).getByRole("button", {
+				name: "Reintentar",
+			}),
+		);
+		expect(
+			await screen.findByRole("button", { name: /Cabaña/ }),
+		).toBeInTheDocument();
+
+		firstRetry.resolve([{ ...categoryFixture, name: "Categoría vieja" }]);
+		await Promise.resolve();
+		expect(
+			screen.queryByRole("button", { name: /Categoría vieja/ }),
+		).not.toBeInTheDocument();
+	});
+
+	it("ignores a category completion after Home unmounts", async () => {
+		const pendingCategories = deferred();
+		get.mockImplementation((endpoint) => {
+			if (endpoint === "/categories") return pendingCategories.promise;
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			return Promise.resolve([]);
+		});
+		const view = renderHome();
+
+		view.unmount();
+		pendingCategories.resolve([categoryFixture]);
+		await Promise.resolve();
 	});
 });
 

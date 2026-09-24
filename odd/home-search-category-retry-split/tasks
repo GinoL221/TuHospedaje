@@ -1,11 +1,13 @@
 # Split Home search and category retries
 
 - [x] Deliver search failure/retry UX with hook, Home UI, and tests as a verified <=400-line commit.
-- [ ] Deliver category failure/retry UX with Home UI and tests as a verified <=400-line commit.
+- [x] Deliver category failure/retry UX with Home UI and tests as a verified <=400-line commit.
 - [ ] Run complete frontend checks and candidate reviews; record evidence and boundaries.
 
 Original completed branch `fix/home-search-category-error-retry` at `fea5191030cf7e01dbd890cde180ee0e66cd3554` remains untouched. New split branch starts at `origin/main` `8206cf4a7d8b4a5b733c45d98fa6ae163885d797`.
 
-Search slice: RED 2 failures, GREEN 41/41; independent full suite 638/638, lint, build and diff check passed. Commit identity pending.
+First slice: commit `5475eb4affecae9e42986a5133063ac63dd1509e` (`fix: show Home search failures with retry`), signed and approved by native review `review-eaa19f60d451faaa`. That approval applies only to the first commit.
 
-Evidence: RED focused Home/hook tests failed as expected (35 passed, 2 failed: missing new search failure alert); GREEN passed after implementation (41 passed, 0 failed). `git diff --check` passed. The search task stays unchecked pending parent independent verification and commit; no category failure/retry behavior is included.
+Second slice: RED focused Home/hook tests failed as expected (43 passed, 2 failed: missing category failure alert); GREEN passed after implementation (45 passed, 0 failed). Independent full frontend 642/642, lint, build and diff check passed; Home source/tests match original final bytes. The second slice has no commit or native review approval yet.
+
+First-slice evidence remains: RED 2 search failures, GREEN 41/41; independent full suite 638/638, lint, build, and diff check passed.

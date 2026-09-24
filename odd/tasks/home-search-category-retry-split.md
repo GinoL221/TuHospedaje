@@ -11,13 +11,13 @@ Rebuild the verified Home request-failure change as two independently reviewable
 
 ## Tasks
 - [x] Deliver search failure/retry UI, hook, and tests as one verified commit at or below 400 changed lines.
-- [ ] Deliver category failure/retry UI and tests as a separate verified commit at or below 400 changed lines.
+- [x] Deliver category failure/retry UI and tests as a separate verified commit at or below 400 changed lines.
 - [ ] Run complete frontend checks and read-only review of both new commit candidates; record exact evidence and slice boundaries.
 
 ## Verification
 - Test first candidate on its own branch head with focused Home/hook tests, lint, build, diff check.
 - Test both together using the full frontend suite, lint, build, and changed-file diagnostics.
-- Treat previous native review `review-b8597dee88fef688` as evidence for the old commit only, not the new commit identities.
+- Native approval `review-eaa19f60d451faaa` applies only to first commit `5475eb4affecae9e42986a5133063ac63dd1509e`; it does not approve the uncommitted second slice or any future commit identity.
 - Record limitations; browser/provider/CI are not inferred from local tests.
 
 ## Evidence
@@ -25,4 +25,8 @@ Rebuild the verified Home request-failure change as two independently reviewable
 - GREEN: the same focused command passed after implementation (41 passed, 0 failed).
 - `git diff --check` passed before parent verification and commit.
 - Independent verification passed: focused 41/41, full frontend 638/638 across 66 files, ESLint, Vite build (2,153 modules), and diff check. Category behavior remains at baseline; search failure uses one alert live region.
-- Search slice is under the 400-line budget; category failure/retry work is not included. Commit identity pending.
+- First slice commit: `5475eb4affecae9e42986a5133063ac63dd1509e` (`fix: show Home search failures with retry`), signed and approved by native review `review-eaa19f60d451faaa`.
+- Second slice RED: `npm --prefix frontend test -- src/pages/Home/Home.test.jsx src/hooks/useHomeSearchResults.test.js` failed as expected before the category implementation (43 passed, 2 failed: category failure alerts absent).
+- Second slice GREEN: the same focused command passed after implementation (45 passed, 0 failed). It covers category failure versus valid empty response, independent retry recovery, stale retry completion, and unmount completion guards.
+- Independent verification passed: focused 45/45, full frontend 642/642 across 66 files, ESLint, Vite build (2,153 modules), and diff check. Home source/test files match the preserved original final revision byte-for-byte; the second diff does not change search or recommendations.
+- Second slice has no commit or native review approval yet; neither is implied by the first slice approval.
