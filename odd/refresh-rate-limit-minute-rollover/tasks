@@ -1,0 +1,17 @@
+# Refresh rate-limit minute rollover
+
+- [x] Add bounded attempt headroom to the valid-credential IP-ceiling test and preserve fresh-family isolation.
+- [x] Run focused/full backend verification, record evidence, and complete the native review gate.
+
+## Evidence
+
+- RED: CI run `35925301333` failed only the valid-credential refresh IP-limit test after six attempts crossed a real fixed-window boundary.
+- The test now uses 12 bounded attempts; across at most two minute windows, one bucket must receive the blocking sixth hit.
+- Fresh valid user/family isolation remains per attempt on one IP.
+- Writer and independent focused verification each passed 8/8 tests; focused diff checks passed.
+- Work-unit commit `0bb4affb5310b6b5a40e621caf4735b68b33e4ab` is intentionally unsigned after explicit user authorization following GPG `Vida máxima`.
+- Full verification with a generated process-only `JWT_SECRET` passed 664/664 tests and all JaCoCo coverage checks across 86 analyzed classes.
+- Full diff check passed; LSP returned no findings but could not confirm a clean Java re-check.
+- Verification evidence commit `2ebaa04aad4387f1c271ee16bb568cb4b26d4e6b` is also intentionally unsigned after a second explicit authorization.
+- Native review `review-59a14d739f4f324e` approved and acknowledged target `sha256:4961f1c926f410b968c1c66888d68c19a7155f1187532a14d3870d95b72ec33b`; its three informational advisories restate the documented bounded-window residual risk and opened no correction.
+- Three-or-more-window execution remains outside the bounded guarantee.
