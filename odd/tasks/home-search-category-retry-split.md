@@ -19,7 +19,7 @@ Rebuild the verified Home request-failure change as two independently reviewable
 ## Verification
 - Test first candidate on its own branch head with focused Home/hook tests, lint, build, diff check.
 - Test both together using the full frontend suite, lint, build, and changed-file diagnostics.
-- Native approval `review-eaa19f60d451faaa` applies only to first commit `5475eb4affecae9e42986a5133063ac63dd1509e`; it does not approve the uncommitted second slice or any future commit identity.
+- Native approval `review-eaa19f60d451faaa` applies only to first commit `5475eb4affecae9e42986a5133063ac63dd1509e`. The second slice and later corrections have separate commit-bound approvals recorded below.
 - Record limitations; browser/provider/CI are not inferred from local tests.
 
 ## Evidence
@@ -37,7 +37,7 @@ Rebuild the verified Home request-failure change as two independently reviewable
 - Original completed branch/worktree remains unchanged; no issue, push, PR, merge or cleanup performed.
 - Follow-up investigation: the mounted stale-retry test asserts that older completions do not replace newer UI. The category cleanup invalidates request IDs on unmount by code inspection; RTL/JSDOM does not expose a reliable direct post-unmount state-update assertion here without testing React internals. The assertion-free unmount test was removed.
 - Reverification after fixing a blank-line Prettier failure: focused 44/44, full frontend 641/641 across 66 files, ESLint, format check, Vite build (2,153 modules), coverage and `git diff --check` passed. Coverage: statements 93.42% (threshold 85%), branches 88.71% (80%), functions 89.44% (74%), lines 95.08% (87%). No production change.
-- Signed follow-up work-unit commit `4c928d363c4694b89427dc2f57b6d7390911e09d` (25 diff lines) is approved and acknowledged in native review `review-e3e50076ff1372dc`. Category PR slice currently totals 160 diff lines against `5475eb4affecae9e42986a5133063ac63dd1509e`, including passive evidence commit `2142d17b387b21d60245f6731da1b02d617c8a96`.
+- Signed follow-up work-unit commit `4c928d363c4694b89427dc2f57b6d7390911e09d` (25 diff lines) is approved and acknowledged in native review `review-e3e50076ff1372dc`. At passive evidence commit `2142d17b387b21d60245f6731da1b02d617c8a96`, the intermediate category PR slice totaled 160 diff lines against `5475eb4affecae9e42986a5133063ac63dd1509e`; later corrections increased that count.
 - Before this follow-up, all-server diagnostics showed two clean files, two with auxiliary findings, none inconclusive. The candidate-caused category nested-ternary warning was addressed by choosing `categoryContent` through explicit error/empty/list branches; a fresh Home.jsx probe reports only an informational Spanish typo suggestion, with no nested-ternary warning.
 - Independent post-format verification: focused 44/44 and full frontend 641/641 across 66 files; ESLint, Prettier format check, Vite build (2,153 modules), coverage thresholds and diff check passed. Coverage: statements 93.44% (85% required), branches 88.71% (80%), functions 89.44% (74%), lines 95.10% (87%).
 - Signed render-cleanup work-unit commit `9d9dc74e84f5b72448f7d17d5a172a74a08adc0a` changed 61 lines; native review `review-5c09e498b52359be` approved and acknowledged. The category PR slice is 201 changed lines against `5475eb4affecae9e42986a5133063ac63dd1509e` before this final evidence note. No issue, push or PR created.
