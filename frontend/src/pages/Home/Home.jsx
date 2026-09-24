@@ -141,6 +141,35 @@ export default function Home() {
 		});
 	}
 
+	let categoryContent;
+	if (categoriesError) {
+		categoryContent = (
+			<div className="categories-alert" role="alert">
+				<p>No pudimos cargar las categorías.</p>
+				<button type="button" onClick={fetchCategories}>
+					Reintentar
+				</button>
+			</div>
+		);
+	} else if (categoriesLoaded && categories.length === 0) {
+		categoryContent = (
+			<p className="empty-state">No hay categorías disponibles.</p>
+		);
+	} else {
+		categoryContent = (
+			<div className="category-list">
+				{categories.map((c) => (
+					<CategoryCard
+						key={c.id}
+						category={c}
+						isActive={selectedCategories.includes(String(c.id))}
+						onClick={() => updateCategories(c.id)}
+					/>
+				))}
+			</div>
+		);
+	}
+
 	return (
 		<main className="home page-container">
 			<section className="search">
@@ -250,27 +279,7 @@ export default function Home() {
 			</section>
 			<section className="categories">
 				<h2>Categorías</h2>
-				{categoriesError ? (
-					<div className="categories-alert" role="alert">
-						<p>No pudimos cargar las categorías.</p>
-						<button type="button" onClick={fetchCategories}>
-							Reintentar
-						</button>
-					</div>
-				) : categoriesLoaded && categories.length === 0 ? (
-					<p className="empty-state">No hay categorías disponibles.</p>
-				) : (
-					<div className="category-list">
-						{categories.map((c) => (
-							<CategoryCard
-								key={c.id}
-								category={c}
-								isActive={selectedCategories.includes(String(c.id))}
-								onClick={() => updateCategories(c.id)}
-							/>
-						))}
-					</div>
-				)}
+				{categoryContent}
 			</section>
 			{searchRequestError ? (
 				<section className="search-results">
