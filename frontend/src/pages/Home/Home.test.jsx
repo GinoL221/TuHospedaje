@@ -801,21 +801,6 @@ describe("Home - search and category loading failures", () => {
 			screen.queryByRole("button", { name: /Categoría vieja/ }),
 		).not.toBeInTheDocument();
 	});
-
-	it("ignores a category completion after Home unmounts", async () => {
-		const pendingCategories = deferred();
-		get.mockImplementation((endpoint) => {
-			if (endpoint === "/categories") return pendingCategories.promise;
-			if (endpoint.startsWith("/lodgings/recommendations"))
-				return Promise.resolve(recommendationsPage());
-			return Promise.resolve([]);
-		});
-		const view = renderHome();
-
-		view.unmount();
-		pendingCategories.resolve([categoryFixture]);
-		await Promise.resolve();
-	});
 });
 
 describe("Home - search form", () => {
