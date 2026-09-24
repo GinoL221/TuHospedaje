@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
@@ -20,6 +20,9 @@ export default function Home() {
 	const { search } = useLocation();
 	const { user } = useAuth();
 	const [categories, setCategories] = useState([]);
+	const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+	const [categoriesError, setCategoriesError] = useState(false);
+	const categoryRequest = useRef(0);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
 	const [formSearchError, setFormSearchError] = useState("");
@@ -60,11 +63,28 @@ export default function Home() {
 		navigate(next.toString() ? `/?${next.toString()}` : "/");
 	}
 
-	useEffect(() => {
+	const fetchCategories = useCallback(() => {
+		const requestId = ++categoryRequest.current;
 		getCategories()
-			.then((data) => setCategories(Array.isArray(data) ? data : []))
-			.catch(() => {});
+			.then((data) => {
+				if (categoryRequest.current !== requestId) return;
+				setCategories(Array.isArray(data) ? data : []);
+				setCategoriesLoaded(true);
+				setCategoriesError(false);
+			})
+			.catch(() => {
+				if (categoryRequest.current !== requestId) return;
+				setCategoriesLoaded(true);
+				setCategoriesError(true);
+			});
 	}, []);
+
+	useEffect(() => {
+		fetchCategories();
+		return () => {
+			categoryRequest.current += 1;
+		};
+	}, [fetchCategories]);
 
 	useEffect(() => {
 		if (!user) return;
@@ -119,6 +139,35 @@ export default function Home() {
 			else next.delete(id);
 			return next;
 		});
+	}
+
+	let categoryContent;
+	if (categoriesError) {
+		categoryContent = (
+			<div className="categories-alert" role="alert">
+				<p>No pudimos cargar las categorías.</p>
+				<button type="button" onClick={fetchCategories}>
+					Reintentar
+				</button>
+			</div>
+		);
+	} else if (categoriesLoaded && categories.length === 0) {
+		categoryContent = (
+			<p className="empty-state">No hay categorías disponibles.</p>
+		);
+	} else {
+		categoryContent = (
+			<div className="category-list">
+				{categories.map((c) => (
+					<CategoryCard
+						key={c.id}
+						category={c}
+						isActive={selectedCategories.includes(String(c.id))}
+						onClick={() => updateCategories(c.id)}
+					/>
+				))}
+			</div>
+		);
 	}
 
 	return (
@@ -230,20 +279,7 @@ export default function Home() {
 			</section>
 			<section className="categories">
 				<h2>Categorías</h2>
-				{categories.length === 0 ? (
-					<p className="empty-state">No hay categorías disponibles.</p>
-				) : (
-					<div className="category-list">
-						{categories.map((c) => (
-							<CategoryCard
-								key={c.id}
-								category={c}
-								isActive={selectedCategories.includes(String(c.id))}
-								onClick={() => updateCategories(c.id)}
-							/>
-						))}
-					</div>
-				)}
+				{categoryContent}
 			</section>
 			{searchRequestError ? (
 				<section className="search-results">
