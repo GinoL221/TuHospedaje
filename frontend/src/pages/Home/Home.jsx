@@ -22,7 +22,7 @@ export default function Home() {
 	const [categories, setCategories] = useState([]);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
-	const [searchError, setSearchError] = useState("");
+	const [formSearchError, setFormSearchError] = useState("");
 	const [favoriteIds, setFavoriteIds] = useState(new Set());
 	const {
 		lodgings,
@@ -35,7 +35,11 @@ export default function Home() {
 		refresh: handleRefreshRecommendations,
 		retry: fetchRecommendations,
 	} = useHomeRecommendations();
-	const { searchResults: visibleSearchResults } = useHomeSearchResults(search);
+	const {
+		searchResults: visibleSearchResults,
+		searchError: searchRequestError,
+		retrySearch,
+	} = useHomeSearchResults(search);
 
 	const searchParams = new URLSearchParams(search);
 	const selectedCategories = searchParams.getAll("categories");
@@ -91,10 +95,12 @@ export default function Home() {
 
 	function handleSearch(e) {
 		e.preventDefault();
-		setSearchError("");
+		setFormSearchError("");
 
 		if (checkIn && checkOut && checkIn >= checkOut) {
-			setSearchError("La fecha de check-out debe ser posterior al check-in");
+			setFormSearchError(
+				"La fecha de check-out debe ser posterior al check-in",
+			);
 			return;
 		}
 
@@ -215,9 +221,9 @@ export default function Home() {
 							Buscar
 						</button>
 					</form>
-					{searchError && (
+					{formSearchError && (
 						<p className="search-error" role="alert">
-							{searchError}
+							{formSearchError}
 						</p>
 					)}
 				</div>
@@ -239,28 +245,39 @@ export default function Home() {
 					</div>
 				)}
 			</section>
-			{visibleSearchResults && (
-				<section className="search-results" aria-live="polite">
-					<div className="section-header">
-						<h2>Resultados de búsqueda</h2>
-						{selectedCategories.length > 0 && (
-							<button className="btn-clear-filter" onClick={clearCategories}>
-								Limpiar filtros
-							</button>
-						)}
+			{searchRequestError ? (
+				<section className="search-results">
+					<div className="search-results-alert" role="alert">
+						<p>No pudimos realizar la búsqueda.</p>
+						<button type="button" onClick={retrySearch}>
+							Reintentar
+						</button>
 					</div>
-					<p>
-						{visibleSearchResults.totalItems ?? 0} resultados de{" "}
-						{visibleSearchResults.catalogItems ?? 0} alojamientos
-					</p>
-					{visibleSearchResults.lodgings?.length > 0 && (
-						<div className="hotel-list">
-							{visibleSearchResults.lodgings.map((lodging) => (
-								<ProductCard key={lodging.id} lodging={lodging} />
-							))}
-						</div>
-					)}
 				</section>
+			) : (
+				visibleSearchResults && (
+					<section className="search-results" aria-live="polite">
+						<div className="section-header">
+							<h2>Resultados de búsqueda</h2>
+							{selectedCategories.length > 0 && (
+								<button className="btn-clear-filter" onClick={clearCategories}>
+									Limpiar filtros
+								</button>
+							)}
+						</div>
+						<p>
+							{visibleSearchResults.totalItems ?? 0} resultados de{" "}
+							{visibleSearchResults.catalogItems ?? 0} alojamientos
+						</p>
+						{visibleSearchResults.lodgings?.length > 0 && (
+							<div className="hotel-list">
+								{visibleSearchResults.lodgings.map((lodging) => (
+									<ProductCard key={lodging.id} lodging={lodging} />
+								))}
+							</div>
+						)}
+					</section>
+				)
 			)}
 			<section className="recommendations">
 				<div className="section-header">

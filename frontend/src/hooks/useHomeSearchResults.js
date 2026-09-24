@@ -1,31 +1,50 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { searchLodgings } from "../services/lodgingService";
 
-const EMPTY_SEARCH_RESULTS = { lodgings: [], totalItems: 0, catalogItems: 0 };
-
 export default function useHomeSearchResults(search) {
-	const [searchResults, setSearchResults] = useState(null);
+	const [searchState, setSearchState] = useState(null);
+	const activeRequest = useRef(0);
 
-	useEffect(() => {
-		if (!search) return undefined;
+	const fetchSearch = useCallback((query) => {
+		const requestId = ++activeRequest.current;
 
-		let isCurrentSearch = true;
-		searchLodgings(search)
+		searchLodgings(query)
 			.then((data) => {
-				if (isCurrentSearch) setSearchResults({ query: search, data });
+				if (activeRequest.current === requestId) {
+					setSearchState({ query, data, error: null });
+				}
 			})
-			.catch(() => {
-				if (isCurrentSearch) {
-					setSearchResults({ query: search, data: EMPTY_SEARCH_RESULTS });
+			.catch((error) => {
+				if (activeRequest.current === requestId) {
+					setSearchState({ query, data: null, error });
 				}
 			});
+	}, []);
+
+	useEffect(() => {
+		if (!search) {
+			activeRequest.current += 1;
+			return undefined;
+		}
+
+		fetchSearch(search);
 
 		return () => {
-			isCurrentSearch = false;
+			activeRequest.current += 1;
 		};
-	}, [search]);
+	}, [fetchSearch, search]);
 
+	const retrySearch = useCallback(() => {
+		if (!search) return;
+
+		setSearchState({ query: search, data: null, error: null });
+		fetchSearch(search);
+	}, [fetchSearch, search]);
+
+	const isCurrentQuery = searchState?.query === search;
 	return {
-		searchResults: searchResults?.query === search ? searchResults.data : null,
+		searchResults: isCurrentQuery ? searchState.data : null,
+		searchError: isCurrentQuery ? searchState.error : null,
+		retrySearch,
 	};
 }
