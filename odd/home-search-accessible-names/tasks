@@ -1,7 +1,7 @@
 # Home search accessible names
 
 - [x] Add explicit accessible names to city and date inputs with tests that fail before implementation and use the datepicker's real `ariaLabel` prop.
-- [ ] Verify focused/full frontend checks and native review; record results and commits.
+- [x] Verify focused/full frontend checks and native review; record results and commits.
 
 ## Evidence
 
@@ -10,3 +10,5 @@
 - Signed work-unit commit: `855b02c75ccfb824e07d5a048f50d48bd13762d9`.
 - Full frontend verification passed: 631/631 tests in 66 files, ESLint, and diff check.
 - LSP findings were seven informational spelling suggestions only; real-browser verification was not run.
+- Signed verification commit: `28f12e14ca4d9acd0918a399c6f96f78102790e2`.
+- Native review `review-1e4e50928519f5ad` approved and acknowledged target `sha256:1362e04443fc7f77002c006aca0cceca27c5c321fe28e7a58280811bd7cba628`.

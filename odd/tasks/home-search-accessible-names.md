@@ -15,7 +15,7 @@ Keep placeholders, locale, city autocomplete semantics, date picker behavior, qu
 ## Tasks
 
 - [x] Add explicit accessible names to city and date inputs with tests that fail before implementation and use the datepicker's real `ariaLabel` prop.
-- [ ] Verify focused/full frontend checks and native review; record results and commits.
+- [x] Verify focused/full frontend checks and native review; record results and commits.
 
 ## Acceptance criteria
 
@@ -41,3 +41,5 @@ Keep placeholders, locale, city autocomplete semantics, date picker behavior, qu
 - Full frontend verification passed: ESLint and 631/631 tests across 66 files; `git diff --check HEAD` passed.
 - LSP reported seven informational spelling suggestions for existing Spanish text/test values, with no error or warning diagnostics.
 - Real-browser verification was not run.
+- Signed verification commit: `28f12e14ca4d9acd0918a399c6f96f78102790e2` (`docs: record home search verification`).
+- Native review `review-1e4e50928519f5ad` approved and acknowledged target `sha256:1362e04443fc7f77002c006aca0cceca27c5c321fe28e7a58280811bd7cba628`.
