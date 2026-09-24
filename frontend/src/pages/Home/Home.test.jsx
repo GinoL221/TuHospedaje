@@ -1,6 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { readFileSync } from "node:fs";
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { customRender, screen, waitFor } from "../../test/test-utils";
 import Home from "./Home";
@@ -168,10 +168,12 @@ describe("Home - lodgings render", () => {
 
 function deferred() {
 	let resolve;
-	const promise = new Promise((res) => {
+	let reject;
+	const promise = new Promise((res, rej) => {
 		resolve = res;
+		reject = rej;
 	});
-	return { promise, resolve };
+	return { promise, reject, resolve };
 }
 
 describe("Home - pending list transition", () => {
@@ -610,6 +612,106 @@ describe("Home - loading failure, retry, and repeated failure", () => {
 			screen.queryByText(
 				"No hay alojamientos cargados todavía. Volvé más tarde.",
 			),
+		).not.toBeInTheDocument();
+	});
+});
+
+describe("Home - search request failures", () => {
+	it("shows a search failure without false zero results and recovers only through its retry", async () => {
+		let searchAttempts = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/search")) {
+				searchAttempts += 1;
+				return searchAttempts === 1
+					? Promise.reject(new Error("search unavailable"))
+					: Promise.resolve({
+							lodgings: [lodgingFixture],
+							totalItems: 1,
+							catalogItems: 1,
+						});
+			}
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([]);
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderHome({ route: "/?city=La%20Plata" });
+
+		const searchAlert = await screen.findByRole("alert");
+		expect(searchAlert).toHaveTextContent("No pudimos realizar la búsqueda.");
+		expect(searchAlert.closest("section")).not.toHaveAttribute("aria-live");
+		expect(
+			screen.queryByText(/0 resultados de 0 alojamientos/),
+		).not.toBeInTheDocument();
+
+		await user.click(
+			within(searchAlert).getByRole("button", { name: "Reintentar" }),
+		);
+		expect(
+			await screen.findByText("1 resultados de 1 alojamientos"),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText("No pudimos realizar la búsqueda."),
+		).not.toBeInTheDocument();
+	});
+
+	it("keeps a valid empty search response distinct from a search error", async () => {
+		mockGetDefaults({ categoryLodgings: [] });
+		renderHome({ route: "/?city=La%20Plata" });
+
+		const resultCount = await screen.findByText(
+			"0 resultados de 0 alojamientos",
+		);
+		expect(resultCount.closest("section")).toHaveAttribute(
+			"aria-live",
+			"polite",
+		);
+		expect(
+			screen.queryByText("No pudimos realizar la búsqueda."),
+		).not.toBeInTheDocument();
+	});
+
+	it("ignores an old search retry rejection after the query changes", async () => {
+		const oldRetry = deferred();
+		let oldSearchAttempts = 0;
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/search")) {
+				const query = new URL(endpoint, "http://localhost").search;
+				if (query === "?city=Vieja") {
+					oldSearchAttempts += 1;
+					return oldSearchAttempts === 1
+						? Promise.reject(new Error("old search failed"))
+						: oldRetry.promise;
+				}
+				return Promise.resolve({
+					lodgings: [],
+					totalItems: 0,
+					catalogItems: 1,
+				});
+			}
+			if (endpoint === "/categories") return Promise.resolve([categoryFixture]);
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderHome({ route: "/?city=Vieja" });
+
+		const searchAlert = await screen.findByRole("alert");
+		await user.click(
+			within(searchAlert).getByRole("button", { name: "Reintentar" }),
+		);
+		await user.click(await screen.findByRole("button", { name: /Cabaña/ }));
+		expect(
+			await screen.findByText("0 resultados de 1 alojamientos"),
+		).toBeInTheDocument();
+
+		oldRetry.reject(new Error("old retry failed"));
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(
+			screen.queryByText("No pudimos realizar la búsqueda."),
 		).not.toBeInTheDocument();
 	});
 });
