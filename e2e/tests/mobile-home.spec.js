@@ -126,6 +126,34 @@ async function expectTouchTarget(locator) {
   expect(box.height).toBeGreaterThanOrEqual(44);
 }
 
+/** @param {import('@playwright/test').Locator} locator */
+async function expectContrastAtLeastAA(locator) {
+  const contrast = await locator.evaluate((element) => {
+    const parseRgb = (value) => value.match(/\d+(?:\.\d+)?/g).slice(0, 3).map(Number);
+    const relativeLuminance = ([red, green, blue]) => {
+      const channels = [red, green, blue].map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045
+          ? normalized / 12.92
+          : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const foreground = relativeLuminance(parseRgb(getComputedStyle(element).color));
+    let backgroundElement = element;
+    let background = getComputedStyle(backgroundElement).backgroundColor;
+    while (background === 'rgba(0, 0, 0, 0)' && backgroundElement.parentElement) {
+      backgroundElement = backgroundElement.parentElement;
+      background = getComputedStyle(backgroundElement).backgroundColor;
+    }
+    const backgroundLuminance = relativeLuminance(parseRgb(background));
+    return (Math.max(foreground, backgroundLuminance) + 0.05) /
+      (Math.min(foreground, backgroundLuminance) + 0.05);
+  });
+
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
+}
+
 /**
  * @param {import('@playwright/test').Page} page
  * @param {string} placeholder
@@ -250,6 +278,15 @@ async function exerciseRetryControls(page, homePage) {
 
   await expect(categoryAlert).toBeVisible();
   await expect(searchAlert).toBeVisible();
+  for (const alert of [categoryAlert, searchAlert]) {
+    await expectContrastAtLeastAA(alert.locator('p'));
+  }
+  for (const retryControl of [categoryRetry, searchRetry]) {
+    await expectContrastAtLeastAA(retryControl);
+    await retryControl.hover();
+    await expectContrastAtLeastAA(retryControl);
+    await page.mouse.move(0, 0);
+  }
   for (const retryControl of [categoryRetry, searchRetry]) {
     await retryControl.scrollIntoViewIfNeeded();
     await expectTouchTarget(retryControl);
