@@ -4,7 +4,23 @@ const { test, expect } = require('../fixtures/fixtures');
 const CITY_SUGGESTIONS = ['Buenos Aires', 'Burzaco', 'Bariloche'];
 
 /** @param {import('@playwright/test').Page} page */
-async function mockHomeApi(page, searchRequests = []) {
+async function mockHomeApi(
+  page,
+  searchRequests = [],
+  { failInitialCategory = false, failInitialSearch = false } = {},
+) {
+  const retryState = {
+    categoriesFailing: failInitialCategory,
+    searchFailing: failInitialSearch,
+  };
+
+  await page.route('https://img.icons8.com/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+    });
+  });
   await page.route('**/api/auth/me', async (route) => {
     await route.fulfill({
       status: 200,
@@ -20,6 +36,11 @@ async function mockHomeApi(page, searchRequests = []) {
     });
   });
   await page.route('**/api/categories', async (route) => {
+    if (retryState.categoriesFailing) {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+      return;
+    }
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -49,12 +70,26 @@ async function mockHomeApi(page, searchRequests = []) {
   });
   await page.route('**/api/lodgings/search**', async (route) => {
     searchRequests.push(route.request().url());
+    if (retryState.searchFailing) {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+      return;
+    }
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ lodgings: [], totalItems: 0, catalogItems: 0 }),
     });
   });
+
+  return {
+    allowCategoryRetry() {
+      retryState.categoriesFailing = false;
+    },
+    allowSearchRetry() {
+      retryState.searchFailing = false;
+    },
+  };
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -197,6 +232,48 @@ async function exerciseSearchSubmission(page, homePage) {
   await expectNoHorizontalOverflow(page);
 }
 
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {import('../pages/HomePage')} homePage
+ */
+async function exerciseRetryControls(page, homePage) {
+  const homeApi = await mockHomeApi(page, [], {
+    failInitialCategory: true,
+    failInitialSearch: true,
+  });
+  await homePage.open('/?city=Buenos%20Aires');
+
+  const categoryAlert = page.getByRole('alert').filter({ hasText: 'categorías' });
+  const searchAlert = page.getByRole('alert').filter({ hasText: 'búsqueda' });
+  const categoryRetry = categoryAlert.getByRole('button', { name: 'Reintentar' });
+  const searchRetry = searchAlert.getByRole('button', { name: 'Reintentar' });
+
+  await expect(categoryAlert).toBeVisible();
+  await expect(searchAlert).toBeVisible();
+  for (const retryControl of [categoryRetry, searchRetry]) {
+    await retryControl.scrollIntoViewIfNeeded();
+    await expectTouchTarget(retryControl);
+    await expectContainedInViewport(page, retryControl);
+    await retryControl.focus();
+    await expect(retryControl).toBeFocused();
+    await expect(retryControl).toHaveCSS('outline-style', 'solid');
+  }
+  await expectNoHorizontalOverflow(page);
+
+  homeApi.allowCategoryRetry();
+  await categoryRetry.click();
+  await expect(categoryAlert).toHaveCount(0);
+  await expect(page.getByText('No hay categorías disponibles.')).toBeVisible();
+  await expect(searchAlert).toBeVisible();
+
+  homeApi.allowSearchRetry();
+  await searchRetry.click();
+  await expect(searchAlert).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Resultados de búsqueda' })).toBeVisible();
+  await expect(page.getByText('0 resultados de 0 alojamientos')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+}
+
 test.use({ hasTouch: true });
 
 test.describe('Mobile Home city search', () => {
@@ -221,6 +298,22 @@ test.describe('Mobile Home search submission', () => {
   });
 });
 
+test.describe('Home retry controls on desktop', () => {
+  test.use({ viewport: { width: 1280, height: 844 } });
+
+  test('keeps failed category and search retries accessible through successful empty states', async ({ page, homePage }) => {
+    await exerciseRetryControls(page, homePage);
+  });
+});
+
+test.describe('Home retry controls at 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('keeps failed category and search retries accessible through successful empty states', async ({ page, homePage }) => {
+    await exerciseRetryControls(page, homePage);
+  });
+});
+
 test.describe('Mobile Home at 320x844', () => {
   test.use({ viewport: { width: 320, height: 844 } });
 
@@ -240,5 +333,9 @@ test.describe('Mobile Home at 320x844', () => {
     await expectNoHorizontalOverflow(page);
     await inspectDatepicker(page, 'Check-in');
     await expectNoHorizontalOverflow(page);
+  });
+
+  test('keeps failed category and search retries accessible through successful empty states', async ({ page, homePage }) => {
+    await exerciseRetryControls(page, homePage);
   });
 });
