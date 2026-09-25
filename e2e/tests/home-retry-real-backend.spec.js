@@ -70,6 +70,7 @@ test.describe('Home search retry — real seeded backend', () => {
     expect(searchResults.totalItems).toBeGreaterThan(0);
     expect(Array.isArray(searchResults.lodgings)).toBe(true);
     expect(searchResults.lodgings.length).toBeGreaterThan(0);
+    expect(searchResults.lodgings.every((lodging) => lodging.city === 'Buenos Aires')).toBe(true);
     expect(typeof searchResults.lodgings[0]?.name).toBe('string');
     expect(searchResults.lodgings[0].name).not.toBe('');
 
