@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const {
-  pinnedVersion, imageForVersion, parseMode, dockerArgv, verifyImage, main,
+  pinnedVersion, imageForVersion, parseMode, dockerArgv, verifyPlaywright, verifyImage, main,
 } = require('./public-runner.cjs');
 
 const image = 'mcr.microsoft.com/playwright:v1.60.0-noble';
@@ -46,6 +46,24 @@ test('builds bounded read-only container argv with only the isolated artifact mo
     ['run', '--rm', '--pull=never', '--init', '--name', containerName, '--network', 'none']);
 });
 
+test('requires the host Playwright executable before Docker or readiness checks', async () => {
+  let checkedPath;
+  assert.throws(() => verifyPlaywright((file, mode) => {
+    checkedPath = file;
+    assert.equal(mode, require('node:fs').constants.X_OK);
+    throw new Error('missing');
+  }), /cd e2e && npm ci/);
+  assert.match(checkedPath, /e2e[\\/]node_modules[\\/]\.bin[\\/]playwright$/);
+
+  const calls = [];
+  await assert.rejects(main(['smoke'], {
+    access: () => { throw new Error('missing'); },
+    spawnSync: (...args) => { calls.push(args); },
+    checkDemo: async () => { calls.push('readiness'); },
+  }), /cd e2e && npm ci/);
+  assert.deepEqual(calls, []);
+});
+
 test('verifies cached image identity without pulling', () => {
   const calls = [];
   const success = (command, args) => {
@@ -81,6 +99,7 @@ test('sets finite per-mode deadlines and stops only the invocation container on 
     process.exitCode = 0;
     await main([mode], {
       spawnSync: fakeRun,
+      access: () => {},
       checkDemo: async () => {},
       createArtifacts: () => '/private/run',
       randomBytes: () => Buffer.from('0123456789abcdef01234567', 'hex'),
@@ -103,6 +122,7 @@ test('does not stop a container for non-timeout failure and reports stop uncerta
     const oldExitCode = process.exitCode;
     process.exitCode = 0;
     await main(['list'], {
+      access: () => {},
       spawnSync: (_command, args) => {
         calls.push(args);
         if (args[0] === 'image') return { status: 0, stdout: JSON.stringify([image]) };

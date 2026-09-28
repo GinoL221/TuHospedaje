@@ -188,7 +188,13 @@ Los scripts disponibles están declarados en [`frontend/package.json`](frontend/
 
 ### E2E con Playwright
 
-Para ejecutar el conjunto público aislado en CachyOS, levantá primero el demo local y usá únicamente estos modos desde la raíz del repositorio:
+Antes de ejecutar cualquier modo, instalá las dependencias E2E desde la raíz del repositorio; esta instalación queda fuera del demo preservado:
+
+```bash
+cd e2e && npm ci && cd ..
+```
+
+El runner no instala paquetes. También requiere que la imagen Playwright versionada ya esté en caché de Docker. Después, levantá el demo local y usá únicamente estos modos desde la raíz del repositorio:
 
 ```bash
 node e2e/scripts/public-runner.cjs list

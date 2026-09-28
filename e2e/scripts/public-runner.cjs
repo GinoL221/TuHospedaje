@@ -61,6 +61,12 @@ function dockerArgv({ image, repo, artifacts, mode, containerName }) {
   return args;
 }
 
+function verifyPlaywright(access = fs.accessSync) {
+  try { access(path.join(E2E, 'node_modules/.bin/playwright'), fs.constants.X_OK); } catch {
+    throw new Error('Playwright dependency is missing; run: cd e2e && npm ci');
+  }
+}
+
 function verifyImage(image, run = spawnSync) {
   const result = run('docker', ['image', 'inspect', image, '--format', '{{json .RepoTags}}'], {
     encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
@@ -103,6 +109,7 @@ async function main(argv = process.argv.slice(2), deps = {}) {
   }
   const image = imageForVersion(pinnedVersion(manifest));
   const run = deps.spawnSync || spawnSync;
+  verifyPlaywright(deps.access || fs.accessSync);
   verifyImage(image, run);
   if (mode !== 'list') await (deps.checkDemo || checkDemo)();
   const artifacts = (deps.createArtifacts || createArtifacts)();
@@ -143,4 +150,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { pinnedVersion, imageForVersion, parseMode, dockerArgv, verifyImage, checkDemo, main };
+module.exports = { pinnedVersion, imageForVersion, parseMode, dockerArgv, verifyPlaywright, verifyImage, checkDemo, main };
