@@ -188,18 +188,21 @@ Los scripts disponibles están declarados en [`frontend/package.json`](frontend/
 
 ### E2E con Playwright
 
-Requiere backend y frontend corriendo, además de una base con los datos necesarios para el escenario:
+Para ejecutar el conjunto público aislado en CachyOS, levantá primero el demo local y usá únicamente estos modos desde la raíz del repositorio:
 
 ```bash
-cd e2e
-npm ci
-npx playwright install
-npx playwright test
+node e2e/scripts/public-runner.cjs list
+node e2e/scripts/public-runner.cjs smoke
+node e2e/scripts/public-runner.cjs public
 ```
 
-También podés ejecutar un proyecto específico con `npm run test:chrome`. La configuración usa `BASE_URL` y está en [`e2e/playwright.config.js`](e2e/playwright.config.js). Los reportes se generan en `e2e/playwright-report/`.
+`list` enumera sin contactar el demo; `smoke` corre la comprobación básica; `public` ejecuta la matriz completa. Los tres usan Chromium, Firefox y WebKit de escritorio. La configuración aislada [`e2e/playwright.public.config.cjs`](e2e/playwright.public.config.cjs) admite sólo `smoke.spec.js`, `search.spec.js` y `home-recommendations.spec.js`. Esa lista es una frontera de revisión del código fuente, no un firewall de red que impida a una prueba allowlisteada emitir escrituras.
 
-El escenario de imágenes canónicas requiere los masters externos y `CANONICAL_ASSETS_E2E=1`; el CI no los incluye porque esos JPEG permanecen fuera del repositorio.
+El runner fija `http://localhost:5173`, hace un GET de readiness antes de iniciar navegadores y usa Docker con la imagen oficial Noble correspondiente exactamente a `@playwright/test` en `e2e/package.json`. No descarga imágenes ni instala npm; si la imagen versionada no está en caché, falla. Cada modo tiene un límite interno: `list` 90 segundos, `smoke` 180 segundos y `public` 600 segundos. Al vencer, intenta detener sólo el contenedor desechable nombrado para esa invocación (`docker stop --time 5`); Docker `--rm` lo quita al parar. Si el stop falla o no se confirma, el runner informa el nombre y el comando de inspección de sólo lectura (`docker inspect <nombre>`); no afirma que se haya limpiado. La ruta privada de artefactos se imprime también ante timeout o error. La configuración usa el reporter `list` de consola y guarda resultados en `/artifacts/test-results`; no genera un informe HTML persistido. Screenshots y videos se conservan sólo ante fallas. El directorio temporal del host tiene permisos 700; inspeccionalo y borrá manualmente cada directorio cuando ya no lo necesites.
+
+El modo smoke/public usa `--network host` para que el contenedor acceda al Vite publicado sólo en loopback; esto amplía lo que el contenedor puede alcanzar en la red del host. El contenedor no recibe credenciales, socket Docker, volúmenes de base ni otros árboles del repositorio. El montaje E2E es de sólo lectura; la allowlist sigue siendo una frontera de revisión, no una garantía contra escrituras HTTP desde una prueba modificada. El runner conserva el sandbox sin privilegios y limita `/tmp` a 256 MiB; agrega 512 MiB de `/dev/shm` privado, `HOME=/tmp`, `XDG_CACHE_HOME=/tmp/fontcache` y un límite PID de 256. Un diagnóstico aislado completó un smoke de Firefox con estos ajustes (PIDs Docker muestreados: máximo 165); un smoke autorizado completó 9/9 pruebas en Chromium, Firefox y WebKit en 39,9 segundos; la matriz pública de 30 pruebas sigue sin ejecutarse. Las suites existentes de auth, reservas, reseñas y administración pueden cambiar datos: no las ejecutes contra la base demo preservada. La configuración predeterminada y CI no cambian.
+
+Al actualizar Playwright, actualizá también el pin exacto de `@playwright/test` y asegurate de tener en caché la etiqueta oficial `mcr.microsoft.com/playwright:v<version>-noble`. Los assets canónicos siguen siendo opt-in mediante `CANONICAL_ASSETS_E2E=1` en el flujo existente y quedan fuera de esta allowlist.
 
 ## Documentación y recorridos
 
