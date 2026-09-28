@@ -5,7 +5,7 @@ Show `Sin reseñas` on unrated Home lodging cards instead of `0.0 (0 opiniones)`
 
 ## Scope and authority
 - User selected this Home-only copy change. `ProductCard` is shared by Home (recommendations and search results) and Favorites, so Home explicitly opts in to the new label.
-- Preserve the isolated demo database, canonical images, running services, and the unrelated uncommitted canonical Playwright spec fix. No backend/seed/Compose changes, cleanup, push or commit was authorized.
+- Preserve the isolated demo database, canonical images, running services, and the unrelated canonical Playwright spec fix. No backend/seed/Compose changes, cleanup or push was authorized.
 - Technical checks must distinguish unit tests, build/lint, and browser evidence; do not claim broader academic criteria from this copy fix.
 
 ## Allowed edit surfaces
@@ -21,4 +21,4 @@ Show `Sin reseñas` on unrated Home lodging cards instead of `0.0 (0 opiniones)`
 
 ## Evidence
 - Existing `ProductCard` always renders a numeric rating summary; stars already appear only when `averageRating > 0`. `ratingCount` is zero for unrated list items and may be absent in component fixtures.
-- No source was changed when this task record was created. Final feature files remain uncommitted in the target checkout; the review-only worktree is retained. Neither a commit nor a push was authorized. The independent Chromium check found description line-clamp geometry extending past the card's bounding rectangle; whether clipped glyphs paint beyond it was not established and this remains outside the requested rating-copy scope.
+- Commits: canonical e2e test `873552f` (`test(e2e): fix canonical lodging image coverage`); Home behavior/tests `9f1da30` (`fix(home): show unrated lodging review copy`). The Home commit also contains this feature task record as it stood at commit time; this post-commit evidence update is currently uncommitted. The review-only worktree is retained. No push was authorized. The independent Chromium check found description line-clamp geometry extending past the card's bounding rectangle; whether clipped glyphs paint beyond it was not established and this remains outside the requested rating-copy scope.
