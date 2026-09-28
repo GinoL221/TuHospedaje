@@ -31,7 +31,61 @@ function renderProductCard(props = {}, { authValue } = {}) {
 }
 
 describe("ProductCard - rendering lodging data", () => {
-	it("shows explicit zero average and rating count for an unrated lodging", () => {
+	it.each([
+		["zero rating count", { ...lodgingFixture, ratingCount: 0 }],
+		[
+			"absent rating count and average",
+			{ ...lodgingFixture, ratingCount: undefined, averageRating: undefined },
+		],
+	])(
+		"shows Sin reseñas for an opted-in unrated lodging with %s",
+		(_description, lodging) => {
+			renderProductCard({ lodging, showUnratedMessage: true });
+
+			expect(screen.getByText("Sin reseñas")).toBeInTheDocument();
+			expect(screen.queryByText("0.0 (0 opiniones)")).not.toBeInTheDocument();
+		},
+	);
+
+	it.each([
+		[
+			"positive count with zero average",
+			{ ...lodgingFixture, averageRating: 0, ratingCount: 3 },
+			"0.0 (3 opiniones)",
+			0,
+		],
+		[
+			"positive average with zero count",
+			{ ...lodgingFixture, averageRating: 4, ratingCount: 0 },
+			"4.0 (0 opiniones)",
+			4,
+		],
+	])(
+		"does not claim no reviews for %s",
+		(_description, lodging, summary, fullStars) => {
+			renderProductCard({ lodging, showUnratedMessage: true });
+
+			expect(screen.queryByText("Sin reseñas")).not.toBeInTheDocument();
+			expect(screen.getByText(summary)).toBeInTheDocument();
+			expect(
+				document.querySelectorAll(".card-rating-overlay .ov-star-full"),
+			).toHaveLength(fullStars);
+		},
+	);
+
+	it("keeps the numeric summary for positive ratings when opted in", () => {
+		renderProductCard({
+			showUnratedMessage: true,
+			lodging: { ...lodgingFixture, averageRating: 4.5, ratingCount: 12 },
+		});
+
+		expect(screen.getByText("4.5 (12 opiniones)")).toBeInTheDocument();
+		expect(
+			document.querySelectorAll(".card-rating-overlay .ov-star-full"),
+		).toHaveLength(4);
+	});
+
+	it("keeps the existing numeric summary without the opt-in", () => {
 		renderProductCard({ lodging: { ...lodgingFixture, ratingCount: 0 } });
 
 		expect(screen.getByText("0.0 (0 opiniones)")).toBeInTheDocument();

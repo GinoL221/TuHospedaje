@@ -10,6 +10,7 @@ export default function ProductCard({
 	defaultFavorite = false,
 	onFavoriteToggle,
 	showFavoriteButton = true,
+	showUnratedMessage = false,
 }) {
 	const { user } = useAuth();
 	const [optimisticFavorite, setOptimisticFavorite] = useState(null);
@@ -103,8 +104,11 @@ export default function ProductCard({
 				<div className="hotel-card-body">
 					<h3>{lodging.name}</h3>
 					<p className="rating-summary">
-						{Number(lodging.averageRating ?? 0).toFixed(1)} (
-						{lodging.ratingCount ?? 0} opiniones)
+						{showUnratedMessage &&
+						Number(lodging.ratingCount ?? 0) <= 0 &&
+						Number(lodging.averageRating ?? 0) <= 0
+							? "Sin reseñas"
+							: `${Number(lodging.averageRating ?? 0).toFixed(1)} (${lodging.ratingCount ?? 0} opiniones)`}
 					</p>
 					<p className="location">
 						{lodging.city}, {lodging.country}
