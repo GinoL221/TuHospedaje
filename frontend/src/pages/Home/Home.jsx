@@ -308,7 +308,11 @@ export default function Home() {
 						{visibleSearchResults.lodgings?.length > 0 && (
 							<div className="hotel-list">
 								{visibleSearchResults.lodgings.map((lodging) => (
-									<ProductCard key={lodging.id} lodging={lodging} />
+									<ProductCard
+										key={lodging.id}
+										lodging={lodging}
+										showUnratedMessage
+									/>
 								))}
 							</div>
 						)}
@@ -353,6 +357,7 @@ export default function Home() {
 								lodging={lodging}
 								defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
 								onFavoriteToggle={handleFavoriteToggle}
+								showUnratedMessage
 							/>
 						))}
 					</div>

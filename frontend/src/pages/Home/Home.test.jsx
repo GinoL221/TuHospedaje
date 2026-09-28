@@ -38,8 +38,17 @@ vi.mock("react-datepicker", () => ({
 }));
 
 vi.mock("../../components/ProductCard/ProductCard", () => ({
-	default: ({ lodging, defaultFavorite = false, onFavoriteToggle }) => (
-		<div data-testid="product-card" data-favorite={defaultFavorite}>
+	default: ({
+		lodging,
+		defaultFavorite = false,
+		onFavoriteToggle,
+		showUnratedMessage = false,
+	}) => (
+		<div
+			data-testid="product-card"
+			data-favorite={defaultFavorite}
+			data-show-unrated-message={showUnratedMessage}
+		>
 			{lodging.name}
 			{onFavoriteToggle && (
 				<button
@@ -147,6 +156,10 @@ describe("Home - lodgings render", () => {
 		renderHome();
 
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(screen.getByTestId("product-card")).toHaveAttribute(
+			"data-show-unrated-message",
+			"true",
+		);
 		expect(get).toHaveBeenCalledWith(
 			`/lodgings/recommendations?seed=${FIXED_SEED}&page=0&size=8`,
 		);
@@ -617,6 +630,19 @@ describe("Home - loading failure, retry, and repeated failure", () => {
 });
 
 describe("Home - search and category loading failures", () => {
+	it("opts search results and recommendations into the unrated message", async () => {
+		mockGetDefaults();
+		renderHome({ route: "/?city=Bariloche" });
+
+		await waitFor(() =>
+			expect(screen.getAllByTestId("product-card")).toHaveLength(2),
+		);
+		const cards = screen.getAllByTestId("product-card");
+		for (const card of cards) {
+			expect(card).toHaveAttribute("data-show-unrated-message", "true");
+		}
+	});
+
 	it("shows a search failure without false zero results and recovers only through its retry", async () => {
 		let searchAttempts = 0;
 		get.mockImplementation((endpoint) => {
