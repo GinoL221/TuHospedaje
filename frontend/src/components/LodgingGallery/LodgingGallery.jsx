@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	ChevronUp,
+} from "lucide-react";
 import GalleryModal from "../GalleryModal/GalleryModal";
 import "./LodgingGallery.css";
 
@@ -103,15 +108,41 @@ export default function LodgingGallery({ images = [], name }) {
 								</button>
 							))}
 						</div>
-						<button
-							className="gallery-more"
-							onClick={() => {
-								setCurrentIndex(0);
-								setIsModalOpen(true);
-							}}
-						>
-							Ver más
-						</button>
+						<div className="gallery-desktop-actions">
+							<div className="gallery-desktop-navigation">
+								<button
+									className="gallery-thumbs-arrow gallery-desktop-arrow"
+									onClick={() =>
+										setCurrentIndex((prev) => Math.max(0, prev - 1))
+									}
+									disabled={previewIndex === 0}
+									aria-label="Imagen anterior"
+								>
+									<ChevronUp size={24} aria-hidden="true" focusable="false" />
+								</button>
+								<button
+									className="gallery-thumbs-arrow gallery-desktop-arrow"
+									onClick={() =>
+										setCurrentIndex((prev) =>
+											Math.min(previewImages.length - 1, prev + 1),
+										)
+									}
+									disabled={previewIndex === previewImages.length - 1}
+									aria-label="Imagen siguiente"
+								>
+									<ChevronDown size={24} aria-hidden="true" focusable="false" />
+								</button>
+							</div>
+							<button
+								className="gallery-more"
+								onClick={() => {
+									setCurrentIndex(0);
+									setIsModalOpen(true);
+								}}
+							>
+								Ver más
+							</button>
+						</div>
 					</div>
 				)}
 			</div>

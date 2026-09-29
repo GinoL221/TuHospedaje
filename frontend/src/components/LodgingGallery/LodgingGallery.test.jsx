@@ -23,6 +23,41 @@ describe("LodgingGallery", () => {
 		expect(screen.getByText("1 / 7")).toBeInTheDocument();
 	});
 
+	it("navigates the desktop preview with bounded arrows without opening the modal", async () => {
+		render(<LodgingGallery images={images} name="Cabaña del Lago" />);
+		const user = userEvent.setup();
+		const previous = screen.getByRole("button", { name: "Imagen anterior" });
+		const next = screen.getByRole("button", { name: "Imagen siguiente" });
+
+		expect(previous).toBeDisabled();
+		expect(next).toBeEnabled();
+		await user.click(next);
+
+		expect(
+			screen
+				.getByRole("button", { name: "Abrir galería" })
+				.querySelector("img"),
+		).toHaveAccessibleName("Cabaña del Lago - 2");
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		await user.click(previous);
+		expect(
+			screen
+				.getByRole("button", { name: "Abrir galería" })
+				.querySelector("img"),
+		).toHaveAccessibleName("Cabaña del Lago - 1");
+		await user.click(previous);
+		expect(previous).toBeDisabled();
+
+		for (let index = 0; index < 4; index += 1) await user.click(next);
+		expect(
+			screen
+				.getByRole("button", { name: "Abrir galería" })
+				.querySelector("img"),
+		).toHaveAccessibleName("Cabaña del Lago - 5");
+		expect(next).toBeDisabled();
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	});
+
 	it.each([0, 1, 2, 3, 4, 5, 7])(
 		"shows a valid preview for %i images",
 		(imageCount) => {

@@ -84,6 +84,23 @@
   flex-shrink: 0;
 }
 
+.gallery-desktop-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+}
+
+.gallery-desktop-navigation {
+  display: flex;
+  gap: 8px;
+}
+
+.gallery-desktop-navigation .gallery-thumbs-arrow {
+  width: 44px;
+}
+
 .gallery-more {
   grid-column: 2;
   justify-self: end;
@@ -197,7 +214,13 @@
     gap: 8px;
   }
 
-  .gallery-desktop-arrow {
+  .gallery-desktop-actions {
+    grid-column: 2;
+    display: flex;
+    justify-self: end;
+  }
+
+  .gallery-desktop-navigation {
     display: none;
   }
 
