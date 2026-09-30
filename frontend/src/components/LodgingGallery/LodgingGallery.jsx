@@ -82,14 +82,6 @@ export default function LodgingGallery({ images = [], name }) {
 				</div>
 				{images.length > 1 && (
 					<div className="gallery-thumbs-col">
-						<button
-							className="gallery-thumbs-arrow gallery-desktop-arrow"
-							onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-							disabled={currentIndex === 0}
-							aria-label="Imagen anterior"
-						>
-							<ChevronUp size={20} aria-hidden="true" focusable="false" />
-						</button>
 						<div className="gallery-thumbs" ref={thumbnailStripRef}>
 							{previewImages.slice(1).map((url, index) => (
 								<button
@@ -116,27 +108,41 @@ export default function LodgingGallery({ images = [], name }) {
 								</button>
 							))}
 						</div>
-						<button
-							className="gallery-thumbs-arrow gallery-desktop-arrow"
-							onClick={() =>
-								setCurrentIndex((prev) =>
-									Math.min(previewImages.length - 1, prev + 1),
-								)
-							}
-							disabled={previewIndex === previewImages.length - 1}
-							aria-label="Imagen siguiente"
-						>
-							<ChevronDown size={20} aria-hidden="true" focusable="false" />
-						</button>
-						<button
-							className="gallery-more"
-							onClick={() => {
-								setCurrentIndex(0);
-								setIsModalOpen(true);
-							}}
-						>
-							Ver más
-						</button>
+						<div className="gallery-desktop-actions">
+							<div className="gallery-desktop-navigation">
+								<button
+									className="gallery-thumbs-arrow gallery-desktop-arrow"
+									onClick={() =>
+										setCurrentIndex((prev) => Math.max(0, prev - 1))
+									}
+									disabled={previewIndex === 0}
+									aria-label="Imagen anterior"
+								>
+									<ChevronUp size={24} aria-hidden="true" focusable="false" />
+								</button>
+								<button
+									className="gallery-thumbs-arrow gallery-desktop-arrow"
+									onClick={() =>
+										setCurrentIndex((prev) =>
+											Math.min(previewImages.length - 1, prev + 1),
+										)
+									}
+									disabled={previewIndex === previewImages.length - 1}
+									aria-label="Imagen siguiente"
+								>
+									<ChevronDown size={24} aria-hidden="true" focusable="false" />
+								</button>
+							</div>
+							<button
+								className="gallery-more"
+								onClick={() => {
+									setCurrentIndex(0);
+									setIsModalOpen(true);
+								}}
+							>
+								Ver más
+							</button>
+						</div>
 					</div>
 				)}
 			</div>
