@@ -45,17 +45,18 @@ public class ReservationController {
     @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Create a reservation",
-            description = "Books a lodging for the authenticated user. Returns 400 if the requested " +
-                          "dates overlap with an existing confirmed reservation. Returns 409 if a " +
-                          "concurrent update conflict is detected (optimistic or pessimistic lock failure)."
+            description = "Books a lodging for the authenticated user. Returns 400 for invalid input or " +
+                          "date validation errors. Returns 409 if the requested dates overlap with an " +
+                          "existing confirmed reservation or a concurrent update conflict is detected " +
+                          "(optimistic or pessimistic lock failure)."
     )
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Reservation created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or date conflict with an existing reservation", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input or date validation error", content = @Content),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Concurrent update conflict — retry the request", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Date overlap with an existing confirmed reservation or concurrent update conflict", content = @Content),
     })
     public ResponseEntity<ReservationResponse> create(
             @AuthenticationPrincipal User user,
