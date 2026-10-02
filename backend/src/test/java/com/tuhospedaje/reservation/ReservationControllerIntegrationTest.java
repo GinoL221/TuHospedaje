@@ -136,6 +136,52 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnConflictWhenCreatingReservationForOverlappingDates() throws Exception {
+        Long lodgingId = createTestLodging();
+        LocalDate checkIn = LocalDate.now().plusDays(10);
+        LocalDate checkOut = LocalDate.now().plusDays(12);
+        Map<String, Object> request = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", checkIn.toString(),
+                "checkOut", checkOut.toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455"
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(post("/api/reservations")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        Map<String, Object> overlappingRequest = Map.of(
+                "lodgingId", lodgingId,
+                "checkIn", checkIn.plusDays(1).toString(),
+                "checkOut", checkOut.plusDays(1).toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455"
+        );
+        mockMvc.perform(post("/api/reservations")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(overlappingRequest)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+
+        assertThat(reservationRepository.findAll().stream()
+                .filter(reservation -> reservation.getLodging().getId().equals(lodgingId))
+                .filter(reservation -> reservation.getStatus() == ReservationStatus.CONFIRMED))
+                .hasSize(1);
+    }
+
+    @Test
     void shouldRejectOversizedNotes() throws Exception {
         Long lodgingId = createTestLodging();
         Map<String, Object> request = Map.of(
@@ -542,7 +588,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenLodgingIsNotAvailable() throws Exception {
+    void shouldReturnConflictWhenLodgingIsNotAvailable() throws Exception {
         Long lodgingId = createTestLodging();
 
         createReservation(lodgingId, LocalDate.now().plusDays(10), LocalDate.now().plusDays(12));
@@ -563,7 +609,9 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("El alojamiento no está disponible para las fechas seleccionadas"));
     }
 
     /**
