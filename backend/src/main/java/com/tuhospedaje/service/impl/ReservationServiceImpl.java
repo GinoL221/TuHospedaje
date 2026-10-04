@@ -8,6 +8,7 @@ import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.ReservationConflictException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
@@ -105,7 +106,7 @@ public class ReservationServiceImpl implements ReservationService {
                         && r.getCheckOut().isAfter(request.getCheckIn()));
 
         if (hasOverlap) {
-            throw new IllegalArgumentException("El alojamiento no está disponible para las fechas seleccionadas");
+            throw new ReservationConflictException("El alojamiento no está disponible para las fechas seleccionadas");
         }
 
         User user = userRepository.findById(actor.id())

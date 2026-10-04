@@ -7,6 +7,7 @@ import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.ReservationConflictException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
@@ -71,7 +72,7 @@ class ReservationServiceImplTest {
     }
 
     @Test
-    void createReservation_whenDatesConflict_throwsIllegalArgumentException() {
+    void createReservation_whenDatesConflict_throwsReservationConflictException() {
         User user = buildUser(1L, RoleEnum.USER);
         Lodging lodging = buildLodging(10L, new BigDecimal("100.00"));
         CreateReservationRequest request = buildRequest(10L);
@@ -85,8 +86,8 @@ class ReservationServiceImplTest {
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(List.of(existing));
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
+        ReservationConflictException ex = assertThrows(
+                ReservationConflictException.class,
                 () -> reservationService.createReservation(actor(user), request)
         );
         assertThat(ex.getMessage()).contains("no está disponible");

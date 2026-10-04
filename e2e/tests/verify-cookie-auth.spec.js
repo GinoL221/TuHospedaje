@@ -46,22 +46,53 @@ test.describe('jwt-cookie-storage — browser verification', () => {
   test('session survives page reload via /me', async ({ page }) => {
     await loginViaUI(page);
 
-    let meResponse;
-    page.on('response', res => {
-      if (res.url().includes('/api/auth/me')) meResponse = res;
-    });
+    const logoutButton = page.getByRole('button', { name: 'Cerrar sesión', exact: true });
+    await expect(logoutButton).toBeVisible();
 
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    const homeUrl = `${FRONTEND}/`;
+    const meUrl = new URL('/api/auth/me', BACKEND);
+    let reloadNavigationSeen = false;
+    let reloadDocumentReady = false;
+    const meRequests = new Set();
 
-    expect(meResponse, '/me must be called on reload').toBeTruthy();
-    console.log('/me status:', meResponse.status());
-    expect(meResponse.status()).toBe(200);
+    const onRequest = request => {
+      if (request.isNavigationRequest() && request.method() === 'GET' &&
+          request.url() === homeUrl && request.frame() === page.mainFrame()) {
+        reloadNavigationSeen = true;
+      }
 
-    const body = await meResponse.json();
-    console.log('/me body:', JSON.stringify(body));
-    expect(body.email).toBe(EMAIL);
-    expect(page.url()).not.toContain('/login');
+      const requestUrl = new URL(request.url());
+      if (reloadDocumentReady && request.method() === 'GET' &&
+          requestUrl.origin === meUrl.origin && requestUrl.pathname === meUrl.pathname &&
+          request.frame() === page.mainFrame()) {
+        meRequests.add(request);
+      }
+    };
+    const onFrameNavigated = frame => {
+      if (reloadNavigationSeen && frame === page.mainFrame() && frame.url() === homeUrl) {
+        reloadDocumentReady = true;
+      }
+    };
+
+    page.on('request', onRequest);
+    page.on('framenavigated', onFrameNavigated);
+
+    const meResponsePromise = page.waitForResponse(response => meRequests.has(response.request()));
+    try {
+      const [meResponse] = await Promise.all([
+        meResponsePromise,
+        page.reload({ waitUntil: 'domcontentloaded' }),
+      ]);
+
+      expect(meResponse.status()).toBe(200);
+      const body = await meResponse.json();
+      expect(body.email).toBe(EMAIL);
+      await expect(logoutButton).toBeVisible();
+      expect(page.url()).toBe(homeUrl);
+    } finally {
+      page.off('request', onRequest);
+      page.off('framenavigated', onFrameNavigated);
+    }
   });
 
   // ── 3. Logout: cookie cleared by backend ────────────────────────────────

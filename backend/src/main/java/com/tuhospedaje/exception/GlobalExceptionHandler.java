@@ -99,6 +99,18 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", resolveMessage("error.rate_limit", locale), "status", 429));
     }
 
+    @ExceptionHandler(ReservationConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleReservationConflict(ReservationConflictException ex, Locale locale) {
+        String resolvedMsg;
+        try {
+            resolvedMsg = messageSource.getMessage(ex.getMessage(), null, locale);
+        } catch (NoSuchMessageException e) {
+            resolvedMsg = ex.getMessage();
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", resolvedMsg, "status", 409));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex, Locale locale) {
         String resolvedMsg;
