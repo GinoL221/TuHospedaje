@@ -6,6 +6,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.ReservationConflictException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
@@ -177,7 +178,7 @@ class ReservationConcurrencyTest {
                 return false;
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
-                return cause instanceof IllegalArgumentException
+                return cause instanceof ReservationConflictException
                         || cause instanceof PessimisticLockingFailureException;
             } catch (InterruptedException e) {
                 return false;
