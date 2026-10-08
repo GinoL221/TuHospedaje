@@ -6,7 +6,7 @@ Es el proyecto final integrador de Digital House. El alcance académico correspo
 
 ## Stack
 
-- **Backend:** Java 17, Spring Boot 3.5, Spring Security/JWT, Spring Data JPA y MariaDB.
+- **Backend:** Java 17, Spring Boot 4.0, Spring Security/JWT, Spring Data JPA y MariaDB.
 - **Frontend:** React 19, Vite 8, React Router y Lucide React.
 - **E2E:** Playwright para Chromium, Firefox y mobile Chromium.
 - **Servicios opcionales:** Cloudinary para imágenes y SMTP para email. La configuración SMTP no prueba por sí sola la entrega del proveedor o la llegada al buzón.
