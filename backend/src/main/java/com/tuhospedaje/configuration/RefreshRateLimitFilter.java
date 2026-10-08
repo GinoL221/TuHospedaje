@@ -1,6 +1,6 @@
 package com.tuhospedaje.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.tuhospedaje.security.FixedWindowRateLimiter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -68,7 +68,7 @@ public class RefreshRateLimitFilter extends OncePerRequestFilter {
 
     private final SessionProperties properties;
     private final Supplier<Clock> clock;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper;
     private final MessageSource messageSource;
 
     private final FixedWindowRateLimiter limiter = new FixedWindowRateLimiter();

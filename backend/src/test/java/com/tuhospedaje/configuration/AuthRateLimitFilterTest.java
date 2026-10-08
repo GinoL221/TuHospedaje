@@ -14,7 +14,7 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -43,7 +43,7 @@ class AuthRateLimitFilterTest {
     @Mock
     private MessageSource messageSource;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JsonMapper objectMapper = new JsonMapper();
 
     @BeforeEach
     void stubRateLimitMessage() {
@@ -211,7 +211,7 @@ class AuthRateLimitFilterTest {
         filter.doFilter(loginRequest(), blocked, chain);
 
         assertThat(blocked.getStatus()).isEqualTo(429);
-        com.fasterxml.jackson.databind.JsonNode body = objectMapper.readTree(blocked.getContentAsByteArray());
+        tools.jackson.databind.JsonNode body = objectMapper.readTree(blocked.getContentAsByteArray());
         assertThat(body.properties()).extracting(java.util.Map.Entry::getKey)
                 .containsExactlyInAnyOrder("error", "status");
         assertThat(body.get("status").asInt()).isEqualTo(429);

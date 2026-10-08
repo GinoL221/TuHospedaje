@@ -1,6 +1,7 @@
 package com.tuhospedaje.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -88,7 +89,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private final AuthRateLimitProperties properties;
     private final Supplier<Clock> clock;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper;
     private final MessageSource messageSource;
 
     /**
@@ -193,7 +194,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             if (raw != null && !raw.isBlank()) {
                 return raw.trim().toLowerCase(Locale.ROOT);
             }
-        } catch (IOException ignored) {
+        } catch (JacksonException ignored) {
             // malformed -> IP-only key; controller still returns 400
         }
         return null;
