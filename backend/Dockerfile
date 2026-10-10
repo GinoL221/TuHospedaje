@@ -18,7 +18,7 @@ COPY src src
 RUN ./mvnw -B -DskipTests package \
     && cp target/backend-0.0.1-SNAPSHOT.jar /workspace/app.jar
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:17-jre@sha256:207ecae0b2b104dfc6dfa763d1e9cd2041cb344800a180e24cb1a28ed533ff90
 # Require the OpenSSL security update in the runtime image.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
@@ -33,6 +33,8 @@ RUN apt-get update \
         || { echo "Required OpenSSL security update missing or too old: $package" >&2; exit 1; }; \
     done \
     && rm -rf /var/lib/apt/lists/*
+# Remove the unused Pebble executable inherited from the runtime base image.
+RUN rm -f /usr/bin/pebble
 WORKDIR /app
 COPY --from=build /workspace/app.jar /app/app.jar
 RUN chown 10001:10001 /app/app.jar
