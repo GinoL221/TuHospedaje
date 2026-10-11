@@ -4,6 +4,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	ChevronUp,
+	ImageOff,
 } from "lucide-react";
 import GalleryModal from "../GalleryModal/GalleryModal";
 import "./LodgingGallery.css";
@@ -35,7 +36,14 @@ export default function LodgingGallery({ images = [], name }) {
 		});
 	}, [previewIndex]);
 
-	if (images.length === 0) return null;
+	if (images.length === 0) {
+		return (
+			<section className="gallery-empty" aria-label="Galería de imágenes">
+				<ImageOff size={24} aria-hidden="true" focusable="false" />
+				<p>Este alojamiento todavía no tiene fotos.</p>
+			</section>
+		);
+	}
 
 	return (
 		<>
