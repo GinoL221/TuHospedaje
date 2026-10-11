@@ -23,6 +23,22 @@ describe("LodgingGallery", () => {
 		expect(screen.getByText("1 / 6")).toBeInTheDocument();
 	});
 
+	it("shows an empty state when no images are provided", () => {
+		render(<LodgingGallery images={[]} name="Cabaña del Lago" />);
+
+		expect(
+			screen.getByText("Este alojamiento todavía no tiene fotos.", {
+				exact: true,
+			}),
+		).toBeInTheDocument();
+		expect(screen.queryAllByRole("img")).toHaveLength(0);
+		expect(screen.queryAllByRole("button")).toHaveLength(0);
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("Ver más", { exact: true }),
+		).not.toBeInTheDocument();
+	});
+
 	it("renders only existing preview images when fewer than five are provided", () => {
 		render(
 			<LodgingGallery images={images.slice(0, 3)} name="Cabaña del Lago" />,
