@@ -52,7 +52,7 @@ Este es el flujo recomendado para desarrollo. Levanta MariaDB, backend y fronten
 
 ### Datos demo opcionales
 
-El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH`; generá el hash con una contraseña de desarrollo que no uses en otro entorno:
+El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH` en `deploy/dev.env`. Compose no debe interpolar ese valor: un hash bcrypt contiene `$` y Compose lo corta. El entrypoint del seed lee el archivo y lo exporta sin pasarlo por la interpolación. Generá el hash con una contraseña de desarrollo que no uses en otro entorno:
 
 ```bash
 python3 -m venv /tmp/bcrypt-venv
