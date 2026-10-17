@@ -90,7 +90,9 @@ async function exerciseProductDetail(page) {
     await expectContainedInViewport(page, control);
   }
 
-  const dateControls = popper.locator('.react-datepicker__day');
+  // Mobile deliberately shows one month; the second remains mounted but hidden.
+  await expect(popper.locator('.react-datepicker__month-container:visible')).toHaveCount(1);
+  const dateControls = popper.locator('.react-datepicker__day:visible');
   await expect(dateControls).not.toHaveCount(0);
   for (const control of await dateControls.all()) {
     await expect(control).toBeVisible();
@@ -100,6 +102,7 @@ async function exerciseProductDetail(page) {
   }
 
   await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: test.info().outputPath('calendar-mobile.png') });
 }
 
 test.describe('Mobile ProductDetail at the project viewport', () => {

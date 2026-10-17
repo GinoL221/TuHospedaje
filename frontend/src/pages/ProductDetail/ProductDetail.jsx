@@ -321,6 +321,7 @@ export default function ProductDetail() {
 		}
 		setDateDrafts((current) => ({ ...current, [field]: null }));
 		setDateErrors((current) => ({ ...current, [field]: undefined }));
+		if (field === "checkOut") closeCalendar(true);
 	}
 
 	function clearDates() {

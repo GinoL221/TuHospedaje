@@ -403,6 +403,16 @@ describe("ProductDetail - S17 typed dates", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("closes the calendar after a typed checkout so Reservar is not covered", async () => {
+		const user = await setup();
+		await typeDate(user, "Check-in", "15/07/2026");
+		await user.keyboard("{Escape}");
+		expect(document.querySelector(".react-datepicker")).not.toBeInTheDocument();
+		await typeDate(user, "Check-out", "20/07/2026");
+		expect(document.querySelector(".react-datepicker")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled();
+	});
+
 	it("accepts both typed endpoints on Enter and blur and books the displayed range", async () => {
 		const user = await setup();
 		await typeDate(user, "Check-in", "15/07/2026");
