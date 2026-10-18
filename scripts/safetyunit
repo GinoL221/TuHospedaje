@@ -1,0 +1,56 @@
+#!/bin/bash
+# Developer self-check only: this launcher is not a security or network sandbox.
+set -euo pipefail
+umask 077
+
+if [[ "$#" -ne 1 || "$1" != "--self-test" ]]; then
+    printf '%s\n' 'usage: scripts/safetyunit --self-test' >&2
+    exit 2
+fi
+
+workspace_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+readonly workspace_root
+readonly backend_root="$workspace_root/backend"
+readonly output_root="$backend_root/.safetyunit-output"
+readonly repository="${SAFETYUNIT_REPOSITORY:-${HOME:?HOME must be set}/.m2/repository}"
+readonly maven="${SAFETYUNIT_MAVEN:-$(command -v mvn || true)}"
+
+if [[ "$maven" != /* || ! -f "$maven" || ! -x "$maven" ]]; then
+    printf '%s\n' 'safetyunit: Maven must be an absolute executable path' >&2
+    exit 2
+fi
+if [[ "$repository" != /* || ! -d "$repository" ]]; then
+    printf '%s\n' 'safetyunit: repository must be an existing absolute directory' >&2
+    exit 2
+fi
+if [[ -L "$output_root" ]]; then
+    printf '%s\n' 'refusing symlink safetyunit output root' >&2
+    exit 2
+fi
+mkdir -p -- "$output_root"
+chmod 700 -- "$output_root"
+run_root="$(mktemp -d "$output_root/run.XXXXXXXX")"
+private_home="$run_root/home"
+private_tmp="$run_root/tmp"
+private_build="$run_root/build"
+private_config="$run_root/config"
+mkdir -p -- "$private_home" "$private_tmp" "$private_build" "$private_config/docker"
+printf '%s\n' '<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"></settings>' > "$private_config/settings.xml"
+
+cd -- "$backend_root"
+exec /usr/bin/env -i \
+    PATH=/usr/bin:/bin \
+    HOME="$private_home" \
+    MAVEN_SKIP_RC=true \
+    JAVA_TOOL_OPTIONS="-Duser.home=\"$private_home\" -Djava.io.tmpdir=\"$private_tmp\"" \
+    TMPDIR="$private_tmp" TMP="$private_tmp" TEMP="$private_tmp" \
+    DOCKER_CONFIG="$private_config/docker" \
+    TESTCONTAINERS_PULL_POLICY="com.tuhospedaje.safety.OfflineImagePolicy\$NeverPullPolicy" \
+    TESTCONTAINERS_IMAGE_SUBSTITUTOR="com.tuhospedaje.safety.OfflineImagePolicy\$DenyImageSubstitutor" \
+    "$maven" -o -s "$private_config/settings.xml" -gs "$private_config/settings.xml" \
+    -Dmaven.repo.local="$repository" \
+    -Duser.home="$private_home" \
+    -Dsafetyunit.build="$private_build" \
+    -Dsafetyunit.home="$private_home" \
+    -Dsafetyunit.tmp="$private_tmp" \
+    -Psafetyunit test
