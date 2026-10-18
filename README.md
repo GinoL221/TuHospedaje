@@ -41,6 +41,10 @@ Este es el flujo recomendado para desarrollo. Levanta MariaDB, backend y fronten
 
    Este flujo aplica sólo las migraciones de esquema. No carga filas demo.
 
+   El frontend de desarrollo usa `VITE_WHATSAPP_NUMBER=12025550100`, un número ficticio del rango reservado norteamericano 202-555-0100–0199. No es un canal real de contacto y no demuestra entrega de mensajes. Las pruebas verifican el enlace sin abrir WhatsApp ni enviar mensajes. Para ejecución manual, configurá la misma variable en `frontend/.env`. Un despliegue real requiere un número de contacto autorizado; este valor queda limitado a desarrollo.
+
+   Para verificar esta configuración sin levantar servicios ni leer archivos privados, ejecutá `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/tests -p test_dev_whatsapp_config.py -v` desde la raíz. La prueba resuelve los archivos Compose públicos con valores ficticios y `--env-file /dev/null`; no descarga imágenes ni modifica bases.
+
 3. Para detenerlo sin borrar la base:
 
    ```bash

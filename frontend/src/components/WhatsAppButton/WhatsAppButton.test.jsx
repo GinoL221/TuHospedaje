@@ -48,6 +48,20 @@ describe("WhatsAppButton - valid configuration handoff", () => {
 		expect(link).toHaveAttribute("rel", "noopener noreferrer");
 	});
 
+	it("renders the fictional development contact without initiating a handoff", () => {
+		vi.stubEnv("VITE_WHATSAPP_NUMBER", "12025550100");
+		render(<WhatsAppButton />);
+
+		const link = getHandoffLink();
+		expect(link).toHaveAttribute(
+			"href",
+			HANDOFF_URL.replace("5491122334455", "12025550100"),
+		);
+		expect(link).toHaveAttribute("target", "_blank");
+		expect(link).toHaveAttribute("rel", "noopener noreferrer");
+		expect(screen.queryByRole("status")).toBeNull();
+	});
+
 	it("reports only that the handoff was initiated, never that a message was sent or delivered", () => {
 		vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
 		render(<WhatsAppButton />);
