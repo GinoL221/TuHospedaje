@@ -139,8 +139,20 @@ async function exerciseBooking(page) {
   await nextMonth.scrollIntoViewIfNeeded();
   await expectContainedInViewport(page, nextMonth);
   await page.keyboard.press('Escape');
-  await checkIn.focus();
-  await page.keyboard.press('Enter');
+  await expect(calendar).not.toBeVisible();
+  // Escape schedules both a blur and a refocus. Wait for returned focus to
+  // survive the next rendering frame instead of racing those callbacks.
+  await page.waitForFunction(() => {
+    const input = document.getElementById('booking-check-in');
+    const ready = () => Boolean(
+      input && document.activeElement === input &&
+      !document.querySelector('.react-datepicker-popper .react-datepicker'),
+    );
+    if (!ready()) return false;
+    return new Promise(resolve => requestAnimationFrame(() => resolve(ready())));
+  });
+  await expect(checkIn).toBeFocused();
+  await checkIn.press('Enter');
   await expect(calendar).toBeVisible();
   await page.keyboard.press('Escape');
 
