@@ -311,6 +311,8 @@ export default function Home() {
 									<ProductCard
 										key={lodging.id}
 										lodging={lodging}
+										defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
+										onFavoriteToggle={handleFavoriteToggle}
 										showUnratedMessage
 									/>
 								))}

@@ -1027,6 +1027,38 @@ describe("Home - pagination", () => {
 });
 
 describe("Home - favorites", () => {
+	it("shares loaded favorites and toggles between search results and recommendations", async () => {
+		mockGetDefaults({ favorites: [lodgingFixture] });
+		const user = userEvent.setup();
+		renderHome({ route: "/?city=Bariloche" });
+
+		await screen.findByRole("heading", { name: "Resultados de búsqueda" });
+		await waitFor(() => {
+			const cards = screen.getAllByTestId("product-card");
+			expect(cards).toHaveLength(2);
+			for (const card of cards) {
+				expect(card).toHaveAttribute("data-favorite", "true");
+			}
+		});
+		const [searchCard, recommendationCard] =
+			screen.getAllByTestId("product-card");
+
+		await user.click(
+			within(searchCard).getByRole("button", { name: "Toggle favorite" }),
+		);
+		for (const card of [searchCard, recommendationCard]) {
+			expect(card).toHaveAttribute("data-favorite", "false");
+		}
+		await user.click(
+			within(recommendationCard).getByRole("button", {
+				name: "Toggle favorite",
+			}),
+		);
+		for (const card of [searchCard, recommendationCard]) {
+			expect(card).toHaveAttribute("data-favorite", "true");
+		}
+	});
+
 	it("fetches favorites when the user is logged in", async () => {
 		mockGetDefaults();
 		renderHome();
