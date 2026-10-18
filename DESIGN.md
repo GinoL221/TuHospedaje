@@ -140,6 +140,7 @@ Mobile/touch Admin is **not supported**. Touch-capable devices at `<=1024px` rec
 
 | Status | Contract |
 |---|---|
+| **Implemented** | ProductDetail shows one calendar month on mobile and two on desktop. At `<=480px`, the calendar is centered below the fixed Header and uses narrow outer gutters and no inline month margins to keep seven `44x44px` day targets contained at `320px`. Browser checks cover `320px`, `390px`, and desktop `1440px`; mobile tests inspect the visible month, not the deliberately hidden second month. |
 | **Implemented** | SearchResults keeps controls available while chips summarize applied filters. Chip removal synchronizes controls while preserving result cards, loading, error, empty, pagination, and responsive behavior; the `600px` layout was manually verified. |
 | **Implemented** | One global Footer-mounted WhatsApp action remains fixed on desktop, enters normal Footer flow at `<=768px` with a `48x48px` target, preserves its URL and accessible name, and is hidden when its environment value is absent. |
 | **Implemented** | ConfirmDialog has dialog semantics, instance-safe naming, safe initial focus, enabled-control focus containment, return focus, pending-safe Escape and overlay behavior, and duplicate-confirm protection. Its focused tests, Admin regressions, lint, and build were previously recorded as passing. |

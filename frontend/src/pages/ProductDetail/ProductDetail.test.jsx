@@ -249,10 +249,10 @@ describe("ProductDetail - header navigation placement", () => {
 		expect(css.match(/\.btn-share\s*\{/g)).toHaveLength(1);
 		expect(css).toMatch(/\.product-detail\s*\{[^}]*overflow-x:\s*hidden/);
 		expect(css).toMatch(
-			/\.product-detail \.product-datepicker-popper[^}]*width:\s*min\(320px, 100vw\)/,
+			/\.product-detail \.product-datepicker-popper[^}]*width:\s*min\(640px, calc\(100vw - 32px\)\)/,
 		);
 		expect(css).toMatch(
-			/@media \(max-width: 768px\)[\s\S]*\.date-pickers[^}]*grid-template-columns:\s*1fr/,
+			/@media \(max-width: 768px\)[\s\S]*\.react-datepicker__month-container:nth-of-type\(2\)[^}]*display:\s*none/,
 		);
 		expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
 	});
@@ -317,6 +317,247 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 	});
 });
 
+describe("ProductDetail - S17 typed dates", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.setSystemTime(new Date(2026, 6, 15, 12));
+	});
+	afterEach(() => vi.useRealTimers());
+
+	async function setup(occupiedRanges = []) {
+		mockGetDefaults({ availability: { occupiedRanges } });
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).toBeEnabled(),
+		);
+		return user;
+	}
+
+	async function typeDate(user, field, value, commit = "{Enter}") {
+		const input = screen.getByLabelText(field);
+		await user.clear(input);
+		await user.type(input, value);
+		expect(input).toHaveValue(value);
+		expect(input).toHaveFocus();
+		if (commit === "blur") await user.tab();
+		else if (commit) await user.keyboard(commit);
+	}
+
+	it.each(["typing", "calendar"])(
+		"preserves an invalid opposite draft and blocks booking after valid %s checkout",
+		async (method) => {
+			const user = await setup();
+			await typeDate(user, "Check-in", "15/07/2026");
+			await typeDate(user, "Check-out", "20/07/2026");
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+			);
+			const calls = getAvailability.mock.calls.length;
+			await typeDate(user, "Check-in", "31/02/2026");
+			expect(getAvailability).toHaveBeenCalledTimes(calls);
+			if (method === "typing") await typeDate(user, "Check-out", "21/07/2026");
+			else
+				await selectDateByLabelPart(
+					user,
+					screen.getByLabelText("Check-out"),
+					"July 21st, 2026",
+				);
+			await waitFor(() =>
+				expect(screen.getByLabelText("Check-out")).toBeEnabled(),
+			);
+			expect(screen.getByLabelText("Check-out")).toHaveValue("21/07/2026");
+			expect(screen.getByLabelText("Check-in")).toHaveValue("31/02/2026");
+			expect(screen.getByLabelText("Check-in")).toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+			expect(
+				screen.getByText("Ingresá una fecha válida en formato dd/mm/aaaa."),
+			).toHaveAttribute("role", "alert");
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+			expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+			await user.click(screen.getByRole("button", { name: "Reservar" }));
+			expect(screen.queryByTestId("booking-sentinel")).not.toBeInTheDocument();
+		},
+	);
+
+	it("S18 opens one shared calendar without stealing typing focus and supports keyboard entry and Escape", async () => {
+		const user = await setup();
+		const input = screen.getByLabelText("Check-in");
+		await user.click(input);
+		expect(document.querySelectorAll(".react-datepicker")).toHaveLength(1);
+		await user.type(input, "15/07/2026");
+		expect(input).toHaveValue("15/07/2026");
+		expect(input).toHaveFocus();
+		expect(input).toHaveAttribute("aria-expanded", "true");
+		await user.keyboard("{Enter}");
+		await user.keyboard("{ArrowDown}");
+		expect(document.activeElement).toHaveClass("react-datepicker__day");
+		await user.keyboard("{Escape}");
+		expect(document.querySelectorAll(".react-datepicker")).toHaveLength(0);
+		expect(screen.getByLabelText("Check-out")).toHaveFocus();
+		expect(
+			screen.queryByRole("button", { name: /Abrir calendario/ }),
+		).not.toBeInTheDocument();
+	});
+
+	it("closes the calendar after a typed checkout so Reservar is not covered", async () => {
+		const user = await setup();
+		await typeDate(user, "Check-in", "15/07/2026");
+		await user.keyboard("{Escape}");
+		expect(document.querySelector(".react-datepicker")).not.toBeInTheDocument();
+		await typeDate(user, "Check-out", "20/07/2026");
+		expect(document.querySelector(".react-datepicker")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled();
+	});
+
+	it("accepts both typed endpoints on Enter and blur and books the displayed range", async () => {
+		const user = await setup();
+		await typeDate(user, "Check-in", "15/07/2026");
+		expect(screen.getByLabelText("Check-in")).toHaveValue("15/07/2026");
+		expect(screen.getByText("Elegí la salida")).toBeInTheDocument();
+		await typeDate(user, "Check-out", "20/07/2026", "blur");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		expect(screen.getByText(/Total estimado:/)).toHaveTextContent("5 noches");
+		expect(screen.getByText(/Total estimado:/)).toHaveTextContent("$500");
+		expect(getAvailability).toHaveBeenLastCalledWith(
+			"1",
+			expect.objectContaining({
+				checkIn: new Date(2026, 6, 15),
+				checkOut: new Date(2026, 6, 20),
+			}),
+		);
+		await user.click(screen.getByRole("button", { name: "Reservar" }));
+		expect(screen.getByTestId("booking-sentinel")).toBeInTheDocument();
+	});
+
+	it.each(["31/02/2026", "15/13/2026", "texto", "15/07/26"])(
+		"rejects malformed or impossible typed date %s without availability requests",
+		async (value) => {
+			const user = await setup();
+			const calls = getAvailability.mock.calls.length;
+			await typeDate(user, "Check-in", value);
+			expect(
+				screen.getByText(
+					/Ingresá una fecha válida|La fecha no está disponible/,
+				),
+			).toHaveTextContent("Ingresá una fecha válida en formato dd/mm/aaaa.");
+			expect(screen.getByLabelText("Check-in")).toHaveValue(value);
+			expect(screen.getByLabelText("Check-in")).toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+			expect(screen.getByLabelText("Check-out")).toHaveValue("");
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+			expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+			expect(getAvailability).toHaveBeenCalledTimes(calls);
+		},
+	);
+
+	it.each(["14/07/2026", "17/07/2026"])(
+		"rejects past or occupied typed arrival %s",
+		async (value) => {
+			const user = await setup([
+				{ checkIn: "2026-07-17", checkOut: "2026-07-19" },
+			]);
+			const calls = getAvailability.mock.calls.length;
+			await typeDate(user, "Check-in", value);
+			expect(
+				screen.getByText(
+					/Ingresá una fecha válida|La fecha no está disponible/,
+				),
+			).toHaveTextContent(
+				"La fecha no está disponible o no forma un rango válido.",
+			);
+			expect(screen.getByLabelText("Check-out")).toHaveValue("");
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+			expect(getAvailability).toHaveBeenCalledTimes(calls);
+		},
+	);
+
+	it("accepts occupied check-in as a checkout boundary but rejects occupied nights and same-day departure", async () => {
+		const user = await setup([
+			{ checkIn: "2026-07-17", checkOut: "2026-07-19" },
+		]);
+		await typeDate(user, "Check-in", "15/07/2026");
+		await typeDate(user, "Check-out", "17/07/2026");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		expect(screen.getByText(/Total estimado:/)).toHaveTextContent("2 noches");
+		const calls = getAvailability.mock.calls.length;
+		for (const value of ["18/07/2026", "19/07/2026", "15/07/2026"]) {
+			await typeDate(user, "Check-out", value);
+			expect(
+				screen.getByText(
+					/Ingresá una fecha válida|La fecha no está disponible/,
+				),
+			).toHaveTextContent(
+				"La fecha no está disponible o no forma un rango válido.",
+			);
+			expect(screen.getByLabelText("Check-in")).toHaveValue("15/07/2026");
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+			expect(getAvailability).toHaveBeenCalledTimes(calls);
+		}
+	});
+
+	it("blocks uncommitted drafts, preserves a valid end and clears an invalid end on typed arrival changes", async () => {
+		const user = await setup();
+		await typeDate(user, "Check-in", "15/07/2026");
+		await typeDate(user, "Check-out", "20/07/2026");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		await typeDate(user, "Check-in", "16/07/2026", "");
+		expect(screen.getByLabelText("Check-in")).toHaveValue("16/07/2026");
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+		await user.keyboard("{Enter}");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		expect(screen.getByLabelText("Check-out")).toHaveValue("20/07/2026");
+		expect(screen.getByText(/Total estimado:/)).toHaveTextContent("4 noches");
+		await typeDate(user, "Check-in", "21/07/2026");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+		expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+	});
+
+	it("keeps the calendar usable after a typed error and resets text and errors with clear dates", async () => {
+		const user = await setup();
+		await typeDate(user, "Check-in", "31/02/2026");
+		expect(
+			screen.getByText(/Ingresá una fecha válida|La fecha no está disponible/),
+		).toBeInTheDocument();
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		expect(screen.getByLabelText("Check-in")).toHaveValue("15/07/2026");
+		expect(
+			screen.queryByText(
+				/Ingresá una fecha válida|La fecha no está disponible/,
+			),
+		).not.toBeInTheDocument();
+		await typeDate(user, "Check-out", "texto");
+		await user.click(screen.getByRole("button", { name: "Limpiar fechas" }));
+		expect(screen.getByLabelText("Check-in")).toHaveValue("");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(
+			screen.queryByText(
+				/Ingresá una fecha válida|La fecha no está disponible/,
+			),
+		).not.toBeInTheDocument();
+		expect(screen.getByText("Elegí la entrada")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+	});
+});
+
 describe("ProductDetail - navigation to booking", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -359,6 +600,332 @@ describe("ProductDetail - navigation to booking", () => {
 	// thin page-specific wiring: that the check-out DatePicker's minDate prop
 	// is actually connected to minCheckoutDate(checkIn), not duplicating the
 	// date-math assertions already owned by dateRange.test.js.
+	it("S16 edits a partial check-in directly across the next occupied period", async () => {
+		mockGetDefaults({
+			availability: {
+				occupiedRanges: [{ checkIn: "2026-07-16", checkOut: "2026-07-18" }],
+			},
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).toBeEnabled(),
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 22nd, 2026",
+		);
+		expect(screen.getByLabelText("Check-in")).toHaveValue("22/07/2026");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+		expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+	});
+
+	it("S16 edits check-out without replacing an existing check-in", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 20th, 2026",
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 22nd, 2026",
+		);
+		expect(screen.getByLabelText("Check-in")).toHaveValue("15/07/2026");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("22/07/2026");
+		expect(screen.getByText(/Total estimado:/)).toHaveTextContent("7 noches");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+	});
+
+	it("S16 preserves a valid check-out when editing check-in earlier or later", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 20th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 25th, 2026",
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		for (const [day, value, nights] of [
+			["July 18th, 2026", "18/07/2026", 7],
+			["July 22nd, 2026", "22/07/2026", 3],
+		]) {
+			await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), day);
+			expect(screen.getByLabelText("Check-in")).toHaveValue(value);
+			expect(screen.getByLabelText("Check-out")).toHaveValue("25/07/2026");
+			expect(screen.getByText(/Total estimado:/)).toHaveTextContent(
+				`${nights} noches`,
+			);
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+			);
+		}
+	});
+
+	it.each(["July 20th, 2026", "July 22nd, 2026"])(
+		"S16 clears check-out when the new check-in is not before it: %s",
+		async (day) => {
+			mockGetDefaults();
+			const user = userEvent.setup();
+			renderProductDetail({ authValue: makeAuthValue() });
+			await screen.findByText("Cabaña del Lago");
+			await screen.findByText("Todas las fechas están disponibles.");
+			await selectDateByLabelPart(
+				user,
+				screen.getByLabelText("Check-in"),
+				"July 15th, 2026",
+			);
+			await selectDateByLabelPart(
+				user,
+				screen.getByLabelText("Check-out"),
+				"July 20th, 2026",
+			);
+			await waitFor(() =>
+				expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+			);
+			await selectDateByLabelPart(user, screen.getByLabelText("Check-in"), day);
+			expect(screen.getByLabelText("Check-in")).toHaveValue(
+				day.includes("20th") ? "20/07/2026" : "22/07/2026",
+			);
+			expect(screen.getByLabelText("Check-out")).toHaveValue("");
+			expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+		},
+	);
+
+	it("S16 clears a preserved check-out if the edited stay crosses occupied nights", async () => {
+		mockGetDefaults({
+			availability: {
+				occupiedRanges: [{ checkIn: "2026-07-16", checkOut: "2026-07-18" }],
+			},
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).toBeEnabled(),
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 18th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 20th, 2026",
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		expect(screen.getByLabelText("Check-in")).toHaveValue("15/07/2026");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+	});
+
+	it("S16 announces the endpoint being edited and advances after selecting check-in", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+		expect(screen.getByText("Elegí la entrada")).toHaveAttribute(
+			"aria-live",
+			"polite",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		expect(screen.getByText("Elegí la salida")).toBeInTheDocument();
+		await user.click(screen.getByLabelText("Check-in"));
+		expect(screen.getByText("Elegí la entrada")).toBeInTheDocument();
+	});
+
+	it("S16 clears both dates, total and booking eligibility and resets availability", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+		expect(
+			screen.getByRole("button", { name: "Limpiar fechas" }),
+		).toBeDisabled();
+		const initialAvailabilityRequest = getAvailability.mock.calls.at(-1);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-out"),
+			"July 20th, 2026",
+		);
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled(),
+		);
+		await user.click(screen.getByRole("button", { name: "Limpiar fechas" }));
+		expect(screen.getByLabelText("Check-in")).toHaveValue("");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(screen.queryByText(/Total estimado:/)).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+		expect(
+			screen.getByRole("button", { name: "Limpiar fechas" }),
+		).toBeDisabled();
+		expect(screen.getByText("Elegí la entrada")).toBeInTheDocument();
+		await waitFor(() =>
+			expect(getAvailability.mock.calls.at(-1)).toEqual(
+				initialAvailabilityRequest,
+			),
+		);
+	});
+
+	it("pairs each date label with its input in a separate layout column", async () => {
+		mockGetDefaults();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		const checkIn = screen.getByRole("textbox", { name: "Check-in" });
+		const checkOut = screen.getByRole("textbox", { name: "Check-out" });
+
+		expect(checkIn.parentElement).not.toBe(checkOut.parentElement);
+		expect(checkIn.parentElement).toContainElement(
+			screen.getByText("Check-in"),
+		);
+		expect(checkOut.parentElement).toContainElement(
+			screen.getByText("Check-out"),
+		);
+		expect(checkIn).toHaveAccessibleName("Check-in");
+		expect(checkOut).toHaveAccessibleName("Check-out");
+	});
+
+	it("shows a two-month shared range calendar when the guest opens check-in", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await screen.findByText("Todas las fechas están disponibles.");
+		await user.click(screen.getByLabelText("Check-in"));
+
+		expect(
+			document.querySelectorAll(
+				".product-datepicker-popper .react-datepicker__month-container",
+			),
+		).toHaveLength(2);
+	});
+
+	it("blocks every checkout date whose stay would cross an occupied night", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-16", checkOut: "2026-07-18" }],
+				},
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await user.click(screen.getByLabelText("Check-out"));
+
+		expect(getDateCellByLabelPart("July 16th, 2026")).not.toHaveAttribute(
+			"aria-disabled",
+			"true",
+		);
+		const occupiedCheckout = getDateCellByLabelPart("July 17th, 2026");
+		expect(occupiedCheckout).toHaveAttribute("aria-disabled", "true");
+		expect(getDateCellByLabelPart("July 18th, 2026")).toHaveAttribute(
+			"aria-disabled",
+			"true",
+		);
+		await user.click(occupiedCheckout);
+		expect(screen.getByLabelText("Check-out")).toHaveValue("");
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeDisabled();
+	});
+
+	it("allows checkout on the first occupied day because the stay is half-open", async () => {
+		mockGetSequenced({
+			availabilityResponses: [
+				{
+					available: false,
+					occupiedRanges: [{ checkIn: "2026-07-16", checkOut: "2026-07-17" }],
+				},
+			],
+		});
+		const user = userEvent.setup();
+		renderProductDetail({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
+		await selectDateByLabelPart(
+			user,
+			screen.getByLabelText("Check-in"),
+			"July 15th, 2026",
+		);
+		await user.click(screen.getByLabelText("Check-out"));
+
+		const checkoutBoundary = getDateCellByLabelPart("July 16th, 2026");
+		expect(checkoutBoundary).not.toHaveAttribute("aria-disabled", "true");
+		await user.click(checkoutBoundary);
+
+		expect(screen.getByLabelText("Check-out")).toHaveValue("16/07/2026");
+		expect(screen.getByText(/Total estimado:/)).toHaveTextContent("1 noches");
+		expect(screen.getByRole("button", { name: "Reservar" })).toBeEnabled();
+	});
+
 	it("disables the same day as check-in in the check-out calendar, requiring at least one night", async () => {
 		mockGetDefaults();
 		const authValue = makeAuthValue();
