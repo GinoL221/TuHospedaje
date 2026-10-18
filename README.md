@@ -52,7 +52,7 @@ Este es el flujo recomendado para desarrollo. Levanta MariaDB, backend y fronten
 
 ### Datos demo opcionales
 
-El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH`; generá el hash con una contraseña de desarrollo que no uses en otro entorno:
+El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH` en `deploy/dev.env`. Compose no debe interpolar ese valor: un hash bcrypt contiene `$` y Compose lo corta. El entrypoint del seed lee el archivo y lo exporta sin pasarlo por la interpolación. Generá el hash con una contraseña de desarrollo que no uses en otro entorno:
 
 ```bash
 python3 -m venv /tmp/bcrypt-venv
@@ -60,6 +60,18 @@ python3 -m venv /tmp/bcrypt-venv
 export DEV_ADMIN_PASSWORD_HASH=$(/tmp/bcrypt-venv/bin/python3 -c \
   "import bcrypt, getpass; print(bcrypt.hashpw(getpass.getpass().encode(), bcrypt.gensalt(10)).decode())")
 ```
+
+Guardá el resultado en una línea literal `DEV_ADMIN_PASSWORD_HASH=...` de `deploy/dev.env`, sin comillas ni espacios alrededor de `=`. El entrypoint acepta 60 caracteres, prefijos `$2a$`, `$2b$` o `$2y$`, costo de `04` a `31` y el alfabeto bcrypt (`./A-Za-z0-9`). Un valor ausente o malformado detiene el arranque sin imprimir el hash. Esta validación comprueba el formato; no verifica una contraseña ni calcula hashes. El desarrollo sin el overlay de seed mantiene su entrypoint habitual.
+
+Para verificar el entrypoint sin bases ni archivos privados, usá una imagen **ya instalada** con `/bin/sh`, `awk`, `cut` y `grep`:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 SEED_TEST_IMAGE=ID_DE_IMAGEN_LOCAL \
+  python3 -m unittest discover -s backend/docker -p test_seed_entrypoint.py -v
+shellcheck backend/docker/seed-entrypoint.sh
+```
+
+Las pruebas usan contenedores sin red y sin descargas, raíz de sólo lectura, capacidades eliminadas, fixtures ficticios y un proceso testigo en lugar del backend. Sólo escriben en temporales propios, que se eliminan al terminar.
 
 Después, levantá el overlay:
 

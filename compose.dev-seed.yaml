@@ -4,7 +4,9 @@ services:
   backend:
     environment:
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
-      DEV_ADMIN_PASSWORD_HASH: ${DEV_ADMIN_PASSWORD_HASH:?DEV_ADMIN_PASSWORD_HASH is required}
+    volumes:
+      - ./deploy/dev.env:/run/dev-admin.env:ro
+    entrypoint: ["/bin/sh", "/workspace/docker/seed-entrypoint.sh"]
 
 volumes:
   db-data:
