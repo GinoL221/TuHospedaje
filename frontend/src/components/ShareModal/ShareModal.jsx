@@ -19,9 +19,9 @@ export default function ShareModal({ lodging, onClose }) {
 	const descriptionId = useId();
 	const [copyStatus, setCopyStatus] = useState("");
 	const url = window.location.href;
-	const [message, setMessage] = useState(
-		`Mirá este alojamiento en TuHospedaje: ${lodging.name}`,
-	);
+	const lodgingDescription = lodging.description?.trim() || "";
+	const initialMessage = `Mirá este alojamiento en TuHospedaje: ${lodging.name}${lodgingDescription ? `. ${lodgingDescription}` : ""}`;
+	const [message, setMessage] = useState(initialMessage);
 
 	useEffect(() => {
 		previousFocusRef.current = document.activeElement;
@@ -230,6 +230,7 @@ export default function ShareModal({ lodging, onClose }) {
 					<div className="share-description" aria-hidden="true">
 						<strong>{lodging.name}</strong>
 						<span>{lodging.city}</span>
+						{lodgingDescription && <span>{lodgingDescription}</span>}
 					</div>
 				</div>
 

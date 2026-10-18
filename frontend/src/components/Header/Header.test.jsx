@@ -84,11 +84,31 @@ describe("Header - authenticated user", () => {
 		expect(adminLink).toHaveClass("nav-link", "nav-username");
 	});
 
+	it("links the admin avatar to /admin and closes the mobile menu", async () => {
+		const user = userEvent.setup();
+		customRender(<Header />, {
+			authValue: makeAuthValue({ user: mockAdmin }),
+		});
+
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		const avatarLink = screen.getByRole("link", { name: "Administración" });
+		expect(avatarLink).toHaveAttribute("href", "/admin");
+		expect(avatarLink).toContainElement(
+			screen.getByRole("img", { name: "Test" }),
+		);
+		await user.click(avatarLink);
+		expect(screen.getByRole("button", { name: "Abrir menú" })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
+	});
+
 	it("renders a non-admin name as non-interactive text", () => {
 		customRender(<Header />);
 
 		const username = screen.getByText("Test");
 
+		expect(screen.getByRole("img", { name: "Test" }).closest("a")).toBeNull();
 		expect(username).toHaveClass("nav-username");
 		expect(username).not.toHaveClass("nav-link");
 		expect(

@@ -41,6 +41,21 @@ export default function Header() {
 		};
 	}, [menuOpen]);
 
+	const avatar = user && (
+		<img
+			src={
+				user.imageUrl ||
+				`https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`
+			}
+			alt={user.firstName}
+			className="avatar"
+			onError={(e) => {
+				e.target.onerror = null;
+				e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`;
+			}}
+		/>
+	);
+
 	return (
 		<header ref={headerRef} className="site-header">
 			<nav className="page-container">
@@ -69,18 +84,17 @@ export default function Header() {
 					{logoutError && <p role="alert">{logoutError}</p>}
 					{user ? (
 						<>
-							<img
-								src={
-									user.imageUrl ||
-									`https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`
-								}
-								alt={user.firstName}
-								className="avatar"
-								onError={(e) => {
-									e.target.onerror = null;
-									e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`;
-								}}
-							/>
+							{user.role === "ADMIN" ? (
+								<Link
+									to="/admin"
+									aria-label="Administración"
+									onClick={() => setMenuOpen(false)}
+								>
+									{avatar}
+								</Link>
+							) : (
+								avatar
+							)}
 							{user.role === "ADMIN" ? (
 								<Link
 									to="/administración"

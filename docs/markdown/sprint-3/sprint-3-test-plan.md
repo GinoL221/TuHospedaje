@@ -120,6 +120,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 **Cobertura automatizada (frontend) — agregada en auditoría posterior:** los pasos 1-2 se verificaban antes solo comprobando que el modal abría, sin verificar su contenido real (test con `vi.mock` que stubeaba `ShareModal`). `ProductDetail.test.jsx` — `describe('ProductDetail - ShareModal', ...)` ahora verifica la URL y descripción realmente renderizadas contra el componente real (commit `2bced9d`).
 
+**Comportamiento del mensaje para compartir:** cuando el alojamiento tiene descripción, el modal la muestra y la agrega al mensaje inicial editable, quitando espacios al principio y al final. Twitter y WhatsApp reciben ese mensaje; Instagram copia el mensaje y el enlace para completar la publicación manualmente. Si la descripción falta o contiene solo espacios, se conserva el mensaje anterior con el nombre. Facebook y “Copiar enlace” siguen usando únicamente la URL. `ShareModal.test.jsx` cubre estos contratos locales; esto no prueba publicación ni entrega en los proveedores externos.
+
 ### TC-28: Módulo de Reseñas (US #28)
 
 * **Historias de Usuario Asociadas:** US #28 (Puntuar producto)

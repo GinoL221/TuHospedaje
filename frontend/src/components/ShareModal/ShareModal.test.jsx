@@ -135,24 +135,65 @@ describe("ShareModal", () => {
 		expect(screen.queryByRole("img")).not.toBeInTheDocument();
 	});
 
-	it("uses external links for providers that support a handoff", () => {
-		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
+	it("shows the lodging description and includes it in sharing handoffs", async () => {
+		const description = "Terraza privada con vista al lago al amanecer.";
+		const user = userEvent.setup();
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText },
+		});
+		render(
+			<ShareModal
+				lodging={{ ...lodging, description: `  ${description}  ` }}
+				onClose={vi.fn()}
+			/>,
+		);
 
-		const url = window.location.href;
-		const text = "Mirá este alojamiento en TuHospedaje: Cabaña del Lago";
-		const expectedLinks = {
-			Facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-			Twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-			WhatsApp: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
-		};
-
-		for (const [name, href] of Object.entries(expectedLinks)) {
-			const link = screen.getByRole("link", { name });
-			expect(link).toHaveAttribute("href", href);
-			expect(link).toHaveAttribute("target", "_blank");
-			expect(link).toHaveAttribute("rel", "noopener noreferrer");
-		}
+		const message = `Mirá este alojamiento en TuHospedaje: ${lodging.name}. ${description}`;
+		expect(screen.getByText(description)).toBeInTheDocument();
+		expect(screen.getByLabelText("Mensaje para compartir")).toHaveValue(
+			message,
+		);
+		expect(
+			new URL(
+				screen.getByRole("link", { name: "Twitter" }).href,
+			).searchParams.get("text"),
+		).toBe(message);
+		expect(
+			new URL(
+				screen.getByRole("link", { name: "WhatsApp" }).href,
+			).searchParams.get("text"),
+		).toBe(`${message} ${window.location.href}`);
+		await user.click(screen.getByRole("button", { name: "Instagram" }));
+		expect(writeText).toHaveBeenCalledWith(
+			`${message} ${window.location.href}`,
+		);
 	});
+
+	it.each([undefined, "   "])(
+		"uses existing provider handoffs without a description (%s)",
+		(description) => {
+			render(
+				<ShareModal lodging={{ ...lodging, description }} onClose={vi.fn()} />,
+			);
+
+			const url = window.location.href;
+			const text = "Mirá este alojamiento en TuHospedaje: Cabaña del Lago";
+			const expectedLinks = {
+				Facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+				Twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+				WhatsApp: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
+			};
+
+			for (const [name, href] of Object.entries(expectedLinks)) {
+				const link = screen.getByRole("link", { name });
+				expect(link).toHaveAttribute("href", href);
+				expect(link).toHaveAttribute("target", "_blank");
+				expect(link).toHaveAttribute("rel", "noopener noreferrer");
+			}
+		},
+	);
 
 	it("copies the edited handoff message for Instagram and explains the manual step", async () => {
 		const user = userEvent.setup();
