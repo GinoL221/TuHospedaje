@@ -1578,7 +1578,7 @@ describe("ProductDetail - ReviewsSection integration", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(get).toHaveBeenCalledWith("/ratings/lodging/1");
+		await waitFor(() => expect(get).toHaveBeenCalledWith("/ratings/lodging/1"));
 		expect(await screen.findByText("4.2")).toBeInTheDocument();
 		expect(screen.getByText("(5 reseñas)")).toBeInTheDocument();
 	});

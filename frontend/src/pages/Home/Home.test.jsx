@@ -265,7 +265,7 @@ describe("Home - pending list transition", () => {
 		expect(screen.queryByText("Cabaña del Lago")).not.toBeInTheDocument();
 	});
 
-	it("keeps recommendation cards visible and busy until category lodgings arrive", async () => {
+	it("hides recommendations while category results are pending and renders filtered lodgings", async () => {
 		mockGetDefaults({ categories: [categoryFixture] });
 		const user = userEvent.setup();
 		renderHome();
@@ -282,10 +282,14 @@ describe("Home - pending list transition", () => {
 
 		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
 
-		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
 		expect(
-			screen.getByRole("list", { name: "Recomendaciones" }),
-		).toHaveAttribute("aria-busy", "false");
+			screen
+				.getByRole("heading", {
+					name: "Recomendaciones",
+					hidden: true,
+				})
+				.closest("section"),
+		).toHaveAttribute("hidden");
 
 		pending.resolve({
 			lodgings: [{ ...lodgingFixture, id: 4, name: "Cabaña Filtrada" }],
@@ -294,7 +298,14 @@ describe("Home - pending list transition", () => {
 		});
 
 		expect(await screen.findByText("Cabaña Filtrada")).toBeInTheDocument();
-		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(
+			screen
+				.getByRole("heading", {
+					name: "Recomendaciones",
+					hidden: true,
+				})
+				.closest("section"),
+		).toHaveAttribute("hidden");
 	});
 });
 
@@ -411,7 +422,7 @@ describe("Home - explicit refresh and catalog reset", () => {
 });
 
 describe("Home - category filter compatibility", () => {
-	it("searches encoded city, repeated categories, and dates while keeping categories and recommendations visible", async () => {
+	it("hides recommendations for category filters combined with city and dates, then restores them when cleared", async () => {
 		mockGetDefaults({
 			categories: [categoryFixture, { id: 2, name: "Hotel", icon: "hotel" }],
 		});
@@ -444,14 +455,22 @@ describe("Home - category filter compatibility", () => {
 			screen.getByRole("heading", { name: "Categorías" }),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: "Recomendaciones" }),
-		).toBeInTheDocument();
+			screen
+				.getByRole("heading", {
+					name: "Recomendaciones",
+					hidden: true,
+				})
+				.closest("section"),
+		).toHaveAttribute("hidden");
 		expect(get).toHaveBeenCalledWith(
 			"/lodgings/search?city=San%20Mart%C3%ADn&categories=1&categories=2&checkIn=2026-08-01&checkOut=",
 		);
 
-		await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+		await user.click(screen.getByRole("button", { name: "Mostrar todos" }));
 		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Recomendaciones" }),
+		).toBeInTheDocument();
 		await waitFor(() =>
 			expect(get).toHaveBeenCalledWith(
 				"/lodgings/search?city=San+Mart%C3%ADn&checkIn=2026-08-01&checkOut=",
@@ -477,7 +496,7 @@ describe("Home - category filter compatibility", () => {
 		);
 	});
 
-	it("shows Limpiar filtros when a category is active and hides it after deselection", async () => {
+	it("shows Mostrar todos while a category is active and restores recommendations when cleared", async () => {
 		mockGetDefaults({ categories: [categoryFixture] });
 		const user = userEvent.setup();
 		renderHome();
@@ -487,13 +506,19 @@ describe("Home - category filter compatibility", () => {
 		const categoryBtn = screen.getByRole("button", { name: /Cabaña/ });
 		await user.click(categoryBtn);
 		expect(
-			await screen.findByRole("button", { name: "Limpiar filtros" }),
+			await screen.findByRole("button", { name: "Mostrar todos" }),
 		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "Recomendaciones" }),
+		).not.toBeInTheDocument();
 
-		await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+		await user.click(screen.getByRole("button", { name: "Mostrar todos" }));
+		expect(
+			await screen.findByRole("heading", { name: "Recomendaciones" }),
+		).toBeInTheDocument();
 		await waitFor(() =>
 			expect(
-				screen.queryByRole("button", { name: "Limpiar filtros" }),
+				screen.queryByRole("button", { name: "Mostrar todos" }),
 			).not.toBeInTheDocument(),
 		);
 	});
@@ -630,10 +655,21 @@ describe("Home - loading failure, retry, and repeated failure", () => {
 });
 
 describe("Home - search and category loading failures", () => {
-	it("opts search results and recommendations into the unrated message", async () => {
+	it("keeps Home recommendations visible during city/date searches", async () => {
 		mockGetDefaults();
-		renderHome({ route: "/?city=Bariloche" });
+		renderHome({
+			route: "/?city=Bariloche&checkIn=2026-07-10&checkOut=2026-07-15",
+		});
 
+		expect(
+			await screen.findByText("1 resultados de 1 alojamientos"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Categorías" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Recomendaciones" }),
+		).toBeInTheDocument();
 		await waitFor(() =>
 			expect(screen.getAllByTestId("product-card")).toHaveLength(2),
 		);
