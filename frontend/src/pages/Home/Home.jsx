@@ -297,7 +297,7 @@ export default function Home() {
 							<h2>Resultados de búsqueda</h2>
 							{selectedCategories.length > 0 && (
 								<button className="btn-clear-filter" onClick={clearCategories}>
-									Limpiar filtros
+									Mostrar todos
 								</button>
 							)}
 						</div>
@@ -321,7 +321,10 @@ export default function Home() {
 					</section>
 				)
 			)}
-			<section className="recommendations">
+			<section
+				className="recommendations"
+				hidden={selectedCategories.length > 0}
+			>
 				<div className="section-header">
 					<h2>Recomendaciones</h2>
 					<button
