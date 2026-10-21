@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
 	ChevronDown,
 	ChevronLeft,
@@ -11,10 +11,30 @@ import "./LodgingGallery.css";
 
 const FALLBACK_IMAGE = "https://placehold.co/800x600?text=Sin+imagen";
 const FALLBACK_THUMB = "https://placehold.co/400x300?text=Sin+imagen";
+const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
+const DESKTOP_MEDIA_QUERY = "(min-width: 901px)";
+
+function matchesTabletViewport() {
+	if (typeof window === "undefined") return false;
+	if (typeof window.matchMedia === "function") {
+		return (
+			!window.matchMedia(MOBILE_MEDIA_QUERY).matches &&
+			!window.matchMedia(DESKTOP_MEDIA_QUERY).matches
+		);
+	}
+	return window.innerWidth > 768 && window.innerWidth < 901;
+}
 
 export default function LodgingGallery({ images = [], name }) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isTabletViewport, setIsTabletViewport] = useState(
+		matchesTabletViewport,
+	);
+	const isTabletViewportRef = useRef(isTabletViewport);
+	const pendingArrowFocusRef = useRef(null);
+	const previousButtonRef = useRef(null);
+	const nextButtonRef = useRef(null);
 	const thumbnailStripRef = useRef(null);
 	const thumbnailRefs = useRef([]);
 	const previewImages = images.slice(0, 5);
@@ -24,7 +44,61 @@ export default function LodgingGallery({ images = [], name }) {
 	);
 
 	useEffect(() => {
-		if (!window.matchMedia?.("(max-width: 768px)").matches) return;
+		const updateForViewport = () => {
+			const nextIsTabletViewport = matchesTabletViewport();
+			if (nextIsTabletViewport === isTabletViewportRef.current) return;
+
+			const isMobileViewport =
+				typeof window.matchMedia === "function"
+					? window.matchMedia(MOBILE_MEDIA_QUERY).matches
+					: window.innerWidth <= 768;
+			pendingArrowFocusRef.current = null;
+			if (!isMobileViewport) {
+				if (document.activeElement === previousButtonRef.current) {
+					pendingArrowFocusRef.current = "previous";
+				} else if (document.activeElement === nextButtonRef.current) {
+					pendingArrowFocusRef.current = "next";
+				}
+			}
+
+			isTabletViewportRef.current = nextIsTabletViewport;
+			setIsTabletViewport(nextIsTabletViewport);
+		};
+
+		if (typeof window.matchMedia === "function") {
+			const mediaQueries = [
+				window.matchMedia(MOBILE_MEDIA_QUERY),
+				window.matchMedia(DESKTOP_MEDIA_QUERY),
+			];
+			if (mediaQueries.every((query) => query.addEventListener)) {
+				mediaQueries.forEach((query) =>
+					query.addEventListener("change", updateForViewport),
+				);
+				return () =>
+					mediaQueries.forEach((query) =>
+						query.removeEventListener("change", updateForViewport),
+					);
+			}
+		}
+
+		window.addEventListener("resize", updateForViewport);
+		return () => window.removeEventListener("resize", updateForViewport);
+	}, []);
+
+	useLayoutEffect(() => {
+		const focusedArrow = pendingArrowFocusRef.current;
+		if (!focusedArrow) return;
+
+		pendingArrowFocusRef.current = null;
+		const button =
+			focusedArrow === "previous"
+				? previousButtonRef.current
+				: nextButtonRef.current;
+		if (button && !button.disabled) button.focus();
+	}, [isTabletViewport]);
+
+	useEffect(() => {
+		if (!window.matchMedia?.(MOBILE_MEDIA_QUERY).matches) return;
 		const thumbnail = thumbnailRefs.current[previewIndex];
 		if (!thumbnail || !thumbnailStripRef.current?.contains(thumbnail)) return;
 		thumbnail.scrollIntoView({
@@ -35,6 +109,31 @@ export default function LodgingGallery({ images = [], name }) {
 				: "smooth",
 		});
 	}, [previewIndex]);
+
+	const previousButton = (
+		<button
+			ref={previousButtonRef}
+			className="gallery-thumbs-arrow gallery-desktop-arrow gallery-desktop-arrow--prev"
+			onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+			disabled={currentIndex === 0}
+			aria-label="Imagen anterior"
+		>
+			<ChevronUp size={20} aria-hidden="true" focusable="false" />
+		</button>
+	);
+	const nextButton = (
+		<button
+			ref={nextButtonRef}
+			className="gallery-thumbs-arrow gallery-desktop-arrow gallery-desktop-arrow--next"
+			onClick={() =>
+				setCurrentIndex((prev) => Math.min(previewImages.length - 1, prev + 1))
+			}
+			disabled={previewIndex === previewImages.length - 1}
+			aria-label="Imagen siguiente"
+		>
+			<ChevronDown size={20} aria-hidden="true" focusable="false" />
+		</button>
+	);
 
 	if (images.length === 0) {
 		return (
@@ -90,6 +189,7 @@ export default function LodgingGallery({ images = [], name }) {
 				</div>
 				{images.length > 1 && (
 					<div className="gallery-thumbs-col">
+						{isTabletViewport && previousButton}
 						<div className="gallery-thumbs" ref={thumbnailStripRef}>
 							{previewImages.slice(1).map((url, index) => (
 								<button
@@ -116,31 +216,14 @@ export default function LodgingGallery({ images = [], name }) {
 								</button>
 							))}
 						</div>
+						{isTabletViewport && nextButton}
 						<div className="gallery-desktop-actions">
-							<div className="gallery-desktop-navigation">
-								<button
-									className="gallery-thumbs-arrow gallery-desktop-arrow gallery-desktop-arrow--prev"
-									onClick={() =>
-										setCurrentIndex((prev) => Math.max(0, prev - 1))
-									}
-									disabled={currentIndex === 0}
-									aria-label="Imagen anterior"
-								>
-									<ChevronUp size={20} aria-hidden="true" focusable="false" />
-								</button>
-								<button
-									className="gallery-thumbs-arrow gallery-desktop-arrow gallery-desktop-arrow--next"
-									onClick={() =>
-										setCurrentIndex((prev) =>
-											Math.min(previewImages.length - 1, prev + 1),
-										)
-									}
-									disabled={previewIndex === previewImages.length - 1}
-									aria-label="Imagen siguiente"
-								>
-									<ChevronDown size={20} aria-hidden="true" focusable="false" />
-								</button>
-							</div>
+							{!isTabletViewport && (
+								<div className="gallery-desktop-navigation">
+									{previousButton}
+									{nextButton}
+								</div>
+							)}
 							<button
 								className="gallery-more"
 								onClick={() => {

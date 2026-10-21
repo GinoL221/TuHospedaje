@@ -1,6 +1,14 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { screen, userEvent } from "../../test/test-utils";
+import { afterEach, vi } from "vitest";
 import LodgingGallery from "./LodgingGallery";
+
+const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
+const DESKTOP_MEDIA_QUERY = "(min-width: 901px)";
+
+afterEach(() => {
+	vi.unstubAllGlobals();
+});
 
 const images = Array.from(
 	{ length: 7 },
@@ -124,5 +132,84 @@ describe("LodgingGallery", () => {
 			screen.getByRole("dialog", { name: "Galería de imágenes" }),
 		).toBeInTheDocument();
 		expect(screen.getByText("1 / 7")).toBeInTheDocument();
+	});
+
+	it("keeps tablet keyboard order and focus aligned across breakpoint changes", async () => {
+		let viewportWidth = 768.5;
+		const listeners = new Map();
+		const matchesMedia = (query) => {
+			if (query === MOBILE_MEDIA_QUERY) return viewportWidth <= 768;
+			if (query === DESKTOP_MEDIA_QUERY) return viewportWidth >= 901;
+			return false;
+		};
+		vi.stubGlobal("matchMedia", (query) => ({
+			get matches() {
+				return matchesMedia(query);
+			},
+			addEventListener: (_event, listener) => {
+				const queryListeners = listeners.get(query) ?? new Set();
+				queryListeners.add(listener);
+				listeners.set(query, queryListeners);
+			},
+			removeEventListener: (_event, listener) =>
+				listeners.get(query)?.delete(listener),
+		}));
+		const { container } = render(
+			<LodgingGallery images={images} name="Cabaña del Lago" />,
+		);
+		const user = userEvent.setup();
+		const next = screen.getByRole("button", { name: "Imagen siguiente" });
+		const more = screen.getByRole("button", { name: "Ver más" });
+
+		await user.click(next);
+
+		const previous = screen.getByRole("button", { name: "Imagen anterior" });
+		const thumbnailButtons = Array.from(
+			container.querySelectorAll(".gallery-thumb"),
+		);
+		const tabletOrder = [previous, ...thumbnailButtons, next, more];
+		expect(
+			Array.from(
+				container.querySelectorAll(
+					".gallery-desktop-arrow, .gallery-thumb, .gallery-more",
+				),
+			),
+		).toEqual(tabletOrder);
+		expect(next).toHaveFocus();
+
+		const setViewportWidth = (width) => {
+			viewportWidth = width;
+			act(() => {
+				listeners.forEach((queryListeners, query) => {
+					const event = { matches: matchesMedia(query) };
+					queryListeners.forEach((listener) => listener(event));
+				});
+			});
+		};
+
+		setViewportWidth(900.5);
+		expect(
+			Array.from(
+				container.querySelectorAll(
+					".gallery-desktop-arrow, .gallery-thumb, .gallery-more",
+				),
+			),
+		).toEqual(tabletOrder);
+		expect(next).toHaveFocus();
+		setViewportWidth(901);
+		const desktopNext = screen.getByRole("button", {
+			name: "Imagen siguiente",
+		});
+		expect(desktopNext).toHaveFocus();
+		const desktopActions = container.querySelector(".gallery-desktop-actions");
+		expect(desktopActions).toContainElement(
+			screen.getByRole("button", { name: "Imagen anterior" }),
+		);
+		expect(desktopActions).toContainElement(desktopNext);
+
+		setViewportWidth(900.5);
+		expect(
+			screen.getByRole("button", { name: "Imagen siguiente" }),
+		).toHaveFocus();
 	});
 });
