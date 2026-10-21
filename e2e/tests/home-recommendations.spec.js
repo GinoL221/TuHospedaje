@@ -74,9 +74,9 @@ test.describe('Home recommendations — stable pagination', () => {
     expect(afterRefresh.length).toBeGreaterThan(0);
   });
 
-  test('selecting a category does not call the recommendations endpoint', async ({ page, homePage }) => {
+  test('category filtering hides recommendations without fetching them and clearing restores the snapshot', async ({ page, homePage }) => {
     await homePage.open('/');
-    await currentPageIds(page);
+    const originalIds = await currentPageIds(page);
     await page.locator('.category-tag').first().waitFor({ state: 'visible' });
 
     let recommendationCalls = 0;
@@ -87,11 +87,15 @@ test.describe('Home recommendations — stable pagination', () => {
     await page.locator('.category-tag').first().click();
     await expect(page).toHaveURL(/categories=/);
     await expect(page.getByText(/resultados de/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Recomendaciones' })).toBeHidden();
     expect(recommendationCalls).toBe(0);
-    await expect(page.getByRole('heading', { name: 'Recomendaciones' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Limpiar filtros' }).click();
+    await page.getByRole('button', { name: 'Mostrar todos', exact: true }).click();
+    await expect(page).not.toHaveURL(/categories=/);
+    await expect(page.getByRole('heading', { name: 'Recomendaciones' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Actualizar recomendaciones' })).toBeVisible();
+    expect(await currentPageIds(page)).toEqual(originalIds);
+    expect(recommendationCalls).toBe(0);
   });
 
   test('a failed load shows an accessible error and a successful retry restores a valid page', async ({ page, homePage }) => {
