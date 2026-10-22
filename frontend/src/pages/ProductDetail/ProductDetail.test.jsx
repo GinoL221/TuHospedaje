@@ -326,7 +326,9 @@ describe("ProductDetail - S17 typed dates", () => {
 
 	async function setup(occupiedRanges = []) {
 		mockGetDefaults({ availability: { occupiedRanges } });
-		const user = userEvent.setup();
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime,
+		});
 		renderProductDetail({ authValue: makeAuthValue() });
 		await screen.findByText("Cabaña del Lago");
 		await waitFor(() =>
@@ -344,6 +346,22 @@ describe("ProductDetail - S17 typed dates", () => {
 		if (commit === "blur") await user.tab();
 		else if (commit) await user.keyboard(commit);
 	}
+
+	it("advances fake timers for typed date interactions", async () => {
+		const advanceTimers = vi.spyOn(vi, "advanceTimersByTime");
+		try {
+			const user = await setup();
+			await typeDate(user, "Check-in", "15/07/2026");
+			expect(screen.getByLabelText("Check-in")).toHaveValue("15/07/2026");
+			expect(screen.getByLabelText("Check-in")).not.toHaveAttribute(
+				"aria-invalid",
+				"true",
+			);
+			expect(advanceTimers).toHaveBeenCalledWith(0);
+		} finally {
+			advanceTimers.mockRestore();
+		}
+	});
 
 	it.each(["typing", "calendar"])(
 		"preserves an invalid opposite draft and blocks booking after valid %s checkout",
