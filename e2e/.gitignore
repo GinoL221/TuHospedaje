@@ -3,4 +3,5 @@ test-results/
 playwright-report/
 allure-results/
 allure-report/
+.run-local-persistent/
 .env

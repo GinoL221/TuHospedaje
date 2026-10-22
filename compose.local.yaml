@@ -1,0 +1,375 @@
+# Persistent local development, separate from existing dev/prod volumes.
+name: tuhospedaje-local
+
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: tuhospedaje_local_dev
+      MARIADB_USER: local_app
+      MARIADB_PASSWORD: ${LOCAL_DB_PASSWORD:?LOCAL_DB_PASSWORD is required}
+      MARIADB_ROOT_PASSWORD: ${LOCAL_DB_ROOT_PASSWORD:?required}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks: [data]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$$MARIADB_PASSWORD" mariadb-admin ping
+          -h 127.0.0.1 -u"$$MARIADB_USER" --silent
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 15s
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    restart: unless-stopped
+    entrypoint: [/bin/sh, /workspace/docker/seed-entrypoint.sh]
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: ""
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/tuhospedaje_local_dev
+      SPRING_DATASOURCE_USERNAME: local_app
+      SPRING_DATASOURCE_PASSWORD: ${LOCAL_DB_PASSWORD:?required}
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
+      JWT_SECRET: ${LOCAL_JWT_SECRET:?LOCAL_JWT_SECRET is required}
+      SESSION_ACTIVE_KEY_ID: local
+      SESSION_REFRESH_KEY: ${LOCAL_SESSION_REFRESH_KEY:?required}
+      CORS_ALLOWED_ORIGINS: http://127.0.0.1:5173,http://localhost:5173
+      APP_CORS_ALLOWED_ORIGINS: http://127.0.0.1:5173,http://localhost:5173
+      TUHOSPEDAJE_CANONICAL_ASSETS_ROOT: /canonical
+      TUHOSPEDAJE_WELCOME_PUBLIC_BASE_URL: https://app.example
+      MAIL_SMTP_ENABLED: "false"
+      SPRING_JPA_SHOW_SQL: "false"
+    ports: ["127.0.0.1:8080:8080"]
+    volumes:
+      - type: bind
+        source: ./backend
+        target: /workspace
+      - maven-cache:/root/.m2
+      - type: bind
+        source: ./deploy/local-admin.env
+        target: /run/dev-admin.env
+        read_only: true
+        bind:
+          create_host_path: false
+      # Only masters are exposed; prompts and evidence stay private.
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-001-hotel-buenos-aires-centro/masters
+        target: /canonical/lodging-001-hotel-buenos-aires-centro/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-002-cabana-los-arrayanes/masters
+        target: /canonical/lodging-002-cabana-los-arrayanes/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-003-departamento-palermo-soho/masters
+        target: /canonical/lodging-003-departamento-palermo-soho/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-004-hostel-cordoba-backpackers/masters
+        target: /canonical/lodging-004-hostel-cordoba-backpackers/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-005-cabana-del-lago/masters
+        target: /canonical/lodging-005-cabana-del-lago/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-006-hotel-internacional/masters
+        target: /canonical/lodging-006-hotel-internacional/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-007-cabana-el-mirador/masters
+        target: /canonical/lodging-007-cabana-el-mirador/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-008-hotel-mar-del-plata/masters
+        target: /canonical/lodging-008-hotel-mar-del-plata/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-009-departamento-puerto-madero/masters
+        target: /canonical/lodging-009-departamento-puerto-madero/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-010-hostel-salta-andino/masters
+        target: /canonical/lodging-010-hostel-salta-andino/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-011-hotel-riviera-rosario/masters
+        target: /canonical/lodging-011-hotel-riviera-rosario/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-012-cabana-los-cipreses/masters
+        target: /canonical/lodging-012-cabana-los-cipreses/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-013-departamento-nueva-cordoba/masters
+        target: /canonical/lodging-013-departamento-nueva-cordoba/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-014-gran-hotel-tucuman/masters
+        target: /canonical/lodging-014-gran-hotel-tucuman/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-015-cabana-el-bolson/masters
+        target: /canonical/lodging-015-cabana-el-bolson/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-016-departamento-chacras-de-coria/masters
+        target: /canonical/lodging-016-departamento-chacras-de-coria/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-017-hotel-del-glaciar/masters
+        target: /canonical/lodging-017-hotel-del-glaciar/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-018-cabana-san-roque/masters
+        target: /canonical/lodging-018-cabana-san-roque/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-019-departamento-belgrano/masters
+        target: /canonical/lodging-019-departamento-belgrano/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-020-hotel-la-perla/masters
+        target: /canonical/lodging-020-hotel-la-perla/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-021-cabana-lacar/masters
+        target: /canonical/lodging-021-cabana-lacar/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-022-departamento-pichincha/masters
+        target: /canonical/lodging-022-departamento-pichincha/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-023-hotel-cataratas-iguazu/masters
+        target: /canonical/lodging-023-hotel-cataratas-iguazu/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-024-cabana-los-glaciares/masters
+        target: /canonical/lodging-024-cabana-los-glaciares/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-025-departamento-recoleta/masters
+        target: /canonical/lodging-025-departamento-recoleta/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-026-hotel-legado-mitico/masters
+        target: /canonical/lodging-026-hotel-legado-mitico/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-027-hostel-la-plata-centro/masters
+        target: /canonical/lodging-027-hostel-la-plata-centro/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-028-hostel-patagonico/masters
+        target: /canonical/lodging-028-hostel-patagonico/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-029-hostel-san-telmo/masters
+        target: /canonical/lodging-029-hostel-san-telmo/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-030-hostel-las-vinas/masters
+        target: /canonical/lodging-030-hostel-las-vinas/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-031-resort-iguazu-grand/masters
+        target: /canonical/lodging-031-resort-iguazu-grand/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-032-resort-termas-federacion/masters
+        target: /canonical/lodging-032-resort-termas-federacion/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-033-resort-valle-de-uco/masters
+        target: /canonical/lodging-033-resort-valle-de-uco/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-034-resort-llao-llao/masters
+        target: /canonical/lodging-034-resort-llao-llao/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-035-glamping-bosques-del-sur/masters
+        target: /canonical/lodging-035-glamping-bosques-del-sur/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-036-glamping-cerro-chapelco/masters
+        target: /canonical/lodging-036-glamping-cerro-chapelco/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-037-glamping-valle-encantado/masters
+        target: /canonical/lodging-037-glamping-valle-encantado/masters
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: >-
+          ${CANONICAL_ASSETS_HOST_DIR:?required}/lodging-038-glamping-vinas-del-sur/masters
+        target: /canonical/lodging-038-glamping-vinas-del-sur/masters
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [app, data]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl --fail --silent
+          http://127.0.0.1:8080/actuator/health/readiness > /dev/null
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://127.0.0.1:8080/api
+      # Fictional number; never used to demonstrate message delivery.
+      VITE_WHATSAPP_NUMBER: "12025550100"
+    ports: ["127.0.0.1:5173:5173"]
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    networks: [app]
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:5173/ > /dev/null']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+networks:
+  app:
+  data:
+
+volumes:
+  db-data:
+    name: tuhospedaje-local-db
+  maven-cache:
+  frontend-node-modules:

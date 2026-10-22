@@ -54,6 +54,58 @@ Este es el flujo recomendado para desarrollo. Levanta MariaDB, backend y fronten
 
    Para eliminar la base descartable de desarrollo, agregá `-v`. Nunca uses `down -v` sobre producción.
 
+### Entorno local persistente con imágenes aprobadas
+
+Usá `compose.local.yaml` como archivo independiente (sin los overlays dev/prod).
+Crea el proyecto `tuhospedaje-local` y el volumen `tuhospedaje-local-db`, sin usar
+las bases existentes. MariaDB no publica puertos; frontend y backend escuchan
+solo en loopback, en `5173` y `8080`. Detené cualquier demo que use esos puertos
+antes del arranque, sin borrar sus datos.
+
+1. Prepará `deploy/local.env` siguiendo `deploy/local.env.example`, con claves
+   aleatorias propias. Conservá esas claves entre arranques. Guardá el hash
+   bcrypt del admin (costo 10–14, literal y sin comillas) en una línea
+   `DEV_ADMIN_PASSWORD_HASH=...` de **`deploy/local-admin.env`**, separado del
+   archivo que Compose interpola. Ambos archivos están ignorados por Git:
+
+   ```bash
+   chmod 600 deploy/local.env deploy/local-admin.env
+   docker compose --env-file deploy/local.env -f compose.local.yaml config --quiet
+   docker compose --env-file deploy/local.env -f compose.local.yaml up -d --build
+   ```
+
+2. Abrí `http://127.0.0.1:5173`. El primer arranque en el volumen vacío aplica
+   las migraciones y el seed aprobado: 38 alojamientos y 190 imágenes. Los
+   arranques siguientes conservan los datos y Flyway no repite el seed. El admin
+   es `admin@tuhospedaje.com`; usá la contraseña cuyo hash preparaste. Cambiar el
+   archivo de hash después del primer arranque **no cambia** la contraseña en DB.
+
+   El backend monta solo los 38 directorios `masters` en lectura, con los nombres
+   exactos del seed. No copia imágenes al repositorio ni publica notas, prompts,
+   evidencias o Cloudinary. La ruta raíz la define `CANONICAL_ASSETS_HOST_DIR`;
+   un directorio ausente impide el arranque en vez de crear uno vacío.
+
+3. Para detener y volver a arrancar conservando la base:
+
+   ```bash
+   docker compose --env-file deploy/local.env -f compose.local.yaml down
+   docker compose --env-file deploy/local.env -f compose.local.yaml up -d
+   ```
+
+   **No uses `down -v`, `docker volume rm` ni `docker volume prune`: borran datos.**
+   El volumen conserva datos entre reinicios, pero no reemplaza un backup.
+   Los contenedores usan `restart: unless-stopped`; si los detenés explícitamente,
+   volvé a iniciarlos con `up -d`. Este entorno sigue el checkout local y no
+   equivale a desplegar las imágenes publicadas de producción.
+
+Desde otra notebook, conservá el túnel SSH de `5173` y `8080` y abrí la misma URL.
+Para verificar la configuración pública sin secretos ni servicios:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+  -s tools/tests -p test_local_persistent_config.py -v
+```
+
 ### Datos demo opcionales
 
 El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH` en `deploy/dev.env`. Compose no debe interpolar ese valor: un hash bcrypt contiene `$` y Compose lo corta. El entrypoint del seed lee el archivo y lo exporta sin pasarlo por la interpolación. Generá el hash con una contraseña de desarrollo que no uses en otro entorno:
