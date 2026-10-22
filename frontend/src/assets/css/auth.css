@@ -11,6 +11,7 @@
   --auth-success-ring: rgba(46, 125, 50, 0.15);
   --auth-neutral-muted: #999;
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: flex-start;
   flex: 1;
