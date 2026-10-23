@@ -202,6 +202,7 @@ class DatabaseMigrationIntegrationTest {
                         "spring.config.location=" + isolatedConfigDirectory.toUri()
                 )
                 .run(
+                        "--app.jwt.secret=test-only-migration-profile",
                         "--spring.datasource.url=" + probe.jdbcUrl(),
                         "--spring.datasource.username=" + probe.username(),
                         "--spring.datasource.password=" + probe.password(),
@@ -671,6 +672,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                             "spring.config.location=" + isolatedConfigDirectory.toUri()
                     )
                     .run(
+                            "--app.jwt.secret=test-only-migration-profile",
                             "--spring.datasource.url=" + profileContainer.getJdbcUrl(),
                             "--spring.datasource.username=" + probeUsername,
                             "--spring.datasource.password=" + probePassword,

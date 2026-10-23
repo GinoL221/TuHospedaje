@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.jwt.secret=test-only-canonical-assets")
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
 @Import(TestcontainersConfiguration.class)
