@@ -16,7 +16,7 @@ Runner: no single new runner. Existing commands stay in the sprint test plans an
 - T2 S2 inline done: write the current-`main` delivery index without promoting unverified stories. Commit `5002aa022df6fc0ca6bd3049e97c9eb772b4b433`.
 - T3 S2 inline done: bind the corresponding tests to current `main`. Auth API, local user walk, admin users table, blocked self-role pointer, and the reverted role-label change are recorded. No story was marked verified.
 - T5 S2 inline done: show `Credenciales inválidas.` for a failed login by sending `Accept-Language: es`. Commit `febaeb4`. Local bad login confirmed the Spanish text.
-- T4 S1-S2 inline pending: update the traceability pin only after T3 evidence exists. Do not mark a story verified from an old SHA.
+- T4 S1-S2 inline done: point the traceability pin at published main `a430c73` and index the auth evidence at `b39b12e`. Do not mark a story verified.
 
 ## Log
 
@@ -29,3 +29,4 @@ Runner: no single new runner. Existing commands stay in the sprint test plans an
 - L7: The user logged in as `admin@tuhospedaje.com` on the already running local stack and opened Usuarios. The table showed ID, name, email, role, and actions. The admin row showed `ADMIN` and `Quitar admin`. Three other rows showed `USER` and `Hacer admin`. No role was changed. The capture does not confirm the disabled state or the title `No podés cambiarte tu propio rol`. No story was marked verified.
 - L8: The user hovered the admin row's `Quitar admin` button without clicking and reported that the pointer is blocked. The capture shows the prohibited cursor on that button. It does not show the title `No podés cambiarte tu propio rol`. No role was changed and no story was marked verified.
 - L9: The user authorized a reversible local role change. Only `walkthrough-auth-1792878045008@example.com` was set to `ADMIN`. The users table then showed `ADMIN` and `Quitar admin` on that row. The same row was set back to `USER`, and the user confirmed the button showed `Hacer admin` again. The other rows were not changed. The promoted account was not used to log in. No story was marked verified.
+- L10: The user authorized updating the traceability pin without marking stories verified. Pinned main moves from `1572f121e91a29257aa618618873d6b560df863a` to published `a430c73938663df2d7c72eb23b9e730d25c3a48a`. US #13, #14, and #16 stay not verified. Their bounded notes point at `docs/markdown/delivery/current-main.md` on `docs/main-academic-delivery` at `b39b12e`, not at a fresh deploy of pinned main. `close-user-story-gaps-browser-evidence.md` names the same published main and does not add a browser run for it.

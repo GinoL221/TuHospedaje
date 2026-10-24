@@ -51,6 +51,6 @@ Después, solo `walkthrough-auth-1792878045008@example.com` pasó a `ADMIN`. La 
 ## Limitaciones conocidas
 
 - Los PDF originales `Sprint 1.pdf` a `Sprint 4.pdf` no están en el repositorio. La autoridad usada por la matriz es el texto que esa matriz dice haber extraído.
-- La matriz está clavada en `1572f121e91a29257aa618618873d6b560df863a`, no en el commit de este índice. No promueve ninguna historia a verificada.
+- La matriz apunta al `main` publicado `a430c73938663df2d7c72eb23b9e730d25c3a48a`. Este índice está en `docs/main-academic-delivery` y no promueve ninguna historia a verificada.
 - El mail de confirmación y el envío real de WhatsApp no quedaron comprobados en el recorrido local del `2026-10-24`.
 - No hay despliegue de producción. La CI exitosa de `a430c73` no reemplaza esa comprobación.
