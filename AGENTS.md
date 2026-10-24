@@ -34,6 +34,14 @@
 - Each commit should be a coherent, deployable unit of work
 - Never commit `node_modules`, `dist/`, `target/`, `.env`, or generated files
 
+## Registro del piloto con Obsidian
+- Para el piloto, leé por Obsidian MCP la política en `AGENTS.md` del vault (distinto de este archivo), la nota `02-Proyectos/TuHospedaje.md` y la convención `01-Conocimiento/Tecnologías/Herramientas/Engram-Vault-Sync.md`.
+- Al cierre de trabajo relevante, leé esas notas antes de comparar evidencia y proponer cambios; también podés cargarlas una vez y seguir la convención central durante el trabajo.
+- Proponé ajustes ante hitos, cambios de alcance, arquitectura o despliegue, bloqueos importantes y cambios de estado confirmados por el usuario; no por cada commit ni cambio menor.
+- Agrupá las propuestas al cierre y distinguí implementación, merge y despliegue.
+- Antes de cualquier escritura en el vault, pedí aprobación humana explícita; no hagás sincronización automática.
+- Si Obsidian MCP o las notas no están disponibles, informá la limitación: no recurrás al sistema de archivos del vault ni afirmés que el registro se completó.
+
 ## Skills
 
 | Skill | Description | File |
