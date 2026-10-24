@@ -44,7 +44,9 @@ La API usó `mariadb:10.11` en `localhost:32769/test` y `localhost:32770/test`. 
 
 El recorrido en el stack local ya levantado, con un usuario nuevo, mostró el formulario de registro, la lista de contraseña, la vuelta a Home con el nombre y sin enlace de administración, el cierre de sesión, el login correcto y el rechazo de `/admin` hacia `/unauthorized`. El login con contraseña incorrecta mostró primero `Invalid credentials.`. Después de que el cliente pidiera `Accept-Language: es`, el mismo recorrido mostró `Credenciales inválidas.`.
 
-El panel de Usuarios se abrió después en `http://127.0.0.1:5173/administración`, con la sesión admin ya levantada. La tabla mostró ID, nombre, email, rol y acciones. La fila de `admin@tuhospedaje.com` tenía rol `ADMIN` y el botón «Quitar admin». Las otras tres filas tenían rol `USER` y el botón «Hacer admin». No se cambió ningún rol. El usuario confirmó que el puntero se bloquea sobre «Quitar admin» de su propia fila, y la captura muestra el cursor prohibido sobre ese botón. La captura no muestra el texto «No podés cambiarte tu propio rol».
+El panel de Usuarios se abrió después en `http://127.0.0.1:5173/administración`, con la sesión admin ya levantada. La tabla mostró ID, nombre, email, rol y acciones. La fila de `admin@tuhospedaje.com` tenía rol `ADMIN` y el botón «Quitar admin». Las otras tres filas tenían rol `USER` y el botón «Hacer admin». En ese momento no se cambió ningún rol. El usuario confirmó que el puntero se bloquea sobre «Quitar admin» de su propia fila, y la captura muestra el cursor prohibido sobre ese botón. La captura no muestra el texto «No podés cambiarte tu propio rol».
+
+Después, solo `walkthrough-auth-1792878045008@example.com` pasó a `ADMIN`. La tabla mostró la etiqueta `ADMIN` y el botón «Quitar admin». Esa fila volvió a `USER`, y el usuario confirmó que el botón muestra otra vez «Hacer admin». No se inició sesión con esa cuenta promovida, así que el acceso de admin de ese usuario no quedó comprobado.
 
 ## Limitaciones conocidas
 

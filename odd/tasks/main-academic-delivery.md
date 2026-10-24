@@ -14,7 +14,7 @@ Runner: no single new runner. Existing commands stay in the sprint test plans an
 
 - T1 S1-S2 inline done: inventory the documents already on `main` and record the evidence gap. No commit.
 - T2 S2 inline done: write the current-`main` delivery index without promoting unverified stories. Commit `5002aa022df6fc0ca6bd3049e97c9eb772b4b433`.
-- T3 S2 inline in progress: bind the corresponding tests to current `main`. Auth API, local user walk, admin users table, and the blocked pointer on the admin's own role button are recorded. A role change remains unconfirmed.
+- T3 S2 inline done: bind the corresponding tests to current `main`. Auth API, local user walk, admin users table, blocked self-role pointer, and the reverted role-label change are recorded. No story was marked verified.
 - T5 S2 inline done: show `Credenciales inválidas.` for a failed login by sending `Accept-Language: es`. Commit `febaeb4`. Local bad login confirmed the Spanish text.
 - T4 S1-S2 inline pending: update the traceability pin only after T3 evidence exists. Do not mark a story verified from an old SHA.
 
@@ -28,3 +28,4 @@ Runner: no single new runner. Existing commands stay in the sprint test plans an
 - L6: The user authorized correcting the failed-login text. RED failed because request headers had no `Accept-Language`. GREEN: `src/services/api.test.js` passed 37 tests after `frontend/src/services/api.js` sent `Accept-Language: es`. Commit `febaeb4`. A later local bad login showed `Credenciales inválidas.` No new user was created for that check.
 - L7: The user logged in as `admin@tuhospedaje.com` on the already running local stack and opened Usuarios. The table showed ID, name, email, role, and actions. The admin row showed `ADMIN` and `Quitar admin`. Three other rows showed `USER` and `Hacer admin`. No role was changed. The capture does not confirm the disabled state or the title `No podés cambiarte tu propio rol`. No story was marked verified.
 - L8: The user hovered the admin row's `Quitar admin` button without clicking and reported that the pointer is blocked. The capture shows the prohibited cursor on that button. It does not show the title `No podés cambiarte tu propio rol`. No role was changed and no story was marked verified.
+- L9: The user authorized a reversible local role change. Only `walkthrough-auth-1792878045008@example.com` was set to `ADMIN`. The users table then showed `ADMIN` and `Quitar admin` on that row. The same row was set back to `USER`, and the user confirmed the button showed `Hacer admin` again. The other rows were not changed. The promoted account was not used to log in. No story was marked verified.
