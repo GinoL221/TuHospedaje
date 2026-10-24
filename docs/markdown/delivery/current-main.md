@@ -42,7 +42,7 @@ Estas corridas no aprueban US #13, #14 ni #16. Cubren las pruebas automáticas d
 
 La API usó `mariadb:10.11` en `localhost:32769/test` y `localhost:32770/test`. No usó la base local preservada.
 
-El recorrido en el stack local ya levantado, con un usuario nuevo, mostró el formulario de registro, la lista de contraseña, la vuelta a Home con el nombre y sin enlace de administración, el cierre de sesión, el login correcto y el rechazo de `/admin` hacia `/unauthorized`. El login con contraseña incorrecta mostró `Invalid credentials.`, no `Credenciales inválidas`. No se recorrió el panel de roles: no hay contraseña de admin disponible y no se leyó ningún secreto.
+El recorrido en el stack local ya levantado, con un usuario nuevo, mostró el formulario de registro, la lista de contraseña, la vuelta a Home con el nombre y sin enlace de administración, el cierre de sesión, el login correcto y el rechazo de `/admin` hacia `/unauthorized`. El login con contraseña incorrecta mostró primero `Invalid credentials.`. Después de que el cliente pidiera `Accept-Language: es`, el mismo recorrido mostró `Credenciales inválidas.`. No se recorrió el panel de roles: no hay contraseña de admin disponible y no se leyó ningún secreto.
 
 ## Limitaciones conocidas
 
