@@ -19,6 +19,9 @@ deploy/local.env
 deploy/local-admin.env
 deploy/prod.env
 
+# Private local backups and restore evidence (may contain stored credentials)
+/backups/local/
+
 # Python
 __pycache__/
 *.py[cod]
