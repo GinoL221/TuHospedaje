@@ -40,7 +40,9 @@ Estas corridas no aprueban US #13, #14 ni #16. Cubren las pruebas automáticas d
 | Pantalla | `npx vitest run src/pages/RegisterPage.test.jsx src/pages/LoginPage.test.jsx src/components/Header/Header.test.jsx src/pages/Admin/AdminUsers.test.jsx` | 4 archivos, 40 pruebas, 0 fallas |
 | API | `cd backend && ./mvnw -B -Dtest=AuthControllerIntegrationTest,UserControllerIntegrationTest test` | 28 + 11 pruebas, 0 fallas, `BUILD SUCCESS` |
 
-La API usó `mariadb:10.11` en `localhost:32769/test` y `localhost:32770/test`. No usó la base local preservada. Los pasos de navegador de TC-13, TC-14 y TC-16 no se ejecutaron.
+La API usó `mariadb:10.11` en `localhost:32769/test` y `localhost:32770/test`. No usó la base local preservada.
+
+El recorrido en el stack local ya levantado, con un usuario nuevo, mostró el formulario de registro, la lista de contraseña, la vuelta a Home con el nombre y sin enlace de administración, el cierre de sesión, el login correcto y el rechazo de `/admin` hacia `/unauthorized`. El login con contraseña incorrecta mostró `Invalid credentials.`, no `Credenciales inválidas`. No se recorrió el panel de roles: no hay contraseña de admin disponible y no se leyó ningún secreto.
 
 ## Limitaciones conocidas
 
