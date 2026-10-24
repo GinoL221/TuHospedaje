@@ -1532,7 +1532,9 @@ describe("ProductDetail - Features detail", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getByText("Características")).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "¿Qué ofrece este lugar?" }),
+		).toBeInTheDocument();
 		expect(screen.getByText("WiFi")).toBeInTheDocument();
 		expect(screen.getByText("Estacionamiento")).toBeInTheDocument();
 		expect(
@@ -1549,7 +1551,9 @@ describe("ProductDetail - Features detail", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.queryByText("Características")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "¿Qué ofrece este lugar?" }),
+		).not.toBeInTheDocument();
 	});
 });
 

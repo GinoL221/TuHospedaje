@@ -633,7 +633,7 @@ export default function ProductDetail() {
 					className="features-section"
 					aria-labelledby="product-features-title"
 				>
-					<h2 id="product-features-title">Características</h2>
+					<h2 id="product-features-title">¿Qué ofrece este lugar?</h2>
 					<div className="features-grid">
 						{lodging.features.map((f) => (
 							<div key={f.id} className="feature-item">
