@@ -42,7 +42,9 @@ Estas corridas no aprueban US #13, #14 ni #16. Cubren las pruebas automáticas d
 
 La API usó `mariadb:10.11` en `localhost:32769/test` y `localhost:32770/test`. No usó la base local preservada.
 
-El recorrido en el stack local ya levantado, con un usuario nuevo, mostró el formulario de registro, la lista de contraseña, la vuelta a Home con el nombre y sin enlace de administración, el cierre de sesión, el login correcto y el rechazo de `/admin` hacia `/unauthorized`. El login con contraseña incorrecta mostró primero `Invalid credentials.`. Después de que el cliente pidiera `Accept-Language: es`, el mismo recorrido mostró `Credenciales inválidas.`. No se recorrió el panel de roles: no hay contraseña de admin disponible y no se leyó ningún secreto.
+El recorrido en el stack local ya levantado, con un usuario nuevo, mostró el formulario de registro, la lista de contraseña, la vuelta a Home con el nombre y sin enlace de administración, el cierre de sesión, el login correcto y el rechazo de `/admin` hacia `/unauthorized`. El login con contraseña incorrecta mostró primero `Invalid credentials.`. Después de que el cliente pidiera `Accept-Language: es`, el mismo recorrido mostró `Credenciales inválidas.`.
+
+El panel de Usuarios se abrió después en `http://127.0.0.1:5173/administración`, con la sesión admin ya levantada. La tabla mostró ID, nombre, email, rol y acciones. La fila de `admin@tuhospedaje.com` tenía rol `ADMIN` y el botón «Quitar admin». Las otras tres filas tenían rol `USER` y el botón «Hacer admin». No se cambió ningún rol. La captura no confirma que el botón de la propia fila esté inhabilitado ni muestra «No podés cambiarte tu propio rol».
 
 ## Limitaciones conocidas
 
