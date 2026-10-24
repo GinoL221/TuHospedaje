@@ -87,7 +87,9 @@ async function request(
 	options = {},
 ) {
 	const { multipart = false, signal } = options;
-	const headers = multipart ? {} : { "Content-Type": "application/json" };
+	const headers = multipart
+		? { "Accept-Language": "es" }
+		: { "Accept-Language": "es", "Content-Type": "application/json" };
 	if (UNSAFE_METHODS.has(method)) {
 		const csrfToken = getCsrfToken();
 		if (csrfToken) {

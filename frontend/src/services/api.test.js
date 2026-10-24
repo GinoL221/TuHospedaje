@@ -26,6 +26,19 @@ afterEach(() => {
 		"XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 });
 
+describe("api service - locale", () => {
+	it("asks the backend for Spanish error messages", async () => {
+		const fetchMock = mockFetchResolved();
+		vi.stubGlobal("fetch", fetchMock);
+
+		await get("/lodgings");
+
+		expect(fetchMock.mock.calls[0][1].headers).toMatchObject({
+			"Accept-Language": "es",
+		});
+	});
+});
+
 describe("api service - successful requests", () => {
 	it("GET resolves with the parsed JSON body", async () => {
 		const fetchMock = mockFetchResolved({ json: async () => ({ data: 1 }) });

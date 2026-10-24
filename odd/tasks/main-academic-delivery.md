@@ -14,7 +14,8 @@ Runner: no single new runner. Existing commands stay in the sprint test plans an
 
 - T1 S1-S2 inline done: inventory the documents already on `main` and record the evidence gap. No commit.
 - T2 S2 inline done: write the current-`main` delivery index without promoting unverified stories. Commit `5002aa022df6fc0ca6bd3049e97c9eb772b4b433`.
-- T3 S2 inline blocked: bind the corresponding tests to current `main`, one story group at a time. Waits for the user to name the first group and to authorize any write to the preserved local database.
+- T3 S2 inline in progress: bind the corresponding tests to current `main`. Auth API and local user walk are recorded. Admin role panel remains unwalked.
+- T5 S2 inline in progress: show `Credenciales inválidas.` for a failed login by sending `Accept-Language: es`.
 - T4 S1-S2 inline pending: update the traceability pin only after T3 evidence exists. Do not mark a story verified from an old SHA.
 
 ## Log
