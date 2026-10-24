@@ -31,6 +31,17 @@ La matriz pide, para cada historia, componente de UI, endpoint y criterio de ace
 
 Una prueba que pasa en otro commit no corrige la entrega actual. La corrección entra en `main` con el test que falla antes del cambio y pasa después.
 
+## Evidencia de registro, login y roles
+
+Estas corridas no aprueban US #13, #14 ni #16. Cubren las pruebas automáticas de pantalla con autenticación simulada y las pruebas de API contra MariaDB desechable.
+
+| Corrida | Comando | Resultado |
+| --- | --- | --- |
+| Pantalla | `npx vitest run src/pages/RegisterPage.test.jsx src/pages/LoginPage.test.jsx src/components/Header/Header.test.jsx src/pages/Admin/AdminUsers.test.jsx` | 4 archivos, 40 pruebas, 0 fallas |
+| API | `cd backend && ./mvnw -B -Dtest=AuthControllerIntegrationTest,UserControllerIntegrationTest test` | 28 + 11 pruebas, 0 fallas, `BUILD SUCCESS` |
+
+La API usó `mariadb:10.11` en `localhost:32769/test` y `localhost:32770/test`. No usó la base local preservada. Los pasos de navegador de TC-13, TC-14 y TC-16 no se ejecutaron.
+
 ## Limitaciones conocidas
 
 - Los PDF originales `Sprint 1.pdf` a `Sprint 4.pdf` no están en el repositorio. La autoridad usada por la matriz es el texto que esa matriz dice haber extraído.
