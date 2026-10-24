@@ -48,6 +48,19 @@ El panel de Usuarios se abrió después en `http://127.0.0.1:5173/administració
 
 Después, solo `walkthrough-auth-1792878045008@example.com` pasó a `ADMIN`. La tabla mostró la etiqueta `ADMIN` y el botón «Quitar admin». Esa fila volvió a `USER`, y el usuario confirmó que el botón muestra otra vez «Hacer admin». No se inició sesión con esa cuenta promovida, así que el acceso de admin de ese usuario no quedó comprobado.
 
+## Evidencia de exploración y búsqueda
+
+Estas corridas no aprueban US #2, #4 ni #22. No se recorrió el navegador y no se escribió en la base local.
+
+| Corrida | Comando | Resultado |
+| --- | --- | --- |
+| Pantalla | `cd frontend && npx vitest run src/pages/Home/Home.test.jsx src/hooks/useHomeSearchResults.test.js src/hooks/useCityAutocomplete.test.js src/hooks/useHomeRecommendations.test.js` | 4 archivos, 63 pruebas, 0 fallas |
+| API | `cd backend && ./mvnw -B -Dtest=LodgingControllerIntegrationTest,RecommendationServiceContractTest,RecommendationControllerContractTest test` | 43 + 4 + 2 pruebas, 0 fallas, `BUILD SUCCESS` |
+
+La API de alojamientos usó `mariadb:10.11` en `localhost:32772/test`. No usó la base local preservada. `RecommendationServiceContractTest` usa mocks, no Testcontainers.
+
+Estas corridas no establecen el color ni el alto mínimo del Home, la grilla de 4 columnas, ni que ciudad y país coincidan con la base. Tampoco establecen el máximo de 10 y el orden aleatorio repetido de `GET /api/lodgings/random`, ni todos los filtros de TC-22.
+
 ## Limitaciones conocidas
 
 - Los PDF originales `Sprint 1.pdf` a `Sprint 4.pdf` no están en el repositorio. La autoridad usada por la matriz es el texto que esa matriz dice haber extraído.
