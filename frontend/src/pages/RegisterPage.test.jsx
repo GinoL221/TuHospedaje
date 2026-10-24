@@ -122,6 +122,37 @@ describe("RegisterPage - empty submit", () => {
 	});
 });
 
+describe("RegisterPage - password length limit", () => {
+	it("rejects more than 20 characters in Spanish and accepts 20", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue();
+		renderRegisterPage({ authValue });
+
+		const tooLong = "A12345678901234567890";
+		await fillForm(user, { password: tooLong, confirmPassword: tooLong });
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+		expect(
+			screen.getByText("Debe tener como máximo 20 caracteres"),
+		).toBeInTheDocument();
+		expect(authValue.register).not.toHaveBeenCalled();
+
+		await user.clear(getInput("password"));
+		await user.clear(getInput("confirmPassword"));
+		const atLimit = "A1234567890123456789";
+		await user.type(getInput("password"), atLimit);
+		await user.type(getInput("confirmPassword"), atLimit);
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+		expect(authValue.register).toHaveBeenCalledWith(
+			"Test",
+			"User",
+			"test@example.com",
+			atLimit,
+		);
+	});
+});
+
 describe("RegisterPage - mismatched confirm password", () => {
 	it("blocks submit with a mismatch error", async () => {
 		const user = userEvent.setup();

@@ -21,6 +21,7 @@ export default function RegisterPage() {
 	const [loading, setLoading] = useState(false);
 	const [pwChecks, setPwChecks] = useState({
 		minLength: false,
+		maxLength: false,
 		hasUpper: false,
 		hasNumber: false,
 	});
@@ -34,6 +35,7 @@ export default function RegisterPage() {
 		if (name === "password") {
 			setPwChecks({
 				minLength: value.length >= 6,
+				maxLength: value.length > 0 && value.length <= 20,
 				hasUpper: /[A-Z]/.test(value),
 				hasNumber: /[0-9]/.test(value),
 			});
@@ -53,6 +55,8 @@ export default function RegisterPage() {
 			errors.password = "La contraseña es obligatoria";
 		} else if (form.password.length < 6) {
 			errors.password = "Debe tener al menos 6 caracteres";
+		} else if (form.password.length > 20) {
+			errors.password = "Debe tener como máximo 20 caracteres";
 		} else if (!/[A-Z]/.test(form.password)) {
 			errors.password = "Debe contener una mayúscula";
 		} else if (!/[0-9]/.test(form.password)) {
@@ -144,6 +148,7 @@ export default function RegisterPage() {
 								? "input-error"
 								: form.password &&
 									  pwChecks.minLength &&
+									  pwChecks.maxLength &&
 									  pwChecks.hasUpper &&
 									  pwChecks.hasNumber
 									? "input-valid"
@@ -156,6 +161,11 @@ export default function RegisterPage() {
 								className={pwChecks.minLength ? "pw-check-ok" : "pw-check-fail"}
 							>
 								{pwChecks.minLength ? "✔" : "✘"} Al menos 6 caracteres
+							</li>
+							<li
+								className={pwChecks.maxLength ? "pw-check-ok" : "pw-check-fail"}
+							>
+								{pwChecks.maxLength ? "✔" : "✘"} Como máximo 20 caracteres
 							</li>
 							<li
 								className={pwChecks.hasUpper ? "pw-check-ok" : "pw-check-fail"}
