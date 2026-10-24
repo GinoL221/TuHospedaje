@@ -280,6 +280,7 @@ Al actualizar Playwright, actualizá también el pin exacto de `@playwright/test
 
 ## Documentación y recorridos
 
+- [`docs/markdown/delivery/current-main.md`](docs/markdown/delivery/current-main.md): entrada de la entrega académica. `main` es el entregable; los reportes históricos no aprueban una historia por sí solos.
 - [`product.md`](product.md): alcance funcional y recorridos académicos actuales.
 - [`docs/diseno/manual-identidad.md`](docs/diseno/manual-identidad.md): autoridad de identidad visual.
 - [`docs/markdown/sprint-4/academic-demo-guide.md`](docs/markdown/sprint-4/academic-demo-guide.md): guía de demostración académica.
