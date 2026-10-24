@@ -61,6 +61,8 @@ La API de alojamientos usó `mariadb:10.11` en `localhost:32772/test`. No usó l
 
 Estas corridas no establecen el color ni el alto mínimo del Home, la grilla de 4 columnas, ni que ciudad y país coincidan con la base. Tampoco establecen el máximo de 10 y el orden aleatorio repetido de `GET /api/lodgings/random`, ni todos los filtros de TC-22.
 
+Un recorrido posterior de la Home ya levantada, en `http://127.0.0.1:5173/` a 1440×900, mostró los títulos «Buscar hospedaje», «Categorías» y «Recomendaciones», el campo Ciudad, Check-in, Check-out y el botón Buscar. Las categorías visibles fueron Cabañas, Departamentos, Glamping, Hostels, Hoteles y Resorts. Había 8 recomendaciones, no 10. Las cards mostraron nombre, ciudad y país. La grilla medida fue de 4 columnas de 320 px. El fondo del buscador fue `rgb(38, 70, 83)`, que es `--secondary`, no `--primary`. El fondo del main fue `rgb(244, 244, 249)`. El `min-height` calculado fue `auto`, no `100vh`; el alto del contenido superó la ventana. Buscar «Buenos» dejó la URL `/?city=Buenos`, agregó «Resultados de búsqueda» y mantuvo categorías y recomendaciones. No se creó ninguna reserva y no se comparó cada card contra una fila de la base. No es un despliegue nuevo del `main` publicado.
+
 ## Limitaciones conocidas
 
 - Los PDF originales `Sprint 1.pdf` a `Sprint 4.pdf` no están en el repositorio. La autoridad usada por la matriz es el texto que esa matriz dice haber extraído.
