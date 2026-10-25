@@ -75,6 +75,17 @@ En la Home ya levantada, `http://127.0.0.1:5173/` mostró «Página 1 de 5». In
 
 Clic en Hoteles dejó `/?categories=1`, mostró «Resultados de búsqueda» con 9 cards y el botón «Mostrar todos». «Mostrar todos» volvió a `/` y quitó esos resultados. El título «Recomendaciones» seguía en el documento durante el filtro; no se comprobó que la sección estuviera oculta. No se midieron conteos de coincidencias, selección múltiple ni otros anchos.
 
+## Evidencia de reservas
+
+Estas corridas no aprueban US #23, #30, #31 ni #32. No se recorrió el navegador, no se escribió en la base local y no se comprobó el envío de mail.
+
+| Corrida | Comando | Resultado |
+| --- | --- | --- |
+| Reserva en el frontend | `cd frontend && npx vitest run src/pages/Booking/BookingPage.test.jsx src/pages/Booking/BookingConfirmation.test.jsx src/hooks/useAvailability.test.js src/components/RequireAuth.test.jsx` | 4 archivos, 55 pruebas, 0 fallas |
+| Reserva en la API | `cd backend && ./mvnw -B -Dtest=ReservationControllerIntegrationTest,ReservationConcurrencyTest test` | `ReservationConcurrencyTest` 3 y `ReservationControllerIntegrationTest` 33. Total 36, 0 fallas. BUILD SUCCESS |
+
+Maven usó `jdbc:mariadb://localhost:32774/test` y `jdbc:mariadb://localhost:32775/test`, MariaDB 10.11. No toca la base preservada. El texto de mail en la confirmación no prueba que el mensaje haya llegado. Las fechas ocupadas no se vieron en el navegador.
+
 ## Limitaciones conocidas
 
 - Los PDF originales `Sprint 1.pdf` a `Sprint 4.pdf` no están en el repositorio. La autoridad usada por la matriz es el texto que esa matriz dice haber extraído.
