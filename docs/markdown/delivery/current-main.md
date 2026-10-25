@@ -50,7 +50,7 @@ Después, solo `walkthrough-auth-1792878045008@example.com` pasó a `ADMIN`. La 
 
 ## Evidencia de exploración y búsqueda
 
-Estas corridas no aprueban US #2, #4 ni #22. No se recorrió el navegador y no se escribió en la base local.
+Estas corridas no aprueban US #2, #4 ni #22. Esas dos corridas no recorrieron el navegador y no escribieron en la base local.
 
 | Corrida | Comando | Resultado |
 | --- | --- | --- |
@@ -62,6 +62,18 @@ La API de alojamientos usó `mariadb:10.11` en `localhost:32772/test`. No usó l
 Estas corridas no establecen el color ni el alto mínimo del Home, la grilla de 4 columnas, ni que ciudad y país coincidan con la base. Tampoco establecen el máximo de 10 y el orden aleatorio repetido de `GET /api/lodgings/random`, ni todos los filtros de TC-22.
 
 Un recorrido posterior de la Home ya levantada, en `http://127.0.0.1:5173/` a 1440×900, mostró los títulos «Buscar hospedaje», «Categorías» y «Recomendaciones», el campo Ciudad, Check-in, Check-out y el botón Buscar. Las categorías visibles fueron Cabañas, Departamentos, Glamping, Hostels, Hoteles y Resorts. Había 8 recomendaciones, no 10. Las cards mostraron nombre, ciudad y país. La grilla medida fue de 4 columnas de 320 px. El fondo del buscador fue `rgb(38, 70, 83)`, que es `--secondary`, no `--primary`. El fondo del main fue `rgb(244, 244, 249)`. El `min-height` calculado fue `auto`, no `100vh`; el alto del contenido superó la ventana. Buscar «Buenos» dejó la URL `/?city=Buenos`, agregó «Resultados de búsqueda» y mantuvo categorías y recomendaciones. No se creó ninguna reserva y no se comparó cada card contra una fila de la base. No es un despliegue nuevo del `main` publicado.
+
+## Evidencia de paginación y filtros
+
+Estas observaciones no aprueban US #8 ni #20. No se creó ninguna reserva y no se recorrió la tabla admin.
+
+| Corrida | Comando | Resultado |
+| --- | --- | --- |
+| Chips | `cd frontend && npx vitest run src/pages/Home/CategoryCard.test.jsx` | 1 archivo, 11 pruebas, 0 fallas |
+
+En la Home ya levantada, `http://127.0.0.1:5173/` mostró «Página 1 de 5». Inicio y Anterior estaban deshabilitados. Siguiente y Última no. Siguiente pasó el texto a «Página 2 de 5» y habilitó Inicio y Anterior. La URL no cambió y no se comprobó que las cards fueran distintas. Seguían viéndose 8 recomendaciones.
+
+Clic en Hoteles dejó `/?categories=1`, mostró «Resultados de búsqueda» con 9 cards y el botón «Mostrar todos». «Mostrar todos» volvió a `/` y quitó esos resultados. El título «Recomendaciones» seguía en el documento durante el filtro; no se comprobó que la sección estuviera oculta. No se midieron conteos de coincidencias, selección múltiple ni otros anchos.
 
 ## Limitaciones conocidas
 
