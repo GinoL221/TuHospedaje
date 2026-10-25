@@ -1023,6 +1023,90 @@ describe("Home - search form", () => {
 });
 
 describe("Home - pagination", () => {
+	it("paginates search results while preserving filters and resets the page when a filter changes", async () => {
+		const firstPageLodging = {
+			...lodgingFixture,
+			id: 31,
+			name: "Alojamiento página 1",
+		};
+		const secondPageLodging = {
+			...lodgingFixture,
+			id: 32,
+			name: "Alojamiento página 2",
+		};
+		const requestedSearches = [];
+		get.mockImplementation((endpoint) => {
+			if (endpoint.startsWith("/lodgings/search")) {
+				const url = new URL(endpoint, "http://localhost");
+				requestedSearches.push(url);
+				const requestedPage = Number(url.searchParams.get("page") || 0);
+				return Promise.resolve({
+					lodgings: [
+						requestedPage === 1 ? secondPageLodging : firstPageLodging,
+					],
+					currentPage: requestedPage,
+					totalItems: 10,
+					totalPages: 2,
+					catalogItems: 38,
+				});
+			}
+			if (endpoint.startsWith("/lodgings/recommendations"))
+				return Promise.resolve(recommendationsPage());
+			if (endpoint === "/categories") return Promise.resolve([categoryFixture]);
+			return Promise.resolve([]);
+		});
+		const user = userEvent.setup();
+		renderHome({
+			route: "/?city=Bariloche&checkIn=2026-12-17&checkOut=2026-12-20",
+		});
+
+		expect(await screen.findByText("Alojamiento página 1")).toBeInTheDocument();
+		expect(
+			screen.getByText("10 resultados de 38 alojamientos"),
+		).toBeInTheDocument();
+		const pagination = () =>
+			screen.getByRole("navigation", {
+				name: "Paginación de resultados de búsqueda",
+			});
+		expect(within(pagination()).getByText(/Página/)).toHaveTextContent(
+			"Página 1 de 2",
+		);
+
+		await user.click(
+			within(pagination()).getByRole("button", { name: "Siguiente" }),
+		);
+		expect(await screen.findByText("Alojamiento página 2")).toBeInTheDocument();
+		expect(screen.queryByText("Alojamiento página 1")).not.toBeInTheDocument();
+		expect(within(pagination()).getByText(/Página/)).toHaveTextContent(
+			"Página 2 de 2",
+		);
+		const pageOneSearch = requestedSearches[requestedSearches.length - 1];
+		expect(pageOneSearch.searchParams.get("city")).toBe("Bariloche");
+		expect(pageOneSearch.searchParams.get("checkIn")).toBe("2026-12-17");
+		expect(pageOneSearch.searchParams.get("checkOut")).toBe("2026-12-20");
+		expect(pageOneSearch.searchParams.get("page")).toBe("1");
+
+		await user.click(
+			within(pagination()).getByRole("button", { name: "Anterior" }),
+		);
+		expect(await screen.findByText("Alojamiento página 1")).toBeInTheDocument();
+		const pageZeroSearch = requestedSearches[requestedSearches.length - 1];
+		expect(pageZeroSearch.searchParams.get("page")).toBeNull();
+
+		await user.click(
+			within(pagination()).getByRole("button", { name: "Siguiente" }),
+		);
+		expect(await screen.findByText("Alojamiento página 2")).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: /Cabaña/ }));
+		expect(await screen.findByText("Alojamiento página 1")).toBeInTheDocument();
+		const filteredSearch = requestedSearches[requestedSearches.length - 1];
+		expect(filteredSearch.searchParams.get("city")).toBe("Bariloche");
+		expect(filteredSearch.searchParams.get("checkIn")).toBe("2026-12-17");
+		expect(filteredSearch.searchParams.get("checkOut")).toBe("2026-12-20");
+		expect(filteredSearch.searchParams.get("categories")).toBe("1");
+		expect(filteredSearch.searchParams.get("page")).toBeNull();
+	});
+
 	it("wires the first and last page controls to the recommendation hook", async () => {
 		mockGetDefaults({
 			recommendations: recommendationsPage({ totalPages: 3 }),

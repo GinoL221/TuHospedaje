@@ -9,6 +9,7 @@ import useHomeRecommendations from "../../hooks/useHomeRecommendations";
 import useHomeSearchResults from "../../hooks/useHomeSearchResults";
 import useCityAutocomplete from "../../hooks/useCityAutocomplete";
 import ProductCard from "../../components/ProductCard/ProductCard";
+import Pagination from "../../components/Pagination/Pagination";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
 import "./Home.css";
@@ -55,11 +56,13 @@ export default function Home() {
 			? [...selected, category]
 			: selected
 		).forEach((id) => next.append("categories", id));
+		next.delete("page");
 		navigate(`/?${next.toString()}`);
 	}
 	function clearCategories() {
 		const next = new URLSearchParams(search);
 		next.delete("categories");
+		next.delete("page");
 		navigate(next.toString() ? `/?${next.toString()}` : "/");
 	}
 
@@ -130,6 +133,13 @@ export default function Home() {
 		if (checkOut) params.set("checkOut", formatDate(checkOut));
 
 		navigate(`/?${params.toString()}`);
+	}
+
+	function handleSearchPageChange(page) {
+		const next = new URLSearchParams(search);
+		if (page === 0) next.delete("page");
+		else next.set("page", String(page));
+		navigate(next.toString() ? `/?${next.toString()}` : "/");
 	}
 
 	function handleFavoriteToggle(id, add) {
@@ -317,6 +327,16 @@ export default function Home() {
 									/>
 								))}
 							</div>
+						)}
+						{visibleSearchResults.totalPages > 1 && (
+							<nav aria-label="Paginación de resultados de búsqueda">
+								<Pagination
+									page={visibleSearchResults.currentPage}
+									totalPages={visibleSearchResults.totalPages}
+									onPageChange={handleSearchPageChange}
+									className="home-pagination"
+								/>
+							</nav>
 						)}
 					</section>
 				)
