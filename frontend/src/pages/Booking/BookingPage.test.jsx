@@ -619,7 +619,10 @@ describe("BookingPage - check-out calendar minimum date", () => {
 // (LodgingServiceImpl.checkAvailability). There was previously zero test
 // coverage of this filtering behavior.
 describe("BookingPage - occupied date filtering", () => {
+	const originalTimezone = process.env.TZ;
+
 	beforeEach(() => {
+		process.env.TZ = "America/Argentina/Buenos_Aires";
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		// Use a midday local time, not UTC midnight: "2026-07-01" parses as UTC
 		// midnight, which in a UTC-3 timezone is "2026-06-30T21:00" local time,
@@ -630,6 +633,46 @@ describe("BookingPage - occupied date filtering", () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+		if (originalTimezone === undefined) {
+			delete process.env.TZ;
+		} else {
+			process.env.TZ = originalTimezone;
+		}
+	});
+
+	it("interprets date-only occupied ranges correctly in Argentina time", async () => {
+		// A date-only API string parses as the previous local day when treated as
+		// UTC midnight in Argentina (UTC-3). The calendar must retain the API day.
+		expect(new Date("2026-07-20").getDate()).toBe(19);
+		mockGetDefaults({
+			availability: {
+				occupiedRanges: [{ checkIn: "2026-07-20", checkOut: "2026-07-23" }],
+			},
+		});
+		const user = userEvent.setup();
+		renderBookingPage({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
+
+		await user.click(screen.getByLabelText("Check-in"));
+
+		for (const label of [
+			"July 20th, 2026",
+			"July 21st, 2026",
+			"July 22nd, 2026",
+		]) {
+			expect(getDateCellByLabelPart(label)).toHaveAttribute(
+				"aria-disabled",
+				"true",
+			);
+		}
+		expect(getDateCellByLabelPart("July 23rd, 2026")).toHaveAttribute(
+			"aria-disabled",
+			"false",
+		);
 	});
 
 	it("blocks dates inside an existing reservation while leaving its checkout day and outside dates selectable", async () => {
@@ -669,6 +712,40 @@ describe("BookingPage - occupied date filtering", () => {
 
 		// A date outside the occupied range entirely is also selectable.
 		expect(july25).toHaveAttribute("aria-disabled", "false");
+	});
+
+	it("allows checkout on an occupied start date when the stay ends at that boundary", async () => {
+		mockGetDefaults({
+			availability: {
+				available: true,
+				occupiedRanges: [{ checkIn: "2026-07-20", checkOut: "2026-07-23" }],
+			},
+		});
+		const user = userEvent.setup();
+		renderBookingPage({ authValue: makeAuthValue() });
+
+		await screen.findByText("Cabaña del Lago");
+		await waitFor(() =>
+			expect(screen.getByLabelText("Check-in")).not.toBeDisabled(),
+		);
+
+		await user.click(screen.getByLabelText("Check-in"));
+		await user.click(getDateCellByLabelPart("July 17th, 2026"));
+
+		const checkOutInput = screen.getByLabelText("Check-out");
+		await user.click(checkOutInput);
+		const july20 = getDateCellByLabelPart("July 20th, 2026");
+		const july21 = getDateCellByLabelPart("July 21st, 2026");
+		const july24 = getDateCellByLabelPart("July 24th, 2026");
+
+		// Checkout on the next reservation's start date is an exclusive boundary.
+		expect(july20).toHaveAttribute("aria-disabled", "false");
+		// A checkout inside or after crossing that occupied stay still overlaps.
+		expect(july21).toHaveAttribute("aria-disabled", "true");
+		expect(july24).toHaveAttribute("aria-disabled", "true");
+
+		await user.click(july20);
+		expect(checkOutInput).toHaveValue("20/07/2026");
 	});
 });
 

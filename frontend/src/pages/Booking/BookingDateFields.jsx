@@ -12,6 +12,7 @@ export default function BookingDateFields({
 	onCheckInChange,
 	onCheckOutChange,
 	isDateOccupied,
+	isCheckOutDateAvailable,
 }) {
 	return (
 		<fieldset
@@ -91,7 +92,7 @@ export default function BookingDateFields({
 						startDate={checkIn}
 						endDate={checkOut}
 						minDate={minCheckoutDate(checkIn)}
-						filterDate={(date) => !isDateOccupied(date)}
+						filterDate={isCheckOutDateAvailable}
 						dateFormat="dd/MM/yyyy"
 						placeholderText="Check-out"
 						aria-required="true"

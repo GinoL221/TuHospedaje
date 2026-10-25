@@ -113,10 +113,34 @@ export default function BookingPage() {
 		loadAvailability({ checkIn, checkOut });
 	}, [checkIn, checkOut, loadAvailability]);
 
+	function toCalendarDay(value) {
+		if (typeof value === "string") {
+			const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+			if (year && month && day) return new Date(year, month - 1, day);
+		}
+
+		const date = new Date(value);
+		return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+	}
+
 	function isDateOccupied(date) {
+		const calendarDate = toCalendarDay(date);
 		return occupiedRanges.some(
 			(range) =>
-				date >= new Date(range.checkIn) && date < new Date(range.checkOut),
+				calendarDate >= toCalendarDay(range.checkIn) &&
+				calendarDate < toCalendarDay(range.checkOut),
+		);
+	}
+
+	function isCheckOutDateAvailable(date) {
+		if (!checkIn) return !isDateOccupied(date);
+
+		const calendarCheckIn = toCalendarDay(checkIn);
+		const calendarCheckOut = toCalendarDay(date);
+		return !occupiedRanges.some(
+			(range) =>
+				calendarCheckIn < toCalendarDay(range.checkOut) &&
+				calendarCheckOut > toCalendarDay(range.checkIn),
 		);
 	}
 
@@ -299,6 +323,7 @@ export default function BookingPage() {
 						onCheckInChange={setCheckIn}
 						onCheckOutChange={setCheckOut}
 						isDateOccupied={isDateOccupied}
+						isCheckOutDateAvailable={isCheckOutDateAvailable}
 					/>
 
 					<fieldset className="booking-fieldset booking-notes-fieldset">
