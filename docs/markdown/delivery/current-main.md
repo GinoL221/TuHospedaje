@@ -1,6 +1,13 @@
 # Entrega académica en main
 
-`main` es la entrega. El commit de referencia de este índice es `a430c73938663df2d7c72eb23b9e730d25c3a48a`. No rearmar las ramas de sprint. Una historia no está aprobada hasta que una corrida quede atada a este commit, o a uno posterior que la nombre.
+`main` es la entrega. El corte integrado en `main` local es `18d98980b2b3f97a3ade9debe0ca81aba1b96c26`; `origin/main` conserva el corte publicado `a430c73938663df2d7c72eb23b9e730d25c3a48a`. No rearmar las ramas de sprint. La integración no agrega evidencia de ejecución ni cambia el SHA al que corresponde cada verificación.
+
+## Integración local y alcance de evidencia
+
+- **Integrado localmente:** fast-forward de `a430c739` a `18d9898`, conservando los 20 commits de `docs/main-academic-delivery`, sin merge commit. Incluye `18aacfb` (cobertura de login) y `18d9898` (documentación).
+- **Publicado:** `origin/main@a430c739`; no hubo push ni despliegue como parte de la integración. La CI ya registrada corresponde a ese SHA publicado, no a `18d9898`.
+- **Verificado:** US #30 conserva su verificación local en `1244af6` (BE-US30-12). No se repitieron pruebas, build, lint, navegador ni login tras el fast-forward; US #30 sigue pendiente de una corrida ligada a `main@18d9898`.
+- **Historial:** las secciones siguientes conservan sus SHAs, ramas y límites originales. «Main fijado» o «main publicado» con `a430c739` identifica ese corte histórico/publicado, no el HEAD local actual. La igualdad de código de producción con el candidato probado no se presenta como una ejecución nueva.
 
 ## Camino corto
 
@@ -172,6 +179,6 @@ La inspección visual final a 1280×900 confirmó dos meses visibles. Con diciem
 ## Limitaciones conocidas
 
 - Los PDF originales `Sprint 1.pdf` a `Sprint 4.pdf` no están en el repositorio. La autoridad usada por la matriz es el texto que esa matriz dice haber extraído.
-- La matriz apunta al `main` publicado `a430c73938663df2d7c72eb23b9e730d25c3a48a`. Este índice está en `docs/main-academic-delivery`; la verificación registrada para US #23 es local y no afirma un despliegue de producción.
+- La matriz conserva el corte publicado `a430c73938663df2d7c72eb23b9e730d25c3a48a` y distingue la integración local `18d9898`. Este índice ya está incorporado en `main` local; las verificaciones de US #23 (`a430c739`) y US #30 (`1244af6`) conservan sus SHAs y no afirman un despliegue de producción.
 - El mail de confirmación y el envío real de WhatsApp no quedaron comprobados en el recorrido local del `2026-10-24`.
 - No hay despliegue de producción. La CI exitosa de `a430c73` no reemplaza esa comprobación.
