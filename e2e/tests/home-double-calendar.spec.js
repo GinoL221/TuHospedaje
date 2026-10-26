@@ -34,6 +34,8 @@ async function mockHome(page, baseURL) {
   const unexpectedApis = [];
   /** @type {URL[]} */
   const searches = [];
+  /** @type {string[]} */
+  const blockedResources = [];
   const origin = new URL(baseURL).origin;
   await page.clock.setFixedTime(new Date('2026-12-01T12:00:00Z'));
   await page.route('**/*', async route => {
@@ -44,14 +46,16 @@ async function mockHome(page, baseURL) {
       await route.abort('blockedbyclient');
       return;
     }
-    if (url.origin !== origin) {
-      await route.abort('blockedbyclient');
-      return;
-    }
     if (!url.pathname.startsWith('/api/')) {
+      if (url.origin !== origin) {
+        blockedResources.push(url.href);
+        await route.abort('blockedbyclient');
+        return;
+      }
       await route.continue();
       return;
     }
+    // CI serves the API on a different port; keep every API response mocked.
     let data;
     if (url.pathname === '/api/auth/me') {
       data = null;
@@ -85,7 +89,7 @@ async function mockHome(page, baseURL) {
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) });
   });
-  return { writes, unexpectedApis, searches };
+  return { writes, unexpectedApis, searches, blockedResources };
 }
 
 /**
@@ -134,6 +138,38 @@ async function inspectCalendar(page, stacked) {
   await expect(titles.nth(1)).toHaveText(initialTitles[1]);
   return popper;
 }
+
+test('keeps writes, unknown APIs and external non-API resources blocked', async ({ page, baseURL }) => {
+  if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
+  const evidence = await mockHome(page, baseURL);
+  await page.goto('/');
+  await expect(page.getByRole('combobox', { name: 'Ciudad' })).toBeVisible();
+
+  // These loopback URLs have no backend. Every probe must be intercepted.
+  const apiOrigin = new URL(baseURL);
+  apiOrigin.port = '5199';
+  const probes = [
+    { url: new URL('/api/lodgings/search', apiOrigin).href, method: 'POST' },
+    { url: new URL('/api/mock-guard-missing', apiOrigin).href, method: 'GET' },
+    { url: new URL('/mock-external-resource', apiOrigin).href, method: 'GET' },
+  ];
+  for (const probe of probes) {
+    const result = await page.evaluate(async ({ url, method }) => {
+      try {
+        await fetch(url, { method });
+        return { rejected: false, name: '' };
+      } catch (error) {
+        return { rejected: true, name: error instanceof Error ? error.name : String(error) };
+      }
+    }, probe);
+    expect(result).toEqual({ rejected: true, name: 'TypeError' });
+  }
+  expect(evidence.writes).toEqual(['POST /api/lodgings/search']);
+  expect(evidence.unexpectedApis).toEqual(['/api/mock-guard-missing']);
+  expect(evidence.searches).toEqual([]);
+  const externalURL = probes[2].url;
+  expect(evidence.blockedResources.filter(url => url === externalURL)).toEqual([externalURL]);
+});
 
 for (const width of [320, 390, 768, 769, 1440]) {
   test.describe(`Home double calendar at ${width}px`, () => {
