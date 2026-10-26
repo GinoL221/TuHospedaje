@@ -13,6 +13,23 @@ async function mockHomeApi(
     categoriesFailing: failInitialCategory,
     searchFailing: failInitialSearch,
   };
+  const baseURL = test.info().project.use.baseURL;
+  if (baseURL === undefined) throw new Error('Mocked Home tests require baseURL');
+  const origin = new URL(baseURL).origin;
+  // Specific fixture routes registered below take priority over this safety net.
+  await page.route('**/*', async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (!['GET', 'HEAD'].includes(request.method())) {
+      await route.abort('blockedbyclient');
+      throw new Error('Unexpected write in mocked Home test: ' + request.method());
+    }
+    if (url.origin !== origin || url.pathname.startsWith('/api/')) {
+      await route.abort('blockedbyclient');
+      return;
+    }
+    await route.continue();
+  });
 
   await page.route('https://img.icons8.com/**', async (route) => {
     await route.fulfill({
@@ -32,6 +49,7 @@ async function mockHomeApi(
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
+      headers: { 'Set-Cookie': 'XSRF-TOKEN=home-calendar-fixture; Path=/; SameSite=Lax' },
       body: '{}',
     });
   });
@@ -169,8 +187,9 @@ async function inspectDatepicker(page, placeholder) {
   const popper = page.locator('.home-datepicker-popper').last();
   const calendar = popper.locator('.react-datepicker');
   await expect(calendar).toBeVisible();
-  await calendar.scrollIntoViewIfNeeded();
-  await expectContainedInViewport(page, calendar);
+  // Two stacked months may exceed the viewport; the popup scrolls internally.
+  await popper.scrollIntoViewIfNeeded();
+  await expectContainedInViewport(page, popper);
   await expectNoHorizontalOverflow(page);
 
   const navigationControls = popper.locator('.react-datepicker__navigation');
@@ -186,10 +205,12 @@ async function inspectDatepicker(page, placeholder) {
   await nextMonth.focus();
   await expect(nextMonth).toBeFocused();
   await expectContainedInViewport(page, nextMonth);
-  const currentMonth = popper.locator('.react-datepicker__current-month');
-  const initialMonth = await currentMonth.innerText();
+  const currentMonths = popper.locator('.react-datepicker__current-month');
+  await expect(popper.locator('.react-datepicker__month-container:visible')).toHaveCount(2);
+  const initialMonths = await currentMonths.allTextContents();
   await page.keyboard.press('Enter');
-  await expect(currentMonth).not.toHaveText(initialMonth);
+  await expect(currentMonths.first()).not.toHaveText(initialMonths[0]);
+  await expect(currentMonths.nth(1)).not.toHaveText(initialMonths[1]);
 
   const enabledInMonthDay = popper.locator(
     '.react-datepicker__day:not(.react-datepicker__day--outside-month):not(.react-datepicker__day--disabled)',

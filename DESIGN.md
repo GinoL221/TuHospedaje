@@ -182,7 +182,7 @@ This section preserves the original requirement comparison and identifies later 
 | Story and original source | Requirement | Documented convention / acceptance boundary |
 |---|---|---|
 | #9, Sprint 1 pp. 25–26 | Admin must not be responsive; mobile access displays an unavailable message. | Intentional scope exclusion, not technical debt. Exact detection/breakpoint remains an implementation choice. |
-| #22, Sprint 3 pp. 3–4 | Search includes a double calendar for date-range selection. | Localized Home date controls alone do not prove the double-calendar criterion; keep criterion verification pending unless separately evidenced. |
+| #22, Sprint 3 pp. 3–4 | Search includes a double calendar for date-range selection. | A bounded local Home correction now has mocked two-month checks at five widths; see the scoped evidence below. This does not change the historical whole-story disposition or prove live-backend acceptance. |
 | #23, Sprint 3 pp. 5–6 | ProductDetail shows a double availability calendar; no mobile exception is stated. | The former one-month mobile convention differed. A local CSS correction passes mocked two-month layout checks at five widths; see local evidence below. Historical story dispositions retain their original SHAs and limits. |
 | #34, Sprint 4 pp. 12–13 | WhatsApp action is lower-right, with consistent/effective placement across resolutions and mobile/tablet compatibility. | Recorded mobile Footer flow needs reconciliation against placement. Do not infer success/error provider handling or message delivery from a handoff link. |
 
@@ -199,8 +199,26 @@ The correction was developed on baseline `8d8a72280a544d8a41be333ff542f3c1dad6ef
 - A later E2E-only typing adjustment added explicit null/undefined guards and a `string[]` annotation without changing fixtures or assertions. JavaScript syntax and diff checks passed. Removing those seven added lines reconstructs the browser-tested E2E blob; CSS and unit-test blobs stayed unchanged. Playwright/Vitest were not rerun after this typing adjustment. The LSP returned zero diagnostics but could not confirm clean on its push-only server, so no diagnostic-clean claim is made.
 - Six `!important` diagnostics for retained/moved CSS declarations remain open. Full lint/build, other browsers, short-height/landscape cases and live-backend integration were not verified by this change.
 
+### Local Home double-calendar evidence
+
+The Home correction was developed on `6f653dee7b589d0afb1149127a2d3971c1993cfa`. Both existing Check-in/Check-out fields request two months. Home-only CSS stacks them through `768px` and keeps them side by side above that breakpoint. A local DatePicker middleware clamps the floating popup horizontally using fixed viewport coordinates; no dependency was added. Search validation, date serialization and pagination handlers are unchanged. ProductDetail, WhatsApp, backend and production authentication are outside this correction.
+
+- RED: job-161 failed at `320px` because the real DatePicker rendered one month instead of two.
+- Job-162 passed nine existing E2E tests and failed five new cases: checkout popup containment at `769px` and a new focus-return expectation at the other four widths. After separately authorized positioning, keyboard-path and mock-cookie adjustments, job-163 passed ten cases but still failed focus return at four widths. The comparison in job-164 is described below; no failed attempt is treated as acceptance evidence.
+- After explicit approval to separate stable focus restoration, job-165 passed all fourteen Chromium E2E tests: five new widths (`320`, `390`, `768`, `769`, `1440px`) and nine existing Home regressions. It also passed `Home.test.jsx` (`39/39`). The scoped test keeps keyboard/day-focus, reopening and Escape-close checks, but makes no stable focus-return claim.
+- Both date fields are checked for two visible months and the expected arrangement, contained popup/controls, navigation of both months, and touch-sized mobile day controls. A synthetic `10–13 January 2027` stay is submitted with Bariloche and preserved when moving to search page two; overflow, unexpected API requests and writes are checked. Existing mocked regressions cover city keyboard/touch selection, city search, calendars and retry controls.
+- The ignored `e2e/.run-local-persistent/home-calendar-*` runner/config disable dotenv/config loading, use a fixed `1 December 2026` browser clock and intercept API responses. A synthetic CSRF cookie completes the mock contract; production CSRF validation is untouched. External requests and writes are blocked. No real login, backend request or reservation occurs. These host-local artifacts are not committed evidence or independent backups.
+- Job-166 passed the full frontend suite (`66` files, `700/700` tests). No application or test files were changed after job-165; the final results were read from the completed logs without rerunning tests. Active diagnostics returned 36 warnings (29 inferred TypeScript warnings in the existing mobile E2E file, six retained/moved CSS `!important` declarations and one existing nested ternary), with two inconclusive paths; no diagnostic-clean claim is made. Full lint/build, other browsers, short-height/landscape, zoom and live-backend integration were not verified. This bounded local result does not approve all of US #22 or establish deployment.
+
+### Home calendar focus follow-up
+
+A separate mocked comparison (job-164) served the original Home JSX/CSS from `6f653dee7b589d0afb1149127a2d3971c1993cfa` and the pending Home correction without changing application files. At both `320px` and `1440px`, Escape from the focused calendar day briefly focused Check-in and then left focus on `body` in both versions. The two baseline assertions caught that transient focus and passed; the current assertions missed it and failed. All four final DOM snapshots showed `body`, so these passing assertions do not prove stable focus restoration or establish a regression exclusive to the double-calendar change.
+
+With explicit human approval, only the new E2E assertion requiring focus to return to Check-in was removed from the calendar correction. The checks for focused keyboard navigation, popup reopening and Escape closing remain. Stable focus restoration is unresolved and requires a separate correction; no production focus handler or authentication code was changed to satisfy that assertion. The ignored comparison runner/result under `e2e/.run-local-persistent/home-focus-compare*` are host-local artifacts, not independent backups or published evidence.
+
 ## Other technical debt
 
+- [ ] Restore stable input focus after Escape closes a Home datepicker; loss of focus was observed in both the baseline and pending correction above.
 - [ ] Raw colors, shadows, spacing, radii, dimensions, fixed offsets, and breakpoints remain hardcoded or fragmented.
 - [ ] `--bg` is overloaded across backgrounds, surfaces, and states; danger and layer tokens are incomplete.
 - [ ] Global selectors and legacy CSS can collide across features.

@@ -23,12 +23,14 @@ vi.mock("react-datepicker", () => ({
 		onChange,
 		locale,
 		popperClassName,
+		monthsShown,
 	}) => (
 		<input
 			aria-label={ariaLabel}
 			data-testid={`datepicker-${placeholderText}`}
 			data-locale={locale}
 			data-popper-class={popperClassName}
+			data-months-shown={monthsShown}
 			value={selected ? selected.toISOString().slice(0, 10) : ""}
 			onChange={(e) =>
 				onChange(e.target.value ? new Date(e.target.value) : null)
@@ -975,6 +977,20 @@ describe("Home - search form", () => {
 			"data-popper-class",
 			"home-datepicker-popper",
 		);
+	});
+
+	it("requests two visible months in both date pickers", async () => {
+		mockGetDefaults();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		for (const field of ["Check-in", "Check-out"]) {
+			expect(screen.getByTestId(`datepicker-${field}`)).toHaveAttribute(
+				"data-months-shown",
+				"2",
+			);
+		}
 	});
 
 	it("searches on Home with the city and selected date query params when submitted", async () => {

@@ -16,6 +16,23 @@ import "./Home.css";
 
 registerLocale("es", es);
 
+/** @type {import("react-datepicker").DatePickerProps["popperModifiers"]} */
+const homeCalendarModifiers = [
+	{
+		name: "homeViewport",
+		fn: ({ x, rects }) => ({
+			// Both pickers use fixed coordinates, so x is relative to the viewport.
+			x: Math.max(
+				8,
+				Math.min(
+					x,
+					document.documentElement.clientWidth - rects.floating.width - 8,
+				),
+			),
+		}),
+	},
+];
+
 export default function Home() {
 	const navigate = useNavigate();
 	const { search } = useLocation();
@@ -251,6 +268,9 @@ export default function Home() {
 								selected={checkIn}
 								onChange={(date) => setCheckIn(date)}
 								selectsStart
+								popperProps={{ strategy: "fixed" }}
+								popperModifiers={homeCalendarModifiers}
+								monthsShown={2}
 								startDate={checkIn}
 								endDate={checkOut}
 								minDate={new Date()}
@@ -266,6 +286,9 @@ export default function Home() {
 								selected={checkOut}
 								onChange={(date) => setCheckOut(date)}
 								selectsEnd
+								popperProps={{ strategy: "fixed" }}
+								popperModifiers={homeCalendarModifiers}
+								monthsShown={2}
 								startDate={checkIn}
 								endDate={checkOut}
 								minDate={checkIn || new Date()}
