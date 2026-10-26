@@ -1,11 +1,27 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import {
 	customRender,
 	screen,
 	userEvent,
 	makeAuthValue,
+	mockUser,
 } from "../test/test-utils";
+import { AuthProvider } from "../context/AuthContext";
+import RequireAuth from "../components/RequireAuth";
+import { getCurrentUser, login as loginRequest } from "../services/authService";
 import LoginPage from "./LoginPage";
+
+vi.mock("../services/authService", () => ({
+	getCurrentUser: vi.fn(),
+	login: vi.fn(),
+	register: vi.fn(),
+	logout: vi.fn(),
+}));
+
+function BookingSentinel() {
+	const location = useLocation();
+	return <div data-testid="booking-sentinel">{location.pathname}</div>;
+}
 
 function FavoritesSentinel() {
 	return <div data-testid="favorites-sentinel">favorites page</div>;
@@ -20,6 +36,10 @@ function renderLoginPage({ authValue, initialEntries } = {}) {
 		<Routes>
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/favorites" element={<FavoritesSentinel />} />
+			<Route
+				path="/register"
+				element={<div data-testid="register-sentinel">registration page</div>}
+			/>
 			<Route path="/" element={<HomeSentinel />} />
 		</Routes>,
 		{ authValue, initialEntries },
@@ -53,6 +73,67 @@ describe("LoginPage - render", () => {
 		expect(
 			screen.getByRole("button", { name: "Iniciar sesión" }),
 		).toBeInTheDocument();
+	});
+});
+
+describe("LoginPage - booking authentication journey", () => {
+	it("redirects an anonymous booking visit to login and returns after simulated authentication", async () => {
+		getCurrentUser.mockResolvedValue(null);
+		loginRequest.mockResolvedValue(mockUser);
+		const user = userEvent.setup();
+		customRender(
+			<AuthProvider>
+				<Routes>
+					<Route path="/login" element={<LoginPage />} />
+					<Route element={<RequireAuth />}>
+						<Route path="/booking/:lodgingId" element={<BookingSentinel />} />
+					</Route>
+				</Routes>
+			</AuthProvider>,
+			{ route: "/booking/1", authValue: null },
+		);
+
+		expect(
+			await screen.findByText(
+				"Necesitás iniciar sesión para continuar. Si no tenés cuenta, podés registrarte.",
+			),
+		).toBeInTheDocument();
+		expect(screen.queryByTestId("booking-sentinel")).not.toBeInTheDocument();
+		expect(loginRequest).not.toHaveBeenCalled();
+		expect(screen.getByRole("link", { name: "Crear cuenta" })).toHaveAttribute(
+			"href",
+			"/register",
+		);
+
+		await fillAndSubmit(user, {
+			email: "test@example.com",
+			password: "test-password",
+		});
+
+		expect(loginRequest).toHaveBeenCalledExactlyOnceWith(
+			"test@example.com",
+			"test-password",
+		);
+		expect(await screen.findByTestId("booking-sentinel")).toHaveTextContent(
+			"/booking/1",
+		);
+		expect(
+			screen.queryByRole("heading", { name: "Iniciar sesión" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("opens registration from the create-account link", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue({ user: null, token: null });
+		renderLoginPage({ authValue, initialEntries: ["/login"] });
+
+		const link = screen.getByRole("link", { name: "Crear cuenta" });
+		expect(link).toHaveAttribute("href", "/register");
+		await user.click(link);
+
+		expect(await screen.findByTestId("register-sentinel")).toBeInTheDocument();
+		expect(authValue.login).not.toHaveBeenCalled();
+		expect(authValue.register).not.toHaveBeenCalled();
 	});
 });
 
