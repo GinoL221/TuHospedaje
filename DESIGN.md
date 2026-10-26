@@ -146,7 +146,7 @@ Guest-facing responsive behavior remains subject to the device criteria in the o
 
 | Status | Contract |
 |---|---|
-| **Partially implemented** | Recorded behavior: ProductDetail shows one calendar month on mobile and two on desktop. Official acceptance remains pending for the mobile difference from US #23's double-calendar requirement; see reconciliation below. At `<=480px`, the calendar is centered below the fixed Header and uses narrow outer gutters and no inline month margins to keep seven `44x44px` day targets contained at `320px`. Browser checks cover `320px`, `390px`, and desktop `1440px`; mobile tests inspect the visible month, not the deliberately hidden second month. |
+| **Implemented** | Local correction developed on baseline `8d8a722`: ProductDetail displays two months stacked at `<=768px` and side by side above `768px`. The mobile popup sits below the fixed Header, with bounded internal vertical scrolling, narrow gutters and no inline month margins, preserving seven `44x44px` day targets at `320px`. Mocked Chromium checks passed at `320`, `390`, `768`, `769`, and `1440px`; both months, navigation, second-month date selection, occupied-day blocking, keyboard close/reopen and containment were asserted. See the local evidence below; this is not a production or full-story acceptance claim. |
 | **Implemented** | SearchResults keeps controls available while chips summarize applied filters. Chip removal synchronizes controls while preserving result cards, loading, error, empty, pagination, and responsive behavior; the `600px` layout was manually verified. |
 | **Partially implemented** | Recorded behavior: one global Footer-mounted WhatsApp action remains fixed on desktop, enters normal Footer flow at `<=768px` with a `48x48px` target, preserves its URL and accessible name, and is hidden when its environment value is absent. US #34 placement and provider-result acceptance are not established by that behavior; see reconciliation below. |
 | **Implemented** | ConfirmDialog has dialog semantics, instance-safe naming, safe initial focus, enabled-control focus containment, return focus, pending-safe Escape and overlay behavior, and duplicate-confirm protection. Its focused tests, Admin regressions, lint, and build were previously recorded as passing. |
@@ -177,16 +177,27 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 
 ## Official requirements reconciliation
 
-This section compares original requirements with documented conventions, not newly inspected UI behavior. It authorizes no UI change and does not change prior evidence or story dispositions.
+This section preserves the original requirement comparison and identifies later bounded local corrections separately. It does not change prior SHA-bound evidence or whole-story dispositions.
 
 | Story and original source | Requirement | Documented convention / acceptance boundary |
 |---|---|---|
 | #9, Sprint 1 pp. 25–26 | Admin must not be responsive; mobile access displays an unavailable message. | Intentional scope exclusion, not technical debt. Exact detection/breakpoint remains an implementation choice. |
 | #22, Sprint 3 pp. 3–4 | Search includes a double calendar for date-range selection. | Localized Home date controls alone do not prove the double-calendar criterion; keep criterion verification pending unless separately evidenced. |
-| #23, Sprint 3 pp. 5–6 | ProductDetail shows a double availability calendar; no mobile exception is stated. | Recorded one-month mobile behavior differs. Historical mobile usability checks do not approve that difference; reconcile UI or obtain an explicit scope decision before claiming compliance. |
+| #23, Sprint 3 pp. 5–6 | ProductDetail shows a double availability calendar; no mobile exception is stated. | The former one-month mobile convention differed. A local CSS correction passes mocked two-month layout checks at five widths; see local evidence below. Historical story dispositions retain their original SHAs and limits. |
 | #34, Sprint 4 pp. 12–13 | WhatsApp action is lower-right, with consistent/effective placement across resolutions and mobile/tablet compatibility. | Recorded mobile Footer flow needs reconciliation against placement. Do not infer success/error provider handling or message delivery from a handoff link. |
 
 Other exact criteria remain in the matrix, including Home's maximum ten random products in a two-column/five-row grid (#4) and the five-image gallery's desktop 50/50 split with a right-side 2×2 grid (#6). This design-system summary does not relax those requirements or assert their current compliance.
+
+### Local ProductDetail double-calendar evidence
+
+The correction was developed on baseline `8d8a72280a544d8a41be333ff542f3c1dad6ef7e`. Only ProductDetail calendar CSS and its tests change; Home (#22), WhatsApp (#34), date/availability logic and backend remain outside this fix.
+
+- RED: job-156 failed at `320px`, expecting two visible months and receiving one.
+- Job-157 failed because the new browser test expected two navigation buttons at the minimum month. After an authorized test correction, job-158 passed all five Chromium widths in `e2e/tests/mobile-product-detail.spec.js`: the initial month permits Next, the following month permits Previous, and both displayed months return together. The same run then reported `62/63` unit tests because a legacy CSS assertion still required hiding month two.
+- After authorization to update that CSS assertion, job-159 passed `ProductDetail.test.jsx` (`63/63`), the full frontend suite (`66` files, `699/699`) and the changed unit file's format check. The CSS and browser test were not changed or rerun in that step.
+- The isolated local runner/config under ignored `e2e/.run-local-persistent/calendar-*` disable dotenv/config loading and use API fixtures with a fixed clock. No real login, backend request, reservation or secret read occurs. These host-local artifacts are not committed evidence or independent backups.
+- A later E2E-only typing adjustment added explicit null/undefined guards and a `string[]` annotation without changing fixtures or assertions. JavaScript syntax and diff checks passed. Removing those seven added lines reconstructs the browser-tested E2E blob; CSS and unit-test blobs stayed unchanged. Playwright/Vitest were not rerun after this typing adjustment. The LSP returned zero diagnostics but could not confirm clean on its push-only server, so no diagnostic-clean claim is made.
+- Six `!important` diagnostics for retained/moved CSS declarations remain open. Full lint/build, other browsers, short-height/landscape cases and live-backend integration were not verified by this change.
 
 ## Other technical debt
 

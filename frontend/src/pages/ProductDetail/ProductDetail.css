@@ -560,13 +560,23 @@
   }
 
   .product-detail .product-datepicker-popper {
-    width: min(320px, calc(100vw - 32px));
+    position: fixed !important;
+    top: calc(var(--site-header-height) + var(--product-space-1)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    /* Seven 44px day targets need 308px plus the calendar borders. */
+    width: min(320px, calc(100vw - 8px));
+    max-width: calc(100vw - 8px);
+    z-index: 1001;
+    max-height: calc(
+      100dvh - var(--site-header-height) - var(--product-space-2)
+    );
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
-  .product-detail
-    .product-datepicker-popper
-    .react-datepicker__month-container:nth-of-type(2) {
-    display: none;
+  .product-detail .product-datepicker-popper .react-datepicker {
+    flex-direction: column;
   }
 
   .product-detail
@@ -574,6 +584,10 @@
     .react-datepicker__month-container {
     width: 100%;
     max-width: 100%;
+  }
+
+  .product-detail .product-datepicker-popper .react-datepicker__month {
+    margin-inline: 0;
   }
 }
 
@@ -602,26 +616,6 @@
   .price-display {
     margin-inline: calc(-1 * var(--product-space-2));
     padding: var(--product-space-2);
-  }
-
-  .product-detail .product-datepicker-popper {
-    position: fixed !important;
-    top: calc(var(--site-header-height) + var(--product-space-1)) !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    /* Seven 44px day targets need 308px plus the calendar borders. */
-    width: min(320px, calc(100vw - 8px));
-    max-width: calc(100vw - 8px);
-    z-index: 1001;
-    max-height: calc(
-      100dvh - var(--site-header-height) - var(--product-space-2)
-    );
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-
-  .product-detail .product-datepicker-popper .react-datepicker__month {
-    margin-inline: 0;
   }
 }
 

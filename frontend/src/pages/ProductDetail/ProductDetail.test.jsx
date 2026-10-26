@@ -251,8 +251,17 @@ describe("ProductDetail - header navigation placement", () => {
 		expect(css).toMatch(
 			/\.product-detail \.product-datepicker-popper[^}]*width:\s*min\(640px, calc\(100vw - 32px\)\)/,
 		);
-		expect(css).toMatch(
-			/@media \(max-width: 768px\)[\s\S]*\.react-datepicker__month-container:nth-of-type\(2\)[^}]*display:\s*none/,
+		const mobileCalendarRules =
+			css.split("@media (max-width: 768px) {")[1]?.split("@media")[0] ?? "";
+		expect(mobileCalendarRules).toMatch(
+			/\.react-datepicker\s*\{[^}]*flex-direction:\s*column/,
+		);
+		expect(mobileCalendarRules).toMatch(
+			/\.react-datepicker__month-container\s*\{[^}]*width:\s*100%/,
+		);
+		expect(mobileCalendarRules).toMatch(/overflow-y:\s*auto/);
+		expect(css).not.toMatch(
+			/\.react-datepicker__month-container:nth-of-type\(2\)[^}]*display:\s*none/,
 		);
 		expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
 	});
