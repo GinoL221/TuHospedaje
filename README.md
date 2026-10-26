@@ -2,14 +2,18 @@
 
 TuHospedaje es una plataforma web para descubrir y reservar alojamientos turísticos. Permite explorar por ciudad y fechas, consultar disponibilidad, guardar favoritos, reservar y administrar el catálogo.
 
-Es el proyecto final integrador de Digital House. El alcance académico corresponde a los Sprints 1–4; pasarelas de pago, chat interno y mapas en vivo quedan fuera de esta entrega. La definición funcional está en [`product.md`](product.md).
+Es el proyecto final integrador de Digital House. Los PDF originales de los Sprints 1–4 definen las historias #1–#35 y sus criterios; [`product.md`](product.md) resume ese alcance y la [matriz de trazabilidad](docs/markdown/compliance/close-user-story-gaps-traceability.md) registra fuentes y evidencia. Una descripción funcional no certifica implementación ni aceptación.
+
+Pasarelas de pago, chat interno y mapas en vivo quedan fuera de esta entrega. **Solo #19 (correo de registro) es explícitamente opcional/no evaluada.** Compartir, puntuaciones, WhatsApp y correo de reserva (#27, #28, #34 y #35) siguen en el alcance oficial aunque su prioridad sea baja. La exclusión de chat interno no excluye WhatsApp. Cancelación es una mejora posterior, no un criterio original ni un reemplazo del historial #33.
+
+La web del huésped debe adaptarse a dispositivos según los criterios oficiales; no se exige una app móvil nativa. **Admin es la excepción de #9:** no debe ser responsive y debe mostrar un mensaje de no disponibilidad en móvil. Los breakpoints concretos son decisiones técnicas. Las diferencias documentadas de calendario doble y ubicación móvil de WhatsApp están [pendientes de reconciliación](DESIGN.md#official-requirements-reconciliation), sin aprobación implícita ni cambios de interfaz en este ajuste.
 
 ## Stack
 
 - **Backend:** Java 17, Spring Boot 4.0, Spring Security/JWT, Spring Data JPA y MariaDB.
 - **Frontend:** React 19, Vite 8, React Router y Lucide React.
 - **E2E:** Playwright para Chromium, Firefox y mobile Chromium.
-- **Servicios opcionales:** Cloudinary para imágenes y SMTP para email. La configuración SMTP no prueba por sí sola la entrega del proveedor o la llegada al buzón.
+- **Proveedores configurables:** Cloudinary para imágenes y SMTP para email. La elección o activación del proveedor no vuelve opcionales los criterios oficiales de imágenes o correo de reserva. Configurar SMTP no prueba la entrega ni la llegada al buzón.
 
 ## Requisitos
 
@@ -281,7 +285,8 @@ Al actualizar Playwright, actualizá también el pin exacto de `@playwright/test
 ## Documentación y recorridos
 
 - [`docs/markdown/delivery/current-main.md`](docs/markdown/delivery/current-main.md): entrada de la entrega académica. `main` es el entregable; los reportes históricos no aprueban una historia por sí solos.
-- [`product.md`](product.md): alcance funcional y recorridos académicos actuales.
+- [`product.md`](product.md): resumen de alcance subordinado a los PDF originales; recorridos de demostración, excepción móvil de Admin e incrementos posteriores.
+- [`DESIGN.md`](DESIGN.md): traducción técnica de identidad, convenciones registradas y diferencias pendientes frente a los requisitos oficiales; no sustituye su aceptación.
 - [`docs/diseno/manual-identidad.md`](docs/diseno/manual-identidad.md): autoridad de identidad visual.
 - [`docs/markdown/sprint-4/academic-demo-guide.md`](docs/markdown/sprint-4/academic-demo-guide.md): guía de demostración académica.
 - [`docs/markdown/sprint-4/sprint-4-test-plan.md`](docs/markdown/sprint-4/sprint-4-test-plan.md): plan de pruebas del Sprint 4.

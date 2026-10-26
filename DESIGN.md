@@ -1,13 +1,15 @@
 # TuHospedaje Technical Design System
 
-This document translates the approved TuHospedaje brand into technical rules and records implementation status and debt. It does not define or override brand identity.
+This document translates the approved TuHospedaje brand into technical rules and records implementation status and debt. It does not define or override brand identity or the official Sprint acceptance criteria.
+
+The original Digital House Sprint 1–4 PDFs define functional and academic requirements (#1–#35; only #19 is explicitly optional/non-evaluated). [product.md](product.md) summarizes that scope; the [traceability matrix](docs/markdown/compliance/close-user-story-gaps-traceability.md) records criterion evidence. The authority table below governs brand translation, not permission to replace official stories.
 
 ## Quick path
 
 1. Read `docs/diseno/manual-identidad.md` for brand decisions.
 2. Check the status in this document before treating a rule as shipped behavior.
-3. Verify implementation claims against the production repository.
-4. Record exceptions as debt; do not promote them into brand rules.
+3. Verify implementation claims against a named repository revision and its recorded checks; source presence does not prove a production deployment.
+4. Check the official requirements reconciliation below before treating an implementation convention as academic compliance. Record deviations explicitly; do not promote them into brand rules or acceptance waivers.
 
 ## Authority and governance
 
@@ -16,7 +18,7 @@ This document translates the approved TuHospedaje brand into technical rules and
 | 1 | `docs/diseno/manual-identidad.md` (Identity Manual v2.0) | Existing primary brand authority for identity, logo, color, typography, imagery, iconography, voice, and brand accessibility. |
 | 2 | Published editorial PDF and official assets | Existing approved publication and materialized brand assets. They do not override the manual when a normative difference exists. |
 | 3 | `DESIGN.md` | Technical translation of the manual; records product conventions, implementation status, and debt. |
-| 4 | Production repository | Source of implemented behavior. Code proves what users receive but does not redefine identity. |
+| 4 | Repository at a named revision | Source of implementation. Code and revision-bound checks establish their stated scope, not deployment or a new brand rule. |
 
 Brand changes require the approval process in [Identity Manual v2.0, section 9](docs/diseno/manual-identidad.md#9-gobernanza). Technical changes subordinate to the manual are recorded here. Do not present future work as implemented.
 
@@ -26,10 +28,12 @@ OpenPencil may produce approved structural directions. Impeccable may refine an 
 
 | Status | Meaning |
 |---|---|
-| **Implemented** | Verified in the production repository. |
+| **Implemented** | Recorded as implemented in the repository within the cited check's scope; does not itself establish current-SHA academic acceptance or deployment. |
 | **Partially implemented** | Present but incomplete, inconsistent, or awaiting stated verification. |
 | **Target** | Approved direction that is not implemented. |
-| **Not supported** | Explicit current product limitation. |
+| **Not supported** | Explicit current product limitation; does not waive an official requirement. |
+
+Existing component checks and adoption entries below retain their historical scopes. This documentation reconciliation reruns none of those checks and does not establish a new verification date or SHA for them.
 
 ## Brand translation
 
@@ -134,15 +138,17 @@ These conventions are derived from the implemented product. They do not come fro
 | **Implemented** | `600px` | Compact SearchResults adjustment |
 | **Implemented** | `480px` | Small component adjustments |
 
-Mobile/touch Admin is **not supported**. Touch-capable devices at `<=1024px` receive a blocking message; this is a current limitation, not a design target.
+Mobile/touch Admin is **not supported by the official academic scope**: US #9 explicitly requires a non-responsive panel and an unavailable message on mobile (Sprint 1, pp. 25–26). The recorded touch-device check at `<=1024px` is an implementation convention, not a PDF-specified breakpoint. This exclusion is not unfinished guest-mobile work.
+
+Guest-facing responsive behavior remains subject to the device criteria in the official stories. WhatsApp entering Footer flow at `<=768px` is a recorded behavior, not evidence that US #34's placement criterion is satisfied.
 
 ### Components and behavior
 
 | Status | Contract |
 |---|---|
-| **Implemented** | ProductDetail shows one calendar month on mobile and two on desktop. At `<=480px`, the calendar is centered below the fixed Header and uses narrow outer gutters and no inline month margins to keep seven `44x44px` day targets contained at `320px`. Browser checks cover `320px`, `390px`, and desktop `1440px`; mobile tests inspect the visible month, not the deliberately hidden second month. |
+| **Partially implemented** | Recorded behavior: ProductDetail shows one calendar month on mobile and two on desktop. Official acceptance remains pending for the mobile difference from US #23's double-calendar requirement; see reconciliation below. At `<=480px`, the calendar is centered below the fixed Header and uses narrow outer gutters and no inline month margins to keep seven `44x44px` day targets contained at `320px`. Browser checks cover `320px`, `390px`, and desktop `1440px`; mobile tests inspect the visible month, not the deliberately hidden second month. |
 | **Implemented** | SearchResults keeps controls available while chips summarize applied filters. Chip removal synchronizes controls while preserving result cards, loading, error, empty, pagination, and responsive behavior; the `600px` layout was manually verified. |
-| **Implemented** | One global Footer-mounted WhatsApp action remains fixed on desktop, enters normal Footer flow at `<=768px` with a `48x48px` target, preserves its URL and accessible name, and is hidden when its environment value is absent. |
+| **Partially implemented** | Recorded behavior: one global Footer-mounted WhatsApp action remains fixed on desktop, enters normal Footer flow at `<=768px` with a `48x48px` target, preserves its URL and accessible name, and is hidden when its environment value is absent. US #34 placement and provider-result acceptance are not established by that behavior; see reconciliation below. |
 | **Implemented** | ConfirmDialog has dialog semantics, instance-safe naming, safe initial focus, enabled-control focus containment, return focus, pending-safe Escape and overlay behavior, and duplicate-confirm protection. Its focused tests, Admin regressions, lint, and build were previously recorded as passing. |
 | **Implemented** | ShareModal accessibility is verified: dialog semantics, instance-safe name and description, initial Close focus, return focus, keyboard containment including share links, Escape and overlay dismissal, interior-click protection, a named `44px` close target, visible focus, and reduced-motion handling. Social actions preserve external identity through tinted borders and backgrounds while petroleum foregrounds provide at least `6.05:1` contrast across verified light-theme states. URLs, copy, image behavior, `target`, and `rel` are preserved. |
 | **Implemented** | ShareModal desktop refinement and mobile presentation at `480x897px` are visually validated. The dialog remains inside the viewport, uses internal scrolling, preserves hierarchy and touch targets, and avoids horizontal overflow. |
@@ -169,6 +175,19 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 
 - [ ] **Mixed legacy iconography:** Lucide coexists with inline SVG, Icons8 images, text glyphs, stars, and legacy mechanisms.
 
+## Official requirements reconciliation
+
+This section compares original requirements with documented conventions, not newly inspected UI behavior. It authorizes no UI change and does not change prior evidence or story dispositions.
+
+| Story and original source | Requirement | Documented convention / acceptance boundary |
+|---|---|---|
+| #9, Sprint 1 pp. 25–26 | Admin must not be responsive; mobile access displays an unavailable message. | Intentional scope exclusion, not technical debt. Exact detection/breakpoint remains an implementation choice. |
+| #22, Sprint 3 pp. 3–4 | Search includes a double calendar for date-range selection. | Localized Home date controls alone do not prove the double-calendar criterion; keep criterion verification pending unless separately evidenced. |
+| #23, Sprint 3 pp. 5–6 | ProductDetail shows a double availability calendar; no mobile exception is stated. | Recorded one-month mobile behavior differs. Historical mobile usability checks do not approve that difference; reconcile UI or obtain an explicit scope decision before claiming compliance. |
+| #34, Sprint 4 pp. 12–13 | WhatsApp action is lower-right, with consistent/effective placement across resolutions and mobile/tablet compatibility. | Recorded mobile Footer flow needs reconciliation against placement. Do not infer success/error provider handling or message delivery from a handoff link. |
+
+Other exact criteria remain in the matrix, including Home's maximum ten random products in a two-column/five-row grid (#4) and the five-image gallery's desktop 50/50 split with a right-side 2×2 grid (#6). This design-system summary does not relax those requirements or assert their current compliance.
+
 ## Other technical debt
 
 - [ ] Raw colors, shadows, spacing, radii, dimensions, fixed offsets, and breakpoints remain hardcoded or fragmented.
@@ -176,12 +195,11 @@ SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local ac
 - [ ] Global selectors and legacy CSS can collide across features.
 - [ ] Focus-visible, touch-target, semantic error association, and reduced-motion coverage remain incomplete.
 - [ ] Dark mode is not supported.
-- [ ] Mobile/touch Admin is not supported.
 
 ## Adoption path
 
 - [x] Preserve the completed SearchResults state and responsive slice.
-- [x] Preserve the completed WhatsApp/Footer behavior slice.
+- [x] Preserve the recorded WhatsApp/Footer behavior checks as historical evidence; official US #34 placement/provider acceptance remains subject to the reconciliation above.
 - [x] Preserve ConfirmDialog accessibility behavior.
 - [x] Preserve ShareModal accessibility behavior.
 - [x] Preserve the verified identity work unit: local Inter Variable loading and official Header/Footer isologotype usage. Its focused 25 tests, lint, and build passed.
