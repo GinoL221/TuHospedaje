@@ -171,6 +171,164 @@ test('keeps writes, unknown APIs and external non-API resources blocked', async 
   expect(evidence.blockedResources.filter(url => url === externalURL)).toEqual([externalURL]);
 });
 
+test('restores stable focus to each date field after Escape', async ({ page, baseURL }) => {
+  if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
+  const evidence = await mockHome(page, baseURL);
+  await page.goto('/');
+  for (const name of ['Check-in', 'Check-out']) {
+    const input = page.getByRole('textbox', { name, exact: true });
+    await input.click();
+    const popper = page.locator('.home-datepicker-popper');
+    await expect(popper).toBeVisible();
+    await input.press('ArrowDown');
+    await expect(popper.locator('.react-datepicker__day:focus')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(popper).not.toBeVisible();
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(input).toBeFocused();
+    await expect(popper).not.toBeVisible();
+  }
+  expect(evidence.writes).toEqual([]);
+  expect(evidence.unexpectedApis).toEqual([]);
+});
+
+test('closes with Escape from calendar navigation controls', async ({ page, baseURL }) => {
+  if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
+  const evidence = await mockHome(page, baseURL);
+  await page.goto('/');
+  for (const name of ['Check-in', 'Check-out']) {
+    const input = page.getByRole('textbox', { name, exact: true });
+    await input.click();
+    const popper = page.locator('.home-datepicker-popper');
+    await expect(popper).toBeVisible();
+    const next = popper.locator('.react-datepicker__navigation--next');
+    await next.focus();
+    await expect(next).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(popper).not.toBeVisible();
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(input).toBeFocused();
+  }
+  expect(evidence.writes).toEqual([]);
+  expect(evidence.unexpectedApis).toEqual([]);
+});
+
+for (const [key, targetRole, targetName] of [
+  ['Tab', 'textbox', 'Check-out'],
+  ['Shift+Tab', 'combobox', 'Ciudad'],
+]) {
+  test(`supports ${key} after Escape from a day`, async ({ page, baseURL }) => {
+    if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
+    const evidence = await mockHome(page, baseURL);
+    await page.goto('/');
+    const input = page.getByRole('textbox', { name: 'Check-in', exact: true });
+    const popper = page.locator('.home-datepicker-popper');
+    await input.click();
+    await expect(popper).toBeVisible();
+    await input.press('ArrowDown');
+    await expect(popper.locator('.react-datepicker__day:focus')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(popper).not.toBeVisible();
+    await expect(input).toBeFocused();
+    await page.keyboard.press(key);
+    await expect(page.getByRole(targetRole, { name: targetName, exact: true })).toBeFocused();
+    expect(evidence.writes).toEqual([]);
+    expect(evidence.unexpectedApis).toEqual([]);
+  });
+}
+
+test('preserves an outside click immediately after Escape from a day', async ({ page, baseURL }) => {
+  if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
+  const evidence = await mockHome(page, baseURL);
+  await page.goto('/');
+  const outside = page.getByRole('button', { name: 'Abrir menú' });
+  const bounds = await outside.boundingBox();
+  if (!bounds) throw new Error('Outside button is not visible');
+  const input = page.getByRole('textbox', { name: 'Check-in', exact: true });
+  await input.click();
+  const popper = page.locator('.home-datepicker-popper');
+  await expect(popper).toBeVisible();
+  await input.press('ArrowDown');
+  await expect(popper.locator('.react-datepicker__day:focus')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  const openedMenu = page.getByRole('button', { name: 'Cerrar menú' });
+  await expect(openedMenu).toBeFocused();
+  await expect(popper).not.toBeVisible();
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect(openedMenu).toBeFocused();
+  expect(evidence.writes).toEqual([]);
+  expect(evidence.unexpectedApis).toEqual([]);
+});
+
+test('preserves later user focus after held Escape callbacks run', async ({ page, baseURL }) => {
+  if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
+  const evidence = await mockHome(page, baseURL);
+  await page.goto('/');
+  const input = page.getByRole('textbox', { name: 'Check-in', exact: true });
+  const outside = page.getByRole('button', { name: 'Abrir menú' });
+  await input.click();
+  const popper = page.locator('.home-datepicker-popper');
+  await expect(popper).toBeVisible();
+  await input.press('ArrowDown');
+  await expect(popper.locator('.react-datepicker__day:focus')).toHaveCount(1);
+  await page.evaluate(() => {
+    const original = window.setTimeout;
+    const originalClear = window.clearTimeout;
+    const pending = new Map();
+    let nextId = -1;
+    window.__heldCalendarTimers = { original, originalClear, pending, controlRan: false, canceledRan: false };
+    window.setTimeout = (callback, delay, ...args) => {
+      if ((delay ?? 0) === 0 && typeof callback === 'function') {
+        const id = nextId--;
+        pending.set(id, () => callback(...args));
+        return id;
+      }
+      return original(callback, delay, ...args);
+    };
+    window.clearTimeout = id => {
+      if (pending.delete(id)) return;
+      originalClear(id);
+    };
+    const canceled = window.setTimeout(() => { window.__heldCalendarTimers.canceledRan = true; }, 0);
+    window.clearTimeout(canceled);
+    window.setTimeout(() => { window.__heldCalendarTimers.controlRan = true; }, 0);
+    let canceledDuringFlush;
+    window.setTimeout(() => window.clearTimeout(canceledDuringFlush), 0);
+    canceledDuringFlush = window.setTimeout(() => { window.__heldCalendarTimers.canceledDuringFlushRan = true; }, 0);
+  });
+  await page.keyboard.press('Escape');
+  await expect(popper).not.toBeVisible();
+  await page.evaluate(() => {
+    window.setTimeout = window.__heldCalendarTimers.original;
+  });
+  await outside.click();
+  const openedMenu = page.getByRole('button', { name: 'Cerrar menú' });
+  await expect(openedMenu).toBeFocused();
+  await page.evaluate(() => {
+    const timers = window.__heldCalendarTimers;
+    try {
+      for (const [id, callback] of timers.pending) {
+        timers.pending.delete(id);
+        callback();
+      }
+    } finally {
+      window.clearTimeout = timers.originalClear;
+      timers.pending.clear();
+    }
+  });
+  expect(await page.evaluate(() => ({
+    controlRan: window.__heldCalendarTimers.controlRan,
+    canceledRan: window.__heldCalendarTimers.canceledRan,
+    canceledDuringFlushRan: Boolean(window.__heldCalendarTimers.canceledDuringFlushRan),
+  }))).toEqual({ controlRan: true, canceledRan: false, canceledDuringFlushRan: false });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect(openedMenu).toBeFocused();
+  await expect(popper).not.toBeVisible();
+  expect(evidence.writes).toEqual([]);
+  expect(evidence.unexpectedApis).toEqual([]);
+});
+
 for (const width of [320, 390, 768, 769, 1440]) {
   test.describe(`Home double calendar at ${width}px`, () => {
     test.use({ viewport: { width, height: width <= 390 ? 844 : 900 } });
@@ -204,7 +362,6 @@ for (const width of [320, 390, 768, 769, 1440]) {
       await expect(popper.locator('.react-datepicker__day:focus')).toHaveCount(1);
       await page.keyboard.press('Escape');
       await expect(popper).not.toBeVisible();
-      // Stable focus restoration also fails on the baseline; tracked separately in DESIGN.md.
       await page.getByRole('button', { name: 'Buscar', exact: true }).click();
       await expect(page.locator('.search-results')).toContainText('Calendar result 1');
       const pagination = page.getByRole('navigation', { name: 'Paginación de resultados de búsqueda' });

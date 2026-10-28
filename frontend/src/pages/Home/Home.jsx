@@ -41,6 +41,8 @@ export default function Home() {
 	const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 	const [categoriesError, setCategoriesError] = useState(false);
 	const categoryRequest = useRef(0);
+	const checkInPicker = useRef(null);
+	const checkOutPicker = useRef(null);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
 	const [formSearchError, setFormSearchError] = useState("");
@@ -128,6 +130,20 @@ export default function Home() {
 		activateSuggestion,
 		selectCity,
 	} = useCityAutocomplete();
+
+	function handleDayEscape(event, picker) {
+		if (
+			event.key !== "Escape" ||
+			!event.target.closest(
+				".react-datepicker__day, .react-datepicker__navigation",
+			)
+		)
+			return;
+		event.preventDefault();
+		event.stopPropagation();
+		event.currentTarget.querySelector("input")?.focus({ preventScroll: true });
+		picker.current?.setOpen(false, true);
+	}
 
 	function formatDate(date) {
 		return date ? date.toISOString().split("T")[0] : "";
@@ -263,8 +279,13 @@ export default function Home() {
 								</ul>
 							)}
 						</div>
-						<div>
+						<div
+							onKeyDownCapture={(event) =>
+								handleDayEscape(event, checkInPicker)
+							}
+						>
 							<DatePicker
+								ref={checkInPicker}
 								selected={checkIn}
 								onChange={(date) => setCheckIn(date)}
 								selectsStart
@@ -281,8 +302,13 @@ export default function Home() {
 								popperClassName="home-datepicker-popper"
 							/>
 						</div>
-						<div>
+						<div
+							onKeyDownCapture={(event) =>
+								handleDayEscape(event, checkOutPicker)
+							}
+						>
 							<DatePicker
+								ref={checkOutPicker}
 								selected={checkOut}
 								onChange={(date) => setCheckOut(date)}
 								selectsEnd
