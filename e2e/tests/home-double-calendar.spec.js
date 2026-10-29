@@ -241,9 +241,9 @@ test('preserves an outside click immediately after Escape from a day', async ({ 
   if (baseURL === undefined) throw new Error('Calendar test requires baseURL');
   const evidence = await mockHome(page, baseURL);
   await page.goto('/');
-  const outside = page.getByRole('button', { name: 'Abrir menú' });
+  const outside = page.getByRole('link', { name: 'TuHospedaje — Inicio' });
   const bounds = await outside.boundingBox();
-  if (!bounds) throw new Error('Outside button is not visible');
+  if (!bounds) throw new Error('Outside link is not visible');
   const input = page.getByRole('textbox', { name: 'Check-in', exact: true });
   await input.click();
   const popper = page.locator('.home-datepicker-popper');
@@ -252,11 +252,10 @@ test('preserves an outside click immediately after Escape from a day', async ({ 
   await expect(popper.locator('.react-datepicker__day:focus')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-  const openedMenu = page.getByRole('button', { name: 'Cerrar menú' });
-  await expect(openedMenu).toBeFocused();
+  await expect(outside).toBeFocused();
   await expect(popper).not.toBeVisible();
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect(openedMenu).toBeFocused();
+  await expect(outside).toBeFocused();
   expect(evidence.writes).toEqual([]);
   expect(evidence.unexpectedApis).toEqual([]);
 });
@@ -266,7 +265,7 @@ test('preserves later user focus after held Escape callbacks run', async ({ page
   const evidence = await mockHome(page, baseURL);
   await page.goto('/');
   const input = page.getByRole('textbox', { name: 'Check-in', exact: true });
-  const outside = page.getByRole('button', { name: 'Abrir menú' });
+  const outside = page.getByRole('link', { name: 'TuHospedaje — Inicio' });
   await input.click();
   const popper = page.locator('.home-datepicker-popper');
   await expect(popper).toBeVisible();
@@ -303,8 +302,7 @@ test('preserves later user focus after held Escape callbacks run', async ({ page
     window.setTimeout = window.__heldCalendarTimers.original;
   });
   await outside.click();
-  const openedMenu = page.getByRole('button', { name: 'Cerrar menú' });
-  await expect(openedMenu).toBeFocused();
+  await expect(outside).toBeFocused();
   await page.evaluate(() => {
     const timers = window.__heldCalendarTimers;
     try {
@@ -323,7 +321,7 @@ test('preserves later user focus after held Escape callbacks run', async ({ page
     canceledDuringFlushRan: Boolean(window.__heldCalendarTimers.canceledDuringFlushRan),
   }))).toEqual({ controlRan: true, canceledRan: false, canceledDuringFlushRan: false });
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect(openedMenu).toBeFocused();
+  await expect(outside).toBeFocused();
   await expect(popper).not.toBeVisible();
   expect(evidence.writes).toEqual([]);
   expect(evidence.unexpectedApis).toEqual([]);
