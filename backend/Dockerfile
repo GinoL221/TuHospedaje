@@ -22,7 +22,7 @@ FROM eclipse-temurin:17-jre@sha256:207ecae0b2b104dfc6dfa763d1e9cd2041cb344800a18
 # Require the OpenSSL security update in the runtime image.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
-    && apt-get install --only-upgrade -y --no-install-recommends libssl3t64 openssl openssl-provider-legacy \
+    && apt-get install --only-upgrade -y --no-install-recommends libssl3t64 openssl openssl-provider-legacy libbrotli1 \
     && groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --home /app --shell /usr/sbin/nologin app \
     && for package in libssl3t64 openssl openssl-provider-legacy; do \
@@ -32,6 +32,12 @@ RUN apt-get update \
         && dpkg --compare-versions "$version" ge 3.5.5-1ubuntu3.6 \
         || { echo "Required OpenSSL security update missing or too old: $package" >&2; exit 1; }; \
     done \
+    && { status="$(dpkg-query -W -f='${db:Status-Status}' libbrotli1)" \
+        && test "$status" = installed \
+        && version="$(dpkg-query -W -f='${Version}' libbrotli1)" \
+        && dpkg --compare-versions "$version" ge 1.2.0-3ubuntu0.1 \
+        || { echo "Required Brotli security update missing or too old: libbrotli1" >&2; exit 1; }; \
+    } \
     && rm -rf /var/lib/apt/lists/*
 # Remove the unused Pebble executable inherited from the runtime base image.
 RUN rm -f /usr/bin/pebble
