@@ -266,11 +266,6 @@ footer .page-container {
 }
 
 @media (max-width: 768px) {
-  .site-header {
-    position: sticky;
-    top: 0;
-  }
-
   .site-header nav {
     flex-wrap: wrap;
     align-items: center;
