@@ -129,13 +129,26 @@ class LodgingServiceImplTest {
     @Test
     void shouldDeleteExistingLodging() {
         Lodging lodging = lodging(8L, "Temporal");
-        when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging), Optional.empty());
 
         Optional<LodgingDTO> deleted = lodgingService.delete(8L);
 
         assertThat(deleted).isPresent();
         assertThat(deleted.get().getId()).isEqualTo(8L);
-        verify(lodgingRepository).deleteById(8L);
+        assertThat(lodging.getVersion()).isZero();
+        verify(lodgingRepository).delete(lodging);
+        verify(lodgingRepository).flush();
+    }
+
+    @Test
+    void shouldFailWhenNullVersionLodgingRemainsAfterDelete() {
+        Lodging lodging = lodging(8L, "Temporal");
+        when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging));
+
+        assertThrows(IllegalStateException.class, () -> lodgingService.delete(8L));
+
+        verify(lodgingRepository).delete(lodging);
+        verify(lodgingRepository).flush();
     }
 
     @Test

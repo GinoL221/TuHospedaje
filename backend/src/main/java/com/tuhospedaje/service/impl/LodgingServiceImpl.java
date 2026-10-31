@@ -140,8 +140,16 @@ public class LodgingServiceImpl implements LodgingService {
     public Optional<LodgingDTO> delete(Long id) throws ResourceNotFoundException {
         Lodging lodging = lodgingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + id));
-        lodgingRepository.deleteById(id);
-        return Optional.of(LodgingDTO.fromEntity(lodging));
+        if (lodging.getVersion() == null) {
+            lodging.setVersion(0L);
+        }
+        LodgingDTO deleted = LodgingDTO.fromEntity(lodging);
+        lodgingRepository.delete(lodging);
+        lodgingRepository.flush();
+        if (lodgingRepository.findById(id).isPresent()) {
+            throw new IllegalStateException("Lodging " + id + " was not deleted");
+        }
+        return Optional.of(deleted);
     }
 
     @Override

@@ -627,6 +627,47 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void shouldDeleteSeededVersionLodgingAndRejectNullVersion() throws Exception {
+        Map<String, Object> versionColumn = jdbcTemplate.queryForMap("""
+                SELECT IS_NULLABLE, COLUMN_DEFAULT
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'lodgings'
+                  AND COLUMN_NAME = 'version'
+                """);
+        assertThat(versionColumn.get("IS_NULLABLE")).isEqualTo("NO");
+        assertThat(String.valueOf(versionColumn.get("COLUMN_DEFAULT"))).isEqualTo("0");
+
+        jdbcTemplate.update("""
+                INSERT INTO lodgings (
+                    name, description, address, city, country, phone_number, email,
+                    price_per_night, max_guests
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                "Version por defecto", "desc", "Calle 1", "Ciudad", "País", "111",
+                "default-version@test.com", new BigDecimal("100.00"), 2);
+        Long id = jdbcTemplate.queryForObject(
+                "SELECT id FROM lodgings WHERE email = ?", Long.class, "default-version@test.com");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT version FROM lodgings WHERE id = ?", Long.class, id)).isZero();
+        jdbcTemplate.update(
+                "INSERT INTO lodging_images (lodging_id, image_url) VALUES (?, ?)",
+                id, "https://example.com/default-version.jpg");
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/lodgings/{id}", id)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM lodgings WHERE id = ?", Integer.class, id)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM lodging_images WHERE lodging_id = ?", Integer.class, id)).isZero();
+    }
+
     private Long createTestLodging(String name, String email) throws Exception {
         Map<String, Object> request = Map.of(
                 "name", name,
