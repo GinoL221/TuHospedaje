@@ -108,6 +108,12 @@ class PolicyControllerIntegrationTest {
 
     @Test
     void shouldListPoliciesPublicly() throws Exception {
+        Policy policy = new Policy();
+        policy.setName("PL-Test-List");
+        policy.setDescription("Descripcion test");
+        policy.setIcon("clock");
+        policyRepository.save(policy);
+
         mockMvc.perform(get("/api/policies"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").exists());
