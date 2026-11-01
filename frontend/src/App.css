@@ -27,6 +27,21 @@
   --action-primary-focus: var(--accent);
   --action-primary-accent: var(--primary);
 
+  /* Approved State Colors (Manual v2.1 Section 3.4) */
+  --feedback-danger-bg: #fef2f2;
+  --feedback-danger-border: #f87171;
+  --feedback-danger-text: #991b1b;
+  --feedback-success-bg: #f0fdf4;
+  --feedback-success-border: #4ade80;
+  --feedback-success-text: #166534;
+  --feedback-warning-bg: #fefce8;
+  --feedback-warning-border: #facc15;
+  --feedback-warning-text: #854d0e;
+
+  /* Typography Scale (Inter - Manual v2.1 Section 4) */
+  --type-display-size: 40px;
+  --type-display-weight: 700;
+  --type-display-line-height: 1.1;
   --type-h1-size: 32px;
   --type-h1-weight: 700;
   --type-h1-line-height: 1.2;
@@ -55,13 +70,6 @@
 
   --empty-state-border: #ccc;
 }
-[data-theme="dark"] {
-  --bg: #05050a;
-  --text: #cccccc;
-  --primary: #ff5500;
-  --secondary: #abccd8;
-  --accent: #62d5c8;
-}
 
 html,
 body {
@@ -85,6 +93,12 @@ body {
   background-color: var(--bg);
   color: var(--text);
   min-height: 100vh;
+}
+
+/* Global Focus-Visible Baseline Contract (WCAG AA) */
+:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 
 #root {

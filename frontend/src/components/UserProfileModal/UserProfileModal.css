@@ -140,15 +140,15 @@
 }
 
 .profile-modal-feedback--cooldown {
-  background: #fefce8;
-  color: #854d0e;
-  border: 1px solid #fef08a;
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
+  border: 1px solid var(--feedback-warning-border);
 }
 
 .profile-modal-feedback--error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: var(--feedback-danger-bg);
+  color: var(--feedback-danger-text);
+  border: 1px solid var(--feedback-danger-border);
 }
 
 .btn-profile-resend {

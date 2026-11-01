@@ -1,10 +1,10 @@
 .welcome-banner {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 10px;
+  background: var(--feedback-success-bg);
+  border: 1px solid var(--feedback-success-border);
+  border-radius: var(--radius-md);
   padding: 18px 24px;
   margin-bottom: 24px;
-  color: #166534;
+  color: var(--feedback-success-text);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
@@ -77,15 +77,15 @@
 }
 
 .welcome-banner-feedback--cooldown {
-  background: #fefce8;
-  color: #854d0e;
-  border: 1px solid #fef08a;
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
+  border: 1px solid var(--feedback-warning-border);
 }
 
 .welcome-banner-feedback--error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: var(--feedback-danger-bg);
+  color: var(--feedback-danger-text);
+  border: 1px solid var(--feedback-danger-border);
 }
 
 .welcome-banner-actions {

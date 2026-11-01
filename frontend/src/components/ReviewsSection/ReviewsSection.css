@@ -166,13 +166,12 @@
   min-width: 0;
   margin: 0 0 var(--review-space-2);
   padding: var(--review-space-1) var(--review-space-2);
-  background: var(--review-error-bg);
-  border: 1px solid var(--review-error-border);
-  border-left: 4px solid var(--review-error);
+  background: var(--feedback-danger-bg);
+  border: 1px solid var(--feedback-danger-border);
   border-radius: var(--radius-sm);
   font-size: var(--type-label-size);
   line-height: var(--type-label-line-height);
-  color: var(--review-error);
+  color: var(--feedback-danger-text);
 }
 
 .ratings-alert p,
@@ -246,7 +245,6 @@
   background-color: var(--action-primary-bg);
   color: var(--action-primary-fg);
   border: none;
-  box-shadow: inset 0 -3px var(--action-primary-accent);
   padding: var(--review-space-1) var(--review-space-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -264,7 +262,7 @@
 }
 
 .btn-submit-review:active:not(:disabled) {
-  box-shadow: inset 0 -4px var(--action-primary-accent);
+  opacity: 0.9;
 }
 
 .btn-submit-review:focus-visible {
@@ -312,7 +310,6 @@
   min-width: 0;
   padding: var(--review-space-2);
   border: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent);
-  border-left: 4px solid var(--accent);
   border-radius: var(--radius-md);
   background: var(--review-surface);
 }

@@ -1,5 +1,5 @@
 .favorites-page {
-  --favorites-danger: #d32f2f;
+  --favorites-danger: var(--feedback-danger-text);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -58,6 +58,8 @@
 
 .empty-state.error {
   color: var(--favorites-danger);
+  background-color: var(--feedback-danger-bg);
+  border-color: var(--feedback-danger-border);
 }
 
 .favorite-remove-error {
