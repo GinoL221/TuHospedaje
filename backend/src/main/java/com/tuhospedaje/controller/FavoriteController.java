@@ -42,7 +42,7 @@ public class FavoriteController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lodging added to favorites", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Authentication required — access denied", content = @Content),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
     })
     public ResponseEntity<Void> addFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
@@ -59,7 +59,7 @@ public class FavoriteController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Lodging removed from favorites", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Authentication required — access denied", content = @Content),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
     })
     public ResponseEntity<Void> removeFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
@@ -76,7 +76,7 @@ public class FavoriteController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Favorite lodgings retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Authentication required — access denied", content = @Content),
     })
     public ResponseEntity<List<LodgingDTO>> getFavorites(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(userService.getFavorites(user.getId()));
