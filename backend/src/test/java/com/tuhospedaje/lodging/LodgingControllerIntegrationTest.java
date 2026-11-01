@@ -361,6 +361,29 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnPaginatedLodgingsRespectingPageAndSize() throws Exception {
+        for (int i = 1; i <= 12; i++) {
+            createTestLodging("Catalog Hotel " + i, "catalog-" + i + "@test.com");
+        }
+
+        mockMvc.perform(get("/api/lodgings")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings.length()").value(10))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.totalItems").value(12));
+
+        mockMvc.perform(get("/api/lodgings")
+                        .param("page", "1")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings.length()").value(2))
+                .andExpect(jsonPath("$.currentPage").value(1));
+    }
+
+    @Test
     void adminLodgings_returnsServerPaginatedSearchResults() throws Exception {
         createTestLodgingWithCity("Admin Page Alpha", "admin-page-alpha@tdd.com", "tdd-admin-page");
         createTestLodgingWithCity("Admin Page Beta", "admin-page-beta@tdd.com", "tdd-admin-page");
