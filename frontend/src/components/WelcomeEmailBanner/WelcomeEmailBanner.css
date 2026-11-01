@@ -1,0 +1,118 @@
+.welcome-banner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  color: #166534;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.welcome-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.welcome-banner-title {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.welcome-banner-icon {
+  color: #15803d;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.welcome-banner-title h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.15rem;
+  color: #14532d;
+}
+
+.welcome-banner-title p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #166534;
+}
+
+.welcome-banner-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #15803d;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.welcome-banner-close:hover {
+  background: #dcfce7;
+}
+
+.welcome-banner-feedback {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.welcome-banner-feedback--scheduled {
+  background: #dcfce7;
+  color: #14532d;
+  border: 1px solid #86efac;
+}
+
+.welcome-banner-feedback--pending {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.welcome-banner-feedback--cooldown {
+  background: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.welcome-banner-feedback--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.welcome-banner-actions {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+
+.btn-resend-welcome {
+  background: #15803d;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-resend-welcome:hover:not(:disabled) {
+  background: #166534;
+}
+
+.btn-resend-welcome:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

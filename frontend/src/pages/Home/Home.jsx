@@ -10,6 +10,7 @@ import useHomeSearchResults from "../../hooks/useHomeSearchResults";
 import useCityAutocomplete from "../../hooks/useCityAutocomplete";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import Pagination from "../../components/Pagination/Pagination";
+import WelcomeEmailBanner from "../../components/WelcomeEmailBanner/WelcomeEmailBanner";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
 import "./Home.css";
@@ -35,8 +36,12 @@ const homeCalendarModifiers = [
 
 export default function Home() {
 	const navigate = useNavigate();
-	const { search } = useLocation();
+	const location = useLocation();
+	const { search } = location;
 	const { user } = useAuth();
+	const [showWelcomeBanner, setShowWelcomeBanner] = useState(() =>
+		Boolean(location.state?.registered),
+	);
 	const [categories, setCategories] = useState([]);
 	const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 	const [categoriesError, setCategoriesError] = useState(false);
@@ -215,6 +220,12 @@ export default function Home() {
 
 	return (
 		<main className="home page-container">
+			{showWelcomeBanner && user && (
+				<WelcomeEmailBanner
+					user={user}
+					onDismiss={() => setShowWelcomeBanner(false)}
+				/>
+			)}
 			<section className="search">
 				<div className="search-card">
 					<h2>Buscar hospedaje</h2>
