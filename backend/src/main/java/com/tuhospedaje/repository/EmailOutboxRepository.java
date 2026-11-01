@@ -18,7 +18,10 @@ public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long>,
 
     Optional<EmailOutbox> findByEmailTypeAndAggregateId(String emailType, String aggregateId);
 
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "SELECT status FROM email_outbox WHERE email_type = 'WELCOME' AND aggregate_id = :aggregateId FOR UPDATE", nativeQuery = true)
+    Optional<String> lockWelcomeStatus(@Param("aggregateId") String aggregateId);
+
+    @Modifying(flushAutomatically = true)
     @Query("""
             UPDATE EmailOutbox o
             SET o.status = 'PENDING', o.failedAttempts = 0, o.nextAttemptAt = NULL,

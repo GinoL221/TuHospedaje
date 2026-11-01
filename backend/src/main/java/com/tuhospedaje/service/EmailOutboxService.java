@@ -8,6 +8,7 @@ public interface EmailOutboxService {
 
     enum WelcomeResendResult {
         SCHEDULED,
+        ALREADY_PENDING,
         COOLDOWN
     }
 
