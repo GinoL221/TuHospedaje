@@ -140,6 +140,40 @@
   border-radius: 20px;
 }
 
+.booking-policies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(38, 70, 83, 0.12);
+}
+
+.booking-policies-title {
+  margin: 0 0 4px;
+  color: var(--secondary);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.booking-policy-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--type-caption-size);
+  line-height: 1.4;
+  color: var(--secondary);
+}
+
+.booking-policy-item strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
 /* --- RESERVATION FORM --- */
 .booking-form {
   display: flex;
