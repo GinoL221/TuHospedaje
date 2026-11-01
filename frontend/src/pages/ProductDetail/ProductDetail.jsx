@@ -5,7 +5,8 @@ import { getLodging } from "../../services/lodgingService";
 import { useAuth } from "../../hooks/useAuth";
 import useAvailability from "../../hooks/useAvailability";
 
-import DatePicker from "react-datepicker";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { es } from "date-fns/locale/es";
 import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import LodgingGallery from "../../components/LodgingGallery/LodgingGallery";
@@ -13,6 +14,8 @@ import Icon from "../../components/Icons/Icon";
 import { minCheckoutDate } from "../../utils/dateRange";
 
 import "./ProductDetail.css";
+
+registerLocale("es", es);
 
 function toCalendarDay(value) {
 	if (typeof value === "string") {
@@ -521,6 +524,7 @@ export default function ProductDetail() {
 								>
 									<DatePicker
 										inline
+										locale="es"
 										selected={
 											activeDateField === "checkIn" ? checkIn : checkOut
 										}

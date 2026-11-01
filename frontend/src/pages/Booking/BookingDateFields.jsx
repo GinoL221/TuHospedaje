@@ -1,5 +1,8 @@
-import DatePicker from "react-datepicker";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { es } from "date-fns/locale/es";
 import { minCheckoutDate } from "../../utils/dateRange";
+
+registerLocale("es", es);
 
 export default function BookingDateFields({
 	availabilityStatus,
@@ -67,6 +70,7 @@ export default function BookingDateFields({
 					<label htmlFor="booking-check-in">Check-in</label>
 					<DatePicker
 						id="booking-check-in"
+						locale="es"
 						selected={checkIn}
 						onChange={onCheckInChange}
 						selectsStart
@@ -86,6 +90,7 @@ export default function BookingDateFields({
 					<label htmlFor="booking-check-out">Check-out</label>
 					<DatePicker
 						id="booking-check-out"
+						locale="es"
 						selected={checkOut}
 						onChange={onCheckOutChange}
 						selectsEnd
