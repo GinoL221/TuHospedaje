@@ -505,6 +505,15 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenSearchParameterTypeIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("checkIn", "invalido"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").isString());
+    }
+
+    @Test
     void shouldRejectSearchFiltersOutsideThePublicContract() throws Exception {
         LocalDate today = LocalDate.now();
 
