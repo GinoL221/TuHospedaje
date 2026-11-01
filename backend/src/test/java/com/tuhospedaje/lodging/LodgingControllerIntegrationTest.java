@@ -334,13 +334,30 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnRandomLodgings() throws Exception {
-        createTestLodging("Random 1", "r1@test.com");
-        createTestLodging("Random 2", "r2@test.com");
+    void shouldReturnRandomLodgingsCappedAtTenWithoutDuplicates() throws Exception {
+        for (int i = 1; i <= 15; i++) {
+            createTestLodging("Random Hotel " + i, "random-" + i + "@test.com");
+        }
 
         mockMvc.perform(get("/api/lodgings/random"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").exists());
+                .andExpect(jsonPath("$.length()").value(10))
+                .andExpect(jsonPath("$[*].name").isArray());
+    }
+
+    @Test
+    void shouldReturnRandomRecommendationsWithoutDuplicatesAndRespectSeed() throws Exception {
+        for (int i = 1; i <= 15; i++) {
+            createTestLodging("Rec Hotel " + i, "rec-" + i + "@test.com");
+        }
+
+        mockMvc.perform(get("/api/lodgings/recommendations")
+                        .param("seed", "a1b2c3d4e5f6g7h8")
+                        .param("page", "0")
+                        .param("size", "8"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings.length()").value(8))
+                .andExpect(jsonPath("$.totalPages").value(2));
     }
 
     @Test
