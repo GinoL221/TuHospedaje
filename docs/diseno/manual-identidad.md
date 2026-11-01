@@ -2,7 +2,7 @@
 title: "Manual de Identidad Visual"
 subtitle: "TuHospedaje"
 author: ["Equipo de Desarrollo e Identidad"]
-date: "Agosto 2026"
+date: "Noviembre 2026"
 geometry: margin=2.5cm
 fontsize: 11pt
 linestretch: 1.25
@@ -15,7 +15,7 @@ header-includes:
   - \definecolor{brandbackground}{HTML}{F4F4F9}
   - \definecolor{brandtext}{HTML}{333333}
   - \pagestyle{fancy}
-  - \fancyfoot[CO,CE]{Manual de Identidad Visual v2.0 — TuHospedaje}
+  - \fancyfoot[CO,CE]{Manual de Identidad Visual v2.1 — TuHospedaje}
   - \fancyfoot[LE,RO]{\thepage}
   - \fancyhead[LO,LE]{Manual de Identidad Visual}
   - \fancyhead[RO,RE]{}
@@ -120,7 +120,7 @@ Los activos disponibles son policromáticos y transparentes. **No existe un acti
 
 # 3. Paleta cromática
 
-La paleta propia contiene cinco colores. Las muestras se generan localmente con LaTeX y no requieren recursos de red.
+La paleta principal conserva cinco colores. La versión 2.1 agrega una extensión semántica para comunicar estados (sección 3.4), sin sustituir esos colores ni ampliar sus usos de marca. Las muestras se generan localmente con LaTeX y no requieren recursos de red.
 
 | Rol | Nombre perceptual | Hex | Muestra local | Uso principal |
 |:---|:---|:---:|:---:|:---|
@@ -154,6 +154,30 @@ Los colores oficiales de redes sociales y servicios externos pueden usarse en su
 ## 3.3. Modo oscuro
 
 El modo oscuro es trabajo futuro. No hay una paleta oscura de marca definida, aprobada ni validada; esta versión no prescribe valores ni afirma que el producto ya la implemente.
+
+## 3.4. Colores semánticos de estado
+
+Extensión aprobada por el responsable del proyecto el **2026-11-01** mediante la confirmación «si apruebo». Estos colores se reservan para mensajes de error, éxito y advertencia en superficies claras. No reemplazan los cinco colores principales ni autorizan nuevas variantes de logo, modo oscuro o cambios en los botones primarios.
+
+| Estado | Texto | Fondo del mensaje | Contraste texto/fondo |
+|:---|:---|:---|---:|
+| Error | `#991B1B` | `#FEF2F2` | `7.60:1` |
+| Éxito | `#166534` | `#F0FDF4` | `6.81:1` |
+| Advertencia | `#854D0E` | `#FEFCE8` | `6.62:1` |
+
+Los tres pares cumplen `4.5:1` para texto normal. Sobre el fondo de página `#F4F4F9`, los colores de texto tienen ratios de `7.58:1`, `6.50:1` y `6.25:1`, respectivamente. Los cálculos usan luminancia relativa sRGB, redondeada a dos decimales; no validan combinaciones distintas de las indicadas.
+
+Los bordes claros siguientes están aprobados **sólo como decoración** de mensajes cuyo estado ya se comunica con texto y, cuando corresponda, un icono con nombre accesible:
+
+| Estado | Borde decorativo | Contraste con su fondo de mensaje |
+|:---|:---|---:|
+| Error | `#F87171` | `2.53:1` |
+| Éxito | `#4ADE80` | `1.66:1` |
+| Advertencia | `#FACC15` | `1.48:1` |
+
+Estos bordes no alcanzan `3:1` sobre su fondo de mensaje, el fondo de página ni blanco. No deben identificar un campo, error, foco o selección como señal gráfica esencial. Todo límite esencial requiere una combinación validada de al menos `3:1`. La extensión no define estados de botones destructivos y el color nunca debe ser la única señal.
+
+**Estado de adopción:** aprobación documental; pendiente de implementación. Los tokens y las pruebas de adopción corresponden a `DESIGN.md` y a una unidad de trabajo posterior. Esta aprobación no afirma cambios en CSS, aceptación visual del frontend ni despliegue.
 
 \newpage
 
@@ -226,8 +250,8 @@ Los atributos, tokens, estados y pruebas concretas pertenecen a `DESIGN.md` y a 
 
 | Campo | Valor |
 |:---|:---|
-| Versión | `2.0` |
-| Fecha de aprobación documental | Agosto 2026 |
+| Versión | `2.1` |
+| Fecha de aprobación documental | Agosto 2026 (v2.0); 2026-11-01 (extensión de estados v2.1) |
 | Responsable de marca | Equipo de Desarrollo e Identidad |
 | Responsable de implementación | Equipo de Desarrollo |
 | Fuente principal | `docs/diseno/manual-identidad.md` |
@@ -252,6 +276,11 @@ Toda modificación debe indicar motivo, alcance, responsable, activos afectados 
 * [ ] Los colores nuevos tienen rol y contraste calculado.
 * [ ] La implementación pendiente está registrada en `DESIGN.md`.
 * [ ] Markdown y PDF contienen la misma versión normativa.
+
+## 9.3. Registro de cambios
+
+* **v2.1 — 2026-11-01:** el responsable del proyecto aprobó las familias semánticas de error, éxito y advertencia, con bordes claros exclusivamente decorativos. Motivo: definir mensajes de estado coherentes antes de planificar la limpieza del frontend. Alcance: sección 3.4, traducción técnica en `DESIGN.md` y brief operativo de Impeccable; publicación derivada en `manual-identidad-visual.pdf`. Se conservan paleta principal, Inter y logos. No hay cambios en activos de marca ni en código del frontend; adopción pendiente.
+* **v2.0 — Agosto 2026:** base normativa anterior. Sus reglas se conservan salvo la extensión explícita de v2.1.
 
 # 10. Recursos y límites
 
