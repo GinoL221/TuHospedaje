@@ -59,6 +59,11 @@ function fillRequiredFields() {
 	});
 }
 
+const defaultLodgingWithImage = {
+	id: null,
+	imageUrls: ["https://example.com/foto1.jpg"],
+};
+
 function ModalHarness() {
 	const [open, setOpen] = useState(false);
 
@@ -164,7 +169,7 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 				}),
 		);
 		const user = userEvent.setup();
-		const { props } = renderModal();
+		const { props } = renderModal({ lodging: defaultLodgingWithImage });
 		fillRequiredFields();
 		const saveButton = screen.getByTestId("admin-save-btn");
 
@@ -217,7 +222,7 @@ describe("LodgingFormModal - price and capacity", () => {
 		const user = userEvent.setup();
 		createLodging.mockResolvedValue({ id: 1 });
 
-		renderModal();
+		renderModal({ lodging: defaultLodgingWithImage });
 		fillRequiredFields();
 		await user.click(screen.getByTestId("admin-save-btn"));
 
@@ -244,7 +249,7 @@ describe("LodgingFormModal - price and capacity", () => {
 			categoryId: null,
 			features: [],
 			policies: [],
-			imageUrls: [],
+			imageUrls: ["https://example.com/foto-existente.jpg"],
 			pricePerNight: 98765.25,
 			maxGuests: 6,
 		};
@@ -289,7 +294,7 @@ describe("LodgingFormModal - price and capacity", () => {
 		["-1", "El precio por noche debe ser mayor a cero"],
 	])("rejects price %s", async (value, message) => {
 		const user = userEvent.setup();
-		renderModal();
+		renderModal({ lodging: defaultLodgingWithImage });
 		fillRequiredFields();
 		await user.clear(screen.getByTestId("field-pricePerNight"));
 		await user.type(screen.getByTestId("field-pricePerNight"), value);
@@ -308,7 +313,7 @@ describe("LodgingFormModal - price and capacity", () => {
 		["1.5", "La capacidad máxima debe ser un número entero"],
 	])("rejects guest capacity %s", async (value, message) => {
 		const user = userEvent.setup();
-		renderModal();
+		renderModal({ lodging: defaultLodgingWithImage });
 		fillRequiredFields();
 		await user.clear(screen.getByTestId("field-maxGuests"));
 		await user.type(screen.getByTestId("field-maxGuests"), value);
@@ -320,29 +325,57 @@ describe("LodgingFormModal - price and capacity", () => {
 	});
 });
 
-describe("LodgingFormModal - ImageUpload failure handling", () => {
-	it("shows the upload error inside the modal and still allows submitting without an image", async () => {
+describe("LodgingFormModal - image requirements and error display", () => {
+	it("shows required error when no image is added and rejects submission", async () => {
 		const user = userEvent.setup();
-		uploadImage.mockRejectedValueOnce(new Error("upload failed"));
-		createLodging.mockResolvedValue({ id: 1 });
+		renderModal({ lodging: { id: null, imageUrls: [] } });
 
-		const { props } = renderModal();
+		fillRequiredFields();
+
+		await user.click(screen.getByTestId("admin-save-btn"));
+
+		expect(
+			screen.getByText("Debés agregar al menos una imagen"),
+		).toBeInTheDocument();
+		expect(createLodging).not.toHaveBeenCalled();
+	});
+
+	it("submits the uploaded image URLs in the payload", async () => {
+		const user = userEvent.setup();
+		createLodging.mockResolvedValue({ id: 99 });
+		uploadImage.mockResolvedValueOnce({ url: "https://example.com/foto1.jpg" });
+		renderModal({ lodging: { id: null, imageUrls: [] } });
 
 		fillRequiredFields();
 
 		const file = new File(["fake-image"], "photo.png", { type: "image/png" });
 		await user.upload(screen.getByLabelText(/URLs de imágenes/i), file);
 
-		expect(
-			await screen.findByText("No se pudo subir la imagen. Intentá de nuevo."),
-		).toBeInTheDocument();
-
 		await user.click(screen.getByTestId("admin-save-btn"));
 
 		expect(createLodging).toHaveBeenCalledWith(
-			expect.objectContaining({ imageUrls: [] }),
+			expect.objectContaining({
+				imageUrls: ["https://example.com/foto1.jpg"],
+			}),
 		);
-		expect(props.onSaved).toHaveBeenCalled();
+	});
+
+	it("displays server error message when createLodging fails with duplicate name", async () => {
+		const user = userEvent.setup();
+		createLodging.mockRejectedValue(
+			new Error("Ya existe un alojamiento con el nombre: Hotel Test"),
+		);
+		renderModal({ lodging: defaultLodgingWithImage });
+
+		fillRequiredFields();
+
+		await user.click(screen.getByTestId("admin-save-btn"));
+
+		expect(
+			await screen.findByText(
+				"Ya existe un alojamiento con el nombre: Hotel Test",
+			),
+		).toBeInTheDocument();
 	});
 });
 
