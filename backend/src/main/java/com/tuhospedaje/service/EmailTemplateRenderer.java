@@ -33,10 +33,11 @@ public class EmailTemplateRenderer {
                 <hr><p style="font-size:12px;color:#888;">TuHospedaje &mdash; Your next stay, confirmed.</p>
                 </body></html>
                 """.formatted(
-                reservation.getLodgingName(), reservation.getCity(), reservation.getCheckIn(), reservation.getCheckOut(),
-                reservation.getGuestName(), reservation.getId(), confirmationNotesRow(reservation),
-                valueOrDash(reservation.getGuestPhone()), reservation.getTotalPrice(), reservation.getStatus(),
-                valueOrDash(reservation.getLodgingPhone()), valueOrDash(reservation.getLodgingEmail()));
+                escapeHtml(reservation.getLodgingName()), escapeHtml(reservation.getCity()),
+                escapeHtml(String.valueOf(reservation.getCheckIn())), escapeHtml(String.valueOf(reservation.getCheckOut())),
+                escapeHtml(reservation.getGuestName()), reservation.getId(), confirmationNotesRow(reservation),
+                escapeHtml(valueOrDash(reservation.getGuestPhone())), reservation.getTotalPrice(), reservation.getStatus(),
+                escapeHtml(valueOrDash(reservation.getLodgingPhone())), escapeHtml(valueOrDash(reservation.getLodgingEmail())));
         return message(user, reservation, subject, body, RESERVATION_CONFIRMATION);
     }
 
@@ -48,8 +49,12 @@ public class EmailTemplateRenderer {
                 <p>Your reservation at %s from %s to %s is now cancelled.</p>
                 <p>Contact the lodging at %s or %s for further assistance.</p>
                 </body></html>
-                """.formatted(reservation.getLodgingName(), reservation.getCheckIn(), reservation.getCheckOut(),
-                valueOrDash(reservation.getLodgingPhone()), valueOrDash(reservation.getLodgingEmail()));
+                """.formatted(
+                escapeHtml(reservation.getLodgingName()),
+                escapeHtml(String.valueOf(reservation.getCheckIn())),
+                escapeHtml(String.valueOf(reservation.getCheckOut())),
+                escapeHtml(valueOrDash(reservation.getLodgingPhone())),
+                escapeHtml(valueOrDash(reservation.getLodgingEmail())));
         return message(user, reservation, subject, body, RESERVATION_CANCELLATION);
     }
 
