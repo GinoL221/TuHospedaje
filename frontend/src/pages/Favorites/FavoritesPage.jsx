@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
 	getFavorites,
 	removeFavorite as removeFavoriteRequest,
@@ -15,17 +15,43 @@ export default function FavoritesPage() {
 	const [pendingRemovals, setPendingRemovals] = useState(() => new Set());
 	const pendingRemovalsRef = useRef(new Set());
 
-	useEffect(() => {
+	const loadFavorites = useCallback((isMountedRef) => {
 		getFavorites()
 			.then((data) => {
+				if (isMountedRef && !isMountedRef.current) return;
 				setFavorites(Array.isArray(data) ? data : []);
+				setError("");
 				setLoading(false);
 			})
 			.catch((err) => {
+				if (isMountedRef && !isMountedRef.current) return;
 				setError(err.message || "No se pudieron cargar los favoritos.");
 				setLoading(false);
 			});
 	}, []);
+
+	useEffect(() => {
+		const isMountedRef = { current: true };
+		loadFavorites(isMountedRef);
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				loadFavorites(isMountedRef);
+			}
+		};
+		const handleFocus = () => {
+			loadFavorites(isMountedRef);
+		};
+
+		window.addEventListener("focus", handleFocus);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+
+		return () => {
+			isMountedRef.current = false;
+			window.removeEventListener("focus", handleFocus);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		};
+	}, [loadFavorites]);
 
 	async function removeFavorite(id) {
 		if (pendingRemovalsRef.current.has(id)) return;

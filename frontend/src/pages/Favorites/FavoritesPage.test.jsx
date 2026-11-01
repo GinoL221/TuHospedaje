@@ -181,4 +181,42 @@ describe("FavoritesPage - removing a favorite", () => {
 		});
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
+
+	it("reloads favorites when window gains focus or becomes visible and clears prior errors", async () => {
+		getFavorites.mockRejectedValueOnce(
+			new Error("No se pudieron cargar los favoritos."),
+		);
+		customRender(<FavoritesPage />);
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"No se pudieron cargar los favoritos.",
+		);
+		expect(getFavorites).toHaveBeenCalledTimes(1);
+
+		getFavorites.mockResolvedValue([favoriteFixture]);
+
+		// Focus event recovers from error and renders list
+		window.dispatchEvent(new Event("focus"));
+
+		expect(await screen.findByText("Cabaña del Lago")).toBeInTheDocument();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(getFavorites).toHaveBeenCalledTimes(2);
+
+		// Visibility change event reloads as well
+		const updatedFixture = {
+			...favoriteFixture,
+			id: 2,
+			name: "Departamento Centro",
+		};
+		getFavorites.mockResolvedValue([favoriteFixture, updatedFixture]);
+
+		Object.defineProperty(document, "visibilityState", {
+			configurable: true,
+			value: "visible",
+		});
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		expect(await screen.findByText("Departamento Centro")).toBeInTheDocument();
+		expect(getFavorites).toHaveBeenCalledTimes(3);
+	});
 });
