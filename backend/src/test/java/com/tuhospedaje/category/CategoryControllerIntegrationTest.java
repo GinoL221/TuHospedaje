@@ -225,6 +225,45 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isNoContent());
+
+        assertFalse(categoryRepository.existsById(saved.getId()));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenDeletingCategoryWithoutToken() throws Exception {
+        Category category = new Category();
+        category.setName("Anon Delete");
+        Category saved = categoryRepository.save(category);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/categories/{id}", saved.getId())
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenDeletingCategoryWithUserRole() throws Exception {
+        Category category = new Category();
+        category.setName("User Role Delete");
+        Category saved = categoryRepository.save(category);
+
+        User regularUser = User.builder()
+                .firstName("Regular")
+                .lastName("User")
+                .email("regular-cat-delete@tuhospedaje.com")
+                .password("123456")
+                .role(RoleEnum.USER)
+                .build();
+        User savedUser = userRepository.save(regularUser);
+        String userToken = jwtService.generateToken(savedUser);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/categories/{id}", saved.getId())
+                        .cookie(accessCookie(userToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
