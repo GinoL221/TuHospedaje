@@ -127,6 +127,18 @@ class LodgingServiceImplTest {
     }
 
     @Test
+    void shouldRejectDuplicateNameOnUpdate() {
+        Lodging existing = lodging(1L, "Hotel Antiguo");
+        existing.setEmail("old@test.com");
+        LodgingDTO dto = lodgingDto("Hotel Existente", "old@test.com");
+        dto.setId(1L);
+        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.existsByName("Hotel Existente")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> lodgingService.update(dto));
+    }
+
+    @Test
     void shouldDeleteExistingLodging() {
         Lodging lodging = lodging(8L, "Temporal");
         when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging), Optional.empty());

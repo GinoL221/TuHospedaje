@@ -128,6 +128,78 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenCreatingLodgingWithDuplicateName() throws Exception {
+        Map<String, Object> first = Map.of(
+                "name", "Hotel Unico Test",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "hotel-unico-1@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("35000.75"),
+                "maxGuests", 5
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(first)))
+                .andExpect(status().isCreated());
+
+        Map<String, Object> duplicate = Map.of(
+                "name", "Hotel Unico Test",
+                "description", "Otra descripción",
+                "address", "Calle 456",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "987654321",
+                "email", "hotel-unico-2@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("40000.00"),
+                "maxGuests", 2
+        );
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(duplicate)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Ya existe un alojamiento con el nombre: Hotel Unico Test"));
+    }
+
+    @Test
+    void shouldCreateLodgingWithImagesSuccessfully() throws Exception {
+        Map<String, Object> request = Map.of(
+                "name", "Hotel Con Imagenes Test",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "hotel-imagenes@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("50000.00"),
+                "maxGuests", 4,
+                "imageUrls", List.of("https://example.com/img1.jpg", "https://example.com/img2.jpg")
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imageUrls").isArray())
+                .andExpect(jsonPath("$.imageUrls.length()").value(2))
+                .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/img1.jpg"))
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/img2.jpg"));
+    }
+
+    @Test
     void shouldReturnBadRequestWhenCreatingLodgingWithInvalidPayload() throws Exception {
         Map<String, Object> request = Map.of(
                 "name", "",
