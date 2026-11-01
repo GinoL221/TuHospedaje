@@ -31,10 +31,28 @@ vi.mock("react-datepicker", () => ({
 			data-locale={locale}
 			data-popper-class={popperClassName}
 			data-months-shown={monthsShown}
-			value={selected ? selected.toISOString().slice(0, 10) : ""}
-			onChange={(e) =>
-				onChange(e.target.value ? new Date(e.target.value) : null)
+			value={
+				selected
+					? `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
+					: ""
 			}
+			onChange={(e) => {
+				const val = e.target.value;
+				if (!val) {
+					onChange(null);
+					return;
+				}
+				if (val instanceof Date) {
+					onChange(val);
+					return;
+				}
+				if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+					const [y, m, d] = val.split("-").map(Number);
+					onChange(new Date(y, m - 1, d));
+					return;
+				}
+				onChange(new Date(val));
+			}}
 		/>
 	),
 }));
@@ -1035,6 +1053,67 @@ describe("Home - search form", () => {
 		expect(
 			screen.getByText("La fecha de check-out debe ser posterior al check-in"),
 		).toBeInTheDocument();
+	});
+
+	it("shows a validation error when only one date is selected", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		const { unmount } = renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		// Caso 1: Solo check-in
+		fireEvent.change(screen.getByTestId("datepicker-Check-in"), {
+			target: { value: "2026-07-10" },
+		});
+		await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+		expect(
+			screen.getByText("Las fechas de entrada y salida deben enviarse juntas"),
+		).toBeInTheDocument();
+		expect(get).not.toHaveBeenCalledWith(expect.stringContaining("/search"));
+
+		unmount();
+
+		// Caso 2: Solo check-out
+		renderHome();
+		await screen.findByText("Cabaña del Lago");
+
+		fireEvent.change(screen.getByTestId("datepicker-Check-out"), {
+			target: { value: "2026-07-15" },
+		});
+		await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+		expect(
+			screen.getByText("Las fechas de entrada y salida deben enviarse juntas"),
+		).toBeInTheDocument();
+		expect(get).not.toHaveBeenCalledWith(expect.stringContaining("/search"));
+	});
+
+	it("serializes dates using local year-month-day without UTC shift", async () => {
+		mockGetDefaults();
+		const user = userEvent.setup();
+		renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const testDateIn = new Date(2026, 6, 10, 0, 0, 0); // July 10, 2026 local
+		const testDateOut = new Date(2026, 6, 15, 0, 0, 0); // July 15, 2026 local
+
+		fireEvent.change(screen.getByTestId("datepicker-Check-in"), {
+			target: { value: testDateIn },
+		});
+		fireEvent.change(screen.getByTestId("datepicker-Check-out"), {
+			target: { value: testDateOut },
+		});
+
+		await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+		await waitFor(() =>
+			expect(get).toHaveBeenCalledWith(
+				expect.stringContaining("checkIn=2026-07-10&checkOut=2026-07-15"),
+			),
+		);
 	});
 });
 
