@@ -44,6 +44,7 @@ class ReservationMigrationIntegrationTest {
             int migrationsExecuted = Flyway.configure()
                     .dataSource(database.getJdbcUrl(), database.getUsername(), database.getPassword())
                     .locations("classpath:db/migration")
+                    .target("8")
                     .load()
                     .migrate()
                     .migrationsExecuted;
