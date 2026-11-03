@@ -654,7 +654,8 @@
 
 @media (max-width: 768px) {
   .product-detail {
-    padding: var(--product-space-2) var(--product-space-2) 40px;
+    padding: calc(var(--site-header-height) + var(--product-space-2))
+      var(--product-space-2) 40px;
   }
 
   .product-detail .product-datepicker-popper {

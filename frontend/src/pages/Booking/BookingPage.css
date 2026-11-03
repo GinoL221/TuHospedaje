@@ -653,7 +653,7 @@
 
 @media (max-width: 768px) {
   .booking-page {
-    padding: 24px 16px 40px;
+    padding: calc(var(--site-header-height) + 24px) 16px 40px;
   }
 }
 
