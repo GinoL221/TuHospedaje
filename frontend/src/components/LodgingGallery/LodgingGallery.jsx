@@ -162,6 +162,12 @@ export default function LodgingGallery({ images = [], name }) {
 							}}
 						/>
 					</button>
+					{images.length > 1 && !isTabletViewport && (
+						<div className="gallery-desktop-navigation">
+							{previousButton}
+							{nextButton}
+						</div>
+					)}
 					{images.length > 1 && (
 						<div className="gallery-mobile-controls">
 							<button
@@ -218,12 +224,6 @@ export default function LodgingGallery({ images = [], name }) {
 						</div>
 						{isTabletViewport && nextButton}
 						<div className="gallery-desktop-actions">
-							{!isTabletViewport && (
-								<div className="gallery-desktop-navigation">
-									{previousButton}
-									{nextButton}
-								</div>
-							)}
 							<button
 								className="gallery-more"
 								onClick={() => {

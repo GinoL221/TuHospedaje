@@ -28,11 +28,7 @@
   gap: var(--review-space-1) var(--review-space-2);
   min-width: 0;
   margin-bottom: var(--review-space-3);
-  padding: var(--review-space-2);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-md);
-  background: #ffffff;
-  box-shadow: var(--shadow-sm);
+  padding: 0;
 }
 
 .ratings-section h2 {
@@ -299,6 +295,11 @@
   overflow-wrap: anywhere;
 }
 
+.reviews-empty-state {
+  border: 0;
+  padding-inline: 0;
+}
+
 .reviews-list {
   display: flex;
   flex-direction: column;
@@ -310,9 +311,10 @@
   box-sizing: border-box;
   min-width: 0;
   padding: var(--review-space-2);
-  border: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent);
-  border-radius: var(--radius-md);
-  background: var(--review-surface);
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary) 18%, transparent);
+  padding-inline: 0;
+  background: transparent;
 }
 
 .review-header {

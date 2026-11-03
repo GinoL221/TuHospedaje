@@ -92,7 +92,7 @@ describe("LodgingGallery", () => {
 		},
 	);
 
-	it("keeps bounded desktop navigation and Ver más in the desktop action row", async () => {
+	it("keeps bounded desktop navigation on the main image and Ver más in the action row", async () => {
 		const { container } = render(
 			<LodgingGallery images={images} name="Cabaña del Lago" />,
 		);
@@ -103,8 +103,8 @@ describe("LodgingGallery", () => {
 		const more = screen.getByRole("button", { name: "Ver más" });
 
 		expect(actions).not.toBeNull();
-		expect(actions).toContainElement(previous);
-		expect(actions).toContainElement(next);
+		expect(container.querySelector(".gallery-main")).toContainElement(previous);
+		expect(container.querySelector(".gallery-main")).toContainElement(next);
 		expect(actions).toContainElement(more);
 		expect(previous).toBeDisabled();
 		expect(next).toBeEnabled();
@@ -201,11 +201,11 @@ describe("LodgingGallery", () => {
 			name: "Imagen siguiente",
 		});
 		expect(desktopNext).toHaveFocus();
-		const desktopActions = container.querySelector(".gallery-desktop-actions");
-		expect(desktopActions).toContainElement(
+		const desktopMain = container.querySelector(".gallery-main");
+		expect(desktopMain).toContainElement(
 			screen.getByRole("button", { name: "Imagen anterior" }),
 		);
-		expect(desktopActions).toContainElement(desktopNext);
+		expect(desktopMain).toContainElement(desktopNext);
 
 		setViewportWidth(900.5);
 		expect(

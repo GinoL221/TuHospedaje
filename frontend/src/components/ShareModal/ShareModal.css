@@ -218,11 +218,12 @@
   border-radius: var(--radius-md);
   border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 10px 14px;
-  background: #f8fafc;
+  background: var(--bg);
   color: var(--text);
+  font-weight: 400;
 }
 .share-message-label textarea:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 3px solid var(--secondary);
   background: #ffffff;
 }
 
@@ -241,17 +242,21 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 16px;
-  border: 1px solid color-mix(in srgb, var(--share-brand) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--secondary) 28%, transparent);
   border-radius: var(--radius-pill);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--secondary);
-  background: color-mix(in srgb, var(--share-brand) 8%, var(--bg));
+  background: #ffffff;
   transition:
     background 200ms ease,
     color 200ms ease,
     transform 0.15s ease;
+}
+
+.share-btn svg {
+  color: var(--share-brand);
 }
 
 .share-btn:hover {

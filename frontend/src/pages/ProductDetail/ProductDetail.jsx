@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { getLodging } from "../../services/lodgingService";
 import { useAuth } from "../../hooks/useAuth";
 import useAvailability from "../../hooks/useAvailability";
@@ -411,6 +411,7 @@ export default function ProductDetail() {
 					</span>
 				</div>
 				<button className="btn-share" onClick={() => setShowShare(true)}>
+					<Share2 size={16} aria-hidden="true" focusable="false" />
 					Compartir
 				</button>
 				<button
@@ -521,7 +522,7 @@ export default function ProductDetail() {
 								occupiedRanges.length === 0 && (
 									<p
 										id={availabilityMessageId}
-										className="availability-status"
+										className="availability-status availability-status--available"
 										role="status"
 										aria-live="polite"
 									>

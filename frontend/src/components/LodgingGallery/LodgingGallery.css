@@ -226,12 +226,13 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
+    position: relative;
   }
 
   .gallery-thumbs-col {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr)) auto;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 8px;
     align-self: stretch;
     width: auto;
@@ -253,23 +254,53 @@
   }
 
   .gallery-desktop-navigation {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    transform: translateY(-50%);
     display: flex;
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-self: end;
-    gap: 8px;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 0 16px;
+    pointer-events: none;
+    z-index: 5;
   }
 
   .gallery-desktop-navigation .gallery-thumbs-arrow {
     flex: 0 0 44px;
     width: 44px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--secondary);
+    box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+  }
+
+  .gallery-desktop-navigation .gallery-thumbs-arrow:hover:not(:disabled) {
+    background: var(--bg);
+    color: var(--secondary);
+    border-color: var(--secondary);
+  }
+
+  .gallery-desktop-navigation .gallery-thumbs-arrow:disabled {
+    background: var(--bg);
+    color: var(--secondary);
+    border-color: transparent;
+    box-shadow: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .gallery-desktop-navigation .gallery-thumbs-arrow svg {
+    transform: rotate(-90deg);
   }
 
   .gallery-thumbs-col:has(.gallery-thumb:nth-child(1):last-child) .gallery-more,
   .gallery-thumbs-col:has(.gallery-thumb:nth-child(2):last-child)
     .gallery-more {
     bottom: auto;
-    top: calc(50% - 86px);
+    top: calc(50% - 60px);
   }
 
   .gallery-thumbs-col:has(.gallery-thumb:nth-child(1):last-child) .gallery-more,
@@ -280,7 +311,7 @@
 
   .gallery-more {
     position: absolute;
-    bottom: 68px;
+    bottom: 16px;
     right: 8px;
     z-index: 5;
     margin-top: 0;

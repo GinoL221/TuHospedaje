@@ -150,11 +150,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-md);
   color: var(--primary);
-  box-shadow: var(--shadow-sm);
 }
 .feature-name {
   font-weight: 600;
@@ -212,6 +208,15 @@
   border-radius: 50%;
   background: var(--accent);
   content: "";
+}
+.availability-status--available {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--feedback-success-text, #166534);
+}
+.availability-status--available::before {
+  background: var(--feedback-success-text, #166534);
 }
 #product-date-format.availability-status {
   background: transparent;
@@ -444,10 +449,6 @@
 }
 .policy-item {
   padding: 18px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-md);
-  background: #ffffff;
-  box-shadow: var(--shadow-sm);
 }
 .policy-item h3 {
   margin: 0 0 8px;
@@ -493,6 +494,10 @@
   box-shadow: var(--shadow-md);
 }
 .btn-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   box-sizing: border-box;
   min-height: 44px;
   background: var(--bg);

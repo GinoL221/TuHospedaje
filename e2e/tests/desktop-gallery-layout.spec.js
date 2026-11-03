@@ -40,10 +40,14 @@ test("desktop gallery controls are distinct and usable", async ({ page }) => {
   const more = page.getByRole("button", { name: "Ver más" });
   await expect(next).toBeVisible();
   await expect(more).toBeVisible();
-  const [nextBox, moreBox, lastPhoto] = await Promise.all([
+  const [nextBox, moreBox, lastPhoto, mainBox] = await Promise.all([
     next.boundingBox(), more.boundingBox(), page.locator(".gallery-thumb").last().boundingBox(),
+    page.locator(".gallery-main-trigger").boundingBox(),
   ]);
-  expect(nextBox.y).toBeGreaterThanOrEqual(lastPhoto.y + lastPhoto.height);
+  expect(nextBox.x).toBeGreaterThanOrEqual(mainBox.x);
+  expect(nextBox.x + nextBox.width).toBeLessThanOrEqual(mainBox.x + mainBox.width);
+  expect(nextBox.y).toBeGreaterThanOrEqual(mainBox.y);
+  expect(nextBox.y + nextBox.height).toBeLessThanOrEqual(mainBox.y + mainBox.height);
   expect(moreBox.x).toBeGreaterThanOrEqual(lastPhoto.x);
   expect(moreBox.x + moreBox.width).toBeLessThanOrEqual(lastPhoto.x + lastPhoto.width);
   expect(moreBox.y + moreBox.height).toBeLessThanOrEqual(lastPhoto.y + lastPhoto.height);
