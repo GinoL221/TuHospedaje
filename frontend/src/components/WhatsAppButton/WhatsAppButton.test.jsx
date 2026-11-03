@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import WhatsAppButton from "./WhatsAppButton";
 
 const HANDOFF_URL =
@@ -121,5 +121,23 @@ describe("WhatsAppButton - fixed lower-right placement", () => {
 		const link = getHandoffLink();
 		expect(link.closest(".whatsapp-button-wrapper")).not.toBeNull();
 		expect(link).toHaveClass("whatsapp-button");
+	});
+
+	it("automatically clears the handoff feedback message after the timeout", () => {
+		vi.useFakeTimers();
+		try {
+			vi.stubEnv("VITE_WHATSAPP_NUMBER", "5491122334455");
+			render(<WhatsAppButton />);
+
+			fireEvent.click(getHandoffLink());
+			expect(screen.getByRole("status")).toBeInTheDocument();
+
+			act(() => {
+				vi.advanceTimersByTime(5000);
+			});
+			expect(screen.queryByRole("status")).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

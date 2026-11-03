@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
+import { Search, RotateCw } from "lucide-react";
 import { getCategories } from "../../services/categoryService";
 import { getFavorites } from "../../services/favoriteService";
 import { useAuth } from "../../hooks/useAuth";
@@ -347,8 +348,14 @@ export default function Home() {
 								popperClassName="home-datepicker-popper"
 							/>
 						</div>
-						<button type="submit" className="btn-search">
-							Buscar
+						<button
+							type="submit"
+							className="btn-search"
+							aria-label="Buscar"
+							title="Buscar"
+						>
+							<Search size={20} strokeWidth={2.5} aria-hidden="true" />
+							<span className="sr-only">Buscar</span>
 						</button>
 					</form>
 					{formSearchError && (
@@ -423,7 +430,8 @@ export default function Home() {
 						className="btn-refresh-recommendations"
 						onClick={handleRefreshRecommendations}
 					>
-						Actualizar recomendaciones
+						<RotateCw size={15} strokeWidth={2.2} aria-hidden="true" />
+						<span>Actualizar recomendaciones</span>
 					</button>
 				</div>
 				{recStatus === "loading" && (
