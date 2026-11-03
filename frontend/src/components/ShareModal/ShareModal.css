@@ -17,15 +17,15 @@
 .share-modal-overlay .share-modal {
   box-sizing: border-box;
   min-width: 0;
-  background: var(--bg);
+  background: #ffffff;
   padding: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   width: min(520px, calc(100vw - 40px));
   max-width: calc(100vw - 40px);
   max-height: calc(100dvh - 40px);
   overflow-y: auto;
   overflow-x: hidden;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   position: relative;
   text-align: left;
 }
@@ -35,8 +35,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 20px 16px 24px;
-  border-bottom: 1px solid rgba(38, 70, 83, 0.16);
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .share-header > div,
@@ -89,10 +89,14 @@
 
 .share-lodging {
   display: grid;
-  grid-template-columns: minmax(0, 156px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   padding: 20px 24px 16px;
+  background: #f8fafc;
+  margin: 16px 24px 0;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .share-image {
@@ -139,15 +143,15 @@
 }
 
 .share-link-row {
-  margin: 0 24px;
-  padding: 12px;
-  border: 1px solid rgba(38, 70, 83, 0.18);
-  border-radius: var(--radius-sm);
+  margin: 16px 24px 0;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(38, 70, 83, 0.04);
+  background: #f8fafc;
 }
 
 .share-link-summary {
@@ -172,8 +176,8 @@
   justify-content: center;
   gap: 8px;
   border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
   background: var(--bg);
   color: var(--secondary);
   font: inherit;
@@ -208,16 +212,25 @@
 }
 
 .share-message-label textarea {
-  min-height: 76px;
+  min-height: 72px;
   resize: vertical;
   font: inherit;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 10px 14px;
+  background: #f8fafc;
+  color: var(--text);
+}
+.share-message-label textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  background: #ffffff;
 }
 
 .share-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  padding: 8px 24px 24px;
+  gap: 12px;
+  padding: 16px 24px 28px;
 }
 
 .share-btn {
@@ -227,9 +240,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--share-brand) 55%, transparent);
-  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  border: 1px solid color-mix(in srgb, var(--share-brand) 40%, transparent);
+  border-radius: var(--radius-pill);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
@@ -237,13 +250,15 @@
   background: color-mix(in srgb, var(--share-brand) 8%, var(--bg));
   transition:
     background 200ms ease,
-    color 200ms ease;
+    color 200ms ease,
+    transform 0.15s ease;
 }
 
 .share-btn:hover {
   background: color-mix(in srgb, var(--share-brand) 18%, var(--bg));
   border-color: var(--secondary);
   color: var(--secondary);
+  transform: translateY(-1px);
 }
 
 .share-copy-fallback {

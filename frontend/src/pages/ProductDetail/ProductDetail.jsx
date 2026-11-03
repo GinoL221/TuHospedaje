@@ -424,255 +424,264 @@ export default function ProductDetail() {
 
 			<LodgingGallery images={lodging.imageUrls} name={lodging.name} />
 
-			{lodging.pricePerNight && (
-				<section
-					className="booking-section"
-					aria-label="Reservar este alojamiento"
-				>
-					<div className="price-display">
-						<strong>${lodging.pricePerNight.toLocaleString()}</strong> / noche
-					</div>
-
-					{availabilityStatus === "loading" && (
-						<p
-							id={availabilityMessageId}
-							className="availability-status"
-							role="status"
-							aria-live="polite"
-						>
-							Comprobando disponibilidad...
-						</p>
-					)}
-					{(availabilityStatus === "error" ||
-						availabilityStatus === "stale") && (
-						<div
-							id={availabilityMessageId}
-							className="availability-alert"
-							role="alert"
-							aria-live="assertive"
-							aria-atomic="true"
-						>
-							<p>
-								{availabilityStatus === "stale"
-									? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
-									: "No pudimos obtener la disponibilidad de este alojamiento."}
-							</p>
-							<button type="button" onClick={retryAvailability}>
-								Reintentar
-							</button>
-						</div>
-					)}
-					{availabilityStatus === "ready" && occupiedRanges.length === 0 && (
-						<p
-							id={availabilityMessageId}
-							className="availability-status"
-							role="status"
-							aria-live="polite"
-						>
-							Todas las fechas están disponibles.
-						</p>
-					)}
-					{selectionConflict.visible && (
-						<p
-							id={availabilityMessageId}
-							className="availability-alert"
-							role="alert"
-							aria-live="assertive"
-							aria-atomic="true"
-						>
-							Las fechas seleccionadas ya no están disponibles. Elegí otro
-							rango.
-						</p>
-					)}
-
-					<div
-						className="date-pickers"
-						role="group"
-						aria-label="Fechas de la estadía"
-						aria-describedby={availabilityMessageId}
+			<div className="detail-columns-layout">
+				<div className="detail-main-info">
+					<section
+						className="description"
+						aria-labelledby="product-description-title"
 					>
-						<div
-							className="date-range-controls"
-							ref={dateControlsRef}
-							onKeyDown={handleDateControlKeys}
-							onBlur={(event) => {
-								if (!event.currentTarget.contains(event.relatedTarget))
-									closeCalendar();
-							}}
+						<h2 id="product-description-title">Descripción</h2>
+						<p>{lodging.description}</p>
+					</section>
+
+					{lodging.features && lodging.features.length > 0 && (
+						<section
+							className="features-section"
+							aria-labelledby="product-features-title"
 						>
-							<DateRangeInputs
-								checkIn={checkIn}
-								checkOut={checkOut}
-								activeField={activeDateField}
-								onActivateField={activateDateField}
-								drafts={dateDrafts}
-								errors={dateErrors}
-								onEditDate={editTypedDate}
-								onCommitDate={commitTypedDate}
-								inputRefs={dateInputRefs}
-								calendarOpen={calendarOpen}
-								disabled={availabilityStatus !== "ready"}
-								aria-invalid={selectionConflict.visible ? "true" : undefined}
-								aria-describedby={availabilityMessageId}
-							/>
-							{calendarOpen && (
-								<div
-									id="product-range-calendar"
-									className="product-datepicker-popper"
-									role="dialog"
-									aria-label="Calendario de la estadía"
+							<h2 id="product-features-title">¿Qué ofrece este lugar?</h2>
+							<div className="features-grid">
+								{lodging.features.map((f) => (
+									<div key={f.id} className="feature-item">
+										<span role="img" aria-label={`Ícono de ${f.name}`}>
+											<Icon name={f.icon} size={20} />
+										</span>
+										<span className="feature-name">{f.name}</span>
+									</div>
+								))}
+							</div>
+						</section>
+					)}
+
+					{lodging.policies && lodging.policies.length > 0 && (
+						<section
+							className="policies-section"
+							aria-labelledby="product-policies-title"
+						>
+							<h2 className="policies-title" id="product-policies-title">
+								Políticas
+							</h2>
+							<div className="policies-grid">
+								{lodging.policies.map((p) => (
+									<div key={p.id} className="policy-item">
+										<h3>
+											<Icon name={p.icon} size={18} /> {p.name}
+										</h3>
+										<p>{p.description}</p>
+									</div>
+								))}
+							</div>
+						</section>
+					)}
+
+					<ReviewsSection lodgingId={id} user={user} />
+				</div>
+
+				{lodging.pricePerNight && (
+					<aside className="detail-aside-booking">
+						<section
+							className="booking-section"
+							aria-label="Reservar este alojamiento"
+						>
+							<div className="price-display">
+								<strong>${lodging.pricePerNight.toLocaleString()}</strong> /
+								noche
+							</div>
+
+							{availabilityStatus === "loading" && (
+								<p
+									id={availabilityMessageId}
+									className="availability-status"
+									role="status"
+									aria-live="polite"
 								>
-									<DatePicker
-										inline
-										locale="es"
-										selected={
-											activeDateField === "checkIn" ? checkIn : checkOut
-										}
-										onChange={selectCalendarDate}
-										selectsStart={activeDateField === "checkIn"}
-										selectsEnd={activeDateField === "checkOut"}
-										allowSameDay
-										startDate={checkIn}
-										endDate={checkOut}
-										monthsShown={2}
-										filterDate={(date) =>
-											activeDateField === "checkIn"
-												? availabilityStatus === "ready" &&
-													!isDateOccupied(date)
-												: Boolean(
-														checkIn &&
-														date > checkIn &&
-														isRangeAvailable(checkIn, date),
-													)
-										}
-										minDate={
-											activeDateField === "checkOut" && checkIn
-												? minCheckoutDate(checkIn)
-												: new Date()
-										}
-										onClickOutside={(event) => {
-											if (!dateControlsRef.current?.contains(event.target))
-												closeCalendar();
-										}}
-									/>
+									Comprobando disponibilidad...
+								</p>
+							)}
+							{(availabilityStatus === "error" ||
+								availabilityStatus === "stale") && (
+								<div
+									id={availabilityMessageId}
+									className="availability-alert"
+									role="alert"
+									aria-live="assertive"
+									aria-atomic="true"
+								>
+									<p>
+										{availabilityStatus === "stale"
+											? "No pudimos actualizar la disponibilidad. Los datos mostrados pueden estar desactualizados."
+											: "No pudimos obtener la disponibilidad de este alojamiento."}
+									</p>
+									<button type="button" onClick={retryAvailability}>
+										Reintentar
+									</button>
 								</div>
 							)}
-						</div>
-						<p id="product-date-format" className="availability-status">
-							Escribí dd/mm/aaaa y presioná Enter, o elegí las fechas en el
-							calendario.
-						</p>
-						<div className="date-range-actions">
-							<p className="date-range-instruction" aria-live="polite">
-								{activeDateField === "checkIn"
-									? "Elegí la entrada"
-									: "Elegí la salida"}
-							</p>
-							<button
-								type="button"
-								className="date-range-clear"
-								onClick={clearDates}
-								disabled={!checkIn && !checkOut && !hasDateDraft}
+							{availabilityStatus === "ready" &&
+								occupiedRanges.length === 0 && (
+									<p
+										id={availabilityMessageId}
+										className="availability-status"
+										role="status"
+										aria-live="polite"
+									>
+										Todas las fechas están disponibles.
+									</p>
+								)}
+							{selectionConflict.visible && (
+								<p
+									id={availabilityMessageId}
+									className="availability-alert"
+									role="alert"
+									aria-live="assertive"
+									aria-atomic="true"
+								>
+									Las fechas seleccionadas ya no están disponibles. Elegí otro
+									rango.
+								</p>
+							)}
+
+							<div
+								className="date-pickers"
+								role="group"
+								aria-label="Fechas de la estadía"
+								aria-describedby={availabilityMessageId}
 							>
-								Limpiar fechas
-							</button>
-						</div>
-					</div>
-
-					{nights > 0 && !hasDateDraft && (
-						<p className="total-estimate">
-							Total estimado: <strong>${total.toLocaleString()}</strong> (
-							{nights} noches)
-						</p>
-					)}
-
-					{user ? (
-						<button
-							className="btn-reserve"
-							onClick={() =>
-								navigate(`/booking/${id}`, {
-									state: {
-										checkIn,
-										checkOut,
-									},
-								})
-							}
-							disabled={
-								!checkIn ||
-								!checkOut ||
-								hasDateDraft ||
-								availabilityStatus !== "ready"
-							}
-						>
-							Reservar
-						</button>
-					) : (
-						<p className="login-prompt">
-							<Link
-								to="/login"
-								state={{
-									from: location,
-									message:
-										"Para reservar necesitás iniciar sesión. Si no tenés cuenta, registrate.",
-								}}
-							>
-								Iniciá sesión
-							</Link>{" "}
-							para reservar
-						</p>
-					)}
-				</section>
-			)}
-
-			<section
-				className="description"
-				aria-labelledby="product-description-title"
-			>
-				<h2 id="product-description-title">Descripción</h2>
-				<p>{lodging.description}</p>
-			</section>
-
-			{lodging.features && lodging.features.length > 0 && (
-				<section
-					className="features-section"
-					aria-labelledby="product-features-title"
-				>
-					<h2 id="product-features-title">¿Qué ofrece este lugar?</h2>
-					<div className="features-grid">
-						{lodging.features.map((f) => (
-							<div key={f.id} className="feature-item">
-								<span role="img" aria-label={`Ícono de ${f.name}`}>
-									<Icon name={f.icon} size={20} />
-								</span>
-								<span className="feature-name">{f.name}</span>
+								<div
+									className="date-range-controls"
+									ref={dateControlsRef}
+									onKeyDown={handleDateControlKeys}
+									onBlur={(event) => {
+										if (!event.currentTarget.contains(event.relatedTarget))
+											closeCalendar();
+									}}
+								>
+									<DateRangeInputs
+										checkIn={checkIn}
+										checkOut={checkOut}
+										activeField={activeDateField}
+										onActivateField={activateDateField}
+										drafts={dateDrafts}
+										errors={dateErrors}
+										onEditDate={editTypedDate}
+										onCommitDate={commitTypedDate}
+										inputRefs={dateInputRefs}
+										calendarOpen={calendarOpen}
+										disabled={availabilityStatus !== "ready"}
+										aria-invalid={
+											selectionConflict.visible ? "true" : undefined
+										}
+										aria-describedby={availabilityMessageId}
+									/>
+									{calendarOpen && (
+										<div
+											id="product-range-calendar"
+											className="product-datepicker-popper"
+											role="dialog"
+											aria-label="Calendario de la estadía"
+										>
+											<DatePicker
+												inline
+												locale="es"
+												selected={
+													activeDateField === "checkIn" ? checkIn : checkOut
+												}
+												onChange={selectCalendarDate}
+												selectsStart={activeDateField === "checkIn"}
+												selectsEnd={activeDateField === "checkOut"}
+												allowSameDay
+												startDate={checkIn}
+												endDate={checkOut}
+												monthsShown={2}
+												filterDate={(date) =>
+													activeDateField === "checkIn"
+														? availabilityStatus === "ready" &&
+															!isDateOccupied(date)
+														: Boolean(
+																checkIn &&
+																date > checkIn &&
+																isRangeAvailable(checkIn, date),
+															)
+												}
+												minDate={
+													activeDateField === "checkOut" && checkIn
+														? minCheckoutDate(checkIn)
+														: new Date()
+												}
+												onClickOutside={(event) => {
+													if (!dateControlsRef.current?.contains(event.target))
+														closeCalendar();
+												}}
+											/>
+										</div>
+									)}
+								</div>
+								<p id="product-date-format" className="availability-status">
+									Escribí dd/mm/aaaa y presioná Enter, o elegí las fechas en el
+									calendario.
+								</p>
+								<div className="date-range-actions">
+									<p className="date-range-instruction" aria-live="polite">
+										{activeDateField === "checkIn"
+											? "Elegí la entrada"
+											: "Elegí la salida"}
+									</p>
+									<button
+										type="button"
+										className="date-range-clear"
+										onClick={clearDates}
+										disabled={!checkIn && !checkOut && !hasDateDraft}
+									>
+										Limpiar fechas
+									</button>
+								</div>
 							</div>
-						))}
-					</div>
-				</section>
-			)}
 
-			{lodging.policies && lodging.policies.length > 0 && (
-				<section
-					className="policies-section"
-					aria-labelledby="product-policies-title"
-				>
-					<h2 className="policies-title" id="product-policies-title">
-						Políticas
-					</h2>
-					<div className="policies-grid">
-						{lodging.policies.map((p) => (
-							<div key={p.id} className="policy-item">
-								<h3>
-									<Icon name={p.icon} size={18} /> {p.name}
-								</h3>
-								<p>{p.description}</p>
-							</div>
-						))}
-					</div>
-				</section>
-			)}
+							{nights > 0 && !hasDateDraft && (
+								<p className="total-estimate">
+									Total estimado: <strong>${total.toLocaleString()}</strong> (
+									{nights} noches)
+								</p>
+							)}
 
-			<ReviewsSection lodgingId={id} user={user} />
+							{user ? (
+								<button
+									className="btn-reserve"
+									onClick={() =>
+										navigate(`/booking/${id}`, {
+											state: {
+												checkIn,
+												checkOut,
+											},
+										})
+									}
+									disabled={
+										!checkIn ||
+										!checkOut ||
+										hasDateDraft ||
+										availabilityStatus !== "ready"
+									}
+								>
+									Reservar
+								</button>
+							) : (
+								<p className="login-prompt">
+									<Link
+										to="/login"
+										state={{
+											from: location,
+											message:
+												"Para reservar necesitás iniciar sesión. Si no tenés cuenta, registrate.",
+										}}
+									>
+										Iniciá sesión para reservar
+									</Link>
+								</p>
+							)}
+						</section>
+					</aside>
+				)}
+			</div>
 
 			{showShare && (
 				<ShareModal lodging={lodging} onClose={() => setShowShare(false)} />

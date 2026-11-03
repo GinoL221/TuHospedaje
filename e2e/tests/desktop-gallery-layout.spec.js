@@ -32,6 +32,27 @@ async function mockLodging(page) {
   );
 }
 
+test("desktop gallery controls are distinct and usable", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await mockLodging(page);
+  await page.goto("/lodgings/6");
+  const next = page.getByRole("button", { name: "Imagen siguiente", exact: true });
+  const more = page.getByRole("button", { name: "Ver más" });
+  await expect(next).toBeVisible();
+  await expect(more).toBeVisible();
+  const [nextBox, moreBox, lastPhoto] = await Promise.all([
+    next.boundingBox(), more.boundingBox(), page.locator(".gallery-thumb").last().boundingBox(),
+  ]);
+  expect(nextBox.y).toBeGreaterThanOrEqual(lastPhoto.y + lastPhoto.height);
+  expect(moreBox.x).toBeGreaterThanOrEqual(lastPhoto.x);
+  expect(moreBox.x + moreBox.width).toBeLessThanOrEqual(lastPhoto.x + lastPhoto.width);
+  expect(moreBox.y + moreBox.height).toBeLessThanOrEqual(lastPhoto.y + lastPhoto.height);
+  await next.click();
+  await expect(page.locator(".gallery-main-trigger img")).toHaveAttribute("alt", / - 2$/);
+  await more.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+});
+
 test("gallery keeps the 1024px desktop split and existing 900px and mobile reflow", async ({
   page,
 }) => {
