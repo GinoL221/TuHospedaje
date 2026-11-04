@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-	Calendar,
-	MapPin,
-	User,
-	Mail,
-	Phone,
-	ExternalLink,
-} from "lucide-react";
+import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import {
 	cancelReservation,
 	getMyReservations,
@@ -159,18 +152,6 @@ export default function MyReservationsPage() {
 												{nights} {nights === 1 ? "noche" : "noches"}
 											</span>
 										)}
-									</div>
-									<div className="reservation-row">
-										<User size={14} />
-										<span>{r.guestName}</span>
-									</div>
-									<div className="reservation-row">
-										<Mail size={14} />
-										<span>{r.guestEmail}</span>
-									</div>
-									<div className="reservation-row">
-										<Phone size={14} />
-										<span>{r.guestPhone}</span>
 									</div>
 									<div className="reservation-row">
 										<span>Número de reserva: {r.id}</span>

@@ -108,8 +108,14 @@ describe("MyReservationsPage - reservation list", () => {
 		expect(
 			await screen.findByText(longReservation.lodgingName),
 		).toBeInTheDocument();
-		expect(screen.getByText(longReservation.guestEmail)).toBeInTheDocument();
-		expect(screen.getByText(longReservation.guestPhone)).toBeInTheDocument();
+		// US #33 lists the lodging, the dates and the price. The guest's own
+		// contact data belongs to the booking form and the profile, not here.
+		expect(
+			screen.queryByText(longReservation.guestEmail),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(longReservation.guestPhone),
+		).not.toBeInTheDocument();
 		expect(screen.getByText("01/07/2026 → 31/07/2026")).toBeInTheDocument();
 		expect(screen.getByText("30 noches")).toBeInTheDocument();
 		expect(screen.getByText("Confirmada")).toBeInTheDocument();
