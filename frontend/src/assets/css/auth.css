@@ -251,7 +251,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .login-container {
-    padding: 48px 16px 48px;
+    padding: calc(var(--site-header-height) + 48px) 16px 48px;
   }
 
   .login-box {
