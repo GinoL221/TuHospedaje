@@ -87,7 +87,7 @@ test.describe('Booking — happy path', () => {
 
     const card = page.locator('article.reservation-card', { hasText: stayLabel });
     await expect(card).toBeVisible();
-    await expect(card.locator('.reservation-status')).toHaveText('CONFIRMED');
+    await expect(card.locator('.reservation-status')).toHaveText('Confirmada');
     await expect(card.getByText(/^Fecha de creación:/)).toBeVisible();
     await expect(card.getByRole('link', { name: /Ver alojamiento/ })).toBeVisible();
   });
