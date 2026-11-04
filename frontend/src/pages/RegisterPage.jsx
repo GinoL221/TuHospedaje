@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import "../App.css";
 import "../assets/css/auth.css";
@@ -19,6 +20,8 @@ export default function RegisterPage() {
 	const [fieldErrors, setFieldErrors] = useState({});
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [pwChecks, setPwChecks] = useState({
 		minLength: false,
 		maxLength: false,
@@ -137,24 +140,42 @@ export default function RegisterPage() {
 					)}
 
 					<label htmlFor="register-password">Contraseña</label>
-					<input
-						id="register-password"
-						name="password"
-						type="password"
-						value={form.password}
-						onChange={handleChange}
-						className={
-							fieldErrors.password
-								? "input-error"
-								: form.password &&
-									  pwChecks.minLength &&
-									  pwChecks.maxLength &&
-									  pwChecks.hasUpper &&
-									  pwChecks.hasNumber
-									? "input-valid"
-									: ""
-						}
-					/>
+					<div className="input-wrap">
+						<input
+							id="register-password"
+							name="password"
+							type={showPassword ? "text" : "password"}
+							value={form.password}
+							onChange={handleChange}
+							className={
+								fieldErrors.password
+									? "input-error"
+									: form.password &&
+										  pwChecks.minLength &&
+										  pwChecks.maxLength &&
+										  pwChecks.hasUpper &&
+										  pwChecks.hasNumber
+										? "input-valid"
+										: ""
+							}
+						/>
+						<button
+							type="button"
+							className="pw-toggle"
+							aria-controls="register-password"
+							aria-pressed={showPassword}
+							aria-label={
+								showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+							}
+							onClick={() => setShowPassword((visible) => !visible)}
+						>
+							{showPassword ? (
+								<EyeOff size={18} aria-hidden="true" focusable="false" />
+							) : (
+								<Eye size={18} aria-hidden="true" focusable="false" />
+							)}
+						</button>
+					</div>
 					{form.password && (
 						<ul className="pw-checks">
 							<li
@@ -186,14 +207,34 @@ export default function RegisterPage() {
 					<label htmlFor="register-confirm-password">
 						Confirmar contraseña
 					</label>
-					<input
-						id="register-confirm-password"
-						name="confirmPassword"
-						type="password"
-						value={form.confirmPassword}
-						onChange={handleChange}
-						className={fieldErrors.confirmPassword ? "input-error" : ""}
-					/>
+					<div className="input-wrap">
+						<input
+							id="register-confirm-password"
+							name="confirmPassword"
+							type={showConfirmPassword ? "text" : "password"}
+							value={form.confirmPassword}
+							onChange={handleChange}
+							className={fieldErrors.confirmPassword ? "input-error" : ""}
+						/>
+						<button
+							type="button"
+							className="pw-toggle"
+							aria-controls="register-confirm-password"
+							aria-pressed={showConfirmPassword}
+							aria-label={
+								showConfirmPassword
+									? "Ocultar confirmación de contraseña"
+									: "Mostrar confirmación de contraseña"
+							}
+							onClick={() => setShowConfirmPassword((visible) => !visible)}
+						>
+							{showConfirmPassword ? (
+								<EyeOff size={18} aria-hidden="true" focusable="false" />
+							) : (
+								<Eye size={18} aria-hidden="true" focusable="false" />
+							)}
+						</button>
+					</div>
 					{fieldErrors.confirmPassword && (
 						<p className="field-error">{fieldErrors.confirmPassword}</p>
 					)}

@@ -46,12 +46,16 @@ describe("reservation path visual contract", () => {
 	it("keeps page titles below the fixed header on mobile", () => {
 		const booking = readSource("pages/Booking/BookingPage.css");
 		const product = readSource("pages/ProductDetail/ProductDetail.css");
+		const auth = readSource("assets/css/auth.css");
 
 		expect(booking).toMatch(
 			/@media \(max-width: 768px\)\s*\{\s*\.booking-page\s*\{[^}]*padding[^;}]*var\(--site-header-height\)/,
 		);
 		expect(product).toMatch(
 			/@media \(max-width: 768px\)\s*\{\s*\.product-detail\s*\{[^}]*padding[^;}]*var\(--site-header-height\)/,
+		);
+		expect(auth).toMatch(
+			/@media \(max-width: 768px\)\s*\{\s*\.login-container\s*\{[^}]*padding[^;}]*var\(--site-header-height\)/,
 		);
 	});
 

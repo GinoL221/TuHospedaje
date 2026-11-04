@@ -256,3 +256,34 @@ describe("RegisterPage - successful registration", () => {
 		expect(await screen.findByTestId("home-sentinel")).toBeInTheDocument();
 	});
 });
+
+describe("RegisterPage — password visibility", () => {
+	it("toggles both password fields independently", async () => {
+		const user = userEvent.setup();
+		renderRegisterPage({ authValue: null });
+
+		const password = screen.getByLabelText("Contraseña");
+		const confirm = screen.getByLabelText("Confirmar contraseña");
+		expect(password).toHaveAttribute("type", "password");
+		expect(confirm).toHaveAttribute("type", "password");
+
+		await user.click(
+			screen.getByRole("button", { name: "Mostrar contraseña" }),
+		);
+		expect(password).toHaveAttribute("type", "text");
+		expect(confirm).toHaveAttribute("type", "password");
+
+		await user.click(
+			screen.getByRole("button", {
+				name: "Mostrar confirmación de contraseña",
+			}),
+		);
+		expect(confirm).toHaveAttribute("type", "text");
+
+		await user.click(
+			screen.getByRole("button", { name: "Ocultar contraseña" }),
+		);
+		expect(password).toHaveAttribute("type", "password");
+		expect(confirm).toHaveAttribute("type", "text");
+	});
+});

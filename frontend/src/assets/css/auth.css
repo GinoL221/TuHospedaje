@@ -1,15 +1,30 @@
 /* Auth Pages */
 .login-container {
   --auth-surface: var(--surface-raised);
-  --auth-card-border: color-mix(in srgb, var(--secondary) 10%, transparent);
+  --auth-card-border: var(--border-subtle);
   --auth-input-border: color-mix(in srgb, var(--secondary) 22%, transparent);
-  --auth-danger: #d32f2f;
-  --auth-danger-bg: #fce4e4;
-  --auth-danger-border: #f5c6c6;
-  --auth-danger-ring: rgba(211, 47, 47, 0.15);
-  --auth-success: #2e7d32;
-  --auth-success-ring: rgba(46, 125, 50, 0.15);
-  --auth-neutral-muted: #999;
+  /* State colours come from the manual's approved semantic extension (v2.1 3.4);
+     the local names stay because the components and tests read them. */
+  --auth-danger: var(--feedback-danger-text);
+  --auth-danger-bg: var(--feedback-danger-bg);
+  --auth-danger-border: var(--feedback-danger-border);
+  --auth-danger-ring: color-mix(
+    in srgb,
+    var(--feedback-danger-text) 15%,
+    transparent
+  );
+  --auth-success: var(--feedback-success-text);
+  --auth-success-ring: color-mix(
+    in srgb,
+    var(--feedback-success-text) 15%,
+    transparent
+  );
+  /* #999 on white is 2.85:1; this grey clears 4.5:1 for a not-met hint. */
+  --auth-neutral-muted: color-mix(
+    in srgb,
+    var(--text) 75%,
+    var(--surface-raised)
+  );
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -24,8 +39,8 @@
 .register-box {
   background-color: var(--auth-surface);
   padding: 35px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--auth-card-border);
 }
 
@@ -121,12 +136,47 @@
 }
 
 .input-wrap input {
-  padding-right: 36px;
+  padding-right: 48px;
+}
+
+/* Show/hide password control: a 44px target that must not inherit the
+   filled look of the form's submit button. */
+.input-wrap .pw-toggle {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+}
+
+.input-wrap .pw-toggle:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
+}
+
+/* The form's own button hover paints --action-primary-hover-bg (#333), which
+   would leave the petrol icon at 1.25:1. Needs the extra selectors to win. */
+.login-box .input-wrap .pw-toggle:hover:not(:disabled),
+.register-box .input-wrap .pw-toggle:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--secondary) 10%, transparent);
+  color: var(--secondary);
 }
 
 .input-wrap .input-check {
   position: absolute;
-  right: 12px;
+  right: 48px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 1rem;
@@ -217,7 +267,7 @@
 .login-box .field-error,
 .register-box .field-error {
   color: var(--feedback-danger-text);
-  font-size: 0.75rem;
+  font-size: var(--type-caption-size);
   margin-top: -12px;
   margin-bottom: 0;
   font-weight: 500;
@@ -236,7 +286,7 @@
 }
 
 .pw-checks li {
-  font-size: 0.78rem;
+  font-size: var(--type-caption-size);
   font-weight: 500;
 }
 
@@ -251,7 +301,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .login-container {
-    padding: 48px 16px 48px;
+    padding: calc(var(--site-header-height) + 48px) 16px 48px;
   }
 
   .login-box {

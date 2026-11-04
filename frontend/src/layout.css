@@ -312,11 +312,15 @@ footer .page-container {
     min-width: 0;
     box-sizing: border-box;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 0 4px;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
     margin-top: 8px;
+    /* The open menu reads as a raised card, like every other surface. */
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
   }
 
   .nav-links--open {
@@ -326,13 +330,16 @@ footer .page-container {
   .nav-links a,
   .nav-links button,
   .nav-username {
+    width: 100%;
     min-height: 44px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: flex-start;
     font-size: 0.95rem;
   }
 
   .site-header .header-register-cta {
+    justify-content: center;
     padding: 8px 18px;
   }
 
