@@ -20,6 +20,19 @@ Repository-root `.impeccable/config.json` contains detector configuration, inclu
 
 Before execution, verify the actual host integration and how it receives project context. Explicitly supply this brief and its linked authorities; do not assume any filename is automatically discovered. Do not install packages, change global configuration, or read external installation directories without the required authorization. Until that check is complete, the plan must label Impeccable execution as unverified.
 
+### Running the detector
+
+The CLI is not installed in this repository: there is no root `package.json`, and `frontend/` and `e2e/` are separate npm projects. Run the pinned version on demand from the repository root, so the root `.impeccable/config.json` and its Inter exception apply:
+
+```bash
+cd <repository-root>
+IMPECCABLE_BROWSER=<chromium-executable> npx impeccable@4.8.0 detect <url-or-path>
+```
+
+`IMPECCABLE_BROWSER` is required for URL scans; any Chromium-based browser works, including the one Playwright already downloaded under `~/.cache/ms-playwright/`. Resolve that path for the installed Playwright version rather than reusing a stale one.
+
+Scan a running dev server to include the element rules (`tiny-text`, `low-contrast`). A scan over source files skips those rules, and the tool reports that result as an undercount rather than a clean pass. URL scans do not authenticate, so screens behind login, such as the booking page, are not covered by this route.
+
 ## 2. Preserve the approved identity
 
 ### Primary actions and contrast
