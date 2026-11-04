@@ -337,3 +337,17 @@
     padding: 10px 12px;
   }
 }
+
+/* From 1024px the card fits two per row, so the list stops leaving half the
+   page empty; below that the single column stays as it was. */
+@media (min-width: 1024px) {
+  .reservations-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    /* The page container already caps the width at 1440px, so the grid can
+       fill it instead of leaving a gap on the right of a 1180px block. */
+    max-width: none;
+    align-items: start;
+  }
+}
