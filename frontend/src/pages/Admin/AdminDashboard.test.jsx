@@ -306,7 +306,7 @@ describe("AdminDashboard - recent reservations table", () => {
 		render(<AdminDashboard onTabChange={vi.fn()} />);
 
 		expect(
-			await screen.findByText("Fecha estimada: 01/07/2026 00:00"),
+			await screen.findByText("estimada · 01/07/2026 00:00"),
 		).toBeInTheDocument();
 		expect(screen.getByText("Llegada tarde")).toBeInTheDocument();
 	});
@@ -330,11 +330,9 @@ describe("AdminDashboard - recent reservations table", () => {
 		});
 		render(<AdminDashboard onTabChange={vi.fn()} />);
 
+		expect(await screen.findByText("20/06/2026 14:30")).toBeInTheDocument();
 		expect(
-			await screen.findByText("Fecha de creación: 20/06/2026 14:30"),
-		).toBeInTheDocument();
-		expect(
-			screen.getByText("Fecha de creación: 20/06/2026 14:30").closest("tr"),
+			screen.getByText("20/06/2026 14:30").closest("tr"),
 		).toHaveTextContent("-");
 	});
 });
