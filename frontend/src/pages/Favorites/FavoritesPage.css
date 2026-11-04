@@ -62,6 +62,17 @@
   border-color: var(--feedback-danger-border);
 }
 
+/*
+ * The shared .empty-state keeps its dashed box for Home and Admin; here it
+ * reads as plain text, like the flattened reviews empty state.
+ */
+.favorites-page .empty-state:not(.error) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 32px 0;
+}
+
 .favorite-remove-error {
   color: var(--favorites-danger);
   font-size: var(--type-caption-size);

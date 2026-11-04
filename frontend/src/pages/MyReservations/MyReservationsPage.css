@@ -21,8 +21,10 @@
 }
 
 .reservations-count {
-  background: var(--accent);
-  color: #fff;
+  /* The accent pair is 3.03:1, below the 4.5:1 the manual requires for text;
+     the primary action pair is 9.19:1. */
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
   border-radius: 20px;
   padding: 3px 12px;
   font-size: 0.8rem;
@@ -39,10 +41,10 @@
 
 /* --- CARD --- */
 .reservation-card {
-  background: var(--bg);
-  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-subtle);
   overflow: hidden;
 }
 
