@@ -329,7 +329,10 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 	});
 });
 
-describe("ProductDetail - S17 typed dates", () => {
+// These cases type two full dates with simulated timers; under the load of the
+// whole suite they need more than the 5s default, and the per-case patch only
+// moved the timeout to the next case in the block.
+describe("ProductDetail - S17 typed dates", { timeout: 15000 }, () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.setSystemTime(new Date(2026, 6, 15, 12));

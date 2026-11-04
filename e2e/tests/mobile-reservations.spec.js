@@ -57,8 +57,8 @@ async function exerciseReservations(page) {
   const card = page.locator('.reservation-card');
   await expect(card).toBeVisible();
   await expect(page.getByText(longReservation.lodgingName)).toBeVisible();
-  await expect(page.getByText(longReservation.guestEmail)).toBeVisible();
-  await expect(page.getByText(longReservation.guestPhone)).toBeVisible();
+  await expect(page.getByText(longReservation.guestEmail)).toHaveCount(0);
+  await expect(page.getByText(longReservation.guestPhone)).toHaveCount(0);
   await expect(page.getByText('01/07/2099 → 31/07/2099')).toBeVisible();
   await expect(page.getByText('30 noches')).toBeVisible();
   await expect(page.getByText('Confirmada')).toBeVisible();
@@ -91,7 +91,8 @@ test.describe('Mobile reservations', () => {
   test.describe('at 320px', () => {
     test.use({ viewport: { width: 320, height: 844 } });
 
-    test('keeps reservation content and actions reachable without overflow', async ({ page, authUser }) => {
+    // authUser is requested for its login side effect, not for its value.
+    test('keeps reservation content and actions reachable without overflow', async ({ page, authUser: _authUser }) => {
       await exerciseReservations(page);
     });
   });
@@ -99,7 +100,8 @@ test.describe('Mobile reservations', () => {
   test.describe('at 390px', () => {
     test.use({ viewport: { width: 390, height: 844 } });
 
-    test('keeps reservation content and actions reachable without overflow', async ({ page, authUser }) => {
+    // authUser is requested for its login side effect, not for its value.
+    test('keeps reservation content and actions reachable without overflow', async ({ page, authUser: _authUser }) => {
       await exerciseReservations(page);
     });
   });
