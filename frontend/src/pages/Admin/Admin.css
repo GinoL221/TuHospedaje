@@ -455,17 +455,18 @@ table td:first-child {
 }
 table th:last-child,
 table td:last-child {
-  width: 160px;
+  width: 120px;
   text-align: right;
 }
 td {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-size: var(--type-label-size);
 }
 th,
 td {
-  padding: 11px 16px;
+  padding: 10px 12px;
   text-align: left;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -473,7 +474,7 @@ th {
   background: var(--secondary);
   color: #fff;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--type-label-size);
   letter-spacing: 0.02em;
 }
 tbody tr:hover {

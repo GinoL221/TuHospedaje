@@ -12,3 +12,16 @@ export function reservationCreatedAtLabel({ createdAt, createdAtDerived }) {
 
 	return `${label}: ${formattedDate} ${formattedTime}`.trim();
 }
+
+/**
+ * The same stamp without the sentence label, for tables whose column header
+ * already says what the value is. A derived date keeps its qualifier.
+ */
+export function reservationCreatedAtValue({ createdAt, createdAtDerived }) {
+	const stamp = reservationCreatedAtLabel({ createdAt, createdAtDerived })
+		?.replace(/^Fecha (de creación|estimada): /, "")
+		.trim();
+	if (!stamp) return null;
+
+	return createdAtDerived ? `estimada · ${stamp}` : stamp;
+}

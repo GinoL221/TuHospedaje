@@ -7,7 +7,7 @@ import {
 import { getAdminReservations } from "../../services/reservationService";
 import {
 	hasReservationNotes,
-	reservationCreatedAtLabel,
+	reservationCreatedAtValue,
 } from "../../utils/reservationPresentation";
 
 // The `key` of each card is the field name in GET /api/admin/stats.
@@ -171,7 +171,7 @@ export default function AdminDashboard({ onTabChange }) {
 										<td>{r.id}</td>
 										<td>{r.lodgingName}</td>
 										<td>{r.guestName}</td>
-										<td>{reservationCreatedAtLabel(r)}</td>
+										<td>{reservationCreatedAtValue(r)}</td>
 										<td>
 											{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}
 										</td>
