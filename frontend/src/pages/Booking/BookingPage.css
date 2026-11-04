@@ -30,23 +30,28 @@
   align-items: start;
 }
 
-.booking-summary,
 .booking-form {
   box-sizing: border-box;
   min-width: 0;
   background: var(--surface-raised);
   border: 1px solid rgba(38, 70, 83, 0.16);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 /* --- LODGING SUMMARY --- */
+/* The summary sits on the page canvas; the form is the only card. */
 .booking-summary {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: clamp(20px, 3vw, 32px);
-  border-top: 4px solid var(--accent);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .booking-summary-header {
@@ -180,7 +185,6 @@
   flex-direction: column;
   gap: 20px;
   padding: clamp(20px, 3vw, 32px);
-  border-top: 4px solid var(--primary);
 }
 
 .booking-form-header {
@@ -300,15 +304,13 @@
 
 /* --- GUEST DETAILS --- */
 .guest-details-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  width: 100%;
-  min-height: 48px;
-  padding: 10px 14px;
-  border: 1px solid rgba(38, 70, 83, 0.28);
-  border-radius: var(--radius-sm);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
   background: transparent;
   color: var(--secondary);
   font-family: inherit;
@@ -316,17 +318,14 @@
   font-weight: 600;
   line-height: var(--type-label-line-height);
   text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background-color var(--transition),
-    border-color var(--transition),
-    box-shadow var(--transition);
 }
 
 .guest-details-toggle:hover {
-  border-color: var(--accent);
-  background: rgba(42, 157, 143, 0.08);
+  color: var(--accent);
 }
 
 #guest-details {
@@ -335,18 +334,17 @@
   gap: 16px;
   box-sizing: border-box;
   min-width: 0;
-  margin-top: 16px;
-  padding: 16px;
-  border: 1px solid rgba(38, 70, 83, 0.16);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .guest-profile-image {
   grid-column: 1;
-  width: 64px;
-  height: 64px;
-  border: 3px solid var(--primary);
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--primary);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -363,7 +361,7 @@
   grid-column: 2;
 }
 
-/* --- AVAILABILITY --- */
+/* Availability reads as plain status text, matching the product detail. */
 .booking-availability {
   margin: 0 0 16px;
 }
@@ -375,15 +373,18 @@
   box-sizing: border-box;
   min-width: 0;
   margin: 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(42, 157, 143, 0.28);
-  border-radius: var(--radius-sm);
-  background: rgba(42, 157, 143, 0.08);
-  color: var(--secondary);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
   font-size: var(--type-label-size);
   font-weight: 500;
   line-height: var(--type-body-line-height);
   overflow-wrap: anywhere;
+}
+
+.availability-status--ready {
+  color: var(--feedback-success-text);
 }
 
 .availability-status::before {
@@ -394,6 +395,10 @@
   border-radius: 50%;
   background: var(--accent);
   content: "";
+}
+
+.availability-status--ready::before {
+  background: var(--feedback-success-text);
 }
 
 .availability-status--loading::before {
@@ -542,10 +547,11 @@
   box-sizing: border-box;
   min-width: 0;
   margin: 0;
-  padding: 16px;
-  border: 1px solid rgba(42, 157, 143, 0.22);
-  border-radius: var(--radius-sm);
-  background: rgba(42, 157, 143, 0.06);
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(38, 70, 83, 0.16);
+  border-radius: 0;
+  background: transparent;
   color: var(--secondary);
   font-size: var(--type-body-size);
   font-weight: 500;
@@ -686,7 +692,6 @@
 }
 
 @media (max-width: 640px) {
-  .booking-summary,
   .booking-form {
     padding: 20px 16px;
   }
@@ -722,6 +727,71 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 4px;
+  }
+}
+
+/*
+ * The summary column is narrow even on wide viewports, so from 901px the
+ * gallery keeps the stacked layout instead of the two-column desktop grid.
+ * Below 901px the gallery's own responsive rules stay in charge.
+ */
+@media (min-width: 901px) {
+  .booking-summary .gallery-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .booking-summary .gallery-main-trigger img {
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .booking-summary .gallery-thumbs-col {
+    position: relative;
+    display: block;
+    align-self: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+  }
+
+  .booking-summary .gallery-desktop-navigation {
+    display: none;
+  }
+
+  .booking-summary .gallery-desktop-actions {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    display: flex;
+  }
+
+  .booking-summary .gallery-thumbs {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .booking-summary .gallery-thumb {
+    flex: 0 0 72px;
+    width: 72px;
+    height: 54px;
+  }
+
+  .booking-summary .gallery-more {
+    position: static;
+    margin: 0;
+    min-height: 32px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 }
 
