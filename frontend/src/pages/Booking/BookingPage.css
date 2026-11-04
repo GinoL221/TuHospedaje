@@ -476,6 +476,34 @@
   padding-bottom: 14px;
 }
 
+/*
+ * `.booking-form h2` also matches the calendar month title, because
+ * react-datepicker renders it as an h2. It wins by specificity, so the
+ * title colour and size have to be restored here. The inherited 24px/600
+ * also inflated the header to 58px and left the arrows 7px above centre;
+ * Label and Caption keep the calendar on the documented type scale.
+ */
+.booking-form .react-datepicker__current-month {
+  color: #ffffff;
+  font-size: var(--type-label-size);
+  font-weight: 700;
+}
+
+.booking-form .react-datepicker__day-name,
+.booking-form .react-datepicker__day {
+  font-size: var(--type-caption-size);
+}
+
+/* datepicker.css paints day names white, but they render on a white row. */
+.booking-form .react-datepicker__day-name {
+  color: var(--secondary);
+}
+
+/* Without this the month shrinks to 191px inside a 328px popper. */
+.booking-form .react-datepicker__month-container {
+  width: 100%;
+}
+
 .booking-form .react-datepicker__navigation {
   top: 0;
   width: 44px;
