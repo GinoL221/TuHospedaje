@@ -8,6 +8,8 @@
   --surface-raised: #fff;
   --content-primary: var(--text);
   --content-strong: var(--secondary);
+  /* One hairline for raised surfaces, so cards read the same on every screen. */
+  --border-subtle: color-mix(in srgb, var(--secondary) 16%, transparent);
 
   --space-2: 8px;
   --space-3: 12px;
