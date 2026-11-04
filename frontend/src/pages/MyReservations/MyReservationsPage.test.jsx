@@ -112,7 +112,7 @@ describe("MyReservationsPage - reservation list", () => {
 		expect(screen.getByText(longReservation.guestPhone)).toBeInTheDocument();
 		expect(screen.getByText("01/07/2026 → 31/07/2026")).toBeInTheDocument();
 		expect(screen.getByText("30 noches")).toBeInTheDocument();
-		expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
+		expect(screen.getByText("Confirmada")).toBeInTheDocument();
 		expect(
 			screen.getByText(/^\$\d{1,3}(?:[,.]\d{3})+$/, {
 				selector: ".reservation-total strong",
@@ -176,7 +176,7 @@ describe("MyReservationsPage - reservation list", () => {
 		expect(cancelReservation).toHaveBeenCalledTimes(1);
 
 		resolveCancellation({ ...reservationFixture, status: "CANCELLED" });
-		expect(await screen.findByText("CANCELLED")).toBeInTheDocument();
+		expect(await screen.findByText("Cancelada")).toBeInTheDocument();
 		expect(
 			screen.queryByRole("button", { name: "Cancelar reserva" }),
 		).not.toBeInTheDocument();
@@ -207,7 +207,7 @@ describe("MyReservationsPage - reservation list", () => {
 		);
 
 		expect(await screen.findByText("Intentá nuevamente.")).toBeInTheDocument();
-		expect(screen.getByText("CONFIRMED")).toBeInTheDocument();
+		expect(screen.getByText("Confirmada")).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: "Cancelar reserva" }),
 		).toBeEnabled();
