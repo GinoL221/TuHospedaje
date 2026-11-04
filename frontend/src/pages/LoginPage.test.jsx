@@ -244,3 +244,24 @@ describe("LoginPage - redirect message from previous route", () => {
 		).toBeInTheDocument();
 	});
 });
+
+describe("LoginPage — password visibility", () => {
+	it("toggles the password field between hidden and visible", async () => {
+		const user = userEvent.setup();
+		customRender(<LoginPage />, { authValue: null, route: "/login" });
+
+		const password = screen.getByLabelText("Contraseña");
+		expect(password).toHaveAttribute("type", "password");
+
+		const toggle = screen.getByRole("button", { name: "Mostrar contraseña" });
+		expect(toggle).toHaveAttribute("aria-pressed", "false");
+		await user.click(toggle);
+
+		expect(password).toHaveAttribute("type", "text");
+		const hide = screen.getByRole("button", { name: "Ocultar contraseña" });
+		expect(hide).toHaveAttribute("aria-pressed", "true");
+
+		await user.click(hide);
+		expect(password).toHaveAttribute("type", "password");
+	});
+});

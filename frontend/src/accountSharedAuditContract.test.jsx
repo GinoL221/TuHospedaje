@@ -79,3 +79,27 @@ describe("account and shared surfaces visual contract", () => {
 		);
 	});
 });
+
+describe("password visibility control", () => {
+	it("keeps the toggle hover on a subtle surface instead of the dark action hover", () => {
+		const auth = readSource("assets/css/auth.css");
+
+		const hover = auth.match(
+			/\.login-box \.input-wrap \.pw-toggle:hover:not\(:disabled\),[\s\S]*?\{([^}]*)\}/,
+		);
+		expect(hover).not.toBeNull();
+		expect(hover[1]).toMatch(
+			/background:\s*color-mix\(in srgb, var\(--secondary\) 10%, transparent\)/,
+		);
+		expect(hover[1]).not.toMatch(/--action-primary-hover-bg/);
+	});
+
+	it("gives the toggle a 44px target and keeps the icon clear of the input text", () => {
+		const auth = readSource("assets/css/auth.css");
+
+		expect(auth).toMatch(
+			/\.input-wrap \.pw-toggle \{[^}]*width:\s*44px;[^}]*height:\s*44px;/s,
+		);
+		expect(auth).toMatch(/\.input-wrap input \{[^}]*padding-right:\s*48px;/s);
+	});
+});

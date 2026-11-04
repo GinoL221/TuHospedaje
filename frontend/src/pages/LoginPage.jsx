@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
 import "../App.css";
@@ -16,6 +17,7 @@ export default function LoginPage() {
 	const [fieldErrors, setFieldErrors] = useState({});
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
 	const location = useLocation();
 	const message = location.state?.message;
 	const from = location.state?.from?.pathname || "/";
@@ -80,14 +82,32 @@ export default function LoginPage() {
 					)}
 
 					<label htmlFor="login-password">Contraseña</label>
-					<input
-						id="login-password"
-						name="password"
-						type="password"
-						value={form.password}
-						onChange={handleChange}
-						className={fieldErrors.password ? "input-error" : ""}
-					/>
+					<div className="input-wrap">
+						<input
+							id="login-password"
+							name="password"
+							type={showPassword ? "text" : "password"}
+							value={form.password}
+							onChange={handleChange}
+							className={fieldErrors.password ? "input-error" : ""}
+						/>
+						<button
+							type="button"
+							className="pw-toggle"
+							aria-controls="login-password"
+							aria-pressed={showPassword}
+							aria-label={
+								showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+							}
+							onClick={() => setShowPassword((visible) => !visible)}
+						>
+							{showPassword ? (
+								<EyeOff size={18} aria-hidden="true" focusable="false" />
+							) : (
+								<Eye size={18} aria-hidden="true" focusable="false" />
+							)}
+						</button>
+					</div>
 					{fieldErrors.password && (
 						<p className="field-error">{fieldErrors.password}</p>
 					)}
