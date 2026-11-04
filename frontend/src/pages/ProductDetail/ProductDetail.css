@@ -462,6 +462,8 @@
   font-size: 0.85rem;
   line-height: 1.5;
   color: var(--text-muted);
+  /* Let the browser move the break so a lone word never ends the last line. */
+  text-wrap: pretty;
 }
 .login-prompt {
   margin: 0;
