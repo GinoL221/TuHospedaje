@@ -69,7 +69,7 @@ describe("primary action contrast contract", () => {
 		expect(rule).not.toMatch(/background(?:-color)?:\s*var\(--primary\)/);
 	});
 
-	it("keeps the Header registration CTA distinct against the petroleum header", () => {
+	it("keeps the Header registration CTA distinct against the light header", () => {
 		const css = readCss("src/layout.css");
 		const rule = css.match(
 			/\.site-header \.header-register-cta\s*\{([^}]*)\}/,
@@ -77,14 +77,12 @@ describe("primary action contrast contract", () => {
 
 		expect(rule).toBeDefined();
 		expect(rule).toMatch(/min-height:\s*44px/);
-		expect(rule).toMatch(/background-color:\s*var\(--bg\)/);
-		expect(rule).toMatch(/color:\s*var\(--secondary\)/);
-		expect(rule).toMatch(/border:\s*2px solid var\(--action-primary-accent\)/);
-		expect(rule).not.toMatch(/background-color:\s*var\(--action-primary-bg\)/);
-		expect(contrast("#264653", "#F4F4F9")).toBeGreaterThanOrEqual(4.5);
-		expect(contrast("#FF6B35", "#264653")).toBeGreaterThanOrEqual(3);
-		expect(contrast("#2A9D8F", "#264653")).toBeGreaterThanOrEqual(3);
-		expect(contrast("#2A9D8F", "#F4F4F9")).toBeGreaterThanOrEqual(3);
+		expect(rule).toMatch(/background-color:\s*var\(--secondary\)/);
+		expect(rule).toMatch(/color:\s*#ffffff/);
+		expect(rule).toMatch(/border:\s*2px solid var\(--secondary\)/);
+		expect(rule).not.toMatch(/background-color:\s*var\(--primary\)/);
+		expect(contrast("#FFFFFF", "#264653")).toBeGreaterThanOrEqual(4.5);
+		expect(contrast("#264653", "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
 	});
 
 	it.each([

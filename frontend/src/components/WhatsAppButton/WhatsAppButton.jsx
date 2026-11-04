@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./WhatsAppButton.css";
 
 const PHONE_PATTERN = /^[1-9]\d{7,14}$/;
 const WHATSAPP_ORIGIN = "https://wa.me";
+const FEEDBACK_TIMEOUT_MS = 5000;
 
 const FIXED_MESSAGE =
 	"Hola, quiero hacer una consulta sobre un alojamiento de TuHospedaje.";
@@ -50,6 +51,15 @@ function buildHandoffUrl(digits) {
 export default function WhatsAppButton() {
 	const handoffUrl = buildHandoffUrl(readConfiguredNumber());
 	const [status, setStatus] = useState(null);
+	const timerRef = useRef(null);
+
+	useEffect(() => {
+		return () => {
+			if (timerRef.current) {
+				clearTimeout(timerRef.current);
+			}
+		};
+	}, []);
 
 	if (!handoffUrl) {
 		return null;
@@ -57,6 +67,12 @@ export default function WhatsAppButton() {
 
 	const handleClick = () => {
 		setStatus("handoff_requested");
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
+		}
+		timerRef.current = setTimeout(() => {
+			setStatus(null);
+		}, FEEDBACK_TIMEOUT_MS);
 	};
 
 	const feedback = status ? FEEDBACK[status] : null;

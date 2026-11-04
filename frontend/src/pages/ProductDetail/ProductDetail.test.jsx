@@ -274,10 +274,9 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		expect(screen.getByRole("link", { name: "Iniciá sesión" })).toHaveAttribute(
-			"href",
-			"/login",
-		);
+		expect(
+			screen.getByRole("link", { name: "Iniciá sesión para reservar" }),
+		).toHaveAttribute("href", "/login");
 		expect(
 			screen.queryByRole("button", { name: "Reservar" }),
 		).not.toBeInTheDocument();
@@ -290,7 +289,9 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 
 		await screen.findByText("Cabaña del Lago");
 
-		const loginLink = screen.getByRole("link", { name: "Iniciá sesión" });
+		const loginLink = screen.getByRole("link", {
+			name: "Iniciá sesión para reservar",
+		});
 		await user.click(loginLink);
 
 		// Same pattern RequireAuth already uses: the login link must carry
@@ -308,7 +309,9 @@ describe("ProductDetail - useAuth integration for the reserve CTA", () => {
 		renderProductDetail({ authValue: null, initialEntries: ["/lodgings/1"] });
 
 		await screen.findByText("Cabaña del Lago");
-		await user.click(screen.getByRole("link", { name: "Iniciá sesión" }));
+		await user.click(
+			screen.getByRole("link", { name: "Iniciá sesión para reservar" }),
+		);
 
 		expect(await screen.findByTestId("login-sentinel")).toHaveTextContent(
 			"message: Para reservar necesitás iniciar sesión. Si no tenés cuenta, registrate.",

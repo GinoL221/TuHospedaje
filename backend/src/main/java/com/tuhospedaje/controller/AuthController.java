@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -119,11 +120,15 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/welcome-email/resend")
-    public ResponseEntity<Void> resendWelcome(Authentication authentication) {
+    public ResponseEntity<?> resendWelcome(Authentication authentication) {
         WelcomeResendResult result = authService.resendWelcome(authentication.getName());
         if (result == WelcomeResendResult.SCHEDULED) {
             return ResponseEntity.accepted().build();
+        }
+        if (result == WelcomeResendResult.ALREADY_PENDING) {
+            return ResponseEntity.ok(java.util.Map.of("status", "pending"));
         }
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(welcomeEmailProperties.getResendCooldown().toSeconds()))

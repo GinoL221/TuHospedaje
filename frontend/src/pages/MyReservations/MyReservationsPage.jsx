@@ -20,6 +20,17 @@ import "./MyReservationsPage.css";
 
 const BUSINESS_TIME_ZONE = "America/Argentina/Buenos_Aires";
 
+const STATUS_LABELS = {
+	CONFIRMED: "Confirmada",
+	CANCELLED: "Cancelada",
+};
+
+// The API sends the enum; the page shows it in Spanish and falls back to the
+// raw value so a new backend status is never rendered as empty.
+function statusLabel(status) {
+	return STATUS_LABELS[status] ?? status;
+}
+
 function fmtDate(str) {
 	return str ? str.split("-").reverse().join("/") : "-";
 }
@@ -133,7 +144,7 @@ export default function MyReservationsPage() {
 									<span
 										className={`reservation-status ${r.status?.toLowerCase()}`}
 									>
-										{r.status}
+										{statusLabel(r.status)}
 									</span>
 								</div>
 

@@ -128,6 +128,78 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenCreatingLodgingWithDuplicateName() throws Exception {
+        Map<String, Object> first = Map.of(
+                "name", "Hotel Unico Test",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "hotel-unico-1@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("35000.75"),
+                "maxGuests", 5
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(first)))
+                .andExpect(status().isCreated());
+
+        Map<String, Object> duplicate = Map.of(
+                "name", "Hotel Unico Test",
+                "description", "Otra descripción",
+                "address", "Calle 456",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "987654321",
+                "email", "hotel-unico-2@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("40000.00"),
+                "maxGuests", 2
+        );
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(duplicate)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Ya existe un alojamiento con el nombre: Hotel Unico Test"));
+    }
+
+    @Test
+    void shouldCreateLodgingWithImagesSuccessfully() throws Exception {
+        Map<String, Object> request = Map.of(
+                "name", "Hotel Con Imagenes Test",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "hotel-imagenes@tuhospedaje.com",
+                "pricePerNight", new BigDecimal("50000.00"),
+                "maxGuests", 4,
+                "imageUrls", List.of("https://example.com/img1.jpg", "https://example.com/img2.jpg")
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/lodgings")
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imageUrls").isArray())
+                .andExpect(jsonPath("$.imageUrls.length()").value(2))
+                .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/img1.jpg"))
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/img2.jpg"));
+    }
+
+    @Test
     void shouldReturnBadRequestWhenCreatingLodgingWithInvalidPayload() throws Exception {
         Map<String, Object> request = Map.of(
                 "name", "",
@@ -262,13 +334,53 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnRandomLodgings() throws Exception {
-        createTestLodging("Random 1", "r1@test.com");
-        createTestLodging("Random 2", "r2@test.com");
+    void shouldReturnRandomLodgingsCappedAtTenWithoutDuplicates() throws Exception {
+        for (int i = 1; i <= 15; i++) {
+            createTestLodging("Random Hotel " + i, "random-" + i + "@test.com");
+        }
 
         mockMvc.perform(get("/api/lodgings/random"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").exists());
+                .andExpect(jsonPath("$.length()").value(10))
+                .andExpect(jsonPath("$[*].name").isArray());
+    }
+
+    @Test
+    void shouldReturnRandomRecommendationsWithoutDuplicatesAndRespectSeed() throws Exception {
+        for (int i = 1; i <= 15; i++) {
+            createTestLodging("Rec Hotel " + i, "rec-" + i + "@test.com");
+        }
+
+        mockMvc.perform(get("/api/lodgings/recommendations")
+                        .param("seed", "a1b2c3d4e5f6g7h8")
+                        .param("page", "0")
+                        .param("size", "8"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings.length()").value(8))
+                .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void shouldReturnPaginatedLodgingsRespectingPageAndSize() throws Exception {
+        for (int i = 1; i <= 12; i++) {
+            createTestLodging("Catalog Hotel " + i, "catalog-" + i + "@test.com");
+        }
+
+        mockMvc.perform(get("/api/lodgings")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings.length()").value(10))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.totalItems").value(12));
+
+        mockMvc.perform(get("/api/lodgings")
+                        .param("page", "1")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lodgings.length()").value(2))
+                .andExpect(jsonPath("$.currentPage").value(1));
     }
 
     @Test
@@ -390,6 +502,15 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/lodgings/search")
                         .param("size", "0"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSearchParameterTypeIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/lodgings/search")
+                        .param("checkIn", "invalido"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").isString());
     }
 
     @Test
@@ -625,6 +746,47 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/lodgings/{id}", id))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldDeleteSeededVersionLodgingAndRejectNullVersion() throws Exception {
+        Map<String, Object> versionColumn = jdbcTemplate.queryForMap("""
+                SELECT IS_NULLABLE, COLUMN_DEFAULT
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'lodgings'
+                  AND COLUMN_NAME = 'version'
+                """);
+        assertThat(versionColumn.get("IS_NULLABLE")).isEqualTo("NO");
+        assertThat(String.valueOf(versionColumn.get("COLUMN_DEFAULT"))).isEqualTo("0");
+
+        jdbcTemplate.update("""
+                INSERT INTO lodgings (
+                    name, description, address, city, country, phone_number, email,
+                    price_per_night, max_guests
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                "Version por defecto", "desc", "Calle 1", "Ciudad", "País", "111",
+                "default-version@test.com", new BigDecimal("100.00"), 2);
+        Long id = jdbcTemplate.queryForObject(
+                "SELECT id FROM lodgings WHERE email = ?", Long.class, "default-version@test.com");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT version FROM lodgings WHERE id = ?", Long.class, id)).isZero();
+        jdbcTemplate.update(
+                "INSERT INTO lodging_images (lodging_id, image_url) VALUES (?, ?)",
+                id, "https://example.com/default-version.jpg");
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/lodgings/{id}", id)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM lodgings WHERE id = ?", Integer.class, id)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM lodging_images WHERE lodging_id = ?", Integer.class, id)).isZero();
     }
 
     private Long createTestLodging(String name, String email) throws Exception {

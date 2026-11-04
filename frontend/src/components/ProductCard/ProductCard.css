@@ -1,10 +1,6 @@
 .hotel-card {
   --product-card-surface: var(--surface-raised);
-  --product-card-border: color-mix(
-    in srgb,
-    var(--content-strong) 16%,
-    transparent
-  );
+  --product-card-border: var(--border-subtle);
   --product-card-focus: var(--action-primary-focus);
   --product-card-overlay: color-mix(
     in srgb,
@@ -25,7 +21,7 @@
   box-sizing: border-box;
   background-color: var(--product-card-surface);
   border: 1px solid var(--product-card-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   width: 100%;
@@ -72,7 +68,9 @@
 .hotel-card-body .location {
   font-size: var(--type-label-size);
   font-weight: 500;
-  color: var(--accent);
+  /* --accent on white is 3.3:1 and the manual forbids it for normal text;
+     --secondary is the documented role for text on light surfaces (9.19:1). */
+  color: var(--secondary);
   margin: 0;
 }
 

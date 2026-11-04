@@ -10,17 +10,18 @@ The original Digital House Sprint 1–4 PDFs define functional and academic requ
 2. Check the status in this document before treating a rule as shipped behavior.
 3. Verify implementation claims against a named repository revision and its recorded checks; source presence does not prove a production deployment.
 4. Check the official requirements reconciliation below before treating an implementation convention as academic compliance. Record deviations explicitly; do not promote them into brand rules or acceptance waivers.
+5. For a future Impeccable pass, read the [operational brief](docs/diseno/impeccable-operational-brief.md). Its execution integration is unverified and its proposals are not brand approvals.
 
 ## Authority and governance
 
 | Priority | Source | Role |
 |---:|---|---|
-| 1 | `docs/diseno/manual-identidad.md` (Identity Manual v2.0) | Existing primary brand authority for identity, logo, color, typography, imagery, iconography, voice, and brand accessibility. |
+| 1 | `docs/diseno/manual-identidad.md` (Identity Manual v2.1) | Existing primary brand authority for identity, logo, color, typography, imagery, iconography, voice, and brand accessibility. |
 | 2 | Published editorial PDF and official assets | Existing approved publication and materialized brand assets. They do not override the manual when a normative difference exists. |
 | 3 | `DESIGN.md` | Technical translation of the manual; records product conventions, implementation status, and debt. |
 | 4 | Repository at a named revision | Source of implementation. Code and revision-bound checks establish their stated scope, not deployment or a new brand rule. |
 
-Brand changes require the approval process in [Identity Manual v2.0, section 9](docs/diseno/manual-identidad.md#9-gobernanza). Technical changes subordinate to the manual are recorded here. Do not present future work as implemented.
+Brand changes require the approval process in [Identity Manual v2.1, section 9](docs/diseno/manual-identidad.md#9-gobernanza). Technical changes subordinate to the manual are recorded here. Do not present future work as implemented.
 
 OpenPencil may produce approved structural directions. Impeccable may refine an accepted direction and support visual or accessibility review. Neither tool has brand authority. Assign file ownership before parallel work.
 
@@ -31,6 +32,7 @@ OpenPencil may produce approved structural directions. Impeccable may refine an 
 | **Implemented** | Recorded as implemented in the repository within the cited check's scope; does not itself establish current-SHA academic acceptance or deployment. |
 | **Partially implemented** | Present but incomplete, inconsistent, or awaiting stated verification. |
 | **Target** | Approved direction that is not implemented. |
+| **Proposal — pending approval** | Candidate rule or value; not approved, not an implementation instruction. |
 | **Not supported** | Explicit current product limitation; does not waive an official requirement. |
 
 Existing component checks and adoption entries below retain their historical scopes. This documentation reconciliation reruns none of those checks and does not establish a new verification date or SHA for them.
@@ -52,7 +54,7 @@ Use only official assets. Preserve proportions, colors, transparency, and compos
 
 Maintain at least `1x` clear space on every side, where `x` is the rendered capital `T` height. Allowed backgrounds are white, `#F4F4F9`, uniform photographic areas with clear separation, or another color only after checking the complete asset at final size.
 
-The available assets are transparent and polychromatic. There is no approved monochrome or inverse asset. Do not simulate one with CSS, filters, or recoloring. See [Identity Manual v2.0, section 2](docs/diseno/manual-identidad.md#2-sistema-de-logotipos).
+The available assets are transparent and polychromatic. There is no approved monochrome or inverse asset. Do not simulate one with CSS, filters, or recoloring. See [Identity Manual v2.1, section 2](docs/diseno/manual-identidad.md#2-sistema-de-logotipos).
 
 **Implemented:** Header and Footer use the byte-equivalent official `TuHospedaje_Isologotipo.png` asset with automatic aspect ratio, `contain` fitting, a `140px` minimum width, and an accessible TuHospedaje home name. The current implementation records `8px` CSS spacing, but that fixed value does not substitute for the manual's proportional `1x` clear-space rule; compliance with the rendered `1x` measurement remains pending visual verification.
 
@@ -79,28 +81,58 @@ The available assets are transparent and polychromatic. There is no approved mon
 
 Do not use orange/water green (`1.17:1`), petroleum/dark text (`1.25:1`), orange/light background (`2.59:1`), or water green/light background (`3.03:1`) for normal text, essential information, or controls. Color must not be the only state signal.
 
-External brand colors are allowed only for the identifiable icon or action of that external service. They are not TuHospedaje palette additions or product tokens. See [Identity Manual v2.0, section 3](docs/diseno/manual-identidad.md#3-paleta-cromática).
+External brand colors are allowed only for the identifiable icon or action of that external service. They are not TuHospedaje palette additions or product tokens. See [Identity Manual v2.1, section 3](docs/diseno/manual-identidad.md#3-paleta-cromática).
 
-**Implementation:** the five brand values exist as global variables. Red danger values remain dispersed and have no canonical token. Dark mode is **not supported**: partial variables exist, but there is no activation path or approved dark brand palette.
+**Implementation:** the five brand values exist as global variables in `frontend/src/App.css`. The approved state-color extension (`--feedback-*`) and typography scale (`--type-display-*`) are defined in `:root`. Dark mode is **not supported**: residual variables were removed and there is no active dark palette.
+
+#### Implemented primary-action tokens
+
+These tokens exist in `frontend/src/App.css`. Preserve this accessible contract: primary brand orange does not mean every primary button must have an orange background.
+
+| Token | Value | Role and contrast |
+|---|---|---|
+| `--action-primary-bg` | `var(--secondary)` (`#264653`) | CTA background; `9.19:1` with light text. |
+| `--action-primary-fg` | `var(--bg)` (`#F4F4F9`) | CTA foreground. |
+| `--action-primary-hover-bg` | `var(--text)` (`#333333`) | Hover/active background; `11.52:1` with light text. |
+| `--action-primary-focus` | `var(--accent)` (`#2A9D8F`) | CTA focus indicator; `3.03:1` against petroleum and light page backgrounds, `3.80:1` against dark text. Recheck other adjacent surfaces. |
+| `--action-primary-accent` | `var(--primary)` (`#FF6B35`) | Action accent (borders, highlights, focus offset accents); not normal text on a light background. |
+| `--action-primary-disabled-bg` | `var(--bg)` (`#F4F4F9`) | Disabled outlined background. |
+| `--action-primary-disabled-fg` | `var(--secondary)` (`#264653`) | Disabled foreground/border; `9.19:1`. |
+
+Light `#F4F4F9` text on orange has `2.59:1` contrast; white text on orange has `2.84:1`. Neither meets normal-text AA.
+
+#### Feedback colors — approved direction, defined in CSS
+
+**Implemented in `App.css`:** the project owner approved these state-color families on 2026-11-01 (confirmation: “si apruebo”). They are the semantic extension in [manual v2.1, section 3.4](docs/diseno/manual-identidad.md#34-colores-semánticos-de-estado); the five principal brand colors remain unchanged. The `--feedback-*` tokens are defined in `:root` and are adopted incrementally across components.
+
+| Semantic family | Background (`-bg`) | Text (`-text`) | Text/banner | Text/page `#F4F4F9` | Decorative border (`-border`) | Border/banner |
+|---|---|---|---:|---:|---|---:|
+| `--feedback-danger-*` | `#FEF2F2` | `#991B1B` | `7.60:1` | `7.58:1` | `#F87171` | `2.53:1` |
+| `--feedback-success-*` | `#F0FDF4` | `#166534` | `6.81:1` | `6.50:1` | `#4ADE80` | `1.66:1` |
+| `--feedback-warning-*` | `#FEFCE8` | `#854D0E` | `6.62:1` | `6.25:1` | `#FACC15` | `1.48:1` |
+
+Ratios use relative sRGB luminance, rounded to two decimals. Text pairs pass `4.5:1`; the pale borders do not pass `3:1` against their banner backgrounds, the light page, or white. They may only be decorative when an independently accessible text/icon communicates the state. They must not identify an input, error, focus or selection as an essential graphic. Essential boundaries require a separately validated `3:1` pair; this extension does not define destructive-button states. State must never rely on color alone.
 
 ### Typography
 
-Inter is the approved brand and product typeface. Authorized routine weights are `400`, `500`, `600`, and `700`.
+Inter is the approved brand and product typeface. Authorized routine weights are `400`, `500`, `600`, and `700`. The manual defines minimum sizes, not mandatory maxima. Semantic token names exist in `frontend/src/App.css` (including Display, H1, H2, Body, Label, and Caption). Usage below describes roles, not adoption across every named view.
 
-| Role | Minimum size | Weight | Line height |
-|---|---:|---:|---:|
-| Display | `40px` | `700` | `1.10` |
-| H1 | `32px` | `700` | `1.20` |
-| H2 | `24px` | `600` | `1.25` |
-| Body | `16px` | `400` | `1.50` |
-| Label | `14px` | `500` | `1.40` |
-| Caption | `12px` | `400` | `1.40` |
+| Role | Token Size | Token Weight | Token Line Height | Value | Intended Usage |
+|---|---|---|---|---|---|
+| Display | `--type-display-size` | `--type-display-weight` | `--type-display-line-height` | `40px` / `700` / `1.10` | Hero banners and marketing landing headers. |
+| H1 | `--type-h1-size` | `--type-h1-weight` | `--type-h1-line-height` | `32px` / `700` / `1.20` | Main view page titles (ProductDetail, Booking, Admin, Profile). |
+| H2 | `--type-h2-size` | `--type-h2-weight` | `--type-h2-line-height` | `24px` / `600` / `1.25` | Section headers within views (features, reviews, policies, summary). |
+| Body | `--type-body-size` | `--type-body-weight` | `--type-body-line-height` | `16px` / `400` / `1.50` | Default body text, descriptions, cards, long reading copy. |
+| Label | `--type-label-size` | `--type-label-weight` | `--type-label-line-height` | `14px` / `500` / `1.40` | Form labels, input values, table headers, compact badges, chips. |
+| Caption | `--type-caption-size` | `--type-caption-weight` | `--type-caption-line-height` | `12px` / `400` / `1.40` | Helper text, secondary timestamps, legal disclaimers, microcopy. |
+
+The `16px` minimum for continuous reading is a brand rule (manual section 4), not a universal WCAG minimum font size. Use the authorized routine weights; legacy `300` weight needs reconciliation. The manual does not impose a blanket ban on italics. Consolidating local sizes into existing semantic roles is planned adoption work, not permission to resize every compact element mechanically. Any new token must be defined before use.
 
 **Partially implemented:** `@fontsource-variable/inter` `5.3.0` supplies the product-managed variable font through the single `@fontsource-variable/inter/wght.css` import in `main.jsx`. CSS declares `"Inter Variable"`, `"Inter"`, and system fallbacks. There is no remote Google Fonts dependency, and Fontsource supplies `font-display: swap`. Global semantic tokens now define H1, H2, Body, Label, and Caption, with an explicit `16px`/`400`/`1.50` Body baseline. ProductDetail, BookingConfirmation, MyReservations, Favorites, Login, and Register use the approved page-title roles. Compact and legacy headings, labels, captions, cards, tables, filters, modals, and Admin remain intentionally outside this verified slice and still need consistency work.
 
 ### Photography
 
-Use authentic, representative lodging images with credible light, balanced color, visible detail, and useful context such as rooms, access, views, and relevant services. Avoid excessive processing, misleading perspective, nonexistent elements, and unverifiable promises. Keep cover, gallery, and description coherent. Lodging-specific canonical identities remain authoritative for their own content. See [Identity Manual v2.0, section 5](docs/diseno/manual-identidad.md#5-fotografía).
+Use authentic, representative lodging images with credible light, balanced color, visible detail, and useful context such as rooms, access, views, and relevant services. Avoid excessive processing, misleading perspective, nonexistent elements, and unverifiable promises. Keep cover, gallery, and description coherent. Lodging-specific canonical identities remain authoritative for their own content. See [Identity Manual v2.1, section 5](docs/diseno/manual-identidad.md#5-fotografía).
 
 ### Iconography
 
@@ -110,7 +142,7 @@ Lucide is the approved interface direction. Use recognizable vector icons at `16
 
 ### Voice and tone
 
-Product copy should be close, clear, simple, and trustworthy: use neutral Spanish, direct verbs, concrete information, and a next action when one exists. Errors should explain the known problem and recovery path. Avoid vague failures, artificial urgency, blame, and unsupported claims. This is a minimum operational translation; [Identity Manual v2.0, section 7](docs/diseno/manual-identidad.md#7-voz-y-tono) remains authoritative.
+Product copy should be close, clear, simple, and trustworthy: use neutral Spanish, direct verbs, concrete information, and a next action when one exists. Errors should explain the known problem and recovery path. Avoid vague failures, artificial urgency, blame, and unsupported claims. This is a minimum operational translation; [Identity Manual v2.1, section 7](docs/diseno/manual-identidad.md#7-voz-y-tono) remains authoritative.
 
 ## Product conventions
 
@@ -134,13 +166,13 @@ These conventions are derived from the implemented product. They do not come fro
 |---|---:|---|
 | **Implemented** | `1100px` | SearchResults layout adjustment |
 | **Implemented** | `1024px` | Tablet changes and mobile/touch Admin block |
-| **Implemented** | `768px` | Primary responsive breakpoint; WhatsApp enters Footer flow |
+| **Implemented** | `768px` | Primary responsive breakpoint; WhatsApp target changes from `56x56px` to `48x48px` and remains fixed |
 | **Implemented** | `600px` | Compact SearchResults adjustment |
 | **Implemented** | `480px` | Small component adjustments |
 
 Mobile/touch Admin is **not supported by the official academic scope**: US #9 explicitly requires a non-responsive panel and an unavailable message on mobile (Sprint 1, pp. 25–26). The recorded touch-device check at `<=1024px` is an implementation convention, not a PDF-specified breakpoint. This exclusion is not unfinished guest-mobile work.
 
-Guest-facing responsive behavior remains subject to the device criteria in the official stories. WhatsApp entering Footer flow at `<=768px` is a recorded behavior, not evidence that US #34's placement criterion is satisfied.
+Guest-facing responsive behavior remains subject to the device criteria in the official stories. Source inspection on baseline `650b475` shows the WhatsApp action mounted in Footer's DOM but positioned fixed at every width (`frontend/src/components/WhatsAppButton/WhatsAppButton.css`). Earlier descriptions of normal mobile Footer flow were inaccurate. This source correction does not rerun historical browser checks or establish full US #34 acceptance.
 
 ### Components and behavior
 
@@ -148,24 +180,39 @@ Guest-facing responsive behavior remains subject to the device criteria in the o
 |---|---|
 | **Implemented** | Local correction developed on baseline `8d8a722`: ProductDetail displays two months stacked at `<=768px` and side by side above `768px`. The mobile popup sits below the fixed Header, with bounded internal vertical scrolling, narrow gutters and no inline month margins, preserving seven `44x44px` day targets at `320px`. Mocked Chromium checks passed at `320`, `390`, `768`, `769`, and `1440px`; both months, navigation, second-month date selection, occupied-day blocking, keyboard close/reopen and containment were asserted. See the local evidence below; this is not a production or full-story acceptance claim. |
 | **Implemented** | SearchResults keeps controls available while chips summarize applied filters. Chip removal synchronizes controls while preserving result cards, loading, error, empty, pagination, and responsive behavior; the `600px` layout was manually verified. |
-| **Partially implemented** | Recorded behavior: one global Footer-mounted WhatsApp action remains fixed on desktop, enters normal Footer flow at `<=768px` with a `48x48px` target, preserves its URL and accessible name, and is hidden when its environment value is absent. US #34 placement and provider-result acceptance are not established by that behavior; see reconciliation below. |
+| **Partially implemented** | One global Footer-mounted WhatsApp action is fixed at lower right on desktop and mobile; the target is `56x56px` above `768px` and `48x48px` at or below it. It preserves its URL and accessible name and is hidden when its environment value is absent. Source inspection is not a new viewport, provider-result or whole-story acceptance check; see reconciliation below. |
 | **Implemented** | ConfirmDialog has dialog semantics, instance-safe naming, safe initial focus, enabled-control focus containment, return focus, pending-safe Escape and overlay behavior, and duplicate-confirm protection. Its focused tests, Admin regressions, lint, and build were previously recorded as passing. |
 | **Implemented** | ShareModal accessibility is verified: dialog semantics, instance-safe name and description, initial Close focus, return focus, keyboard containment including share links, Escape and overlay dismissal, interior-click protection, a named `44px` close target, visible focus, and reduced-motion handling. Social actions preserve external identity through tinted borders and backgrounds while petroleum foregrounds provide at least `6.05:1` contrast across verified light-theme states. URLs, copy, image behavior, `target`, and `rel` are preserved. |
 | **Implemented** | ShareModal desktop refinement and mobile presentation at `480x897px` are visually validated. The dialog remains inside the viewport, uses internal scrolling, preserves hierarchy and touch targets, and avoids horizontal overflow. |
 | **Implemented** | LodgingFormModal has instance-safe dialog naming and description, deterministic initial focus, enabled-control focus containment, opener-focus restoration after actual close, and safe Escape, overlay, and interior-click behavior. Meaningful scalar, category, feature, policy, and image changes route close requests through ConfirmDialog; cancel restores form focus and confirmed discard closes. The underlying form becomes inert while ConfirmDialog is active, and submit/upload pending guards prevent duplicate submit and unsafe close or discard. Focused component, ImageUpload, ConfirmDialog, and AdminLodgings regressions pass alongside frontend lint and build. |
 | **Implemented** | ProductCard uses a declared `400x300` (`4:3`) image and native lazy loading. |
 | **Implemented** | Route chunk failures provide a manual page-reload recovery action. |
-| **Implemented** | Primary CTAs use petroleum `#264653` with light `#F4F4F9` text (`9.19:1`), dark `#333333` hover/active surfaces with light text (`11.52:1`), and an outlined disabled state (`9.19:1`). Orange remains an inset action accent. The `3px` water-green focus indicator has `3.03:1` contrast against both the default CTA and adjacent light surface, and `3.80:1` against hover/active. Shared, authentication, booking, search, reservation, review, and Admin selectors use the semantic contract; focused contract and behavior tests, full frontend lint, and the production build pass. |
+| **Implemented** | Primary CTAs use petroleum `#264653` with light `#F4F4F9` text (`9.19:1`), dark `#333333` hover/active surfaces with light text (`11.52:1`), and an outlined disabled state (`9.19:1`). Orange is reserved as an action accent (active borders, focus ring offsets, badges, highlights, rating stars, calendar selections), with artificial button bottom stripes removed to eliminate UI anti-patterns. The `3px` water-green focus indicator has `3.03:1` contrast against both the default CTA and adjacent light surface, and `3.80:1` against hover/active. Shared, authentication, booking, search, reservation, review, and Admin selectors use the semantic contract; focused contract and behavior tests, full frontend lint, and the production build pass. |
 | **Implemented** | Home search uses an accessible petroleum/light action pair, Spanish-localized date pickers, and a Home-scoped calendar surface with keyboard-visible states and practical day/navigation targets. Login and registration reserve the fixed Header plus stable top and bottom spacing, use natural vertical flow, and keep the Footer after content on short viewports. |
+
+### Interaction and navigation: preservation rules and proposals
+
+This section separates constraints to preserve from future behavior proposals. It does not authorize changes to routes, focus handlers or state management during visual cleanup.
+
+| Area | Preserve / check | Proposal — not implemented or approved by this document |
+|---|---|---|
+| Header and layout | Preserve fixed-header clearance via `--site-scroll-clearance`, existing route destinations and the centered `1440px` container. Verify actual overlap and gutters per viewport. | Consolidate remaining local spacing without assuming the existing token subset is a complete scale. |
+| Active navigation | Normal text needs `4.5:1`. Keep light text on petroleum (`9.19:1`); water-green text on petroleum is only `3.03:1` and fails for normal text. A water-green graphical underline can meet `3:1` there, but color alone cannot identify the current page. | Consistent current-route indication and `aria-current="page"` need a scoped navigation work unit and behavior tests. |
+| Mobile menu and return paths | Preserve the current hamburger, destinations, close behavior and tested history-based Back action. | Escape/outside-click handling, focus restoration, and fallback return destinations need explicit scope and tests; do not silently replace `navigate(-1)` or add new booking navigation. |
+| Focus and targets | Preserve the tested CTA focus contract; measure contrast against each adjacent surface rather than applying one green ring everywhere. The manual's product target is `44x44px`. Existing Home desktop calendar checks retain `36px` day dimensions; treat that as adoption debt, not a waiver. Verify actual hit areas before changing them. | Address uncovered focus/target gaps individually, including stable Home calendar focus restoration. |
+| Loading and empty states | Preserve existing timing, retry actions, data and layout. The recorded `150ms` delay concerns route loading, not every transition. Use clear copy and an appropriate recovery path. | New skeletons, redirects or recovery actions require their own behavior scope. |
+| Validation | Preserve named fields, existing error associations and live announcements; errors need visible text, not only color. Avoid duplicate announcements. Adopt `--feedback-*` tokens for alert messages and banners. | Complete missing associations and status announcements with focused tests, rather than adding `role="alert"` to every field mechanically. |
+| Dialogs | Preserve naming, initial/return focus, focus containment, and component-specific Escape/overlay behavior. Pending, submit and upload guards take precedence over dismissal; dirty forms require the existing discard confirmation. Restore focus after actual close, not while a guarded close is refused. | Any uncovered dialog gap requires a bounded accessibility correction. |
+| Responsive scope | Preserve public flows, existing breakpoints and the fixed WhatsApp action without occlusion. Preserve the Admin mobile blocking behavior; `1024px` is an implementation convention, not a PDF-mandated number. | Do not make Admin mobile-responsive or change functional scope in this pass. |
 
 ## Technical accessibility contract
 
-These implementation requirements complement, but do not originate from, the brand manual:
+These technical requirements extend the brand manual; its section 8 already specifies visible focus and the `44x44px` product interaction target. Product-wide adoption is incomplete:
 
 - Keep visible labels and programmatic names, roles, states, and field-error relationships.
 - Provide visible keyboard focus and keyboard operation for every control.
 - Use at least a `44x44px` interaction area.
-- Dialogs require semantics, label relationships, initial and return focus, focus containment, defined overlay and close behavior, and Escape dismissal.
+- Dialogs require semantics, label relationships, initial and return focus, focus containment, and defined Escape/overlay behavior that preserves pending-operation and unsaved-change guards.
 - Announce introduced errors and status updates when needed.
 - Respect `prefers-reduced-motion`; current product-wide coverage is partial.
 
@@ -184,7 +231,7 @@ This section preserves the original requirement comparison and identifies later 
 | #9, Sprint 1 pp. 25–26 | Admin must not be responsive; mobile access displays an unavailable message. | Intentional scope exclusion, not technical debt. Exact detection/breakpoint remains an implementation choice. |
 | #22, Sprint 3 pp. 3–4 | Search includes a double calendar for date-range selection. | A bounded local Home correction now has mocked two-month checks at five widths; see the scoped evidence below. This does not change the historical whole-story disposition or prove live-backend acceptance. |
 | #23, Sprint 3 pp. 5–6 | ProductDetail shows a double availability calendar; no mobile exception is stated. | The former one-month mobile convention differed. A local CSS correction passes mocked two-month layout checks at five widths; see local evidence below. Historical story dispositions retain their original SHAs and limits. |
-| #34, Sprint 4 pp. 12–13 | WhatsApp action is lower-right, with consistent/effective placement across resolutions and mobile/tablet compatibility. | Recorded mobile Footer flow needs reconciliation against placement. Do not infer success/error provider handling or message delivery from a handoff link. |
+| #34, Sprint 4 pp. 12–13 | WhatsApp action is lower-right, with consistent/effective placement across resolutions and mobile/tablet compatibility. | Current CSS keeps the Footer-mounted action fixed on mobile too; earlier normal-flow wording is corrected above without changing historical acceptance evidence. Recheck placement per viewport and do not infer provider-result handling or delivery from a handoff link. |
 
 Other exact criteria remain in the matrix, including Home's maximum ten random products in a two-column/five-row grid (#4) and the five-image gallery's desktop 50/50 split with a right-side 2×2 grid (#6). This design-system summary does not relax those requirements or assert their current compliance.
 

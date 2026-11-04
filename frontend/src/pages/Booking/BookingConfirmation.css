@@ -46,7 +46,7 @@
   background: var(--confirmation-surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  border-left: 4px solid var(--accent);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 32px;
   width: 100%;
   max-width: 560px;
@@ -130,7 +130,6 @@
   background: var(--action-primary-bg);
   color: var(--action-primary-fg);
   border: none;
-  box-shadow: inset 0 -3px var(--action-primary-accent);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
   font-weight: 700;
@@ -146,7 +145,7 @@
 }
 
 .confirmation-actions .btn-primary:active {
-  box-shadow: inset 0 -4px var(--action-primary-accent);
+  opacity: 0.9;
 }
 
 .confirmation-actions .btn-primary:focus-visible {

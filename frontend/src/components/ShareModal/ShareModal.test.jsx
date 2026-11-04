@@ -226,7 +226,7 @@ describe("ShareModal", () => {
 		);
 
 		expect(css).toMatch(
-			/\.share-btn\s*{[^}]*color:\s*var\(--secondary\);[^}]*background:\s*color-mix\(in srgb, var\(--share-brand\) 8%, var\(--bg\)\);/,
+			/\.share-btn\s*{[^}]*color:\s*var\(--secondary\);[^}]*background:\s*#ffffff;/,
 		);
 		expect(css).toMatch(
 			/\.share-btn:hover\s*{[^}]*background:\s*color-mix\(in srgb, var\(--share-brand\) 18%, var\(--bg\)\);[^}]*border-color:\s*var\(--secondary\);[^}]*color:\s*var\(--secondary\);/,

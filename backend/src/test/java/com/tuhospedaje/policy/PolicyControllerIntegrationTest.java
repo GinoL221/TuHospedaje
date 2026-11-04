@@ -8,6 +8,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
@@ -62,6 +63,9 @@ class PolicyControllerIntegrationTest {
     private ReservationRepository reservationRepository;
 
     @Autowired
+    private EmailOutboxRepository emailOutboxRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     private String adminAuthHeader;
@@ -103,11 +107,19 @@ class PolicyControllerIntegrationTest {
         // Seeded ratings and reservations reference users, so they must go first
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
+        // Outbox rows reference users through FK_email_outbox_user
+        emailOutboxRepository.deleteAll();
         userRepository.deleteAll();
     }
 
     @Test
     void shouldListPoliciesPublicly() throws Exception {
+        Policy policy = new Policy();
+        policy.setName("PL-Test-List");
+        policy.setDescription("Descripcion test");
+        policy.setIcon("clock");
+        policyRepository.save(policy);
+
         mockMvc.perform(get("/api/policies"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").exists());

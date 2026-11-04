@@ -110,7 +110,8 @@ test.describe('BookingPage — preflight and conflict recovery', () => {
   async function selectDate(page, pickerId, date) {
     await page.locator(`#${pickerId}`).click();
     const popper = page.locator('.react-datepicker-popper').last();
-    const targetLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    // The pickers use the Spanish locale, so the header reads e.g. "noviembre 2026".
+    const targetLabel = `${date.toLocaleDateString('es-ES', { month: 'long' })} ${date.getFullYear()}`;
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const header = (await popper.locator('.react-datepicker__current-month').innerText()).toLowerCase();
       if (header.includes(targetLabel.toLowerCase())) break;

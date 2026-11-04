@@ -147,9 +147,6 @@ public class LodgingQueryServiceImpl implements LodgingQueryService {
         boolean reset = requestedRevision != null && !requestedRevision.equals(revision);
         List<Lodging> ordered = new ArrayList<>(eligible);
         Collections.shuffle(ordered, new Random(recommendationSeed(seed, revision)));
-        if (isDefaultIdOrder(ordered)) {
-            Collections.rotate(ordered, 1);
-        }
         int pageSize = Math.max(1, Math.min(size, RANDOM_RESULT_SIZE));
         int totalItems = ordered.size();
         int totalPages = totalItems == 0 ? 0 : (int) Math.ceil((double) totalItems / pageSize);
@@ -182,13 +179,6 @@ public class LodgingQueryServiceImpl implements LodgingQueryService {
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 must be available", exception);
         }
-    }
-
-    private boolean isDefaultIdOrder(List<Lodging> lodgings) {
-        for (int index = 1; index < lodgings.size(); index++) {
-            if (lodgings.get(index - 1).getId().compareTo(lodgings.get(index).getId()) > 0) return false;
-        }
-        return lodgings.size() > 1;
     }
 
     @Override

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
+import { Search, RotateCw } from "lucide-react";
 import { getCategories } from "../../services/categoryService";
 import { getFavorites } from "../../services/favoriteService";
 import { useAuth } from "../../hooks/useAuth";
@@ -10,6 +11,7 @@ import useHomeSearchResults from "../../hooks/useHomeSearchResults";
 import useCityAutocomplete from "../../hooks/useCityAutocomplete";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import Pagination from "../../components/Pagination/Pagination";
+import WelcomeEmailBanner from "../../components/WelcomeEmailBanner/WelcomeEmailBanner";
 import CategoryCard from "./CategoryCard";
 import "../../App.css";
 import "./Home.css";
@@ -35,8 +37,12 @@ const homeCalendarModifiers = [
 
 export default function Home() {
 	const navigate = useNavigate();
-	const { search } = useLocation();
+	const location = useLocation();
+	const { search } = location;
 	const { user } = useAuth();
+	const [showWelcomeBanner, setShowWelcomeBanner] = useState(() =>
+		Boolean(location.state?.registered),
+	);
 	const [categories, setCategories] = useState([]);
 	const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 	const [categoriesError, setCategoriesError] = useState(false);
@@ -146,12 +152,23 @@ export default function Home() {
 	}
 
 	function formatDate(date) {
-		return date ? date.toISOString().split("T")[0] : "";
+		if (!date) return "";
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		return `${year}-${month}-${day}`;
 	}
 
 	function handleSearch(e) {
 		e.preventDefault();
 		setFormSearchError("");
+
+		if ((checkIn && !checkOut) || (!checkIn && checkOut)) {
+			setFormSearchError(
+				"Las fechas de entrada y salida deben enviarse juntas",
+			);
+			return;
+		}
 
 		if (checkIn && checkOut && checkIn >= checkOut) {
 			setFormSearchError(
@@ -215,6 +232,12 @@ export default function Home() {
 
 	return (
 		<main className="home page-container">
+			{showWelcomeBanner && user && (
+				<WelcomeEmailBanner
+					user={user}
+					onDismiss={() => setShowWelcomeBanner(false)}
+				/>
+			)}
 			<section className="search">
 				<div className="search-card">
 					<h2>Buscar hospedaje</h2>
@@ -325,8 +348,14 @@ export default function Home() {
 								popperClassName="home-datepicker-popper"
 							/>
 						</div>
-						<button type="submit" className="btn-search">
-							Buscar
+						<button
+							type="submit"
+							className="btn-search"
+							aria-label="Buscar"
+							title="Buscar"
+						>
+							<Search size={20} strokeWidth={2.5} aria-hidden="true" />
+							<span className="sr-only">Buscar</span>
 						</button>
 					</form>
 					{formSearchError && (
@@ -401,7 +430,8 @@ export default function Home() {
 						className="btn-refresh-recommendations"
 						onClick={handleRefreshRecommendations}
 					>
-						Actualizar recomendaciones
+						<RotateCw size={15} strokeWidth={2.2} aria-hidden="true" />
+						<span>Actualizar recomendaciones</span>
 					</button>
 				</div>
 				{recStatus === "loading" && (

@@ -5,7 +5,7 @@ import {
 	waitFor,
 } from "../../test/test-utils";
 import AdminLodgings from "./AdminLodgings";
-import { get, post, put, del } from "../../services/api";
+import { get, post, put, del, postMultipart } from "../../services/api";
 
 vi.mock("../../services/api");
 
@@ -23,7 +23,7 @@ const lodgingFixture = (overrides = {}) => ({
 	categoryId: 1,
 	features: [],
 	policies: [],
-	imageUrls: [],
+	imageUrls: ["https://example.com/foto1.jpg"],
 	...overrides,
 });
 
@@ -418,6 +418,14 @@ describe("AdminLodgings - create", () => {
 		await user.type(screen.getByTestId("field-phoneNumber"), "1122334455");
 		await user.type(screen.getByTestId("field-pricePerNight"), "30000");
 		await user.type(screen.getByTestId("field-maxGuests"), "4");
+
+		// Upload image to fulfill required image validation
+		postMultipart.mockResolvedValueOnce({
+			url: "https://example.com/foto1.jpg",
+		});
+		const file = new File(["fake-image"], "photo.png", { type: "image/png" });
+		await user.upload(screen.getByLabelText(/URLs de imágenes/i), file);
+		await screen.findByAltText("Imagen 1");
 
 		get.mockImplementation((endpoint) => {
 			if (endpoint.startsWith("/lodgings/admin"))

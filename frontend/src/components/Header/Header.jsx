@@ -2,12 +2,14 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import UserProfileModal from "../UserProfileModal/UserProfileModal";
 
 import logo from "../../assets/images/TuHospedaje_Isologotipo.png";
 
 export default function Header() {
 	const { user, logout, logoutError } = useAuth();
 	const [menuOpen, setMenuOpen] = useState(false);
+	const [profileModalOpen, setProfileModalOpen] = useState(false);
 	const headerRef = useRef(null);
 
 	useLayoutEffect(() => {
@@ -93,7 +95,25 @@ export default function Header() {
 									{avatar}
 								</Link>
 							) : (
-								avatar
+								<button
+									type="button"
+									className="header-profile-btn"
+									onClick={() => {
+										setProfileModalOpen(true);
+										setMenuOpen(false);
+									}}
+									aria-label={`Ver perfil de ${user.firstName}`}
+									style={{
+										background: "none",
+										border: "none",
+										padding: 0,
+										cursor: "pointer",
+										display: "inline-flex",
+										alignItems: "center",
+									}}
+								>
+									{avatar}
+								</button>
 							)}
 							{user.role === "ADMIN" ? (
 								<Link
@@ -106,6 +126,24 @@ export default function Header() {
 							) : (
 								<span className="nav-username">{user.firstName}</span>
 							)}
+							<button
+								type="button"
+								className="nav-link header-profile-link-btn"
+								onClick={() => {
+									setProfileModalOpen(true);
+									setMenuOpen(false);
+								}}
+								style={{
+									background: "none",
+									border: "none",
+									font: "inherit",
+									cursor: "pointer",
+									padding: 0,
+									color: "inherit",
+								}}
+							>
+								Mi perfil
+							</button>
 							<Link
 								to="/favorites"
 								className="nav-link"
@@ -146,6 +184,12 @@ export default function Header() {
 					)}
 				</div>
 			</nav>
+			{profileModalOpen && (
+				<UserProfileModal
+					user={user}
+					onClose={() => setProfileModalOpen(false)}
+				/>
+			)}
 		</header>
 	);
 }

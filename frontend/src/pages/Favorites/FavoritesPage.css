@@ -1,5 +1,5 @@
 .favorites-page {
-  --favorites-danger: #d32f2f;
+  --favorites-danger: var(--feedback-danger-text);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -58,6 +58,19 @@
 
 .empty-state.error {
   color: var(--favorites-danger);
+  background-color: var(--feedback-danger-bg);
+  border-color: var(--feedback-danger-border);
+}
+
+/*
+ * The shared .empty-state keeps its dashed box for Home and Admin; here it
+ * reads as plain text, like the flattened reviews empty state.
+ */
+.favorites-page .empty-state:not(.error) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 32px 0;
 }
 
 .favorite-remove-error {

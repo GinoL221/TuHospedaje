@@ -30,23 +30,28 @@
   align-items: start;
 }
 
-.booking-summary,
 .booking-form {
   box-sizing: border-box;
   min-width: 0;
   background: var(--surface-raised);
-  border: 1px solid rgba(38, 70, 83, 0.16);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 /* --- LODGING SUMMARY --- */
+/* The summary sits on the page canvas; the form is the only card. */
 .booking-summary {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: clamp(20px, 3vw, 32px);
-  border-top: 4px solid var(--accent);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .booking-summary-header {
@@ -140,13 +145,46 @@
   border-radius: 20px;
 }
 
+.booking-policies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(38, 70, 83, 0.12);
+}
+
+.booking-policies-title {
+  margin: 0 0 4px;
+  color: var(--secondary);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.booking-policy-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--type-caption-size);
+  line-height: 1.4;
+  color: var(--secondary);
+}
+
+.booking-policy-item strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
 /* --- RESERVATION FORM --- */
 .booking-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: clamp(20px, 3vw, 32px);
-  border-top: 4px solid var(--primary);
 }
 
 .booking-form-header {
@@ -266,15 +304,13 @@
 
 /* --- GUEST DETAILS --- */
 .guest-details-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  width: 100%;
-  min-height: 48px;
-  padding: 10px 14px;
-  border: 1px solid rgba(38, 70, 83, 0.28);
-  border-radius: var(--radius-sm);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
   background: transparent;
   color: var(--secondary);
   font-family: inherit;
@@ -282,17 +318,14 @@
   font-weight: 600;
   line-height: var(--type-label-line-height);
   text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background-color var(--transition),
-    border-color var(--transition),
-    box-shadow var(--transition);
 }
 
 .guest-details-toggle:hover {
-  border-color: var(--accent);
-  background: rgba(42, 157, 143, 0.08);
+  color: var(--accent);
 }
 
 #guest-details {
@@ -301,18 +334,17 @@
   gap: 16px;
   box-sizing: border-box;
   min-width: 0;
-  margin-top: 16px;
-  padding: 16px;
-  border: 1px solid rgba(38, 70, 83, 0.16);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .guest-profile-image {
   grid-column: 1;
-  width: 64px;
-  height: 64px;
-  border: 3px solid var(--primary);
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--primary);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -329,7 +361,7 @@
   grid-column: 2;
 }
 
-/* --- AVAILABILITY --- */
+/* Availability reads as plain status text, matching the product detail. */
 .booking-availability {
   margin: 0 0 16px;
 }
@@ -341,15 +373,18 @@
   box-sizing: border-box;
   min-width: 0;
   margin: 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(42, 157, 143, 0.28);
-  border-radius: var(--radius-sm);
-  background: rgba(42, 157, 143, 0.08);
-  color: var(--secondary);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
   font-size: var(--type-label-size);
   font-weight: 500;
   line-height: var(--type-body-line-height);
   overflow-wrap: anywhere;
+}
+
+.availability-status--ready {
+  color: var(--feedback-success-text);
 }
 
 .availability-status::before {
@@ -360,6 +395,10 @@
   border-radius: 50%;
   background: var(--accent);
   content: "";
+}
+
+.availability-status--ready::before {
+  background: var(--feedback-success-text);
 }
 
 .availability-status--loading::before {
@@ -375,16 +414,15 @@
   min-width: 0;
   margin: 0;
   padding: 12px 14px;
-  border: 1px solid rgba(192, 57, 43, 0.3);
-  border-left: 4px solid #c0392b;
+  border: 1px solid var(--feedback-danger-border);
   border-radius: var(--radius-sm);
-  background: rgba(192, 57, 43, 0.08);
+  background: var(--feedback-danger-bg);
 }
 
 .availability-alert p {
   min-width: 0;
   margin: 0;
-  color: #c0392b;
+  color: var(--feedback-danger-text);
   font-size: var(--type-label-size);
   font-weight: 600;
   line-height: var(--type-body-line-height);
@@ -399,16 +437,13 @@
   border: 0;
   border-radius: var(--radius-sm);
   background: var(--action-primary-bg);
-  box-shadow: inset 0 -2px var(--action-primary-accent);
   color: var(--action-primary-fg);
   font: inherit;
   font-weight: 600;
   line-height: var(--type-label-line-height);
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background-color var(--transition),
-    box-shadow var(--transition);
+  transition: background-color var(--transition);
 }
 
 .availability-alert button:hover {
@@ -444,6 +479,34 @@
 .booking-form .react-datepicker__header {
   padding-top: 14px;
   padding-bottom: 14px;
+}
+
+/*
+ * `.booking-form h2` also matches the calendar month title, because
+ * react-datepicker renders it as an h2. It wins by specificity, so the
+ * title colour and size have to be restored here. The inherited 24px/600
+ * also inflated the header to 58px and left the arrows 7px above centre;
+ * Label and Caption keep the calendar on the documented type scale.
+ */
+.booking-form .react-datepicker__current-month {
+  color: #ffffff;
+  font-size: var(--type-label-size);
+  font-weight: 700;
+}
+
+.booking-form .react-datepicker__day-name,
+.booking-form .react-datepicker__day {
+  font-size: var(--type-caption-size);
+}
+
+/* datepicker.css paints day names white, but they render on a white row. */
+.booking-form .react-datepicker__day-name {
+  color: var(--secondary);
+}
+
+/* Without this the month shrinks to 191px inside a 328px popper. */
+.booking-form .react-datepicker__month-container {
+  width: 100%;
 }
 
 .booking-form .react-datepicker__navigation {
@@ -484,10 +547,11 @@
   box-sizing: border-box;
   min-width: 0;
   margin: 0;
-  padding: 16px;
-  border: 1px solid rgba(42, 157, 143, 0.22);
-  border-radius: var(--radius-sm);
-  background: rgba(42, 157, 143, 0.06);
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
   color: var(--secondary);
   font-size: var(--type-body-size);
   font-weight: 500;
@@ -514,10 +578,10 @@
   min-width: 0;
   margin: 0;
   padding: 12px 14px;
-  border-left: 4px solid #c0392b;
+  border: 1px solid var(--feedback-danger-border);
   border-radius: var(--radius-sm);
-  background: rgba(192, 57, 43, 0.08);
-  color: #c0392b;
+  background: var(--feedback-danger-bg);
+  color: var(--feedback-danger-text);
   font-size: var(--type-label-size);
   font-weight: 600;
   line-height: var(--type-body-line-height);
@@ -539,7 +603,6 @@
   border: 0;
   border-radius: var(--radius-sm);
   background: var(--action-primary-bg);
-  box-shadow: inset 0 -3px var(--action-primary-accent);
   color: var(--action-primary-fg);
   font-family: inherit;
   font-size: var(--type-body-size);
@@ -547,9 +610,7 @@
   line-height: var(--type-body-line-height);
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background-color var(--transition),
-    box-shadow var(--transition);
+  transition: background-color var(--transition);
 }
 
 .booking-form button[type="submit"]:hover:not(:disabled),
@@ -558,7 +619,7 @@
 }
 
 .booking-form button[type="submit"]:active:not(:disabled) {
-  box-shadow: inset 0 -4px var(--action-primary-accent);
+  opacity: 0.9;
 }
 
 .booking-form button[type="submit"]:disabled {
@@ -626,12 +687,11 @@
 
 @media (max-width: 768px) {
   .booking-page {
-    padding: 24px 16px 40px;
+    padding: calc(var(--site-header-height) + 24px) 16px 40px;
   }
 }
 
 @media (max-width: 640px) {
-  .booking-summary,
   .booking-form {
     padding: 20px 16px;
   }
@@ -667,6 +727,71 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 4px;
+  }
+}
+
+/*
+ * The summary column is narrow even on wide viewports, so from 901px the
+ * gallery keeps the stacked layout instead of the two-column desktop grid.
+ * Below 901px the gallery's own responsive rules stay in charge.
+ */
+@media (min-width: 901px) {
+  .booking-summary .gallery-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .booking-summary .gallery-main-trigger img {
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .booking-summary .gallery-thumbs-col {
+    position: relative;
+    display: block;
+    align-self: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+  }
+
+  .booking-summary .gallery-desktop-navigation {
+    display: none;
+  }
+
+  .booking-summary .gallery-desktop-actions {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    display: flex;
+  }
+
+  .booking-summary .gallery-thumbs {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .booking-summary .gallery-thumb {
+    flex: 0 0 72px;
+    width: 72px;
+    height: 54px;
+  }
+
+  .booking-summary .gallery-more {
+    position: static;
+    margin: 0;
+    min-height: 32px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 }
 

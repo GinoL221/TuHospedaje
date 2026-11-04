@@ -171,7 +171,7 @@ async function exerciseProductDetail(page, baseURL, stacked) {
   await months.nth(1).locator('.react-datepicker__day--010:not(.react-datepicker__day--outside-month)').click();
   await expect(checkIn).toHaveValue('10/01/2027');
   const january = calendar.locator('.react-datepicker__month-container').filter({
-    has: page.locator('.react-datepicker__current-month', { hasText: /^January 2027$/ }),
+    has: page.locator('.react-datepicker__current-month', { hasText: /^enero 2027$/ }),
   });
   await january.locator('.react-datepicker__day--013:not(.react-datepicker__day--outside-month)').click();
   await expect(checkOut).toHaveValue('13/01/2027');

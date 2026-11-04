@@ -109,9 +109,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public WelcomeResendResult resendWelcome(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.lockByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        return emailOutboxService.resendWelcome(user);
+        WelcomeResendResult result = emailOutboxService.resendWelcome(user);
+        if (result == WelcomeResendResult.SCHEDULED
+                && userRepository.updateWelcomeResendRequestedAt(user.getId(), user.getWelcomeResendRequestedAt()) != 1) {
+            throw new IllegalStateException("Could not persist welcome resend cooldown");
+        }
+        return result;
     }
 
     @Override

@@ -8,7 +8,7 @@ Seguí este orden cuando necesites resolver una duda:
 
 1. **Alcance académico y demostración:** [product.md](../product.md).
 2. **Requisitos oficiales:** los PDFs originales de Digital House Sprint 1–4, suministrados fuera del repositorio. La reconciliación documentada está en [la matriz de trazabilidad](markdown/compliance/close-user-story-gaps-traceability.md).
-3. **Identidad de marca:** [Manual de Identidad Visual v2.0](diseno/manual-identidad.md).
+3. **Identidad de marca:** [Manual de Identidad Visual v2.1](diseno/manual-identidad.md).
 4. **Traducción técnica de diseño:** [DESIGN.md](../DESIGN.md), siempre subordinado al manual de identidad.
 5. **Arquitectura y decisiones académicas:** [Definición del Proyecto](markdown/project-definition.md), verificando las secciones de estado actual.
 6. **Implementación y evidencia:** código, tests, CI y documentos fechados, siempre ligados a una revisión, entorno y fecha concretos.
@@ -19,7 +19,7 @@ Seguí este orden cuando necesites resolver una duda:
 | ---: | --- | --- | --- |
 | 1 | PDFs originales de Digital House Sprint 1–4 | User stories oficiales | El estado actual de la implementación |
 | 2 | [product.md](../product.md) | Alcance académico, recorridos de demo y exclusiones | Requisitos externos no incluidos en el producto |
-| 3 | [Manual de Identidad Visual v2.0](diseno/manual-identidad.md) | Marca, tipografía, color, activos, voz e identidad | Que una regla de marca esté implementada |
+| 3 | [Manual de Identidad Visual v2.1](diseno/manual-identidad.md) | Marca, tipografía, color, activos, voz e identidad | Que una regla de marca esté implementada |
 | 4 | [DESIGN.md](../DESIGN.md) | Traducción técnica, convenciones y estado de adopción | Cambiar una decisión normativa del manual |
 | 5 | Código, configuración, tests y CI | Comportamiento observado para una revisión concreta | Estado de otra revisión, otro entorno o infraestructura externa |
 | 6 | Informes, auditorías, matrices y planes fechados | Contexto y evidencia histórica | La verdad actual sin una verificación nueva |

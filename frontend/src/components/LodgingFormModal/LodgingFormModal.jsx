@@ -175,6 +175,8 @@ export default function LodgingFormModal({
 			errs.maxGuests = "La capacidad máxima debe ser un número entero";
 		else if (Number(form.maxGuests) <= 0)
 			errs.maxGuests = "La capacidad máxima debe ser mayor a cero";
+		if (!form.imageUrls || form.imageUrls.length === 0)
+			errs.imageUrls = "Debés agregar al menos una imagen";
 		return errs;
 	};
 
@@ -418,6 +420,11 @@ export default function LodgingFormModal({
 									setUploading(nextUploading);
 								}}
 							/>
+							{fieldErrors.imageUrls && (
+								<p className="field-error full-width">
+									{fieldErrors.imageUrls}
+								</p>
+							)}
 							{error && <p className="form-error full-width">{error}</p>}
 							<p id={descriptionId} className="required-note full-width">
 								* Campos obligatorios

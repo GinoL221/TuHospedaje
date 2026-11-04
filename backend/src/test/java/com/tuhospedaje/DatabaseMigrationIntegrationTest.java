@@ -213,7 +213,7 @@ class DatabaseMigrationIntegrationTest {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
 assertThat(probeJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(9);
+                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(12);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories", Integer.class)).isEqualTo(6);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM features", Integer.class)).isEqualTo(8);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM policies", Integer.class)).isEqualTo(6);
@@ -349,7 +349,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .locations("classpath:db/migration")
                     .load();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(8);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(11);
 
             JdbcTemplate independentJdbcTemplate = new JdbcTemplate(
                     new org.springframework.jdbc.datasource.DriverManagerDataSource(
@@ -423,7 +423,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                     .locations("classpath:db/migration")
                     .load()
-                    .migrate().migrationsExecuted).isEqualTo(6);
+                    .migrate().migrationsExecuted).isEqualTo(9);
 
             assertLodgingPriceAndCapacity(template, "both-missing@example.com", "190.00", 4);
             assertLodgingPriceAndCapacity(template, "capacity-missing@example.com", "250.75", 4);

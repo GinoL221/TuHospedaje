@@ -195,6 +195,8 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
                 .isEqualTo("Error processing the image.");
         assertThat(errorOf(handler.handleDataIntegrity(new DataIntegrityViolationException("bad data"), Locale.ENGLISH)))
                 .isEqualTo("Missing required fields or invalid data.");
+        assertThat(errorOf(handler.handleTypeMismatch(mock(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class), Locale.ENGLISH)))
+                .isEqualTo("Missing required fields or invalid data.");
         assertThat(errorOf(handler.handleGeneric(new RuntimeException("boom"), Locale.ENGLISH)))
                 .isEqualTo("Internal server error.");
     }

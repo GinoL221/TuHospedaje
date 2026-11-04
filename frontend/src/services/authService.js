@@ -26,3 +26,7 @@ export function register(firstName, lastName, email, password) {
 export function logout() {
 	return post("/auth/logout");
 }
+
+export function resendWelcomeEmail() {
+	return post("/auth/welcome-email/resend");
+}

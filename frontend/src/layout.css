@@ -18,8 +18,9 @@ html {
   left: 0;
   width: 100%;
   z-index: var(--layer-header);
-  background-color: var(--secondary);
-  box-shadow: var(--shadow-md);
+  background-color: var(--surface-raised);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .site-header nav {
@@ -62,16 +63,16 @@ html {
 .brand-link,
 .footer-brand {
   box-sizing: border-box;
-  padding: 8px;
-  background-color: var(--bg);
-  border-radius: 4px;
+  padding: 4px 8px;
+  background-color: transparent;
+  border-radius: var(--radius-sm);
 }
 
 .tagline {
   min-width: 0;
-  color: #a8cfc9;
-  font-weight: 300;
-  font-style: italic;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-style: normal;
   font-size: 0.9rem;
   margin: 0;
   white-space: nowrap;
@@ -91,48 +92,56 @@ html {
   display: none;
   background: none;
   border: none;
-  color: var(--bg);
+  color: var(--text);
   cursor: pointer;
   width: 44px;
   height: 44px;
   padding: 10px;
   line-height: 0;
   flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.hamburger-btn:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 
 .nav-links a {
-  color: var(--bg);
+  color: var(--text);
   text-decoration: none;
   font-weight: 600;
-  font-size: 1rem;
-  transition: color 0.3s ease;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
   white-space: nowrap;
 }
 
 .nav-links a:hover {
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 3px solid var(--primary);
+  border: 2px solid var(--primary);
   object-fit: cover;
 }
 
 .nav-username {
-  color: var(--bg);
-  font-weight: 600;
+  color: var(--secondary);
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
 .btn-logout {
   background: transparent;
-  border: 1px solid var(--bg);
-  color: var(--bg);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: var(--text);
   padding: 6px 16px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
@@ -143,22 +152,25 @@ html {
 .btn-logout:hover {
   background-color: var(--bg);
   color: var(--secondary);
+  border-color: var(--secondary);
 }
 
 .site-header .header-register-cta {
   box-sizing: border-box;
   min-height: 44px;
-  background-color: var(--bg);
-  color: var(--secondary);
-  border: 2px solid var(--action-primary-accent);
-  padding: 10px 25px;
+  background-color: var(--secondary);
+  color: #ffffff;
+  border: 2px solid var(--secondary);
+  padding: 9px 22px;
   font-weight: 700;
   font-family: inherit;
   letter-spacing: 0.01em;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition:
     background-color var(--transition),
     border-color var(--transition),
@@ -166,13 +178,13 @@ html {
 }
 
 .site-header .header-register-cta:hover {
-  background-color: var(--bg);
-  color: var(--secondary);
-  border-color: var(--accent);
+  background-color: #1e3742;
+  color: #ffffff;
+  border-color: #1e3742;
 }
 
 .site-header .header-register-cta:active {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  opacity: 0.9;
 }
 
 .site-header .header-register-cta:focus-visible {
@@ -194,10 +206,11 @@ main {
 
 /* FOOTER */
 footer {
-  background-color: var(--secondary);
-  color: var(--bg);
+  background-color: var(--surface-raised);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--text-muted);
   width: 100%;
-  padding: 20px 0;
+  padding: 24px 0;
   margin-top: auto;
 }
 
@@ -244,13 +257,15 @@ footer .page-container {
 .footer-right img {
   height: 24px;
   width: 24px;
-  filter: brightness(0) invert(1);
-  transition: transform 0.2s ease;
+  filter: brightness(0.2);
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .footer-right img:hover {
   transform: scale(1.08);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 /* RESPONSIVE */
@@ -266,11 +281,6 @@ footer .page-container {
 }
 
 @media (max-width: 768px) {
-  .site-header {
-    position: sticky;
-    top: 0;
-  }
-
   .site-header nav {
     flex-wrap: wrap;
     align-items: center;
@@ -305,7 +315,7 @@ footer .page-container {
     align-items: flex-start;
     gap: 12px;
     padding: 12px 0 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
     margin-top: 8px;
   }
 

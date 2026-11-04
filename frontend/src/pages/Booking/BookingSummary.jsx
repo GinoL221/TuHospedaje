@@ -31,6 +31,20 @@ export default function BookingSummary({ lodging }) {
 					))}
 				</div>
 			)}
+			{lodging.policies && lodging.policies.length > 0 && (
+				<div className="booking-policies">
+					<p className="booking-policies-title">Políticas del lugar</p>
+					{lodging.policies.map((policy) => (
+						<div key={policy.id} className="booking-policy-item">
+							<strong>
+								<Icon name={policy.icon} size={14} />
+								{policy.name}
+							</strong>
+							{policy.description && <span>{policy.description}</span>}
+						</div>
+					))}
+				</div>
+			)}
 		</section>
 	);
 }

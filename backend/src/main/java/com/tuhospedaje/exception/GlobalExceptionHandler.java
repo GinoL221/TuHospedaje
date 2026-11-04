@@ -244,6 +244,12 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", resolveMessage("error.data_integrity", locale), "status", 400));
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, Locale locale) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", resolveMessage("error.data_integrity", locale), "status", 400));
+    }
+
     /**
      * Catch-all for unhandled exceptions. AccessDeniedException is explicitly re-thrown
      * so Spring Security's access-denied handler can produce the 403 response instead

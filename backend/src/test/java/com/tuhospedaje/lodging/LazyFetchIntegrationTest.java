@@ -7,6 +7,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
@@ -58,6 +59,9 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
     private com.tuhospedaje.repository.ReservationRepository reservationRepository;
 
     @Autowired
+    private EmailOutboxRepository emailOutboxRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     private Long lodgingId;
@@ -72,6 +76,8 @@ class LazyFetchIntegrationTest extends AbstractIntegrationTest {
         // features/policies are not deleted here to avoid FK violations from other tests
         // (the @Transactional test annotation rolls back newly created data automatically).
         lodgingRepository.deleteAll();
+        // Outbox rows reference users through FK_email_outbox_user
+        emailOutboxRepository.deleteAll();
         userRepository.deleteAll();
 
         userRepository.save(User.builder()

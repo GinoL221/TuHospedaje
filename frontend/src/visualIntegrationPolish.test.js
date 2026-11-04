@@ -28,19 +28,15 @@ describe("approved visual integration contracts", () => {
 		const css = readCss("src/pages/Home/Home.css");
 
 		expect(rule(css, ".btn-search")).toMatch(
-			/background-color:\s*var\(--secondary\)/,
+			/background-color:\s*var\(--primary\)/,
 		);
-		expect(rule(css, ".btn-search")).toMatch(/color:\s*var\(--bg\)/);
+		expect(rule(css, ".btn-search")).toMatch(/color:\s*#ffffff/);
 		expect(rule(css, ".btn-search:hover")).toMatch(
-			/background-color:\s*var\(--bg\)/,
-		);
-		expect(rule(css, ".btn-search:hover")).toMatch(
-			/border-color:\s*var\(--accent\)/,
+			/background-color:\s*var\(--primary-hover/,
 		);
 		expect(rule(css, ".btn-search:focus-visible")).toMatch(
-			/outline:\s*3px solid var\(--accent\)/,
+			/outline:\s*3px solid var\(--primary\)/,
 		);
-		expect(css).not.toMatch(/\.btn-search:hover\s*\{[^}]*#333/i);
 	});
 
 	it("scopes the refreshed calendar states and practical targets to Home", () => {

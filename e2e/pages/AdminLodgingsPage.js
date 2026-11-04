@@ -10,8 +10,9 @@ const AdminBasePage = require('./AdminBasePage');
  *               (all text inputs / textarea via LodgingFormModal)
  * Delete mode : "component" (ConfirmDialog — confirm-delete-yes)
  *
- * Note: image upload is OUT OF SCOPE — Cloudinary is not available in test environments.
- * All fields listed above are required; image, categoryId, featureIds, policyIds are optional.
+ * Note: the form requires at least one image, but Cloudinary is not available in test
+ * environments. createLodging stubs POST /upload and attaches a tiny file, so no real
+ * upload happens. categoryId, featureIds and policyIds are optional.
  */
 class AdminLodgingsPage extends AdminBasePage {
   /** @param {import('@playwright/test').Page} page */
@@ -29,8 +30,8 @@ class AdminLodgingsPage extends AdminBasePage {
   }
 
   /**
-   * Open the add form, fill all required text fields, then save.
-   * Image upload is intentionally skipped (out of scope for E2E).
+   * Open the add form, fill all required text fields, attach a stubbed image, then save.
+   * The upload endpoint is intercepted, so the stored image URL is a fixed placeholder.
    * @param {object} fields
    * @param {string} fields.name
    * @param {string} fields.email
@@ -43,6 +44,18 @@ class AdminLodgingsPage extends AdminBasePage {
    * @param {number} fields.maxGuests
    */
   async createLodging(fields) {
+    await this.page.route(
+      (url) => url.pathname.endsWith('/upload'),
+      async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ url: 'https://example.com/e2e-lodging.png' }),
+        });
+      },
+      { times: 1 },
+    );
     await this.openAddForm();
     await this.fillField('name', fields.name);
     await this.fillField('email', fields.email);
@@ -53,6 +66,15 @@ class AdminLodgingsPage extends AdminBasePage {
     await this.fillField('phoneNumber', fields.phoneNumber);
     await this.fillField('pricePerNight', String(fields.pricePerNight));
     await this.fillField('maxGuests', String(fields.maxGuests));
+    await this.page.locator('#imageUpload').setInputFiles({
+      name: 'e2e-lodging.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    });
+    await this.page.locator('.image-preview-item').first().waitFor();
     const responsePromise = this.page.waitForResponse(
       (response) => response.url().endsWith('/api/lodgings') && response.request().method() === 'POST',
     );

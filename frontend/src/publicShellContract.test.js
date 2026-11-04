@@ -25,6 +25,11 @@ describe("public shell contract", () => {
 		expect(root).toMatch(/--layer-floating:\s*200/);
 	});
 
+	it("keeps the header fixed below the desktop breakpoint", () => {
+		expect(rule(layoutCss, ".site-header")).toMatch(/position:\s*fixed/);
+		expect(layoutCss).not.toMatch(/position:\s*sticky/);
+	});
+
 	it("defines the global scroll and responsive clearance contract in layout.css", () => {
 		expect(rule(layoutCss, ":root")).toMatch(
 			/--site-scroll-clearance:\s*calc\(\s*var\(--site-header-height\)\s*\+\s*var\(--site-scroll-gap\)\s*\)/,

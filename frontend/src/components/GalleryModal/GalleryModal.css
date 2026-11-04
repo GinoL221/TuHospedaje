@@ -57,7 +57,7 @@
 
 .gallery-modal-close:active:not(:disabled),
 .gallery-nav:active:not(:disabled) {
-  box-shadow: inset 0 -3px var(--action-primary-accent);
+  opacity: 0.9;
 }
 
 .gallery-modal-close:disabled,

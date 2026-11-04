@@ -22,6 +22,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -58,6 +59,9 @@ public class User implements UserDetails {
 
     @Column
     private String imageUrl;
+
+    @Column(name = "welcome_resend_requested_at", updatable = false)
+    private Instant welcomeResendRequestedAt;
 
     @Column(nullable = false)
     @lombok.Builder.Default

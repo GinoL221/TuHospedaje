@@ -60,12 +60,38 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
     @Transactional
     public WelcomeResendResult resendWelcome(User user) {
         String aggregateId = user.getId().toString();
-        if (repository.findByEmailTypeAndAggregateId(WELCOME, aggregateId).isEmpty()) {
+        var now = clock.instant();
+        var cutoff = now.minus(welcomeEmailProperties.getResendCooldown());
+        if (user.getWelcomeResendRequestedAt() != null && user.getWelcomeResendRequestedAt().isAfter(cutoff)) {
             return WelcomeResendResult.COOLDOWN;
         }
-        int requeued = repository.requeueWelcomeIfTerminalAndCooled(aggregateId,
-                clock.instant().minus(welcomeEmailProperties.getResendCooldown()));
-        return requeued == 1 ? WelcomeResendResult.SCHEDULED : WelcomeResendResult.COOLDOWN;
+        var existing = repository.findByEmailTypeAndAggregateId(WELCOME, aggregateId);
+        if (existing.isPresent() && (existing.get().getStatus() == EmailOutboxStatus.PENDING
+                || existing.get().getStatus() == EmailOutboxStatus.PROCESSING)) {
+            return WelcomeResendResult.ALREADY_PENDING;
+        }
+        if (existing.isEmpty()) {
+            EmailMessage message = welcomeEmailRenderer.render(user.getId(), user.getEmail(), user.getFirstName());
+            enqueue(user, message.emailType(), message.aggregateId(), message.to(), message.subject(), message.htmlBody(), true);
+            user.setWelcomeResendRequestedAt(now);
+            return WelcomeResendResult.SCHEDULED;
+        }
+        int requeued = repository.requeueWelcomeIfTerminalAndCooled(aggregateId, cutoff);
+        if (requeued == 1) {
+            user.setWelcomeResendRequestedAt(now);
+            return WelcomeResendResult.SCHEDULED;
+        }
+        var currentStatus = repository.lockWelcomeStatus(aggregateId);
+        if (currentStatus.isEmpty()) {
+            EmailMessage message = welcomeEmailRenderer.render(user.getId(), user.getEmail(), user.getFirstName());
+            persistOutbox(user, message.emailType(), message.aggregateId(), message.to(), message.subject(), message.htmlBody(), true);
+            user.setWelcomeResendRequestedAt(now);
+            return WelcomeResendResult.SCHEDULED;
+        }
+        if (currentStatus.get().equals("PENDING") || currentStatus.get().equals("PROCESSING")) {
+            return WelcomeResendResult.ALREADY_PENDING;
+        }
+        return WelcomeResendResult.COOLDOWN;
     }
 
     @Override
@@ -88,6 +114,11 @@ public class EmailOutboxServiceImpl implements EmailOutboxService {
             return;
         }
 
+        persistOutbox(user, emailType, aggregateId, recipient, subject, htmlBody, flush);
+    }
+
+    private void persistOutbox(User user, String emailType, String aggregateId, String recipient,
+                               String subject, String htmlBody, boolean flush) {
         EmailOutbox outbox = new EmailOutbox();
         outbox.setUser(user);
         outbox.setEmailType(emailType);

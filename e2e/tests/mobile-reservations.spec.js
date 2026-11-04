@@ -61,7 +61,7 @@ async function exerciseReservations(page) {
   await expect(page.getByText(longReservation.guestPhone)).toBeVisible();
   await expect(page.getByText('01/07/2099 → 31/07/2099')).toBeVisible();
   await expect(page.getByText('30 noches')).toBeVisible();
-  await expect(page.getByText('CONFIRMED')).toBeVisible();
+  await expect(page.getByText('Confirmada')).toBeVisible();
   await expect(page.getByText(/\$1[.,]234[.,]567/)).toBeVisible();
 
   const lodgingLink = page.getByRole('link', { name: /Ver alojamiento/ });
@@ -73,7 +73,7 @@ async function exerciseReservations(page) {
   await expectNoHorizontalOverflow(page);
 
   await cancelButton.click();
-  await expect(page.getByText('CANCELLED')).toBeVisible();
+  await expect(page.getByText('Cancelada')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancelar reserva' })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
