@@ -32,4 +32,10 @@ public interface LodgingRepository extends JpaRepository<Lodging, Long>, JpaSpec
     List<Lodging> findByCategoryId(Long categoryId);
 
     List<CityProjection> findDistinctByCityContainingIgnoreCaseOrderByCityAsc(String city);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(
+            value = "DELETE FROM user_favorites WHERE lodging_id = :lodgingId",
+            nativeQuery = true)
+    void deleteFavoritesByLodgingId(@org.springframework.data.repository.query.Param("lodgingId") Long lodgingId);
 }

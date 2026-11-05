@@ -789,6 +789,76 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
                 "SELECT COUNT(*) FROM lodging_images WHERE lodging_id = ?", Integer.class, id)).isZero();
     }
 
+    @Test
+    void shouldRejectDeleteWhenLodgingHasReservations() throws Exception {
+        Long lodgingId = createTestLodging("Lodging With Reservation", "has-res@test.com");
+        Long userId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE email = 'admin-lodging-crud-test@tuhospedaje.com'", Long.class);
+
+        jdbcTemplate.update("""
+                INSERT INTO reservations (
+                    lodging_id, user_id, check_in, check_out, guest_name,
+                    guest_email, guest_phone, total_price, status, version
+                ) VALUES (?, ?, '2026-12-01', '2026-12-05', 'Guest',
+                          'guest@test.com', '123456789', 500.00, 'CONFIRMED', 0)
+                """, lodgingId, userId);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/lodgings/{id}", lodgingId)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .header("Accept-Language", "es"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("No se puede eliminar el alojamiento porque tiene reservas asociadas."))
+                .andExpect(jsonPath("$.status").value(400));
+
+        mockMvc.perform(delete("/api/lodgings/{id}", lodgingId)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .header("Accept-Language", "en"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Cannot delete lodging because it has associated reservations."))
+                .andExpect(jsonPath("$.status").value(400));
+
+        mockMvc.perform(get("/api/lodgings/{id}", lodgingId))
+                .andExpect(status().isOk());
+
+        jdbcTemplate.update("DELETE FROM reservations WHERE lodging_id = ?", lodgingId);
+        jdbcTemplate.update("DELETE FROM lodgings WHERE id = ?", lodgingId);
+    }
+
+    @Test
+    void shouldDeleteLodgingWithRatingsAndFavoritesCleanly() throws Exception {
+        Long lodgingId = createTestLodging("Lodging With Extras", "has-extras@test.com");
+        Long userId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE email = 'admin-lodging-crud-test@tuhospedaje.com'", Long.class);
+
+        jdbcTemplate.update(
+                "INSERT INTO user_favorites (user_id, lodging_id) VALUES (?, ?)", userId, lodgingId);
+
+        jdbcTemplate.update("""
+                INSERT INTO ratings (lodging_id, user_id, score, comment, created_at)
+                VALUES (?, ?, 5, 'Hermoso lugar', NOW())
+                """, lodgingId, userId);
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(delete("/api/lodgings/{id}", lodgingId)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/lodgings/{id}", lodgingId))
+                .andExpect(status().isNotFound());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user_favorites WHERE lodging_id = ?", Integer.class, lodgingId)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ratings WHERE lodging_id = ?", Integer.class, lodgingId)).isZero();
+    }
+
     private Long createTestLodging(String name, String email) throws Exception {
         Map<String, Object> request = Map.of(
                 "name", name,

@@ -19,6 +19,10 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     int countByLodgingId(Long lodgingId);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM Rating r WHERE r.lodging.id = :lodgingId")
+    void deleteByLodgingId(@Param("lodgingId") Long lodgingId);
+
     /**
      * Single aggregate query: returns AVG score and COUNT for each lodging in the given id set.
      * Lodgings with no ratings are absent from the result — callers must post-fill with 0.0/0.

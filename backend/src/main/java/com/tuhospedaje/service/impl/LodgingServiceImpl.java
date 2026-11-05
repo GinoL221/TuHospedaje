@@ -16,6 +16,7 @@ import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingQueryService;
 import com.tuhospedaje.service.LodgingService;
 import org.springframework.stereotype.Service;
@@ -39,16 +40,19 @@ public class LodgingServiceImpl implements LodgingService {
     private final FeatureRepository featureRepository;
     private final PolicyRepository policyRepository;
     private final RatingRepository ratingRepository;
+    private final ReservationRepository reservationRepository;
     private final LodgingQueryService lodgingQueryService;
 
     public LodgingServiceImpl(LodgingRepository lodgingRepository, CategoryRepository categoryRepository,
                               FeatureRepository featureRepository, PolicyRepository policyRepository,
-                              RatingRepository ratingRepository, LodgingQueryService lodgingQueryService) {
+                              RatingRepository ratingRepository, ReservationRepository reservationRepository,
+                              LodgingQueryService lodgingQueryService) {
         this.lodgingRepository = lodgingRepository;
         this.categoryRepository = categoryRepository;
         this.featureRepository = featureRepository;
         this.policyRepository = policyRepository;
         this.ratingRepository = ratingRepository;
+        this.reservationRepository = reservationRepository;
         this.lodgingQueryService = lodgingQueryService;
     }
 
@@ -144,9 +148,14 @@ public class LodgingServiceImpl implements LodgingService {
     public Optional<LodgingDTO> delete(Long id) throws ResourceNotFoundException {
         Lodging lodging = lodgingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + id));
+        if (reservationRepository.existsByLodgingId(id)) {
+            throw new IllegalArgumentException("error.lodging.has_reservations");
+        }
         if (lodging.getVersion() == null) {
             lodging.setVersion(0L);
         }
+        lodgingRepository.deleteFavoritesByLodgingId(id);
+        ratingRepository.deleteByLodgingId(id);
         LodgingDTO deleted = LodgingDTO.fromEntity(lodging);
         lodgingRepository.delete(lodging);
         lodgingRepository.flush();

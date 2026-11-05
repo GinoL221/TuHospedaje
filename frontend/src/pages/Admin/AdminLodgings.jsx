@@ -18,6 +18,7 @@ export default function AdminLodgings() {
 	const [showModal, setShowModal] = useState(false);
 	const [editingLodging, setEditingLodging] = useState(null);
 	const [deleteConfirm, setDeleteConfirm] = useState(null);
+	const [deleteError, setDeleteError] = useState("");
 	const [page, setPage] = useState(0);
 	const [totalPages, setTotalPages] = useState(0);
 	const [sortKey, setSortKey] = useState("id");
@@ -80,6 +81,7 @@ export default function AdminLodgings() {
 	}, []);
 
 	const handleDelete = (id, name) => {
+		setDeleteError("");
 		setDeleteConfirm({ id, name });
 	};
 
@@ -87,10 +89,10 @@ export default function AdminLodgings() {
 		if (!deleteConfirm) return;
 		try {
 			await deleteLodging(deleteConfirm.id);
+			setDeleteConfirm(null);
 			fetchLodgings();
 		} catch (err) {
-			console.error(err);
-		} finally {
+			setDeleteError(err.message || "No se pudo eliminar el alojamiento.");
 			setDeleteConfirm(null);
 		}
 	};
@@ -171,6 +173,11 @@ export default function AdminLodgings() {
 				onCancel={() => setDeleteConfirm(null)}
 				testId="confirm-delete"
 			/>
+			{deleteError && (
+				<p role="alert" className="form-error">
+					{deleteError}
+				</p>
+			)}
 			{showModal && (
 				<LodgingFormModal
 					lodging={editingLodging}

@@ -566,4 +566,30 @@ describe("AdminLodgings - delete", () => {
 		expect(del).not.toHaveBeenCalled();
 		expect(screen.getByText("Cabaña del Lago")).toBeInTheDocument();
 	});
+
+	it("shows error alert when delete fails and dismisses confirmation dialog", async () => {
+		mockGetDefaults({
+			lodgings: [lodgingFixture({ id: 1, name: "Cabaña del Lago" })],
+		});
+		del.mockRejectedValue(
+			new Error(
+				"No se puede eliminar el alojamiento porque tiene reservas asociadas.",
+			),
+		);
+		const user = userEvent.setup();
+		renderAdminLodgings();
+
+		await screen.findByText("Cabaña del Lago");
+		await user.click(screen.getByTestId("row-delete-btn"));
+		await user.click(screen.getByTestId("confirm-delete-yes"));
+
+		expect(del).toHaveBeenCalledWith("/lodgings/1");
+		await waitFor(() => {
+			expect(screen.queryByTestId("confirm-delete")).not.toBeInTheDocument();
+		});
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent(
+			"No se puede eliminar el alojamiento porque tiene reservas asociadas.",
+		);
+	});
 });

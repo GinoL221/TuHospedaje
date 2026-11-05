@@ -12,6 +12,7 @@ import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.repository.RatingRepository;
+import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingQueryService;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +42,7 @@ class LodgingServiceImplTest {
     @Mock private FeatureRepository featureRepository;
     @Mock private PolicyRepository policyRepository;
     @Mock private RatingRepository ratingRepository;
+    @Mock private ReservationRepository reservationRepository;
     @Mock private LodgingQueryService lodgingQueryService;
 
     @InjectMocks private LodgingServiceImpl lodgingService;
@@ -148,6 +151,34 @@ class LodgingServiceImplTest {
         assertThat(deleted).isPresent();
         assertThat(deleted.get().getId()).isEqualTo(8L);
         assertThat(lodging.getVersion()).isZero();
+        verify(lodgingRepository).delete(lodging);
+        verify(lodgingRepository).flush();
+    }
+
+    @Test
+    void shouldRejectDeleteWhenLodgingHasReservations() {
+        Lodging lodging = lodging(8L, "Temporal");
+        when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging));
+        when(reservationRepository.existsByLodgingId(8L)).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> lodgingService.delete(8L));
+
+        assertThat(ex.getMessage()).isEqualTo("error.lodging.has_reservations");
+        verify(lodgingRepository, never()).delete(any(Lodging.class));
+        verify(lodgingRepository, never()).flush();
+    }
+
+    @Test
+    void shouldCleanFavoritesAndRatingsWhenDeletingLodging() {
+        Lodging lodging = lodging(8L, "Temporal");
+        when(lodgingRepository.findById(8L)).thenReturn(Optional.of(lodging), Optional.empty());
+        when(reservationRepository.existsByLodgingId(8L)).thenReturn(false);
+
+        Optional<LodgingDTO> deleted = lodgingService.delete(8L);
+
+        assertThat(deleted).isPresent();
+        verify(lodgingRepository).deleteFavoritesByLodgingId(8L);
+        verify(ratingRepository).deleteByLodgingId(8L);
         verify(lodgingRepository).delete(lodging);
         verify(lodgingRepository).flush();
     }
