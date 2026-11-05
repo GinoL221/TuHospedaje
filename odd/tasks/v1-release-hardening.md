@@ -58,3 +58,6 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L3.** «sigo tu recomendacion» — decisión: subida local en el backend en lugar de rotar credenciales de Cloudinary.
 - **L4.** (evidencia, 2026-11-04) La base de desarrollo no contiene ninguna URL de Cloudinary: 190 imágenes de alojamiento apuntan a los assets canónicos del seed, y categorías y usuarios no tienen imágenes. Borrar la cuenta no rompe datos existentes.
 - **L5.** (evidencia) El enunciado de la historia 3 exige subir imágenes, por lo que eliminar la subida sin reemplazo rompería el alcance.
+- **L6.** (2026-11-05) PR #353 mergeado en `main`: corrección de contaminación en `AdminStatsControllerIntegrationTest` limpiando `email_outbox` antes de borrar usuarios.
+- **L7.** (2026-11-05) PR #355 mergeado en `main` (`db5ef4b`), cerrando issue #354: subida local con `LocalImageStorageService`, validación en `ImageContentValidator`, endpoints públicos en `/uploads/**` y eliminación total de Cloudinary.
+- **L8.** (2026-11-05) P1 implementado en rama `fix/rate-limit-real-client-ip`: `server.forward-headers-strategy=native` y `internal-proxies` configurados en `application-prod.properties` para aislar cuotas de rate limit por IP real detrás de nginx, verificado con `RemoteIpRateLimitIntegrationTest` y `UntrustedRemoteIpRateLimitIntegrationTest`.
