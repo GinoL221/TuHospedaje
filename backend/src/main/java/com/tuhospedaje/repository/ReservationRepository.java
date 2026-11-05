@@ -21,6 +21,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     List<Reservation> findByLodgingIdAndStatus(Long lodgingId, ReservationStatus status);
 
+    boolean existsByLodgingId(Long lodgingId);
+
     /**
      * Acquires a PESSIMISTIC_WRITE (SELECT ... FOR UPDATE) lock on all CONFIRMED reservations
      * for the given lodging. Use this exclusively inside a @Transactional write boundary

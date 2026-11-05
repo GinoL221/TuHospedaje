@@ -25,7 +25,7 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P1 | Rate limit detrás de proxy (`forward-headers-strategy`) | S1 | 1 | `fix/rate-limit-real-client-ip` |
 | P2 | Vida del access token y revocación por cambio de contraseña | S1 | 2 | `fix/access-token-revocation` |
 | P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile — en curso; implementación inline, verificación independiente (riesgo de entrega) | S1, S8, S9, S11 | 2 | `fix/prod-delivery-config` |
-| P4 | Borrado de alojamiento con datos asociados | S9 | 2 | `fix/lodging-delete-with-references` |
+| P4 | Borrado de alojamiento con datos asociados — en curso; validación de reservas, limpieza de ratings/favoritos y feedback en Admin | S9, S8, S11, S12 | 2 | `fix/lodging-delete-with-references` |
 | P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
 | P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
 | P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
@@ -65,3 +65,6 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L10.** (2026-11-05) PR #359 mergeado (`4ef1fa9`), issue #358 cerrado, seis jobs de CI verdes. P2 revoca tokens con `tokenVersion`; tokens legacy sin claim y revocación al logout no están cubiertos.
 - **L11.** (2026-11-05) «si» — autorización para P3 (outbox, WhatsApp build-time, jar estable). «reintenta» — autorización para repetir el explorador fallido; el segundo intento completó el mapa. Ruta: implementación inline, sin unidades paralelas independientes; verificador independiente por riesgo de entrega (ítem 5). Sin reiniciar ni modificar el stack persistente.
 - **L12.** (2026-11-05) Issue #360 creado (`type:bug`, `status:approved`) para P3. Implementación verificada localmente: `tools/tests/test_prod_delivery_config.py` (8/8 tests en la suite tools), 20/20 tests de outbox/SMTP, packaging de `target/app.jar` y build frontend con `VITE_WHATSAPP_NUMBER`. RDD approved y burned (`review-ae4b2623e2ecff55`).
+- **L13.** (2026-11-05) PR #361 mergeado en `main` (`03ffb7f`), issue #360 cerrado automáticamente. P3 finalizado con éxito.
+- **L14.** (2026-11-05) Decisión de producto para P4 aprobada por el usuario: bloquear borrado si el alojamiento tiene reservas asociadas (HTTP 400, mensaje claro) para proteger el historial y contratos de los huéspedes. Si no tiene reservas, limpiar automáticamente calificaciones (`ratings`) y favoritos (`user_favorites`) antes de eliminarlo. En el panel Admin (`AdminLodgings.jsx`), capturar el error y mostrarlo en una alerta accesible con `role="alert"`.
+- **L15.** (2026-11-05) Issue #362 creado (`type:bug`, `status:approved`) para P4. Implementación y tests completados: `LodgingServiceImplTest` (14/14), `LodgingControllerIntegrationTest` (51/51), `AdminLodgings.test.jsx` (20/20). RDD assess medium.
