@@ -213,7 +213,7 @@ class DatabaseMigrationIntegrationTest {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
 assertThat(probeJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(12);
+                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(13);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories", Integer.class)).isEqualTo(6);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM features", Integer.class)).isEqualTo(8);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM policies", Integer.class)).isEqualTo(6);
@@ -349,13 +349,20 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .locations("classpath:db/migration")
                     .load();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(11);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(12);
 
             JdbcTemplate independentJdbcTemplate = new JdbcTemplate(
                     new org.springframework.jdbc.datasource.DriverManagerDataSource(
                             independentContainer.getJdbcUrl(),
                             independentContainer.getUsername(),
                             independentContainer.getPassword()));
+            assertThat(independentJdbcTemplate.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
+                    WHERE table_schema = DATABASE()
+                      AND table_name = 'users'
+                      AND column_name IN ('password_changed_at', 'token_version')
+                    """, Integer.class)).isEqualTo(2);
             assertThat(independentJdbcTemplate.queryForObject("""
                     SELECT COUNT(*)
                     FROM information_schema.columns
@@ -423,7 +430,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                     .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                     .locations("classpath:db/migration")
                     .load()
-                    .migrate().migrationsExecuted).isEqualTo(9);
+                    .migrate().migrationsExecuted).isEqualTo(10);
 
             assertLodgingPriceAndCapacity(template, "both-missing@example.com", "190.00", 4);
             assertLodgingPriceAndCapacity(template, "capacity-missing@example.com", "250.75", 4);

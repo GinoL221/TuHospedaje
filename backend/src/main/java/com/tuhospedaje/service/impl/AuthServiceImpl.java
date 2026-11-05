@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -151,6 +152,8 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("La contraseña actual es incorrecta");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordChangedAt(Instant.now());
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
 
         // Best-effort, ADR-0: RefreshSessionService has no bean when the flag is off, so
@@ -208,6 +211,7 @@ public class AuthServiceImpl implements AuthService {
         claims.put("lastName", user.getLastName());
         claims.put("role", user.getRole().name());
         claims.put("imageUrl", user.getImageUrl());
+        claims.put("tokenVersion", user.getTokenVersion());
         return claims;
     }
 
