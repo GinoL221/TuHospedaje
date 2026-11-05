@@ -1,5 +1,6 @@
 package com.tuhospedaje.configuration;
 
+import com.tuhospedaje.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -27,8 +28,12 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>(extraClaims);
+        if (userDetails instanceof User user) {
+            claims.putIfAbsent("tokenVersion", user.getTokenVersion());
+        }
         return Jwts.builder()
-                .claims(extraClaims)
+                .claims(claims)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationMillis))
@@ -46,7 +51,16 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        if (!username.equals(userDetails.getUsername()) || isTokenExpired(token)) {
+            return false;
+        }
+        if (userDetails instanceof User user) {
+            Integer tokenVersion = extractClaim(token, claims -> claims.get("tokenVersion", Integer.class));
+            if (tokenVersion != null && tokenVersion != user.getTokenVersion()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isTokenExpired(String token) {

@@ -63,6 +63,13 @@ public class User implements UserDetails {
     @Column(name = "welcome_resend_requested_at", updatable = false)
     private Instant welcomeResendRequestedAt;
 
+    @Column(name = "password_changed_at")
+    private Instant passwordChangedAt;
+
+    @Column(name = "token_version", nullable = false)
+    @lombok.Builder.Default
+    private int tokenVersion = 1;
+
     @Column(nullable = false)
     @lombok.Builder.Default
     private boolean enabled = true;

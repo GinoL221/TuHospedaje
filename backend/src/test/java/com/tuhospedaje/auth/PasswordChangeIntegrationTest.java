@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -76,6 +77,11 @@ class PasswordChangeIntegrationTest extends AbstractIntegrationTest {
         // Every refresh family for this user is revoked — the previously-valid
         // REFRESH_TOKEN can no longer rotate.
         mockMvc.perform(post("/api/auth/refresh").cookie(cookies.refreshToken()))
+                .andExpect(status().isUnauthorized());
+
+        // The previously-issued ACCESS_TOKEN must be rejected immediately (401),
+        // preventing continued access with stolen or preserved tokens.
+        mockMvc.perform(get("/api/auth/me").cookie(cookies.accessToken()))
                 .andExpect(status().isUnauthorized());
 
         assertThat(sessionSecurityEventRepository.findAll().stream()

@@ -45,4 +45,19 @@ class JwtServiceTest {
         // app.jwt.expiration is configured as 28800000 ms in test resources.
         assertThat(jwtService.getExpirationSeconds()).isEqualTo(28800L);
     }
+
+    @Test
+    void shouldRejectTokenWhenTokenVersionDoesNotMatchUser() {
+        // testUser has default tokenVersion = 1
+        String tokenV1 = jwtService.generateToken(testUser);
+        assertThat(jwtService.isTokenValid(tokenV1, testUser)).isTrue();
+
+        // Simulate password change incrementing tokenVersion
+        testUser.setTokenVersion(2);
+        assertThat(jwtService.isTokenValid(tokenV1, testUser)).isFalse();
+
+        // Fresh token issued at version 2 is valid
+        String tokenV2 = jwtService.generateToken(testUser);
+        assertThat(jwtService.isTokenValid(tokenV2, testUser)).isTrue();
+    }
 }
