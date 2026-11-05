@@ -8,6 +8,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
 import com.tuhospedaje.repository.CategoryRepository;
+import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
@@ -45,6 +46,9 @@ class AdminStatsControllerIntegrationTest extends AbstractIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private EmailOutboxRepository emailOutboxRepository;
+
+    @Autowired
     private LodgingRepository lodgingRepository;
 
     @Autowired
@@ -75,6 +79,9 @@ class AdminStatsControllerIntegrationTest extends AbstractIntegrationTest {
         lodgingRepository.deleteAll();
         featureRepository.deleteAll();
         categoryRepository.deleteAll();
+        // Outbox rows reference users through FK_email_outbox_user, so they go first.
+        // Without this, the suite fails only when another test ran before this one.
+        emailOutboxRepository.deleteAll();
         userRepository.deleteAll();
 
         User admin = userRepository.save(User.builder()
