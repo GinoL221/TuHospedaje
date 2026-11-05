@@ -120,4 +120,42 @@ describe("primary action contrast contract", () => {
 			expect(contrast("#2A9D8F", "#F4F4F9")).toBeGreaterThanOrEqual(3);
 		},
 	);
+
+	it("keeps Header nav links above 4.5:1 contrast on hover against the light header", () => {
+		const css = readCss("src/layout.css");
+		const hoverRule = css.match(/\.nav-links a:hover\s*\{([^}]*)\}/)?.[1];
+
+		expect(hoverRule).toBeDefined();
+		expect(hoverRule).not.toMatch(/color:\s*var\(--primary\)/);
+		expect(hoverRule).toMatch(/color:\s*var\(--secondary\)/);
+	});
+
+	it("keeps Admin table action buttons above 4.5:1 contrast in resting and hover states", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+		const editRule = css.match(/\.btn-edit\s*\{([^}]*)\}/)?.[1];
+		const deleteRule = css.match(/\.btn-delete\s*\{([^}]*)\}/)?.[1];
+		const promoteRule = css.match(/\.btn-promote\s*\{([^}]*)\}/)?.[1];
+		const demoteRule = css.match(/\.btn-demote\s*\{([^}]*)\}/)?.[1];
+
+		expect(editRule).not.toMatch(/color:\s*var\(--primary\)/);
+		expect(editRule).toMatch(/color:\s*var\(--secondary\)/);
+
+		expect(deleteRule).not.toMatch(/#e74c3c/);
+		expect(deleteRule).toMatch(/var\(--feedback-danger-text\)/);
+
+		expect(demoteRule).not.toMatch(/#e74c3c/);
+		expect(demoteRule).toMatch(/var\(--feedback-danger-text\)/);
+
+		expect(promoteRule).not.toMatch(/var\(--accent\)/);
+		expect(promoteRule).toMatch(/var\(--feedback-success-text\)/);
+	});
+
+	it("keeps Home recommendation alert above 4.5:1 contrast and aligned with feedback tokens", () => {
+		const css = readCss("src/pages/Home/Home.css");
+		const alertRule = css.match(/\.recommendations-alert\s*\{([^}]*)\}/)?.[1];
+
+		expect(alertRule).toBeDefined();
+		expect(alertRule).not.toMatch(/color:\s*var\(--primary\)/);
+		expect(alertRule).toMatch(/color:\s*var\(--feedback-danger-text\)/);
+	});
 });

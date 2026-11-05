@@ -372,8 +372,8 @@
 }
 .btn-delete {
   background: transparent;
-  color: #e74c3c;
-  border: 1px solid #e74c3c;
+  color: var(--feedback-danger-text);
+  border: 1px solid var(--feedback-danger-text);
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -383,13 +383,17 @@
   transition: all 150ms ease;
 }
 .btn-delete:hover {
-  background: #e74c3c;
+  background: var(--feedback-danger-text);
   color: #fff;
+}
+.btn-delete:focus-visible {
+  outline: 3px solid var(--feedback-danger-text);
+  outline-offset: 2px;
 }
 .btn-edit {
   background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  color: var(--secondary);
+  border: 1px solid var(--secondary);
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -402,12 +406,16 @@
 .btn-edit:hover {
   background: var(--secondary);
   border-color: var(--secondary);
-  color: var(--bg);
+  color: #fff;
+}
+.btn-edit:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 .btn-promote {
   background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  color: var(--feedback-success-text);
+  border: 1px solid var(--feedback-success-text);
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -417,13 +425,18 @@
   transition: all 150ms ease;
 }
 .btn-promote:hover {
-  background: var(--accent);
+  background: var(--feedback-success-text);
+  border-color: var(--feedback-success-text);
   color: #fff;
+}
+.btn-promote:focus-visible {
+  outline: 3px solid var(--feedback-success-text);
+  outline-offset: 2px;
 }
 .btn-demote {
   background: transparent;
-  color: #e74c3c;
-  border: 1px solid #e74c3c;
+  color: var(--feedback-danger-text);
+  border: 1px solid var(--feedback-danger-text);
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -433,8 +446,12 @@
   transition: all 150ms ease;
 }
 .btn-demote:hover {
-  background: #e74c3c;
+  background: var(--feedback-danger-text);
   color: #fff;
+}
+.btn-demote:focus-visible {
+  outline: 3px solid var(--feedback-danger-text);
+  outline-offset: 2px;
 }
 .btn-promote:disabled,
 .btn-demote:disabled {
