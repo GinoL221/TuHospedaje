@@ -1,11 +1,7 @@
-package com.tuhospedaje.service.impl;
+package com.tuhospedaje.service;
 
-import com.cloudinary.Cloudinary;
-import com.tuhospedaje.dto.upload.UploadResult;
-import com.tuhospedaje.exception.UploadException;
-import com.tuhospedaje.service.CloudinaryService;
 import com.tuhospedaje.service.command.UploadImageCommand;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -15,17 +11,24 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
-@Service
-public class CloudinaryServiceImpl implements CloudinaryService {
+
+/**
+ * Image content validation, extracted verbatim from the former upload service.
+ * Same allowed types, same size and dimension constants, same message keys, same
+ * content-type normalization — the storage backend changed, the validation
+ * contract did not.
+ */
+@Component
+public class ImageContentValidator {
 
     /**
-     * SVG is deliberately absent: it is XML, it can carry script, and Cloudinary serves
-     * it back from a domain the app links to — a stored-XSS vector that the other raster
-     * formats do not have. The frontend's input only advertises {@code accept="image/*"},
-     * which is a hint to the file picker, not a control; this list is the actual gate.
+     * SVG is deliberately absent: it is XML, it can carry script, and a served
+     * SVG would execute from a domain the app links to — a stored-XSS vector
+     * that the other raster formats do not have. The frontend's input only
+     * advertises {@code accept="image/*"}, which is a hint to the file picker,
+     * not a control; this list is the actual gate.
      */
     private static final Set<String> ALLOWED_CONTENT_TYPES =
             Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
@@ -34,29 +37,16 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     private static final long MAX_IMAGE_PIXELS = 20_000_000L;
     private static final byte[] PNG_SIGNATURE = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
 
-    private final Cloudinary cloudinary;
-
-    public CloudinaryServiceImpl(Cloudinary cloudinary) {
-        this.cloudinary = cloudinary;
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes")
-    public UploadResult uploadImage(UploadImageCommand command) {
-        byte[] imageBytes = validate(command);
-        try {
-            Map raw = cloudinary.uploader().upload(imageBytes, Map.of());
-            return new UploadResult(raw);
-        } catch (Exception e) {
-            throw new UploadException("No se pudo subir la imagen", e);
-        }
-    }
-
     /**
-     * The parser rejects oversized HTTP parts as 413 before controller invocation. This
-     * 5 MiB service guard also protects direct callers before allocating or uploading bytes.
+     * Validates the command and returns the normalized content type of the
+     * accepted image, so callers can derive a safe file extension from what was
+     * actually validated rather than from anything client-supplied.
+     *
+     * @throws IllegalArgumentException with a MessageSource key
+     *         ({@code error.upload.empty}, {@code error.upload.too_large},
+     *         {@code error.upload.invalid_type}) when the image is rejected.
      */
-    private byte[] validate(UploadImageCommand command) {
+    public String validate(UploadImageCommand command) {
         if (command == null || command.content() == null || command.content().length == 0) {
             throw new IllegalArgumentException("error.upload.empty");
         }
@@ -70,7 +60,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         if (!ALLOWED_CONTENT_TYPES.contains(contentType) || !hasMatchingValidImageBytes(contentType, imageBytes)) {
             throw new IllegalArgumentException("error.upload.invalid_type");
         }
-        return imageBytes;
+        return contentType;
     }
 
     private boolean hasMatchingValidImageBytes(String contentType, byte[] imageBytes) {

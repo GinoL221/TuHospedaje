@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * SC-6.1, SC-6.3: catch-all 500 and PessimisticLockingFailureException → 409.
- * SC-6.2 (UploadException → 502) is covered in UploadExceptionHandlerTest.
+ * SC-6.2 (UploadException → 500) is covered in UploadExceptionHandlerTest.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

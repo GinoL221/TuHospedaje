@@ -1,0 +1,60 @@
+# v1.0.0 — endurecimiento previo a la entrega
+
+Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Origen: informe de siete áreas (historias, backend, frontend, navegadores, secretos, documentación, entrega). Todo cambio va en su rama con issue aprobado y PR; el tag `v1.0.0` se crea recién al cerrar la Fase 9.
+
+## Specs
+
+- **S1.** No se taggea `v1.0.0` mientras exista un bloqueante abierto: credenciales expuestas, límite de peticiones que bloquea el sitio en producción, o build de imagen roto.
+- **S2.** «Se debe poder subir una o más imágenes del producto.» — enunciado de la historia 3. La subida es parte del alcance y debe seguir funcionando sin Cloudinary.
+- **S3.** Cloudinary se elimina del repositorio: dependencia, configuración, servicio, endpoints y variables de entorno. La cuenta del proveedor deja de ser necesaria para operar.
+- **S4.** La validación de imágenes existente se conserva sin cambios de comportamiento: tipos permitidos JPEG/PNG/WebP/GIF, sin SVG, magic bytes verificados, 5 MB de tope, 8192 px por lado y 20 Mpx decodificados.
+- **S5.** El nombre del archivo almacenado no se deriva del nombre enviado por el cliente: sin path traversal ni colisiones.
+- **S6.** La subida sigue siendo solo para ADMIN y sigue protegida por CSRF.
+- **S7.** La imagen servida debe ser accesible por GET sin autenticación, igual que hoy, para que las fichas de alojamiento rendericen en el sitio público.
+- **S8.** Las pruebas se escriben primero: RED observado antes de la implementación, y toda la suite queda verde.
+- **S9.** No se rompen las 35 historias de usuario ni los tests existentes.
+- **S10.** Los secretos que estuvieron en el historial público se consideran comprometidos: la rotación o la eliminación del proveedor es parte del cierre, no del código.
+- **S11.** Cada corrección cierra con commit de unidad de trabajo en su rama, con tests y documentación junto al comportamiento.
+- **S12.** Las decisiones de producto que cambian contratos existentes (política de contraseñas, grilla de recomendaciones, título de pestaña) se consultan antes de implementarse.
+
+## Tasks
+
+| ID | Tarea | Specs | Fase | Rama |
+| --- | --- | --- | --- | --- |
+| P0 | Subida local de imágenes y eliminación de Cloudinary | S2–S7 | 0 | `fix/local-image-uploads` |
+| P1 | Rate limit detrás de proxy (`forward-headers-strategy`) | S1 | 1 | `fix/rate-limit-real-client-ip` |
+| P2 | Vida del access token y revocación por cambio de contraseña | S1 | 2 | `fix/access-token-revocation` |
+| P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile | S1 | 2 | `fix/prod-delivery-config` |
+| P4 | Borrado de alojamiento con datos asociados | S9 | 2 | `fix/lodging-delete-with-references` |
+| P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
+| P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
+| P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
+| P8 | Admin en ventana angosta sin pantalla táctil | — | 3 | `fix/admin-narrow-window` |
+| P9 | Historias 4, 22 y 26 | S12, S9 | 4 | `fix/user-story-gaps` |
+| P10 | Continuidad de flujo y detalles de UX | S9 | 4 | `fix/flow-continuity` |
+| P11 | Fecha local en la reserva (`toISOString`) | S9 | 4 | `fix/booking-local-date` |
+| P12 | Respuestas 4xx correctas y límites de paginación | — | 5 | `fix/error-status-mapping` |
+| P13 | Migración: unicidad de ratings, versión y rango de fechas | S11 | 5 | `fix/integrity-migration` |
+| P14 | Zona horaria de validación, URLs de imagen y versión en DTO | — | 5 | `fix/validation-details` |
+| P15 | Endurecimiento: Swagger, secreto JWT, tope de body, bloqueo de reserva | — | 5 | `fix/backend-hardening` |
+| P16 | Política de contraseñas | S12 | 5 | `feat/password-policy` |
+| P17 | Correo de reserva en español con fecha y hora | S9 | 5 | `fix/reservation-email-copy` |
+| P18 | CI: permisos, actions fijadas, reintento de publicación, tags | S1 | 6 | `ci/harden-workflow` |
+| P19 | Dependencias con avisos de seguridad | — | 6 | `chore/dependency-security` |
+| P20 | Compose y ejemplos de entorno | — | 6 | `chore/compose-hygiene` |
+| P21 | Higiene del repositorio y `.gitignore` | — | 6 | `chore/repo-hygiene` |
+| P22 | Código muerto del frontend | — | 7 | `chore/remove-dead-frontend-code` |
+| P23 | Landmarks y títulos de página | S12 | 7 | `a11y/landmarks` |
+| P24 | Objetivos táctiles y diálogos propios | — | 7 | `a11y/touch-targets` |
+| P25 | Tokens de color y tipografía | — | 7 | `refactor/design-tokens` |
+| P26 | README: arranque desde cero | — | 8 | `docs/readme-bootstrap` |
+| P27 | Documentos desactualizados | — | 8 | `docs/stale-content` |
+| P28 | Versión 1.0.0 | S1 | 9 | `chore/version-1.0.0` |
+
+## Log
+
+- **L1.** «bien, podes armar un plan para corregir todo, ordenado por prioridad»
+- **L2.** «si lo apruebo / y arrancamos con la fase 0, cloudinary no lo usamos lo podemos borrar del repo»
+- **L3.** «sigo tu recomendacion» — decisión: subida local en el backend en lugar de rotar credenciales de Cloudinary.
+- **L4.** (evidencia, 2026-11-04) La base de desarrollo no contiene ninguna URL de Cloudinary: 190 imágenes de alojamiento apuntan a los assets canónicos del seed, y categorías y usuarios no tienen imágenes. Borrar la cuenta no rompe datos existentes.
+- **L5.** (evidencia) El enunciado de la historia 3 exige subir imágenes, por lo que eliminar la subida sin reemplazo rompería el alcance.

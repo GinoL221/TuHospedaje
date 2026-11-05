@@ -25,6 +25,7 @@ services:
     volumes:
       - ./backend:/workspace
       - maven-cache:/root/.m2
+      - dev-uploads:/uploads
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DEV_DB_NAME:?DEV_DB_NAME is required}
@@ -35,10 +36,23 @@ services:
       SESSION_ACTIVE_KEY_ID: dev
       SESSION_REFRESH_KEY: ${DEV_SESSION_REFRESH_KEY:?DEV_SESSION_REFRESH_KEY is required}
       CORS_ALLOWED_ORIGINS: http://localhost:${DEV_FRONTEND_PORT:-5173}
+      # Writable directory on the dev-uploads volume so uploaded images
+      # survive restarts.
+      TUHOSPEDAJE_UPLOADS_DIR: ${TUHOSPEDAJE_UPLOADS_DIR:-/uploads}
+      # Vite serves the frontend on its own origin without an API proxy, so
+      # image URLs must be absolute against the backend origin; override to
+      # move it. NOTE: this line exceeds the 80-column lint by design — the
+      # nested ${DEV_BACKEND_PORT} default cannot be split across lines.
+      TUHOSPEDAJE_UPLOADS_PUBLIC_PREFIX:
+        ${TUHOSPEDAJE_UPLOADS_PUBLIC_PREFIX:-http://localhost:${DEV_BACKEND_PORT:-8080}/uploads}
     ports:
       - "${DEV_BACKEND_PORT:-8080}:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/actuator/health/readiness || exit 1"]
+      test:
+        - CMD-SHELL
+        - >-
+          curl --fail --silent http://localhost:8080/actuator/health/readiness
+          || exit 1
       interval: 5s
       timeout: 5s
       retries: 24
@@ -61,7 +75,10 @@ services:
     ports:
       - "${DEV_FRONTEND_PORT:-5173}:5173"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ > /dev/null || exit 1"]
+      test:
+        - CMD-SHELL
+        - >-
+          wget -qO- http://127.0.0.1:5173/ > /dev/null || exit 1
       interval: 5s
       timeout: 5s
       retries: 12
@@ -75,3 +92,5 @@ volumes:
     name: tuhospedaje-dev-db
   maven-cache:
   frontend-node-modules:
+  dev-uploads:
+    name: tuhospedaje-dev-uploads

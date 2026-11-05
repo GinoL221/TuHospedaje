@@ -22,7 +22,7 @@ FROM eclipse-temurin:17-jre@sha256:207ecae0b2b104dfc6dfa763d1e9cd2041cb344800a18
 # Require the OpenSSL security update in the runtime image.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
-    && apt-get install --only-upgrade -y --no-install-recommends libssl3t64 openssl openssl-provider-legacy libbrotli1 \
+    && apt-get install --only-upgrade -y --no-install-recommends libssl3t64 openssl openssl-provider-legacy libbrotli1 apt libapt-pkg7.0 \
     && groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --home /app --shell /usr/sbin/nologin app \
     && for package in libssl3t64 openssl openssl-provider-legacy; do \
@@ -44,6 +44,9 @@ RUN rm -f /usr/bin/pebble
 WORKDIR /app
 COPY --from=build /workspace/app.jar /app/app.jar
 RUN chown 10001:10001 /app/app.jar
+# The uploads volume mounts at /uploads; if the image does not pre-create it, Docker
+# creates it as root:root and the unprivileged runtime user could never write uploads.
+RUN mkdir -p /uploads && chown 10001:10001 /uploads
 EXPOSE 8080
 USER 10001
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

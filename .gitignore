@@ -57,3 +57,7 @@ test-results/
 
 # Untracked ODD scratch (tracked odd/tasks stay in git)
 odd/frontend-image-hardening/
+
+# Locally stored image uploads (LocalImageStorageService) — never versioned
+uploads/
+backend/uploads/

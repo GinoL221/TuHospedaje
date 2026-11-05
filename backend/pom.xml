@@ -53,11 +53,6 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.cloudinary</groupId>
-			<artifactId>cloudinary-http5</artifactId>
-			<version>2.3.2</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
@@ -201,7 +196,6 @@
 						<!-- exclude config wiring classes by name, keeping JwtService + JwtAuthenticationFilter visible -->
 						<exclude>**/configuration/ApplicationConfig.*</exclude>
 						<exclude>**/configuration/SecurityConfig.*</exclude>
-						<exclude>**/configuration/CloudinaryConfig.*</exclude>
 						<exclude>**/configuration/CorsProperties.*</exclude>
 						<exclude>**/configuration/OpenApiConfig.*</exclude>
 						<exclude>**/configuration/TestcontainersConfiguration.*</exclude>

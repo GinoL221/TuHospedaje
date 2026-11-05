@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -231,11 +232,34 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", resolveMessage("error.upload.too_large", locale), "status", 413));
     }
 
+    /**
+     * Storage is now the server's own disk: {@code UploadException} means a write
+     * to the uploads directory failed (permissions, full volume, ...). That is a
+     * server-side fault, not an upstream provider failure, so it maps to 500 —
+     * there is no remote gateway to blame with 502 anymore.
+     */
+    /**
+     * Static resources (uploaded images) are publicly reachable, so any unauthenticated
+     * client can request paths that do not exist. Without this dedicated handler those
+     * requests land on the {@link #handleGeneric(Exception, Locale)} catch-all: a
+     * {@code log.error} with stack trace per request — a trivially abusable log-flooding
+     * vector — and a 500 for what is plainly a missing resource. 404, quiet.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex, Locale locale) {
+        log.debug("Static resource not found: {}", ex.getResourcePath());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error",
+                        messageSource.getMessage("error.resource.not_found",
+                                new Object[]{ex.getResourcePath()}, locale),
+                        "status", 404));
+    }
+
     @ExceptionHandler(UploadException.class)
     public ResponseEntity<Map<String, Object>> handleUploadError(UploadException ex, Locale locale) {
         log.error("Upload failed", ex);
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(Map.of("error", resolveMessage("error.upload", locale), "status", 502));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", resolveMessage("error.upload", locale), "status", 500));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

@@ -25,7 +25,7 @@ public class UserDTO {
     @Schema(description = "Role assigned to the user (e.g. ADMIN, USER)", example = "USER")
     private String role;
 
-    @Schema(description = "URL of the user's profile image", example = "https://res.cloudinary.com/demo/image/upload/sample.jpg", nullable = true)
+    @Schema(description = "URL of the user's profile image", example = "/uploads/3f2c9a1e-8c1d-4b7e-9f0a-2d6e5b8c7a1f.jpg", nullable = true)
     private String imageUrl;
 
     public static UserDTO fromEntity(User user) {
