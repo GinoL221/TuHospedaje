@@ -54,4 +54,36 @@ describe("UserProfileModal", () => {
 		await userEv.click(closeBtn);
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
+
+	it("closes on Escape key press", async () => {
+		const onClose = vi.fn();
+		const userEv = userEvent.setup();
+		render(<UserProfileModal user={user} onClose={onClose} />);
+
+		await userEv.keyboard("{Escape}");
+		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("traps focus within the modal when tabbing", async () => {
+		const userEv = userEvent.setup();
+		render(<UserProfileModal user={user} onClose={() => {}} />);
+
+		const closeBtn = screen.getByRole("button", {
+			name: /Cerrar ventana de perfil/i,
+		});
+		const resendBtn = screen.getByRole("button", {
+			name: /Reenviar correo de bienvenida/i,
+		});
+
+		expect(closeBtn).toHaveFocus();
+
+		await userEv.tab();
+		expect(resendBtn).toHaveFocus();
+
+		await userEv.tab();
+		expect(closeBtn).toHaveFocus();
+
+		await userEv.tab({ shift: true });
+		expect(resendBtn).toHaveFocus();
+	});
 });

@@ -170,12 +170,14 @@
 }
 
 .hotel-card-link {
+  --product-card-focus: var(--action-primary-focus);
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   text-decoration: none;
   color: inherit;
   display: block;
+  border-radius: var(--radius-lg);
 }
 
 /* RESPONSIVE */

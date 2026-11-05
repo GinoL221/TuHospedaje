@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
 	Mail,
 	Shield,
@@ -10,9 +10,66 @@ import {
 import { resendWelcomeEmail } from "../../services/authService";
 import "./UserProfileModal.css";
 
+const FOCUSABLE_SELECTOR =
+	'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export default function UserProfileModal({ user, onClose }) {
 	const [resendStatus, setResendStatus] = useState("idle"); // idle | sending | scheduled | pending | cooldown | error
 	const [feedbackMessage, setFeedbackMessage] = useState("");
+	const dialogRef = useRef(null);
+	const closeButtonRef = useRef(null);
+	const previousFocusRef = useRef(null);
+
+	useEffect(() => {
+		if (!user) return;
+		previousFocusRef.current = document.activeElement;
+		const previousBodyOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		closeButtonRef.current?.focus();
+
+		const handleKeyDown = (event) => {
+			if (event.key === "Escape") {
+				event.preventDefault();
+				onClose?.();
+				return;
+			}
+
+			if (event.key !== "Tab") return;
+
+			const focusableElements = Array.from(
+				dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [],
+			);
+			if (focusableElements.length === 0) {
+				event.preventDefault();
+				return;
+			}
+
+			const firstElement = focusableElements[0];
+			const lastElement = focusableElements.at(-1);
+
+			if (event.shiftKey && document.activeElement === firstElement) {
+				event.preventDefault();
+				lastElement.focus();
+			} else if (!event.shiftKey && document.activeElement === lastElement) {
+				event.preventDefault();
+				firstElement.focus();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			document.body.style.overflow = previousBodyOverflow;
+			const previousFocus = previousFocusRef.current;
+			if (
+				previousFocus?.isConnected &&
+				previousFocus.matches?.(FOCUSABLE_SELECTOR)
+			) {
+				previousFocus.focus();
+			}
+		};
+	}, [user, onClose]);
 
 	if (!user) return null;
 
@@ -55,6 +112,7 @@ export default function UserProfileModal({ user, onClose }) {
 			role="presentation"
 		>
 			<div
+				ref={dialogRef}
 				className="profile-modal"
 				role="dialog"
 				aria-modal="true"
@@ -62,6 +120,7 @@ export default function UserProfileModal({ user, onClose }) {
 				onClick={(e) => e.stopPropagation()}
 			>
 				<button
+					ref={closeButtonRef}
 					type="button"
 					className="profile-modal-close"
 					onClick={onClose}

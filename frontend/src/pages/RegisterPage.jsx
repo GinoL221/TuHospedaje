@@ -100,7 +100,11 @@ export default function RegisterPage() {
 		<main className="login-container">
 			<div className="register-box">
 				<h2>Crear cuenta</h2>
-				{error && <p className="error">{error}</p>}
+				{error && (
+					<p className="error" role="alert">
+						{error}
+					</p>
+				)}
 				<form onSubmit={handleSubmit} noValidate>
 					<label htmlFor="register-first-name">Nombre</label>
 					<input
@@ -109,9 +113,19 @@ export default function RegisterPage() {
 						value={form.firstName}
 						onChange={handleChange}
 						className={fieldErrors.firstName ? "input-error" : ""}
+						aria-invalid={fieldErrors.firstName ? "true" : undefined}
+						aria-describedby={
+							fieldErrors.firstName ? "register-firstName-error" : undefined
+						}
 					/>
 					{fieldErrors.firstName && (
-						<p className="field-error">{fieldErrors.firstName}</p>
+						<p
+							id="register-firstName-error"
+							className="field-error"
+							role="alert"
+						>
+							{fieldErrors.firstName}
+						</p>
 					)}
 
 					<label htmlFor="register-last-name">Apellido</label>
@@ -121,9 +135,19 @@ export default function RegisterPage() {
 						value={form.lastName}
 						onChange={handleChange}
 						className={fieldErrors.lastName ? "input-error" : ""}
+						aria-invalid={fieldErrors.lastName ? "true" : undefined}
+						aria-describedby={
+							fieldErrors.lastName ? "register-lastName-error" : undefined
+						}
 					/>
 					{fieldErrors.lastName && (
-						<p className="field-error">{fieldErrors.lastName}</p>
+						<p
+							id="register-lastName-error"
+							className="field-error"
+							role="alert"
+						>
+							{fieldErrors.lastName}
+						</p>
 					)}
 
 					<label htmlFor="register-email">Email</label>
@@ -134,9 +158,15 @@ export default function RegisterPage() {
 						value={form.email}
 						onChange={handleChange}
 						className={fieldErrors.email ? "input-error" : ""}
+						aria-invalid={fieldErrors.email ? "true" : undefined}
+						aria-describedby={
+							fieldErrors.email ? "register-email-error" : undefined
+						}
 					/>
 					{fieldErrors.email && (
-						<p className="field-error">{fieldErrors.email}</p>
+						<p id="register-email-error" className="field-error" role="alert">
+							{fieldErrors.email}
+						</p>
 					)}
 
 					<label htmlFor="register-password">Contraseña</label>
@@ -157,6 +187,10 @@ export default function RegisterPage() {
 										  pwChecks.hasNumber
 										? "input-valid"
 										: ""
+							}
+							aria-invalid={fieldErrors.password ? "true" : undefined}
+							aria-describedby={
+								fieldErrors.password ? "register-password-error" : undefined
 							}
 						/>
 						<button
@@ -201,7 +235,13 @@ export default function RegisterPage() {
 						</ul>
 					)}
 					{fieldErrors.password && (
-						<p className="field-error">{fieldErrors.password}</p>
+						<p
+							id="register-password-error"
+							className="field-error"
+							role="alert"
+						>
+							{fieldErrors.password}
+						</p>
 					)}
 
 					<label htmlFor="register-confirm-password">
@@ -215,6 +255,12 @@ export default function RegisterPage() {
 							value={form.confirmPassword}
 							onChange={handleChange}
 							className={fieldErrors.confirmPassword ? "input-error" : ""}
+							aria-invalid={fieldErrors.confirmPassword ? "true" : undefined}
+							aria-describedby={
+								fieldErrors.confirmPassword
+									? "register-confirmPassword-error"
+									: undefined
+							}
 						/>
 						<button
 							type="button"
@@ -236,7 +282,13 @@ export default function RegisterPage() {
 						</button>
 					</div>
 					{fieldErrors.confirmPassword && (
-						<p className="field-error">{fieldErrors.confirmPassword}</p>
+						<p
+							id="register-confirmPassword-error"
+							className="field-error"
+							role="alert"
+						>
+							{fieldErrors.confirmPassword}
+						</p>
 					)}
 
 					<button type="submit" disabled={loading}>

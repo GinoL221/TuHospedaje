@@ -151,6 +151,32 @@ describe("LoginPage - empty submit", () => {
 		).toBeInTheDocument();
 		expect(authValue.login).not.toHaveBeenCalled();
 	});
+
+	it("associates accessible aria attributes with field errors", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue();
+		renderLoginPage({ authValue, initialEntries: ["/login"] });
+
+		await fillAndSubmit(user, {});
+
+		const emailInput = getEmailInput();
+		const passwordInput = getPasswordInput();
+
+		expect(emailInput).toHaveAttribute("aria-invalid", "true");
+		expect(emailInput).toHaveAttribute("aria-describedby", "login-email-error");
+		const emailError = screen.getByText("El email es obligatorio");
+		expect(emailError).toHaveAttribute("id", "login-email-error");
+		expect(emailError).toHaveAttribute("role", "alert");
+
+		expect(passwordInput).toHaveAttribute("aria-invalid", "true");
+		expect(passwordInput).toHaveAttribute(
+			"aria-describedby",
+			"login-password-error",
+		);
+		const passwordError = screen.getByText("La contraseña es obligatoria");
+		expect(passwordError).toHaveAttribute("id", "login-password-error");
+		expect(passwordError).toHaveAttribute("role", "alert");
+	});
 });
 
 describe("LoginPage - invalid email format", () => {
@@ -214,9 +240,8 @@ describe("LoginPage - failed login", () => {
 
 		await fillAndSubmit(user, { email: "test@example.com", password: "wrong" });
 
-		expect(
-			await screen.findByText("Credenciales inválidas"),
-		).toBeInTheDocument();
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent("Credenciales inválidas");
 		expect(
 			screen.getByRole("button", { name: "Iniciar sesión" }),
 		).not.toBeDisabled();
