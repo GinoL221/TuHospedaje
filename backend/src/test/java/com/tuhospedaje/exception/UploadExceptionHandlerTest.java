@@ -4,11 +4,12 @@ import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.JwtService;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.repository.EmailOutboxRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
-import com.tuhospedaje.service.CloudinaryService;
+import com.tuhospedaje.service.ImageStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * SC-6.2: UploadException → 502 standard JSON shape, no Cloudinary internals leaked.
+ * UploadException → standard JSON shape with no storage internals leaked. Storage is
+ * the server's own disk, so a failed write is a 500 — there is no upstream provider
+ * whose failure would map to 502 anymore.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,6 +39,9 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmailOutboxRepository emailOutboxRepository;
 
     @Autowired
     private RatingRepository ratingRepository;
@@ -50,12 +56,15 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
     private JwtService jwtService;
 
     @MockitoBean
-    private CloudinaryService cloudinaryService;
+    private ImageStorageService imageStorageService;
 
     private String adminToken;
 
     @BeforeEach
     void setUp() {
+        // Outbox rows reference users through FK_email_outbox_user, so they go first.
+        // Without this, the suite fails only when another test ran before this one.
+        emailOutboxRepository.deleteAll();
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
         lodgingRepository.deleteAll();
@@ -70,12 +79,12 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
         adminToken = jwtService.generateToken(admin);
     }
 
-    /** SC-6.2: Cloudinary upload failure returns 502 with standard shape, no internal message leaked */
+    /** A failed write to the uploads directory returns 500 with the generic message, no storage internals leaked */
     @Test
-    void cloudinaryUploadFailure_returns502StandardShape() throws Exception {
-        when(cloudinaryService.uploadImage(any()))
-                .thenThrow(new UploadException("No se pudo subir la imagen",
-                        new RuntimeException("Cloudinary API key invalid - internal detail")));
+    void storageWriteFailure_returns500StandardShape() throws Exception {
+        when(imageStorageService.store(any()))
+                .thenThrow(new UploadException("No se pudo guardar la imagen",
+                        new RuntimeException("Permission denied: /var/lib/uploads - internal detail")));
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.jpg", "image/jpeg", "fake-image-bytes".getBytes());
@@ -86,24 +95,24 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
                         .cookie(accessCookie(adminToken))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
-                .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.status").value(502))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.error").isString())
                 .andExpect(jsonPath("$.error").value(
                         org.hamcrest.Matchers.not(
-                                org.hamcrest.Matchers.containsString("Cloudinary API key invalid"))));
+                                org.hamcrest.Matchers.containsString("Permission denied"))));
     }
 
     /**
-     * A rejected file is the caller's input, so it must be 400 — not the 502 that a
-     * Cloudinary round-trip would produce. Unlike the codebase's older
+     * A rejected file is the caller's input, so it must be 400 — not the 500 that a
+     * failed write would produce. Unlike the codebase's older
      * IllegalArgumentException throw sites (hardcoded literals that fall back verbatim),
      * the upload guards throw MessageSource keys, so this also proves the key branch of
      * handleIllegalArgument actually resolves instead of echoing "error.upload.invalid_type".
      */
     @Test
     void rejectedFileType_returns400WithResolvedMessage() throws Exception {
-        when(cloudinaryService.uploadImage(any()))
+        when(imageStorageService.store(any()))
                 .thenThrow(new IllegalArgumentException("error.upload.invalid_type"));
 
         MockMultipartFile file = new MockMultipartFile(
@@ -123,7 +132,7 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
     /** The direct service size guard retains the localized 400 response contract. */
     @Test
     void serviceLevelSizeRejection_returns400WithResolvedMessage() throws Exception {
-        when(cloudinaryService.uploadImage(any()))
+        when(imageStorageService.store(any()))
                 .thenThrow(new IllegalArgumentException("error.upload.too_large"));
 
         MockMultipartFile file = new MockMultipartFile(
@@ -143,7 +152,7 @@ class UploadExceptionHandlerTest extends AbstractIntegrationTest {
     /** Same guard, empty part: still the caller's input, still 400. */
     @Test
     void emptyFile_returns400WithResolvedMessage() throws Exception {
-        when(cloudinaryService.uploadImage(any()))
+        when(imageStorageService.store(any()))
                 .thenThrow(new IllegalArgumentException("error.upload.empty"));
 
         MockMultipartFile file = new MockMultipartFile(

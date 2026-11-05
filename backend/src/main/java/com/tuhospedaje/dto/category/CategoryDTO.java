@@ -31,7 +31,7 @@ public class CategoryDTO {
     @HttpsImageUrl(groups = {CategoryValidationGroups.OnCreate.class, CategoryValidationGroups.OnUpdate.class})
     @Schema(description = "Representative image URL for the category (absolute https). Required on create; "
             + "omit on update to preserve the previously stored value.",
-            example = "https://res.cloudinary.com/demo/image/upload/hotel.jpg")
+            example = "/uploads/3f2c9a1e-8c1d-4b7e-9f0a-2d6e5b8c7a1f.jpg")
     private String imageUrl;
 
     public Category toEntity() {
