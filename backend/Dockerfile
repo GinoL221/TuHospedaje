@@ -16,7 +16,7 @@ RUN chmod +x mvnw \
     && ./mvnw -B -DskipTests dependency:go-offline
 COPY src src
 RUN ./mvnw -B -DskipTests package \
-    && cp target/backend-0.0.1-SNAPSHOT.jar /workspace/app.jar
+    && cp target/app.jar /workspace/app.jar
 
 FROM eclipse-temurin:17-jre@sha256:207ecae0b2b104dfc6dfa763d1e9cd2041cb344800a180e24cb1a28ed533ff90
 # Require the OpenSSL security update in the runtime image.

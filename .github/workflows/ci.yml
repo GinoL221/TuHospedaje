@@ -26,6 +26,9 @@ jobs:
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
             printf 'SESSION_REFRESH_KEY=%s\n' "$SESSION_REFRESH_KEY"
           } >> "$GITHUB_ENV"
+      - name: Check production delivery configuration
+        working-directory: .
+        run: python3 -m unittest tools.tests.test_prod_delivery_config -v
       - run: ./mvnw -B verify
 
   frontend:
@@ -288,6 +291,9 @@ jobs:
           load: true
           push: false
           tags: ${{ steps.images.outputs.frontend }}
+          build-args: |
+            VITE_API_URL=/api
+            VITE_WHATSAPP_NUMBER=${{ vars.VITE_WHATSAPP_NUMBER }}
 
       - name: Scan backend image
         uses: aquasecurity/trivy-action@v0.36.0

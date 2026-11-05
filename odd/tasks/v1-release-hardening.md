@@ -24,7 +24,7 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P0 | Subida local de imágenes y eliminación de Cloudinary | S2–S7 | 0 | `fix/local-image-uploads` |
 | P1 | Rate limit detrás de proxy (`forward-headers-strategy`) | S1 | 1 | `fix/rate-limit-real-client-ip` |
 | P2 | Vida del access token y revocación por cambio de contraseña | S1 | 2 | `fix/access-token-revocation` |
-| P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile | S1 | 2 | `fix/prod-delivery-config` |
+| P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile — en curso; implementación inline, verificación independiente (riesgo de entrega) | S1, S8, S9, S11 | 2 | `fix/prod-delivery-config` |
 | P4 | Borrado de alojamiento con datos asociados | S9 | 2 | `fix/lodging-delete-with-references` |
 | P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
 | P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
@@ -62,3 +62,6 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L7.** (2026-11-05) PR #355 mergeado en `main` (`db5ef4b`), cerrando issue #354: subida local con `LocalImageStorageService`, validación en `ImageContentValidator`, endpoints públicos en `/uploads/**` y eliminación total de Cloudinary.
 - **L8.** (2026-11-05) P1 implementado en rama `fix/rate-limit-real-client-ip`: `server.forward-headers-strategy=native` y `internal-proxies` configurados en `application-prod.properties` para aislar cuotas de rate limit por IP real detrás de nginx, verificado con `RemoteIpRateLimitIntegrationTest` y `UntrustedRemoteIpRateLimitIntegrationTest`.
 - **L9.** (2026-11-05) P2 implementado en rama `fix/access-token-revocation`: `token_version` y `password_changed_at` en `User` (migración V12) para invalidar tokens viejos inmediatamente en `JwtAuthenticationFilter` tras cambio de contraseña, verificado con `PasswordChangeIntegrationTest` (401 inmediato para token previo) y TTL de 15m (900000 ms) en `application-prod.properties`.
+- **L10.** (2026-11-05) PR #359 mergeado (`4ef1fa9`), issue #358 cerrado, seis jobs de CI verdes. P2 revoca tokens con `tokenVersion`; tokens legacy sin claim y revocación al logout no están cubiertos.
+- **L11.** (2026-11-05) «si» — autorización para P3 (outbox, WhatsApp build-time, jar estable). «reintenta» — autorización para repetir el explorador fallido; el segundo intento completó el mapa. Ruta: implementación inline, sin unidades paralelas independientes; verificador independiente por riesgo de entrega (ítem 5). Sin reiniciar ni modificar el stack persistente.
+- **L12.** (2026-11-05) Issue #360 creado (`type:bug`, `status:approved`) para P3. Implementación verificada localmente: `tools/tests/test_prod_delivery_config.py` (8/8 tests en la suite tools), 20/20 tests de outbox/SMTP, packaging de `target/app.jar` y build frontend con `VITE_WHATSAPP_NUMBER`. RDD approved y burned (`review-ae4b2623e2ecff55`).
