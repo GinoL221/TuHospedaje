@@ -61,6 +61,9 @@ services:
       # default (/uploads) is correct; override only for a different origin.
       TUHOSPEDAJE_UPLOADS_PUBLIC_PREFIX:
         ${TUHOSPEDAJE_UPLOADS_PUBLIC_PREFIX:-/uploads}
+      # Dispatch requires both the outbox scheduler and the SMTP transport.
+      TUHOSPEDAJE_EMAIL_OUTBOX_ENABLED:
+        ${TUHOSPEDAJE_EMAIL_OUTBOX_ENABLED:-false}
       MAIL_SMTP_ENABLED: ${MAIL_SMTP_ENABLED:-false}
       MAILTRAP_HOST: ${MAILTRAP_HOST:-}
       MAILTRAP_PORT: ${MAILTRAP_PORT:-2525}

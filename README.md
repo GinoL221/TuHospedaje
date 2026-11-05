@@ -187,6 +187,18 @@ El backend queda disponible en `http://localhost:8080` y Vite en `http://localho
 
 El Compose de producción ejecuta imágenes ya construidas y referenciadas por `BACKEND_IMAGE` y `FRONTEND_IMAGE`. `compose.prod.yaml` no contiene instrucciones `build`: publicá las imágenes desde tu pipeline y usá tags inmutables o digests.
 
+El backend empaqueta `target/app.jar`, independiente de la versión del `pom.xml`; el Dockerfile conserva `/app/app.jar` como entrada.
+
+WhatsApp se configura **al construir la imagen**, mediante la variable de repositorio de GitHub Actions `VITE_WHATSAPP_NUMBER` (dígitos internacionales, sin `+`). CI la pasa como argumento de build junto con `VITE_API_URL=/api`. Si está vacía, el control no aparece. Cambiarla exige construir una imagen nueva: agregarla a `deploy/prod.env` o al entorno de nginx no cambia el bundle. Para un build manual:
+
+```bash
+docker build -t tuhospedaje-frontend:local \
+  --build-arg VITE_API_URL=/api \
+  --build-arg VITE_WHATSAPP_NUMBER="${VITE_WHATSAPP_NUMBER:-}" frontend
+```
+
+Para enviar los correos encolados, configurá **ambas** opciones `TUHOSPEDAJE_EMAIL_OUTBOX_ENABLED=true` y `MAIL_SMTP_ENABLED=true` en `deploy/prod.env`, además de `MAILTRAP_HOST`, `MAILTRAP_PORT`, `MAILTRAP_USERNAME` y `MAILTRAP_PASSWORD` del transporte SMTP. Por defecto ambas están desactivadas; con cualquiera desactivada los correos quedan `PENDING`, sin envío. Habilitarlas requiere un servidor SMTP válido; la configuración por sí sola no prueba la entrega. El despachador conserva los reintentos y la limpieza existentes.
+
 1. Copiá la plantilla del operador y completá sus valores fuera del repositorio:
 
    ```bash
