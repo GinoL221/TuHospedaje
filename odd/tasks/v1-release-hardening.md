@@ -24,9 +24,9 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P0 | Subida local de imágenes y eliminación de Cloudinary | S2–S7 | 0 | `fix/local-image-uploads` |
 | P1 | Rate limit detrás de proxy (`forward-headers-strategy`) | S1 | 1 | `fix/rate-limit-real-client-ip` |
 | P2 | Vida del access token y revocación por cambio de contraseña | S1 | 2 | `fix/access-token-revocation` |
-| P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile — en curso; implementación inline, verificación independiente (riesgo de entrega) | S1, S8, S9, S11 | 2 | `fix/prod-delivery-config` |
-| P4 | Borrado de alojamiento con datos asociados — en curso; validación de reservas, limpieza de ratings/favoritos y feedback en Admin | S9, S8, S11, S12 | 2 | `fix/lodging-delete-with-references` |
-| P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
+| P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile | S1, S8, S9, S11 | 2 | `fix/prod-delivery-config` |
+| P4 | Borrado de alojamiento con datos asociados | S9, S8, S11, S12 | 2 | `fix/lodging-delete-with-references` |
+| P5 | Contraste en reposo y hover de toda la interfaz — en curso; header hover, botones de tablas Admin y alertas | — | 3 | `fix/contrast-hover-states` |
 | P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
 | P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
 | P8 | Admin en ventana angosta sin pantalla táctil | — | 3 | `fix/admin-narrow-window` |
@@ -68,3 +68,5 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L13.** (2026-11-05) PR #361 mergeado en `main` (`03ffb7f`), issue #360 cerrado automáticamente. P3 finalizado con éxito.
 - **L14.** (2026-11-05) Decisión de producto para P4 aprobada por el usuario: bloquear borrado si el alojamiento tiene reservas asociadas (HTTP 400, mensaje claro) para proteger el historial y contratos de los huéspedes. Si no tiene reservas, limpiar automáticamente calificaciones (`ratings`) y favoritos (`user_favorites`) antes de eliminarlo. En el panel Admin (`AdminLodgings.jsx`), capturar el error y mostrarlo en una alerta accesible con `role="alert"`.
 - **L15.** (2026-11-05) Issue #362 creado (`type:bug`, `status:approved`) para P4. Implementación y tests completados: `LodgingServiceImplTest` (14/14), `LodgingControllerIntegrationTest` (51/51), `AdminLodgings.test.jsx` (20/20). RDD assess medium.
+- **L16.** (2026-11-05) PR #363 mergeado en `main` (`396e168`), issue #362 cerrado automáticamente. P4 y Fase 2 completadas.
+- **L17.** (2026-11-05) Issue #364 creado (`type:bug`, `status:approved`) para P5. Implementación en rama `fix/contrast-hover-states`: hover de enlaces del header a `var(--secondary)` (9.19:1), botones de tablas de Admin (Editar a `var(--secondary)` 9.19:1, Eliminar y Quitar admin a `var(--feedback-danger-text)` 8.75:1, Hacer admin a `var(--feedback-success-text)` 6.56:1 con foco visible) y alerta de recomendaciones en Home a tokens semánticos de peligro (8.16:1). Tests de contrato de contraste añadidos y verdes (14/14 en `primaryActionContrast.test.js`). RDD assess medium.

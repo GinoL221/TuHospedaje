@@ -119,7 +119,11 @@ html {
 }
 
 .nav-links a:hover {
-  color: var(--primary);
+  color: var(--secondary);
+}
+
+.nav-links button.nav-link:hover {
+  color: var(--secondary);
 }
 
 .avatar {
