@@ -20,7 +20,16 @@ export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false);
 	const location = useLocation();
 	const message = location.state?.message;
-	const from = location.state?.from?.pathname || "/";
+	const destination = location.state?.from;
+	const from =
+		destination && typeof destination === "object"
+			? {
+					pathname: destination.pathname || "/",
+					search: destination.search ?? "",
+				}
+			: destination || "/";
+	const fromState = destination?.state;
+	const registerState = destination ? { from: destination } : undefined;
 
 	const handleChange = (e) => {
 		setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,7 +62,10 @@ export default function LoginPage() {
 		try {
 			setLoading(true);
 			await login(form.email, form.password);
-			navigate(from, { replace: true });
+			navigate(
+				from,
+				fromState ? { replace: true, state: fromState } : { replace: true },
+			);
 		} catch (err) {
 			setError(err.message);
 		} finally {
@@ -137,7 +149,10 @@ export default function LoginPage() {
 					</button>
 				</form>
 				<p>
-					¿No tenés cuenta? <Link to="/register">Crear cuenta</Link>
+					¿No tenés cuenta?{" "}
+					<Link to="/register" state={registerState}>
+						Crear cuenta
+					</Link>
 				</p>
 			</div>
 		</main>
