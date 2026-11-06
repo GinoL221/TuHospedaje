@@ -85,8 +85,10 @@
   width: 100%;
   box-sizing: border-box;
 }
-.search-card input:focus-visible {
-  outline: none;
+.search-card input:focus-visible,
+.search-card .react-datepicker__input-container input:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: -2px;
   background-color: #f8fafc;
 }
 .search-card form > div > input {
@@ -543,6 +545,10 @@
   box-shadow: var(--shadow-md);
   border-color: var(--secondary);
   color: var(--secondary);
+}
+.category-tag:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
 }
 .category-icon {
   display: flex;

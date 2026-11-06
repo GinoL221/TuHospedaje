@@ -65,8 +65,16 @@ export default function LoginPage() {
 		<main className="login-container">
 			<div className="login-box">
 				<h2>Iniciar sesión</h2>
-				{message && <p className="error">{message}</p>}
-				{error && <p className="error">{error}</p>}
+				{message && (
+					<p className="error" role="status">
+						{message}
+					</p>
+				)}
+				{error && (
+					<p className="error" role="alert">
+						{error}
+					</p>
+				)}
 				<form onSubmit={handleSubmit} noValidate>
 					<label htmlFor="login-email">Email</label>
 					<input
@@ -76,9 +84,15 @@ export default function LoginPage() {
 						value={form.email}
 						onChange={handleChange}
 						className={fieldErrors.email ? "input-error" : ""}
+						aria-invalid={fieldErrors.email ? "true" : undefined}
+						aria-describedby={
+							fieldErrors.email ? "login-email-error" : undefined
+						}
 					/>
 					{fieldErrors.email && (
-						<p className="field-error">{fieldErrors.email}</p>
+						<p id="login-email-error" className="field-error" role="alert">
+							{fieldErrors.email}
+						</p>
 					)}
 
 					<label htmlFor="login-password">Contraseña</label>
@@ -90,6 +104,10 @@ export default function LoginPage() {
 							value={form.password}
 							onChange={handleChange}
 							className={fieldErrors.password ? "input-error" : ""}
+							aria-invalid={fieldErrors.password ? "true" : undefined}
+							aria-describedby={
+								fieldErrors.password ? "login-password-error" : undefined
+							}
 						/>
 						<button
 							type="button"
@@ -109,7 +127,9 @@ export default function LoginPage() {
 						</button>
 					</div>
 					{fieldErrors.password && (
-						<p className="field-error">{fieldErrors.password}</p>
+						<p id="login-password-error" className="field-error" role="alert">
+							{fieldErrors.password}
+						</p>
 					)}
 
 					<button type="submit" disabled={loading}>

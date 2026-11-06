@@ -120,6 +120,32 @@ describe("RegisterPage - empty submit", () => {
 		expect(screen.getByText("Confirmá tu contraseña")).toBeInTheDocument();
 		expect(authValue.register).not.toHaveBeenCalled();
 	});
+
+	it("associates accessible aria attributes with all field errors", async () => {
+		const user = userEvent.setup();
+		renderRegisterPage();
+
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+		const fields = [
+			"firstName",
+			"lastName",
+			"email",
+			"password",
+			"confirmPassword",
+		];
+		for (const field of fields) {
+			const input = getInput(field);
+			expect(input).toHaveAttribute("aria-invalid", "true");
+			expect(input).toHaveAttribute(
+				"aria-describedby",
+				`register-${field}-error`,
+			);
+			const errorEl = document.getElementById(`register-${field}-error`);
+			expect(errorEl).toBeInTheDocument();
+			expect(errorEl).toHaveAttribute("role", "alert");
+		}
+	});
 });
 
 describe("RegisterPage - password length limit", () => {

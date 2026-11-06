@@ -26,8 +26,8 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P2 | Vida del access token y revocación por cambio de contraseña | S1 | 2 | `fix/access-token-revocation` |
 | P3 | Configuración de producción: outbox, WhatsApp build-arg, jar del Dockerfile | S1, S8, S9, S11 | 2 | `fix/prod-delivery-config` |
 | P4 | Borrado de alojamiento con datos asociados | S9, S8, S11, S12 | 2 | `fix/lodging-delete-with-references` |
-| P5 | Contraste en reposo y hover de toda la interfaz — en curso; header hover, botones de tablas Admin y alertas | — | 3 | `fix/contrast-hover-states` |
-| P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
+| P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
+| P6 | Foco, teclado y semántica de errores — en curso; foco visible, focus trap en UserProfileModal y semántica accesible de formularios | — | 3 | `fix/focus-keyboard-semantics` |
 | P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
 | P8 | Admin en ventana angosta sin pantalla táctil | — | 3 | `fix/admin-narrow-window` |
 | P9 | Historias 4, 22 y 26 | S12, S9 | 4 | `fix/user-story-gaps` |
@@ -70,3 +70,5 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L15.** (2026-11-05) Issue #362 creado (`type:bug`, `status:approved`) para P4. Implementación y tests completados: `LodgingServiceImplTest` (14/14), `LodgingControllerIntegrationTest` (51/51), `AdminLodgings.test.jsx` (20/20). RDD assess medium.
 - **L16.** (2026-11-05) PR #363 mergeado en `main` (`396e168`), issue #362 cerrado automáticamente. P4 y Fase 2 completadas.
 - **L17.** (2026-11-05) Issue #364 creado (`type:bug`, `status:approved`) para P5. Implementación en rama `fix/contrast-hover-states`: hover de enlaces del header a `var(--secondary)` (9.19:1), botones de tablas de Admin (Editar a `var(--secondary)` 9.19:1, Eliminar y Quitar admin a `var(--feedback-danger-text)` 8.75:1, Hacer admin a `var(--feedback-success-text)` 6.56:1 con foco visible) y alerta de recomendaciones en Home a tokens semánticos de peligro (8.16:1). Tests de contrato de contraste añadidos y verdes (14/14 en `primaryActionContrast.test.js`). RDD assess medium.
+- **L18.** (2026-11-05) PR #365 mergeado en `main` (`2c4a37a`), issue #364 cerrado automáticamente. P5 completado.
+- **L19.** (2026-11-05) Issue #366 creado (`type:bug`, `status:approved`) para P6. Implementación en rama `fix/focus-keyboard-semantics`: foco visible en `ProductCard` (`--product-card-focus` en `.hotel-card-link`) e inputs del buscador (`Home.css`); focus trap, tecla `Escape` y foco inicial/restaurado en `UserProfileModal`; semántica de errores accesible (`aria-invalid`, `aria-describedby` y `role="alert"`) en `LoginPage` y `RegisterPage`. Tests unitarios en `UserProfileModal.test.jsx` (5/5), `LoginPage.test.jsx` (11/11) y `RegisterPage.test.jsx` (11/11). RDD assess medium.
