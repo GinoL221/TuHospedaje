@@ -40,7 +40,7 @@ class RatingAggregateRepositoryTest extends AbstractIntegrationTest {
 
     private Lodging lodgingA;
     private Lodging lodgingB;
-    private User rater;
+    private int raterSequence;
 
     @BeforeEach
     void setUp() {
@@ -49,13 +49,7 @@ class RatingAggregateRepositoryTest extends AbstractIntegrationTest {
         lodgingRepository.deleteAll();
         userRepository.deleteAll();
 
-        rater = userRepository.save(User.builder()
-                .firstName("Rater")
-                .lastName("User")
-                .email("rater-agg@test.com")
-                .password("hash")
-                .role(RoleEnum.USER)
-                .build());
+        raterSequence = 0;
 
         lodgingA = lodgingRepository.save(buildLodging("Lodging A", "agg-a@test.com"));
         lodgingB = lodgingRepository.save(buildLodging("Lodging B", "agg-b@test.com"));
@@ -145,6 +139,13 @@ class RatingAggregateRepositoryTest extends AbstractIntegrationTest {
     private void addRating(Lodging lodging, int score) {
         Rating r = new Rating();
         r.setLodging(lodging);
+        User rater = userRepository.save(User.builder()
+                .firstName("Rater")
+                .lastName("User")
+                .email("rater-agg-" + raterSequence++ + "@test.com")
+                .password("hash")
+                .role(RoleEnum.USER)
+                .build());
         r.setUser(rater);
         r.setScore(score);
         ratingRepository.save(r);
