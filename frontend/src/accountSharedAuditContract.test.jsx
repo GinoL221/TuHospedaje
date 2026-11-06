@@ -69,7 +69,10 @@ describe("account and shared surfaces visual contract", () => {
 		);
 		const unauthorized = readSource("pages/Unauthorized/Unauthorized.jsx");
 
-		expect(login).toContain("navigate(from, { replace: true })");
+		// The login redirect now carries from.state, so the call spans several
+		// lines. The contract is still "return to from with replace semantics".
+		expect(login).toMatch(/navigate\(\s*from,/);
+		expect(login).toMatch(/replace: true/);
 		expect(register).toContain('err.code === "duplicate_email"');
 		expect(favorites).toContain('from "../../services/favoriteService"');
 		expect(favoriteService).toContain("del(`/favorites/${lodgingId}`)");
