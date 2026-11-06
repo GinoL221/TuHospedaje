@@ -29,8 +29,8 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
 | P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
 | P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
-| P8 | Admin en ventana angosta sin pantalla táctil — en curso; scroll horizontal de tablas y colapso de sidebar en escritorio angosto | — | 3 | `fix/admin-narrow-window` |
-| P9 | Historias 4, 22 y 26 | S12, S9 | 4 | `fix/user-story-gaps` |
+| P8 | Admin en ventana angosta sin pantalla táctil | — | 3 | `fix/admin-narrow-window` |
+| P9 | Historias 4, 22 y 26 — en curso; buscador con párrafo descriptor, subrayado en políticas y confirmación de 4 columnas | S12, S9 | 4 | `fix/user-story-gaps` |
 | P10 | Continuidad de flujo y detalles de UX | S9 | 4 | `fix/flow-continuity` |
 | P11 | Fecha local en la reserva (`toISOString`) | S9 | 4 | `fix/booking-local-date` |
 | P12 | Respuestas 4xx correctas y límites de paginación | — | 5 | `fix/error-status-mapping` |
@@ -76,3 +76,5 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L21.** (2026-11-05) Issue #368 creado (`type:bug`, `status:approved`) para P7. Implementación en rama `fix/ui-copy-locale`: captura y traducción de fallos de red (`TypeError` / `Failed to fetch`) a mensaje en español rioplatense en `api.js`, voseo homogeneizado en `AdminReservations.jsx` (*«Intentá de nuevo»*), estados vacíos y calendarios revisados. Tests en `api.test.js` (38/38) y `AdminReservations.test.jsx` (13/13). RDD assess medium.
 - **L22.** (2026-11-05) PR #369 mergeado en `main` (`54f8cf8`), issue #368 cerrado automáticamente. P7 completado.
 - **L23.** (2026-11-05) Issue #370 creado (`type:bug`, `status:approved`) para P8. Implementación en rama `fix/admin-narrow-window`: `.admin-content` con `overflow-x: auto` permitiendo scroll horizontal en tablas sin truncar columnas; `min-width: 580px` en `table`; media query `(max-width: 900px)` que colapsa la barra lateral a riel de iconos (72px) liberando 168px de espacio en escritorio angosto; botones de navegación lateral con `title` y `aria-label`. Tests en `adminSurfaceContract.test.js` (4/4) y `Admin.test.jsx` (8/8). RDD assess medium.
+- **L24.** (2026-11-06) PR #371 mergeado en `main` (`879517f`), issue #370 cerrado automáticamente. P8 y Fase 3 completadas.
+- **L25.** (2026-11-06) Issue #372 creado (`type:bug`, `status:approved`) para P9. Decisión de producto S12 aprobada por el usuario: mantener la grilla de 4 columnas en escritorio de Home (US 4); agregar párrafo descriptor en el buscador de Home (US 22); restaurar el subrayado en el título de Políticas de Detalle (US 26). Implementado en rama `fix/user-story-gaps`, verificado con tests en `Home.test.jsx` (42/42) y `ProductDetail.test.jsx` (3/3). RDD assess medium.

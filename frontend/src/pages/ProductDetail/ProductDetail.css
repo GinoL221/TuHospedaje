@@ -437,8 +437,9 @@
   color: var(--secondary);
   font-size: 1.35rem;
   font-weight: 700;
-  padding-bottom: 0;
-  border-bottom: none;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary);
+  display: inline-block;
 }
 .policies-grid {
   display: grid;
