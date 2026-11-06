@@ -241,6 +241,9 @@ export default function Home() {
 			<section className="search">
 				<div className="search-card">
 					<h2>Buscar hospedaje</h2>
+					<p className="search-subtitle">
+						Elegí tu destino y fechas para encontrar las mejores opciones.
+					</p>
 					<form onSubmit={handleSearch}>
 						<div style={{ position: "relative", width: "100%" }}>
 							<input

@@ -48,7 +48,14 @@
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
+}
+.search-card .search-subtitle {
+  color: var(--secondary);
+  font-size: var(--type-body-size);
+  font-weight: 500;
+  margin: 0 0 24px;
+  opacity: 0.85;
 }
 .search-card form {
   display: grid;

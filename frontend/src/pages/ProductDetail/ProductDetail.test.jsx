@@ -1606,6 +1606,15 @@ describe("ProductDetail - Policies detail", () => {
 
 		expect(screen.queryByText("Políticas")).not.toBeInTheDocument();
 	});
+
+	it("underlines the policies block title to emphasize importance (US 26)", () => {
+		const css = readFileSync(resolve(__dirname, "ProductDetail.css"), "utf8");
+		const titleRule = css.match(/\.policies-title\s*\{([^}]*)\}/)?.[1];
+
+		expect(titleRule).toBeDefined();
+		expect(titleRule).toMatch(/border-bottom:\s*2px solid/);
+		expect(titleRule).not.toMatch(/border-bottom:\s*none/);
+	});
 });
 
 describe("ProductDetail - ReviewsSection integration", () => {

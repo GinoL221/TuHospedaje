@@ -1337,4 +1337,15 @@ describe("Home - visitor accessibility contract", () => {
 		expect(css).toMatch(/@media \(max-width: 360px\)/);
 		expect(css).toMatch(/\.search-card input[\s\S]*?min-height: 48px/);
 	});
+
+	it("renders an informative search description paragraph under the title (US 22)", () => {
+		mockGetDefaults();
+		renderHome();
+
+		expect(
+			screen.getByText(
+				"Elegí tu destino y fechas para encontrar las mejores opciones.",
+			),
+		).toBeInTheDocument();
+	});
 });
