@@ -11,6 +11,10 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -252,7 +256,41 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error",
                         messageSource.getMessage("error.resource.not_found",
                                 new Object[]{ex.getResourcePath()}, locale),
-                        "status", 404));
+                                "status", 404));
+    }
+
+    /**
+     * A request the client got wrong is not a server failure, but without a dedicated
+     * handler each of these lands on the catch-all: one {@code log.error} with a stack
+     * trace per request and a 500 that tells the caller to retry something that can never
+     * succeed. Each case answers with the status that names whose mistake it was.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException ex, Locale locale) {
+        log.debug("Malformed request body: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", resolveMessage("error.request.malformed", locale), "status", 400));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, Locale locale) {
+        log.debug("HTTP method not supported: {}", ex.getMethod());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(Map.of("error", resolveMessage("error.request.method_not_supported", locale), "status", 405));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, Locale locale) {
+        log.debug("Content type not supported: {}", ex.getContentType());
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(Map.of("error", resolveMessage("error.request.media_type_not_supported", locale), "status", 415));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingParameter(MissingServletRequestParameterException ex, Locale locale) {
+        log.debug("Missing request parameter: {}", ex.getParameterName());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", resolveMessage("error.request.missing_parameter", locale), "status", 400));
     }
 
     @ExceptionHandler(UploadException.class)
