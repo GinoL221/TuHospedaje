@@ -24,11 +24,26 @@ function BookingSentinel() {
 }
 
 function FavoritesSentinel() {
-	return <div data-testid="favorites-sentinel">favorites page</div>;
+	const location = useLocation();
+	return (
+		<div data-testid="favorites-sentinel">
+			favorites page, search: {location.search || "none"}, checkIn:{" "}
+			{location.state?.checkIn ?? "none"}
+		</div>
+	);
 }
 
 function HomeSentinel() {
 	return <div data-testid="home-sentinel">home page</div>;
+}
+
+function RegisterSentinel() {
+	const location = useLocation();
+	return (
+		<div data-testid="register-sentinel">
+			registration page, from: {location.state?.from?.pathname ?? "none"}
+		</div>
+	);
 }
 
 function renderLoginPage({ authValue, initialEntries } = {}) {
@@ -36,10 +51,7 @@ function renderLoginPage({ authValue, initialEntries } = {}) {
 		<Routes>
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/favorites" element={<FavoritesSentinel />} />
-			<Route
-				path="/register"
-				element={<div data-testid="register-sentinel">registration page</div>}
-			/>
+			<Route path="/register" element={<RegisterSentinel />} />
 			<Route path="/" element={<HomeSentinel />} />
 		</Routes>,
 		{ authValue, initialEntries },
@@ -135,6 +147,25 @@ describe("LoginPage - booking authentication journey", () => {
 		expect(authValue.login).not.toHaveBeenCalled();
 		expect(authValue.register).not.toHaveBeenCalled();
 	});
+
+	it("forwards the pending destination to the create-account link", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue({ user: null, token: null });
+		renderLoginPage({
+			authValue,
+			initialEntries: [
+				{
+					pathname: "/login",
+					state: { from: { pathname: "/favorites", search: "?page=2" } },
+				},
+			],
+		});
+
+		await user.click(screen.getByRole("link", { name: "Crear cuenta" }));
+
+		const destination = await screen.findByTestId("register-sentinel");
+		expect(destination).toHaveTextContent("from: /favorites");
+	});
 });
 
 describe("LoginPage - empty submit", () => {
@@ -212,6 +243,37 @@ describe("LoginPage - successful login", () => {
 
 		expect(authValue.login).toHaveBeenCalledWith("test@example.com", "secret");
 		expect(await screen.findByTestId("favorites-sentinel")).toBeInTheDocument();
+	});
+
+	it("keeps the destination search and state when returning after login", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue({
+			login: vi.fn().mockResolvedValue(undefined),
+		});
+		renderLoginPage({
+			authValue,
+			initialEntries: [
+				{
+					pathname: "/login",
+					state: {
+						from: {
+							pathname: "/favorites",
+							search: "?page=2",
+							state: { checkIn: "2026-10-15", checkOut: "2026-10-18" },
+						},
+					},
+				},
+			],
+		});
+
+		await fillAndSubmit(user, {
+			email: "test@example.com",
+			password: "secret",
+		});
+
+		const destination = await screen.findByTestId("favorites-sentinel");
+		expect(destination).toHaveTextContent("search: ?page=2");
+		expect(destination).toHaveTextContent("checkIn: 2026-10-15");
 	});
 
 	it("navigates to / when no from state is present", async () => {
