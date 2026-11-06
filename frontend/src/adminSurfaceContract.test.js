@@ -49,4 +49,21 @@ describe("admin shell contract", () => {
 		// The pair this replaced: white on brand orange.
 		expect(contrast("#ffffff", "#FF6B35")).toBeLessThan(3);
 	});
+
+	it("allows horizontal scrolling in admin content area on narrow windows", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+		const contentRule = rule(css, ".admin-content");
+
+		expect(contentRule).toBeDefined();
+		expect(contentRule).toMatch(/overflow-x:\s*auto/);
+		expect(contentRule).not.toMatch(/overflow-x:\s*hidden/);
+	});
+
+	it("preserves table column readability and collapses sidebar on narrow viewports", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+		const tableRule = rule(css, "table");
+
+		expect(tableRule).toMatch(/min-width:\s*580px/);
+		expect(css).toMatch(/@media\s*\(max-width:\s*900px\)/);
+	});
 });
