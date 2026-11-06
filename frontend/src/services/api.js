@@ -17,6 +17,8 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
 // catch blocks already handle.
 const REQUEST_TIMEOUT_MS = 15_000;
 const TIMEOUT_MESSAGE = "La solicitud tardó demasiado. Intentá de nuevo.";
+const NETWORK_ERROR_MESSAGE =
+	"No pudimos conectarnos con el servidor. Revisá tu conexión o intentá de nuevo más tarde.";
 
 // Endpoints that legitimately return 401 for reasons unrelated to an
 // expired/missing session cookie (e.g. wrong credentials on login), plus
@@ -71,6 +73,9 @@ async function fetchWithDeadline(url, config, externalSignal) {
 		if (err?.name === "AbortError") {
 			if (abortedByCaller) throw err;
 			throw new Error(TIMEOUT_MESSAGE, { cause: err });
+		}
+		if (err instanceof TypeError) {
+			throw new Error(NETWORK_ERROR_MESSAGE, { cause: err });
 		}
 		throw err;
 	} finally {

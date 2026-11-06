@@ -59,7 +59,7 @@ export default function AdminReservations() {
 				if (cancelled) return;
 				setReservations([]);
 				setTotalPages(0);
-				setError("No se pudieron cargar las reservas. Intenta nuevamente.");
+				setError("No se pudieron cargar las reservas. Intentá de nuevo.");
 				setLoading(false);
 			});
 
