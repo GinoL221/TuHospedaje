@@ -84,7 +84,18 @@ export default function RegisterPage() {
 		try {
 			setLoading(true);
 			await register(form.firstName, form.lastName, form.email, form.password);
-			navigate("/", { state: { registered: true } });
+			const from = location.state?.from;
+			if (from && typeof from === "object") {
+				const { state: fromState, ...target } = from;
+				navigate(target, {
+					replace: true,
+					state: { ...(fromState ?? {}), registered: true },
+				});
+			} else if (from) {
+				navigate(from, { replace: true, state: { registered: true } });
+			} else {
+				navigate("/", { state: { registered: true } });
+			}
 		} catch (err) {
 			if (err.code === "duplicate_email") {
 				setFieldErrors((prev) => ({ ...prev, email: err.message }));

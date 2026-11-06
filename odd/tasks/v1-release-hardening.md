@@ -30,8 +30,8 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
 | P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
 | P8 | Admin en ventana angosta sin pantalla táctil | — | 3 | `fix/admin-narrow-window` |
-| P9 | Historias 4, 22 y 26 — en curso; buscador con párrafo descriptor, subrayado en políticas y confirmación de 4 columnas | S12, S9 | 4 | `fix/user-story-gaps` |
-| P10 | Continuidad de flujo y detalles de UX | S9 | 4 | `fix/flow-continuity` |
+| P9 | Historias 4, 22 y 26 | S12, S9 | 4 | `fix/user-story-gaps` |
+| P10 | Continuidad de flujo y detalles de UX — en curso; preservación de destino en registro y fechas en detalle de producto | S9 | 4 | `fix/flow-continuity` |
 | P11 | Fecha local en la reserva (`toISOString`) | S9 | 4 | `fix/booking-local-date` |
 | P12 | Respuestas 4xx correctas y límites de paginación | — | 5 | `fix/error-status-mapping` |
 | P13 | Migración: unicidad de ratings, versión y rango de fechas | S11 | 5 | `fix/integrity-migration` |
@@ -78,3 +78,5 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L23.** (2026-11-05) Issue #370 creado (`type:bug`, `status:approved`) para P8. Implementación en rama `fix/admin-narrow-window`: `.admin-content` con `overflow-x: auto` permitiendo scroll horizontal en tablas sin truncar columnas; `min-width: 580px` en `table`; media query `(max-width: 900px)` que colapsa la barra lateral a riel de iconos (72px) liberando 168px de espacio en escritorio angosto; botones de navegación lateral con `title` y `aria-label`. Tests en `adminSurfaceContract.test.js` (4/4) y `Admin.test.jsx` (8/8). RDD assess medium.
 - **L24.** (2026-11-06) PR #371 mergeado en `main` (`879517f`), issue #370 cerrado automáticamente. P8 y Fase 3 completadas.
 - **L25.** (2026-11-06) Issue #372 creado (`type:bug`, `status:approved`) para P9. Decisión de producto S12 aprobada por el usuario: mantener la grilla de 4 columnas en escritorio de Home (US 4); agregar párrafo descriptor en el buscador de Home (US 22); restaurar el subrayado en el título de Políticas de Detalle (US 26). Implementado en rama `fix/user-story-gaps`, verificado con tests en `Home.test.jsx` (42/42) y `ProductDetail.test.jsx` (3/3). RDD assess medium.
+- **L26.** (2026-11-06) PR #373 mergeado en `main` (`866fb60`), issue #372 cerrado automáticamente. P9 completado.
+- **L27.** (2026-11-06) Issue #374 creado (`type:bug`, `status:approved`) para P10. Implementado en rama `fix/flow-continuity`: preservación de redirección `from` en `RegisterPage` (evitando que el registro devuelva siempre al home y pierda el flujo de reserva iniciado); preservación y restauración de fechas seleccionadas en `ProductDetail` al pasar por login o registro; utilidades `formatLocalDate` y `parseLocalDate` en `dateRange.js` sin desfases de zona horaria. Tests unitarios en `RegisterPage.test.jsx` (12/12), `ProductDetail.test.jsx` y `dateRange.test.js` (7/7). RDD assess medium.
