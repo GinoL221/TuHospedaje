@@ -151,3 +151,28 @@ describe("Admin - mobile block", () => {
 		expect(heading).toHaveFocus();
 	});
 });
+
+describe("Admin - desktop narrow window without touch", () => {
+	beforeEach(() => {
+		delete window.ontouchstart;
+		Object.defineProperty(navigator, "maxTouchPoints", {
+			value: 0,
+			configurable: true,
+			writable: true,
+		});
+		Object.defineProperty(window, "innerWidth", {
+			value: 800,
+			configurable: true,
+			writable: true,
+		});
+	});
+
+	it("renders the admin shell without mobile block on narrow non-touch desktop windows", () => {
+		renderAdmin();
+
+		expect(screen.getByTestId("admin-dashboard")).toBeInTheDocument();
+		expect(
+			screen.queryByText("Panel no disponible en móvil"),
+		).not.toBeInTheDocument();
+	});
+});

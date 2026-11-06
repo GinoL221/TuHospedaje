@@ -131,7 +131,7 @@
 .admin-content {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   padding: 28px 32px;
   min-width: 0;
 }
@@ -462,6 +462,7 @@
 /* ── TABLES ──────────────────────────────────────────────────── */
 table {
   width: 100%;
+  min-width: 580px;
   table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
@@ -881,4 +882,26 @@ textarea.input-error {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ── RESPONSIVE NARROW DESKTOP ───────────────────────────────── */
+@media (max-width: 900px) {
+  .admin-shell {
+    grid-template-columns: 72px 1fr;
+  }
+  .admin-sidebar-brand-text,
+  .admin-sidebar-brand-sub,
+  .admin-nav-item span {
+    display: none;
+  }
+  .admin-nav-item {
+    justify-content: center;
+    padding: 12px;
+  }
+  .admin-content {
+    padding: 20px 16px;
+  }
+  .admin-topbar {
+    padding: 0 16px;
+  }
 }

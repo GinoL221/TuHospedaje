@@ -79,6 +79,8 @@ export default function Admin() {
 							className={"admin-nav-item" + (tab === key ? " active" : "")}
 							data-testid={`admin-nav-${key}`}
 							onClick={() => setTab(key)}
+							title={label}
+							aria-label={label}
 						>
 							<Icon size={18} />
 							<span>{label}</span>

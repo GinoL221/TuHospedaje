@@ -28,8 +28,8 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 | P4 | Borrado de alojamiento con datos asociados | S9, S8, S11, S12 | 2 | `fix/lodging-delete-with-references` |
 | P5 | Contraste en reposo y hover de toda la interfaz | — | 3 | `fix/contrast-hover-states` |
 | P6 | Foco, teclado y semántica de errores | — | 3 | `fix/focus-keyboard-semantics` |
-| P7 | Textos: voseo, mensajes de red, calendario y estados vacíos — en curso; traducción de errores de red y voseo | — | 3 | `fix/ui-copy-locale` |
-| P8 | Admin en ventana angosta sin pantalla táctil | — | 3 | `fix/admin-narrow-window` |
+| P7 | Textos: voseo, mensajes de red, calendario y estados vacíos | — | 3 | `fix/ui-copy-locale` |
+| P8 | Admin en ventana angosta sin pantalla táctil — en curso; scroll horizontal de tablas y colapso de sidebar en escritorio angosto | — | 3 | `fix/admin-narrow-window` |
 | P9 | Historias 4, 22 y 26 | S12, S9 | 4 | `fix/user-story-gaps` |
 | P10 | Continuidad de flujo y detalles de UX | S9 | 4 | `fix/flow-continuity` |
 | P11 | Fecha local en la reserva (`toISOString`) | S9 | 4 | `fix/booking-local-date` |
@@ -74,3 +74,5 @@ Plan de correcciones aprobado tras la revisión amplia de `main` (`c806a4a`). Or
 - **L19.** (2026-11-05) Issue #366 creado (`type:bug`, `status:approved`) para P6. Implementación en rama `fix/focus-keyboard-semantics`: foco visible en `ProductCard` (`--product-card-focus` en `.hotel-card-link`) e inputs del buscador (`Home.css`); focus trap, tecla `Escape` y foco inicial/restaurado en `UserProfileModal`; semántica de errores accesible (`aria-invalid`, `aria-describedby` y `role="alert"`) en `LoginPage` y `RegisterPage`. Tests unitarios en `UserProfileModal.test.jsx` (5/5), `LoginPage.test.jsx` (11/11) y `RegisterPage.test.jsx` (11/11). RDD assess medium.
 - **L20.** (2026-11-05) PR #367 mergeado en `main` (`7b1817f`), issue #366 cerrado automáticamente. P6 completado.
 - **L21.** (2026-11-05) Issue #368 creado (`type:bug`, `status:approved`) para P7. Implementación en rama `fix/ui-copy-locale`: captura y traducción de fallos de red (`TypeError` / `Failed to fetch`) a mensaje en español rioplatense en `api.js`, voseo homogeneizado en `AdminReservations.jsx` (*«Intentá de nuevo»*), estados vacíos y calendarios revisados. Tests en `api.test.js` (38/38) y `AdminReservations.test.jsx` (13/13). RDD assess medium.
+- **L22.** (2026-11-05) PR #369 mergeado en `main` (`54f8cf8`), issue #368 cerrado automáticamente. P7 completado.
+- **L23.** (2026-11-05) Issue #370 creado (`type:bug`, `status:approved`) para P8. Implementación en rama `fix/admin-narrow-window`: `.admin-content` con `overflow-x: auto` permitiendo scroll horizontal en tablas sin truncar columnas; `min-width: 580px` en `table`; media query `(max-width: 900px)` que colapsa la barra lateral a riel de iconos (72px) liberando 168px de espacio en escritorio angosto; botones de navegación lateral con `title` y `aria-label`. Tests en `adminSurfaceContract.test.js` (4/4) y `Admin.test.jsx` (8/8). RDD assess medium.
