@@ -10,6 +10,7 @@ import useAvailability from "../../hooks/useAvailability";
 import BookingDateFields from "./BookingDateFields";
 import BookingSummary from "./BookingSummary";
 import GuestDetails from "./GuestDetails";
+import { formatLocalDate, parseLocalDate } from "../../utils/dateRange";
 
 import "./BookingPage.css";
 
@@ -19,12 +20,8 @@ export default function BookingPage() {
 	const location = useLocation();
 	const { user } = useAuth();
 
-	const initialCheckIn = location.state?.checkIn
-		? new Date(location.state.checkIn)
-		: null;
-	const initialCheckOut = location.state?.checkOut
-		? new Date(location.state.checkOut)
-		: null;
+	const initialCheckIn = parseLocalDate(location.state?.checkIn);
+	const initialCheckOut = parseLocalDate(location.state?.checkOut);
 
 	const [lodging, setLodging] = useState(null);
 	const [lodgingStatus, setLodgingStatus] = useState("loading");
@@ -68,7 +65,7 @@ export default function BookingPage() {
 	}, [guestDetailsExpanded, phoneError]);
 
 	function formatDate(date) {
-		return date.toISOString().split("T")[0];
+		return formatLocalDate(date);
 	}
 
 	useEffect(() => {

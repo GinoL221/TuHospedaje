@@ -1155,3 +1155,50 @@ describe("BookingPage - guest details disclosure", () => {
 		expect(screen.getByText("Ingresá un teléfono válido.")).toBeInTheDocument();
 	});
 });
+
+describe("BookingPage - local calendar dates", () => {
+	const originalTimezone = process.env.TZ;
+
+	beforeAll(() => {
+		process.env.TZ = "America/Argentina/Buenos_Aires";
+	});
+
+	afterAll(() => {
+		if (originalTimezone === undefined) {
+			delete process.env.TZ;
+		} else {
+			process.env.TZ = originalTimezone;
+		}
+	});
+
+	it("shows the same calendar day that the reservation books", async () => {
+		mockGetDefaults();
+		post.mockResolvedValue({ id: 99 });
+		const authValue = makeAuthValue();
+		const user = userEvent.setup();
+		renderBookingPage({
+			authValue,
+			initialEntries: [
+				{
+					pathname: "/booking/1",
+					state: { checkIn: "2026-10-15", checkOut: "2026-10-18" },
+				},
+			],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByPlaceholderText("Check-in")).toHaveValue("15/10/2026");
+		expect(screen.getByPlaceholderText("Check-out")).toHaveValue("18/10/2026");
+
+		await user.type(screen.getByLabelText("Teléfono"), "123456");
+		await user.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+
+		expect(post).toHaveBeenCalledWith(
+			expect.objectContaining({
+				checkIn: "2026-10-15",
+				checkOut: "2026-10-18",
+			}),
+		);
+	});
+});
