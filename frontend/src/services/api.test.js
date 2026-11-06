@@ -690,3 +690,14 @@ describe("api service - request timeout", () => {
 		expect(vi.getTimerCount()).toBe(0);
 	});
 });
+
+describe("api service - network failures", () => {
+	it("translates raw fetch TypeError (Failed to fetch) into a user-facing Spanish message", async () => {
+		const networkError = new TypeError("Failed to fetch");
+		vi.stubGlobal("fetch", vi.fn().mockRejectedValue(networkError));
+
+		await expect(get("/lodgings")).rejects.toThrow(
+			"No pudimos conectarnos con el servidor. Revisá tu conexión o intentá de nuevo más tarde.",
+		);
+	});
+});
