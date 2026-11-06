@@ -86,8 +86,8 @@ public class LodgingController {
             @ApiResponse(responseCode = "200", description = "Lodgings retrieved successfully"),
     })
     public ResponseEntity<?> findAll(
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) @Min(value = 0, message = "{error.page.negative}") Integer page,
+            @RequestParam(required = false) @Min(value = 1, message = "{error.size.negative}") @Max(value = 100, message = "{error.size.max}") Integer size,
             @RequestParam(required = false) Long category) {
         if (category != null) {
             return ResponseEntity.ok(lodgingService.findByCategory(category));

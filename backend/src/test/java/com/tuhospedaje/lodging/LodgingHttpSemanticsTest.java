@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -125,5 +126,25 @@ class LodgingHttpSemanticsTest extends AbstractIntegrationTest {
                 .getContentAsString();
 
         return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    // GET /api/lodgings paginates without an upper bound, unlike every other
+    // paginated endpoint, so a caller could ask for the whole catalog at once.
+    @Test
+    void findAll_withSizeAboveMaximum_returns400() throws Exception {
+        mockMvc.perform(get("/api/lodgings").param("page", "0").param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void findAll_withZeroSize_returns400() throws Exception {
+        mockMvc.perform(get("/api/lodgings").param("page", "0").param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void findAll_withNegativePage_returns400() throws Exception {
+        mockMvc.perform(get("/api/lodgings").param("page", "-1").param("size", "10"))
+                .andExpect(status().isBadRequest());
     }
 }
