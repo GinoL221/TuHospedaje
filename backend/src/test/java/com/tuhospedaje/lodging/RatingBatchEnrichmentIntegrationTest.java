@@ -68,11 +68,16 @@ class RatingBatchEnrichmentIntegrationTest extends AbstractIntegrationTest {
                 .role(RoleEnum.USER)
                 .build());
 
-        // avg = 3.666... → rounds to 3.7
+        User secondRater = userRepository.save(User.builder()
+                .firstName("Second")
+                .lastName("Rater")
+                .email("second-rater-enrich@test.com")
+                .password("hash")
+                .role(RoleEnum.USER)
+                .build());
+
         addRating(ratedLodging, rater, 3);
-        addRating(ratedLodging, rater, 4);
-        // Note: same user cannot have two ratings in production due to unique constraint,
-        // but the entity/repo doesn't enforce it — we override rater for the third rating
+        addRating(ratedLodging, secondRater, 4);
     }
 
     /** SC-3.2, SC-3.3: list returns correct averageRating and ratingCount per lodging */

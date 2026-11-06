@@ -45,8 +45,40 @@ MariaDB puede confirmar sentencias DDL individuales aunque la migración falle. 
 | Backfill de datos heredados | Existe cobertura para V3 | Ejecutar o ampliar para los datos y la migración candidata. |
 | Inmutabilidad de checksum | Existe cobertura | Ejecutar en la versión candidata. |
 | Validación Hibernate/esquema | Existe cobertura | Ejecutar en la versión candidata. |
-| DDL parcial | Existe cobertura de recuperación para V2; no generaliza a otras migraciones | Probar el punto de fallo de cada migración con DDL múltiple o documentar por qué no aplica. |
+| DDL parcial | Existe cobertura de recuperación para V2 y V13 (`DatabaseMigrationIntegrationTest` e `IntegrityUpgradeIntegrationTest`) | Probar el punto de fallo de cada migración con DDL múltiple o documentar por qué no aplica. |
 | App anterior + esquema expandido y app nueva + esquema expandido | No ejecutado | Ejecutar ambas combinaciones durante la ventana de transición. |
 | Restore + compatibilidad de aplicación y cutover | El runbook verifica restore aislado mensual; esta combinación no está ejecutada | Restaurar el backup elegido, iniciar la imagen objetivo, verificar health y flujo funcional, y ensayar el cutover. |
 
 No presentar las dos últimas filas como evidencia existente hasta que se guarden sus resultados junto al release.
+
+## Preflight y recuperación para V13 (P13)
+
+### Verificación previa al despliegue (preflight de solo lectura)
+
+Antes de promover o desplegar la versión que aplica `V13__rating_uniqueness_and_reservation_integrity.sql`, ejecutar las siguientes consultas de verificación en la base de datos de producción:
+
+```sql
+-- 1. Verificar unicidad de calificaciones (debe devolver 0 filas)
+SELECT lodging_id, user_id, COUNT(*) AS duplicate_count
+FROM ratings
+GROUP BY lodging_id, user_id
+HAVING COUNT(*) > 1;
+
+-- 2. Verificar coherencia de fechas en reservas (debe devolver 0 filas)
+SELECT id, check_in, check_out, guest_email
+FROM reservations
+WHERE check_out <= check_in;
+```
+
+- Si ambas consultas devuelven 0 filas: el despliegue puede continuar normalmente; la migración aplicará el backfill de `version` a `0`, modificará la columna a `NOT NULL DEFAULT 0` e incorporará las restricciones `UK_ratings_lodging_user` y `CK_reservations_date_range`.
+- Si alguna consulta devuelve filas: **NO continuar con el despliegue**. El arranque de Flyway se detendría por el bloque de seguridad `SIGNAL SQLSTATE '45000'`. Resolver los datos manualmente según el procedimiento siguiente antes de iniciar el despliegue.
+
+### Procedimiento manual ante inconsistencias detectadas
+
+1. **Calificaciones duplicadas (`lodging_id`, `user_id`):** acordar con el equipo de producto/operaciones si se consolida conservando la calificación más reciente (`MAX(created_at)`) o la de mayor detalle, y depurar los duplicados en una ventana previa de mantenimiento.
+2. **Fechas inválidas (`check_out <= check_in`):** contrastar contra los registros de auditoría/comprobantes de huésped. Si la reserva fue cancelada o errónea, actualizar las fechas o archivar el registro antes de la migración.
+
+### Comportamiento ante fallos y DDL parcial en V13
+
+- **Bloqueo previo (preflight dentro de SQL):** la migración evalúa `EXISTS` sobre duplicados y fechas invertidas mediante un bloque `BEGIN NOT ATOMIC` antes de ejecutar cualquier sentencia `ALTER TABLE`. Si existen inconsistencias, emite un `SIGNAL SQLSTATE '45000'` sin alterar el esquema ni los datos existentes (las reservas conservan su `version` original y las tablas no se modifican).
+- **Idempotencia de DDL parcial:** las sentencias de modificación utilizan `MODIFY`, `CREATE UNIQUE INDEX IF NOT EXISTS` y `ALTER TABLE reservations ADD CONSTRAINT IF NOT EXISTS CK_reservations_date_range CHECK (check_out > check_in)`. Si un fallo fortuito del servidor interrumpe la ejecución después de haber confirmado sentencias DDL intermedias, la migración puede completarse de manera segura sin colisiones de nombres ni estados inconsistentes, conforme a las pruebas en `IntegrityUpgradeIntegrationTest`.

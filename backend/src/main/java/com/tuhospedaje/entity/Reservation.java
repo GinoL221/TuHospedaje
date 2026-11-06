@@ -61,5 +61,6 @@ public class Reservation {
     private ReservationStatus status = ReservationStatus.CONFIRMED;
 
     @Version
+    @Column(nullable = false)
     private Long version;
 }

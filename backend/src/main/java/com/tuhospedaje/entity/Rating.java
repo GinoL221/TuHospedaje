@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
@@ -19,7 +20,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "ratings")
+@Table(name = "ratings", uniqueConstraints = @UniqueConstraint(
+        name = "UK_ratings_lodging_user", columnNames = {"lodging_id", "user_id"}))
 public class Rating {
 
     @Id
