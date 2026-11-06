@@ -27,6 +27,21 @@ public class HttpsImageUrlValidator implements ConstraintValidator<HttpsImageUrl
         if (value.isBlank() || value.length() > MAX_LENGTH) {
             return false;
         }
+        if (value.startsWith("/uploads/") || value.startsWith("/canonical-lodging-images/")) {
+            if (value.contains("..") || value.contains("\\") || value.contains(":") || value.contains(" ")
+                    || value.contains("<") || value.contains(">")) {
+                return false;
+            }
+            try {
+                URI uri = new URI(value);
+                String path = uri.getPath();
+                return path != null
+                        && (path.startsWith("/uploads/") || path.startsWith("/canonical-lodging-images/"))
+                        && !path.contains("..");
+            } catch (URISyntaxException e) {
+                return false;
+            }
+        }
         try {
             URI uri = new URI(value);
             return uri.isAbsolute()

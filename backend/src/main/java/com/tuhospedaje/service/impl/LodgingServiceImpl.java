@@ -19,6 +19,7 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingQueryService;
 import com.tuhospedaje.service.LodgingService;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -126,6 +127,9 @@ public class LodgingServiceImpl implements LodgingService {
         if (dto.getEmail() != null && !dto.getEmail().equals(lodging.getEmail())
                 && lodgingRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Ya existe un alojamiento con el email: " + dto.getEmail());
+        }
+        if (dto.getVersion() != null && !dto.getVersion().equals(lodging.getVersion())) {
+            throw new ObjectOptimisticLockingFailureException(Lodging.class, dto.getId());
         }
         lodging.setName(dto.getName());
         lodging.setDescription(dto.getDescription());
