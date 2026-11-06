@@ -1629,3 +1629,25 @@ describe("ProductDetail - ReviewsSection integration", () => {
 		expect(screen.getByText("(5 reseñas)")).toBeInTheDocument();
 	});
 });
+
+describe("ProductDetail - date restoration from location state", () => {
+	it("restores check-in and check-out dates from location.state after login/registration flow", async () => {
+		mockGetDefaults();
+		renderProductDetail({
+			initialEntries: [
+				{
+					pathname: "/lodgings/1",
+					state: {
+						checkIn: "2026-10-15",
+						checkOut: "2026-10-20",
+					},
+				},
+			],
+		});
+
+		await screen.findByText("Cabaña del Lago");
+
+		expect(screen.getByLabelText("Check-in")).toHaveValue("15/10/2026");
+		expect(screen.getByLabelText("Check-out")).toHaveValue("20/10/2026");
+	});
+});

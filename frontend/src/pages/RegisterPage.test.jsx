@@ -25,6 +25,10 @@ function renderRegisterPage({ authValue, initialEntries } = {}) {
 		<Routes>
 			<Route path="/register" element={<RegisterPage />} />
 			<Route path="/login" element={<LoginSentinel />} />
+			<Route
+				path="/favorites"
+				element={<div data-testid="favorites-sentinel">favorites</div>}
+			/>
 			<Route path="/" element={<HomeSentinel />} />
 		</Routes>,
 		{ authValue, route: "/register", initialEntries },
@@ -280,6 +284,28 @@ describe("RegisterPage - successful registration", () => {
 			"Secret1",
 		);
 		expect(await screen.findByTestId("home-sentinel")).toBeInTheDocument();
+	});
+
+	it("navigates to location.state.from when present, preserving the user flow", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue({
+			register: vi.fn().mockResolvedValue(undefined),
+		});
+		renderRegisterPage({
+			authValue,
+			initialEntries: [
+				{
+					pathname: "/register",
+					state: { from: { pathname: "/favorites" } },
+				},
+			],
+		});
+
+		await fillForm(user);
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+		expect(authValue.register).toHaveBeenCalled();
+		expect(await screen.findByTestId("favorites-sentinel")).toBeInTheDocument();
 	});
 });
 

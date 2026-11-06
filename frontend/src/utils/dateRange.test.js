@@ -1,4 +1,4 @@
-import { minCheckoutDate } from "./dateRange";
+import { minCheckoutDate, formatLocalDate, parseLocalDate } from "./dateRange";
 
 describe("minCheckoutDate", () => {
 	afterEach(() => {
@@ -50,5 +50,28 @@ describe("minCheckoutDate", () => {
 		const result = minCheckoutDate(undefined);
 
 		expect(result.getTime()).toBe(new Date("2026-07-15T10:00:00").getTime());
+	});
+});
+
+describe("formatLocalDate and parseLocalDate", () => {
+	it("formats and parses local dates without timezone shifting", () => {
+		const date = new Date(2026, 9, 15);
+		const formatted = formatLocalDate(date);
+		expect(formatted).toBe("2026-10-15");
+
+		const parsed = parseLocalDate(formatted);
+		expect(parsed.getFullYear()).toBe(2026);
+		expect(parsed.getMonth()).toBe(9);
+		expect(parsed.getDate()).toBe(15);
+	});
+
+	it("handles null, undefined and invalid inputs safely", () => {
+		expect(formatLocalDate(null)).toBeNull();
+		expect(formatLocalDate(undefined)).toBeNull();
+		expect(formatLocalDate(new Date("invalid"))).toBeNull();
+
+		expect(parseLocalDate(null)).toBeNull();
+		expect(parseLocalDate(undefined)).toBeNull();
+		expect(parseLocalDate("invalid-date")).toBeNull();
 	});
 });

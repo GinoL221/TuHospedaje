@@ -11,7 +11,11 @@ import ReviewsSection from "../../components/ReviewsSection/ReviewsSection";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import LodgingGallery from "../../components/LodgingGallery/LodgingGallery";
 import Icon from "../../components/Icons/Icon";
-import { minCheckoutDate } from "../../utils/dateRange";
+import {
+	minCheckoutDate,
+	formatLocalDate,
+	parseLocalDate,
+} from "../../utils/dateRange";
 
 import "./ProductDetail.css";
 
@@ -121,8 +125,12 @@ export default function ProductDetail() {
 		setLodgingState({ id, lodging: null, error: false });
 	}
 	const { lodging, error: lodgingError } = lodgingState;
-	const [checkIn, setCheckIn] = useState(null);
-	const [checkOut, setCheckOut] = useState(null);
+	const [checkIn, setCheckIn] = useState(() =>
+		parseLocalDate(location.state?.checkIn),
+	);
+	const [checkOut, setCheckOut] = useState(() =>
+		parseLocalDate(location.state?.checkOut),
+	);
 	const [activeDateField, setActiveDateField] = useState("checkIn");
 	const [calendarOpen, setCalendarOpen] = useState(false);
 	const dateControlsRef = useRef(null);
@@ -670,7 +678,15 @@ export default function ProductDetail() {
 									<Link
 										to="/login"
 										state={{
-											from: location,
+											from: {
+												pathname: location.pathname,
+												search: location.search,
+												state: {
+													...(location.state ?? {}),
+													checkIn: formatLocalDate(checkIn),
+													checkOut: formatLocalDate(checkOut),
+												},
+											},
 											message:
 												"Para reservar necesitás iniciar sesión. Si no tenés cuenta, registrate.",
 										}}
