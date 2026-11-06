@@ -85,7 +85,13 @@ export default function RegisterPage() {
 			setLoading(true);
 			await register(form.firstName, form.lastName, form.email, form.password);
 			const from = location.state?.from;
-			if (from) {
+			if (from && typeof from === "object") {
+				const { state: fromState, ...target } = from;
+				navigate(target, {
+					replace: true,
+					state: { ...(fromState ?? {}), registered: true },
+				});
+			} else if (from) {
 				navigate(from, { replace: true, state: { registered: true } });
 			} else {
 				navigate("/", { state: { registered: true } });

@@ -20,15 +20,22 @@ function LoginSentinel() {
 	);
 }
 
+function FavoritesSentinel() {
+	const location = useLocation();
+	return (
+		<div data-testid="favorites-sentinel">
+			favorites, checkIn: {location.state?.checkIn ?? "none"}, registered:{" "}
+			{String(location.state?.registered ?? false)}
+		</div>
+	);
+}
+
 function renderRegisterPage({ authValue, initialEntries } = {}) {
 	return customRender(
 		<Routes>
 			<Route path="/register" element={<RegisterPage />} />
 			<Route path="/login" element={<LoginSentinel />} />
-			<Route
-				path="/favorites"
-				element={<div data-testid="favorites-sentinel">favorites</div>}
-			/>
+			<Route path="/favorites" element={<FavoritesSentinel />} />
 			<Route path="/" element={<HomeSentinel />} />
 		</Routes>,
 		{ authValue, route: "/register", initialEntries },
@@ -306,6 +313,35 @@ describe("RegisterPage - successful registration", () => {
 
 		expect(authValue.register).toHaveBeenCalled();
 		expect(await screen.findByTestId("favorites-sentinel")).toBeInTheDocument();
+	});
+
+	it("keeps the reservation dates carried inside location.state.from", async () => {
+		const user = userEvent.setup();
+		const authValue = makeAuthValue({
+			register: vi.fn().mockResolvedValue(undefined),
+		});
+		renderRegisterPage({
+			authValue,
+			initialEntries: [
+				{
+					pathname: "/register",
+					state: {
+						from: {
+							pathname: "/favorites",
+							search: "?page=1",
+							state: { checkIn: "2026-10-15", checkOut: "2026-10-18" },
+						},
+					},
+				},
+			],
+		});
+
+		await fillForm(user);
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+		const destination = await screen.findByTestId("favorites-sentinel");
+		expect(destination).toHaveTextContent("checkIn: 2026-10-15");
+		expect(destination).toHaveTextContent("registered: true");
 	});
 });
 
