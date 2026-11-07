@@ -1,5 +1,6 @@
 package com.tuhospedaje;
 
+import com.tuhospedaje.configuration.JwtSecretValidationTest;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
@@ -202,7 +203,7 @@ class DatabaseMigrationIntegrationTest {
                         "spring.config.location=" + isolatedConfigDirectory.toUri()
                 )
                 .run(
-                        "--app.jwt.secret=test-only-migration-profile",
+                        "--app.jwt.secret=" + JwtSecretValidationTest.VALID_TEST_SECRET,
                         "--spring.datasource.url=" + probe.jdbcUrl(),
                         "--spring.datasource.username=" + probe.username(),
                         "--spring.datasource.password=" + probe.password(),
@@ -679,7 +680,7 @@ assertThat(probeJdbcTemplate.queryForObject(
                             "spring.config.location=" + isolatedConfigDirectory.toUri()
                     )
                     .run(
-                            "--app.jwt.secret=test-only-migration-profile",
+                            "--app.jwt.secret=" + JwtSecretValidationTest.VALID_TEST_SECRET,
                             "--spring.datasource.url=" + profileContainer.getJdbcUrl(),
                             "--spring.datasource.username=" + probeUsername,
                             "--spring.datasource.password=" + probePassword,

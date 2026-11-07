@@ -10,10 +10,10 @@ import java.util.Base64;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class JwtSecretValidationTest {
+public class JwtSecretValidationTest {
 
     /** 32 zero bytes, Base64. Test fixture only. */
-    static final String VALID_TEST_SECRET = "A".repeat(43) + "=";
+    public static final String VALID_TEST_SECRET = "A".repeat(43) + "=";
 
     private final JwtService jwtService = new JwtService();
 
