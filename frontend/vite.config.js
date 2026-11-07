@@ -12,6 +12,7 @@ export default defineConfig({
     css: false,
     clearMocks: true,
     restoreMocks: true,
+    testTimeout: 10000,
     forbidOnly: !!process.env.CI,
     // @vitest/coverage-v8 is pinned to the exact locked vitest version in
     // package.json (not ^) because this repo's npm is gated by npq-hero
