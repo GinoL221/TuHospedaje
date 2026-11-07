@@ -61,7 +61,7 @@ class UserControllerAdminDisableIntegrationTest extends AbstractIntegrationTest 
                 .build());
         String adminAuthHeader = jwtService.generateToken(admin);
 
-        RegisterRequest registerRequest = new RegisterRequest("Target", "User", "target-disable@test.com", "123456");
+        RegisterRequest registerRequest = new RegisterRequest("Target", "User", "target-disable@test.com", "Pass1234");
         MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))

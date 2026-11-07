@@ -59,7 +59,7 @@ class AuthServiceImplIssuanceFailureTest {
                 .build());
 
         AuthResult result = authService.register(
-                new RegisterRequest("Ada", "Lovelace", "ada-issuance-failure@test.com", "123456"));
+                new RegisterRequest("Ada", "Lovelace", "ada-issuance-failure@test.com", "Pass1234"));
 
         assertThat(result.token()).isEqualTo("access-token-123");
         assertThat(result.refreshCredential()).isNull();

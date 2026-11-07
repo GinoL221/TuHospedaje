@@ -80,7 +80,7 @@ class RefreshRateLimitIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void registerRealUser(String ip, String email) throws Exception {
-        RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
+        RegisterRequest request = new RegisterRequest("Test", "User", email, "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                         .with(fromIp(ip))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -94,7 +94,7 @@ class RefreshRateLimitIntegrationTest extends AbstractIntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .with(fromIp(ip))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "Pass1234"))))
                 .andReturn();
         Cookie accessToken = result.getResponse().getCookie("ACCESS_TOKEN");
         Cookie refreshToken = result.getResponse().getCookie("REFRESH_TOKEN");

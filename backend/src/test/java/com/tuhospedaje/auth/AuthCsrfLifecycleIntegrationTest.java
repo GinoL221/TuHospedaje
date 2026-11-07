@@ -83,7 +83,7 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
                 .andReturn().getResponse().getCookie("XSRF-TOKEN");
         assertThat(preLoginToken).isNotNull();
 
-        RegisterRequest request = new RegisterRequest("Test", "User", "csrf-fixation@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Test", "User", "csrf-fixation@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -91,7 +91,7 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest("csrf-fixation@test.com", "123456")))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("csrf-fixation@test.com", "Pass1234")))
                         .cookie(preLoginToken))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -114,7 +114,7 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
                 .andReturn().getResponse().getCookie("XSRF-TOKEN");
         assertThat(preRegisterToken).isNotNull();
 
-        RegisterRequest request = new RegisterRequest("Test", "User", "csrf-fixation-register@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Test", "User", "csrf-fixation-register@test.com", "Pass1234");
         MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
@@ -191,14 +191,14 @@ class AuthCsrfLifecycleIntegrationTest extends AbstractIntegrationTest {
     }
 
     private Cookie login(String email) throws Exception {
-        RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
+        RegisterRequest request = new RegisterRequest("Test", "User", email, "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "Pass1234"))))
                 .andExpect(status().isOk())
                 .andReturn();
         return result.getResponse().getCookie("ACCESS_TOKEN");

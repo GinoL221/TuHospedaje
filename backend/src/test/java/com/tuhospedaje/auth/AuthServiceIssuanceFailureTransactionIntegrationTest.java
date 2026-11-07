@@ -55,7 +55,7 @@ class AuthServiceIssuanceFailureTransactionIntegrationTest {
         long familiesBefore = families.count();
 
         AuthResult result = authService.register(
-                new RegisterRequest("Marie", "Curie", "marie-hasher-failure@test.com", "123456"));
+                new RegisterRequest("Marie", "Curie", "marie-hasher-failure@test.com", "Pass1234"));
 
         assertThat(result.token()).isNotBlank();
         assertThat(result.refreshCredential()).isNull();
@@ -67,7 +67,7 @@ class AuthServiceIssuanceFailureTransactionIntegrationTest {
         doThrow(new RuntimeException("simulated refresh_token_families insert failure")).when(families).save(any());
 
         AuthResult result = authService.register(
-                new RegisterRequest("Ada", "Lovelace", "ada-tx-issuance-failure@test.com", "123456"));
+                new RegisterRequest("Ada", "Lovelace", "ada-tx-issuance-failure@test.com", "Pass1234"));
 
         assertThat(result.token()).isNotBlank();
         assertThat(result.refreshCredential()).isNull();
@@ -78,10 +78,10 @@ class AuthServiceIssuanceFailureTransactionIntegrationTest {
     void loginStillSucceedsWhenIssuanceFailsInsideTheSharedTransaction() {
         // Seed the user with issuance still working (spy behaves like the real repository
         // until stubbed below), then make it fail for the login call under test.
-        authService.register(new RegisterRequest("Grace", "Hopper", "grace-tx-issuance-failure@test.com", "123456"));
+        authService.register(new RegisterRequest("Grace", "Hopper", "grace-tx-issuance-failure@test.com", "Pass1234"));
         doThrow(new RuntimeException("simulated refresh_token_families insert failure")).when(families).save(any());
 
-        AuthResult result = authService.login(new LoginRequest("grace-tx-issuance-failure@test.com", "123456"));
+        AuthResult result = authService.login(new LoginRequest("grace-tx-issuance-failure@test.com", "Pass1234"));
 
         assertThat(result.token()).isNotBlank();
         assertThat(result.refreshCredential()).isNull();

@@ -107,7 +107,7 @@ class EmailOutboxEnqueueIntegrationTest {
         String email = EMAIL_PREFIX + "welcome@test.com";
 
         AuthService.AuthResult result = authService.register(
-                new RegisterRequest("Ana <b>Gómez</b>", "Gomez", email, "secret123"));
+                new RegisterRequest("Ana <b>Gómez</b>", "Gomez", email, "Secret123"));
 
         User user = userRepository.findByEmail(email).orElseThrow();
         List<com.tuhospedaje.entity.EmailOutbox> rows = emailOutboxRepository.findAll().stream()
@@ -132,7 +132,7 @@ class EmailOutboxEnqueueIntegrationTest {
     void terminalWelcomeFailureAfterRegistrationDoesNotChangeCommittedAuthOutcome() {
         String email = EMAIL_PREFIX + "terminal-failure@test.com";
         AuthService.AuthResult result = authService.register(
-                new RegisterRequest("Ana", "Gómez", email, "secret123"));
+                new RegisterRequest("Ana", "Gómez", email, "Secret123"));
         User user = userRepository.findByEmail(email).orElseThrow();
         com.tuhospedaje.entity.EmailOutbox outbox = emailOutboxRepository.findByEmailTypeAndAggregateId(
                 "WELCOME", user.getId().toString()).orElseThrow();
@@ -212,7 +212,7 @@ class EmailOutboxEnqueueIntegrationTest {
     @Test
     void repeatedEnqueueUsesTheAggregateAndTypeUniquenessGuard() {
         User user = saveUser("duplicate@test.com");
-        RegisterRequest request = new RegisterRequest("Ana", "Gomez", user.getEmail(), "secret123");
+        RegisterRequest request = new RegisterRequest("Ana", "Gomez", user.getEmail(), "Secret123");
 
         emailOutboxService.enqueueWelcome(user, request);
         emailOutboxService.enqueueWelcome(user, request);
@@ -236,7 +236,7 @@ class EmailOutboxEnqueueIntegrationTest {
         try {
             Callable<Object> register = () -> {
                 try {
-                    return authService.register(new RegisterRequest("Ana", "Gómez", CONCURRENT_EMAIL, "secret123"));
+                    return authService.register(new RegisterRequest("Ana", "Gómez", CONCURRENT_EMAIL, "Secret123"));
                 } catch (RuntimeException exception) {
                     return exception;
                 }

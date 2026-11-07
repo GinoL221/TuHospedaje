@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +54,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldRegisterUser() throws Exception {
-        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -66,14 +67,38 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldReturn400WhenPasswordHasNoUppercase() throws Exception {
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "noupper@test.com", "pass1234");
+        mockMvc.perform(post("/api/auth/register")
+                        .locale(Locale.forLanguageTag("es"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.fields.password").value("La contraseña debe contener al menos una letra mayúscula."));
+    }
+
+    @Test
+    void shouldReturn400WhenPasswordHasNoDigit() throws Exception {
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "nodigit@test.com", "Password");
+        mockMvc.perform(post("/api/auth/register")
+                        .locale(Locale.forLanguageTag("es"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.fields.password").value("La contraseña debe contener al menos un número."));
+    }
+
+    @Test
     void shouldReturn400WithDuplicateEmailCodeWhenEmailAlreadyRegistered() throws Exception {
-        RegisterRequest first = new RegisterRequest("Juan", "Pérez", "duplicate@test.com", "123456");
+        RegisterRequest first = new RegisterRequest("Juan", "Pérez", "duplicate@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(first)))
                 .andExpect(status().isCreated());
 
-        RegisterRequest again = new RegisterRequest("Otro", "Nombre", "duplicate@test.com", "abcdef");
+        RegisterRequest again = new RegisterRequest("Otro", "Nombre", "duplicate@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(again)))
@@ -95,11 +120,11 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldLoginSuccessfully() throws Exception {
-        RegisterRequest register = new RegisterRequest("Juan", "Pérez", "juan@test.com", "123456");
+        RegisterRequest register = new RegisterRequest("Juan", "Pérez", "juan@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(register)));
-        LoginRequest login = new LoginRequest("juan@test.com", "123456");
+        LoginRequest login = new LoginRequest("juan@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
@@ -140,7 +165,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest("juan@test.com", "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("juan@test.com", "Pass1234"))))
                 .andExpect(status().isOk())
                 .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItem(containsString("ACCESS_TOKEN="))))
                 .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItem(containsString("HttpOnly"))))
@@ -156,7 +181,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldSetAccessTokenCookieWithExactAttributesOnRegister() throws Exception {
-        RegisterRequest request = new RegisterRequest("Ana", "Gómez", "ana@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Ana", "Gómez", "ana@test.com", "Pass1234");
 
         MvcResult result = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -195,7 +220,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest("csrf-login@test.com", "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("csrf-login@test.com", "Pass1234"))))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -205,7 +230,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldSetCsrfCookieOnRegister() throws Exception {
-        RegisterRequest request = new RegisterRequest("Lucía", "Díaz", "csrf-register@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Lucía", "Díaz", "csrf-register@test.com", "Pass1234");
 
         MvcResult result = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -225,13 +250,13 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest("no-csrf-login@test.com", "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("no-csrf-login@test.com", "Pass1234"))))
                 .andExpect(status().isOk());
     }
 
     @Test
     void shouldRegisterWithoutCsrfHeader() throws Exception {
-        RegisterRequest request = new RegisterRequest("Marco", "Polo", "no-csrf-register@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Marco", "Polo", "no-csrf-register@test.com", "Pass1234");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -430,7 +455,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void registerUser(String email) throws Exception {
-        RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
+        RegisterRequest request = new RegisterRequest("Test", "User", email, "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
@@ -444,7 +469,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         registerUser(email);
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "Pass1234"))))
                 .andExpect(status().isOk())
                 .andReturn();
         Cookie accessTokenCookie = result.getResponse().getCookie("ACCESS_TOKEN");
