@@ -31,8 +31,8 @@ class AuthServiceRefreshIntegrationTest {
 
     @Test
     void loginIssuesARefreshCredentialAndRefreshMintsANewJwtRotatingIt() {
-        authService.register(new RegisterRequest("Ada", "Lovelace", "ada-refresh@test.com", "123456"));
-        AuthResult loginResult = authService.login(new LoginRequest("ada-refresh@test.com", "123456"));
+        authService.register(new RegisterRequest("Ada", "Lovelace", "ada-refresh@test.com", "Pass1234"));
+        AuthResult loginResult = authService.login(new LoginRequest("ada-refresh@test.com", "Pass1234"));
         assertThat(loginResult.refreshCredential()).isNotBlank();
 
         AuthResult refreshResult = authService.refresh(loginResult.refreshCredential());
@@ -70,8 +70,8 @@ class AuthServiceRefreshIntegrationTest {
     // transaction-ownership shape.
     @Test
     void reuseDetectedThroughRefreshEndpointPersistsFamilyRevocationDespiteTheRejection() {
-        authService.register(new RegisterRequest("Grace", "Hopper", "grace-reuse@test.com", "123456"));
-        AuthResult loginResult = authService.login(new LoginRequest("grace-reuse@test.com", "123456"));
+        authService.register(new RegisterRequest("Grace", "Hopper", "grace-reuse@test.com", "Pass1234"));
+        AuthResult loginResult = authService.login(new LoginRequest("grace-reuse@test.com", "Pass1234"));
         AuthResult firstRefresh = authService.refresh(loginResult.refreshCredential());
         // A second legitimate rotation moves the family past generation 1, so replaying the
         // ORIGINAL credential below is genuine reuse of a stale token — not a same-generation

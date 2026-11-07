@@ -91,7 +91,7 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void registerRealUser(String registrationIp, String email) throws Exception {
-        register(registrationIp, new RegisterRequest("Test", "User", email, "123456"))
+        register(registrationIp, new RegisterRequest("Test", "User", email, "Pass1234"))
                 .getResponse();
     }
 
@@ -189,7 +189,7 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
             registerRealUser("10.1.1.6" + i, "int6-" + i + "@test.com");
         }
 
-        MvcResult first = login(loginIp, "int6-1@test.com", "123456");
+        MvcResult first = login(loginIp, "int6-1@test.com", "Pass1234");
         assertThat(first.getResponse().getStatus())
                 .as("first attempt with fully valid credentials must succeed, proving it is a genuine login, not an incidental failure")
                 .isEqualTo(200);
@@ -198,7 +198,7 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
         // account each time) — proves a SUCCESSFUL login consumes the IP quota just
         // like a failed one, since the IP ceiling eventually trips despite every
         // attempt being individually legitimate.
-        MvcResult blocked = firstBlocked(headroomAttempts - 1, i -> login(loginIp, "int6-" + (i + 1) + "@test.com", "123456"));
+        MvcResult blocked = firstBlocked(headroomAttempts - 1, i -> login(loginIp, "int6-" + (i + 1) + "@test.com", "Pass1234"));
         assertThat(blocked).as("IP ceiling of 3 must eventually trip even though every login succeeded").isNotNull();
     }
 

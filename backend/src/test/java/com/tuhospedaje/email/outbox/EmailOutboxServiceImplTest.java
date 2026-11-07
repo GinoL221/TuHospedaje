@@ -43,7 +43,7 @@ class EmailOutboxServiceImplTest {
     @Test
     void enqueueWelcomeStoresTheRenderedWelcomeMessage() {
         User user = user(7L, "ana@example.com");
-        RegisterRequest request = new RegisterRequest("Ana", "Gomez", "ana@example.com", "secret");
+        RegisterRequest request = new RegisterRequest("Ana", "Gomez", "ana@example.com", "Secret123");
         when(repository.findByEmailTypeAndAggregateId("WELCOME", "7")).thenReturn(Optional.empty());
 
         when(welcomeEmailRenderer.render(7L, "ana@example.com", "Ana"))
@@ -107,7 +107,7 @@ class EmailOutboxServiceImplTest {
     @Test
     void duplicateAggregateAndTypeDoesNotCreateAnotherOutboxRow() {
         User user = user(7L, "ana@example.com");
-        RegisterRequest request = new RegisterRequest("Ana", "Gomez", "ana@example.com", "secret");
+        RegisterRequest request = new RegisterRequest("Ana", "Gomez", "ana@example.com", "Secret123");
         when(repository.findByEmailTypeAndAggregateId("WELCOME", "7"))
                 .thenReturn(Optional.of(new EmailOutbox()));
         when(welcomeEmailRenderer.render(7L, "ana@example.com", "Ana"))

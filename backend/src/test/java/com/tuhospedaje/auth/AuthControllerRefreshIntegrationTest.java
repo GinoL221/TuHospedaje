@@ -47,7 +47,7 @@ class AuthControllerRefreshIntegrationTest extends AbstractIntegrationTest {
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest("refresh-login@test.com", "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("refresh-login@test.com", "Pass1234"))))
                 .andExpect(status().isOk())
                 .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItem(containsString("ACCESS_TOKEN="))))
                 .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItem(containsString("REFRESH_TOKEN="))))
@@ -62,7 +62,7 @@ class AuthControllerRefreshIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void registerSetsBothAccessAndRefreshTokenCookies() throws Exception {
-        RegisterRequest request = new RegisterRequest("Refresh", "Register", "refresh-register@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Refresh", "Register", "refresh-register@test.com", "Pass1234");
 
         MvcResult result = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +133,7 @@ class AuthControllerRefreshIntegrationTest extends AbstractIntegrationTest {
         registerUser(email);
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "Pass1234"))))
                 .andExpect(status().isOk())
                 .andReturn();
         Cookie refreshCookie = result.getResponse().getCookie("REFRESH_TOKEN");
@@ -142,7 +142,7 @@ class AuthControllerRefreshIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void registerUser(String email) throws Exception {
-        RegisterRequest request = new RegisterRequest("Test", "User", email, "123456");
+        RegisterRequest request = new RegisterRequest("Test", "User", email, "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));

@@ -179,7 +179,7 @@ class SessionRefreshLifecycleIntegrationTest extends AbstractIntegrationTest {
         LoginCookies cookies = loginAndGetCookies(email);
         Long userId = userRepository.findByEmail(email).orElseThrow().getId();
 
-        PasswordChangeRequest request = new PasswordChangeRequest("123456", "newSecurePass1");
+        PasswordChangeRequest request = new PasswordChangeRequest("Pass1234", "newSecurePass1");
         mockMvc.perform(post("/api/auth/password")
                         .cookie(cookies.accessToken(), cookies.csrfToken())
                         .header("X-XSRF-TOKEN", cookies.csrfToken().getValue())
@@ -200,7 +200,7 @@ class SessionRefreshLifecycleIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void registerUser(String email) throws Exception {
-        RegisterRequest request = new RegisterRequest("Lifecycle", "User", email, "123456");
+        RegisterRequest request = new RegisterRequest("Lifecycle", "User", email, "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
@@ -210,7 +210,7 @@ class SessionRefreshLifecycleIntegrationTest extends AbstractIntegrationTest {
         registerUser(email);
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "Pass1234"))))
                 .andExpect(status().isOk())
                 .andReturn();
         Cookie accessTokenCookie = result.getResponse().getCookie("ACCESS_TOKEN");

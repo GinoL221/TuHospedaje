@@ -56,7 +56,7 @@ class WelcomeOutboxEnqueueRollbackIntegrationTest {
                 .when(emailOutboxRepository).saveAndFlush(any(EmailOutbox.class));
 
         assertThatThrownBy(() -> authService.register(
-                new RegisterRequest("Ana", "Gómez", EMAIL, "secret123")))
+                new RegisterRequest("Ana", "Gómez", EMAIL, "Secret123")))
                 .isInstanceOf(RuntimeException.class);
 
         assertThat(userRepository.findByEmail(EMAIL)).isEmpty();

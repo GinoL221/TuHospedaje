@@ -38,7 +38,7 @@ class AuthServiceImplTest {
 
     @Test
     void shouldRegisterUser() {
-        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan@test.com", "Pass1234");
         AuthResult result = authService.register(request);
         assertThat(result.token()).isNotBlank();
         assertThat(result.body().getEmail()).isEqualTo("juan@test.com");
@@ -46,14 +46,14 @@ class AuthServiceImplTest {
     }
     @Test
     void shouldThrowOnDuplicateEmail() {
-        RegisterRequest request = new RegisterRequest("Juan", " Pérez", "juan@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Juan", " Pérez", "juan@test.com", "Pass1234");
         authService.register(request);
         assertThrows(DuplicateEmailException.class, () -> authService.register(request));
     }
     @Test
     void shouldLoginSuccessfully() {
-        authService.register(new RegisterRequest("Juan", "Pérez", "juan@test.com", "123456"));
-        AuthResult result = authService.login(new LoginRequest("juan@test.com", "123456"));
+        authService.register(new RegisterRequest("Juan", "Pérez", "juan@test.com", "Pass1234"));
+        AuthResult result = authService.login(new LoginRequest("juan@test.com", "Pass1234"));
         assertThat(result.token()).isNotBlank();
         assertThat(result.body().getEmail()).isEqualTo("juan@test.com");
     }
@@ -64,7 +64,7 @@ class AuthServiceImplTest {
     }
     @Test
     void shouldReturnCurrentUserClaimsWithoutToken() {
-        authService.register(new RegisterRequest("Juan", "Pérez", "juan@test.com", "123456"));
+        authService.register(new RegisterRequest("Juan", "Pérez", "juan@test.com", "Pass1234"));
         AuthResponse response = authService.currentUser("juan@test.com");
         assertThat(response.getEmail()).isEqualTo("juan@test.com");
         assertThat(response.getFirstName()).isEqualTo("Juan");
@@ -85,14 +85,14 @@ class AuthServiceImplTest {
     // kill-switch: register/login degrade gracefully with refresh sessions disabled.
     @Test
     void refreshCredentialIsNullWhenRefreshSessionsAreDisabled() {
-        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-refresh-off@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-refresh-off@test.com", "Pass1234");
         AuthResult result = authService.register(request);
         assertThat(result.refreshCredential()).isNull();
     }
 
     @Test
     void shouldEnqueueWelcomeEmailOnRegister() {
-        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-welcome@test.com", "123456");
+        RegisterRequest request = new RegisterRequest("Juan", "Pérez", "juan-welcome@test.com", "Pass1234");
         authService.register(request);
 
         verify(emailOutboxService).enqueueWelcome(org.mockito.ArgumentMatchers.any(), eq(request));

@@ -120,7 +120,7 @@ class RefreshReuseIntegrationTest extends AbstractIntegrationTest {
         registerUser(email);
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "123456"))))
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, "Pass1234"))))
                 .andExpect(status().isOk())
                 .andReturn();
         Cookie refreshCookie = result.getResponse().getCookie("REFRESH_TOKEN");
@@ -129,7 +129,7 @@ class RefreshReuseIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void registerUser(String email) throws Exception {
-        RegisterRequest request = new RegisterRequest("Reuse", "Detect", email, "123456");
+        RegisterRequest request = new RegisterRequest("Reuse", "Detect", email, "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));

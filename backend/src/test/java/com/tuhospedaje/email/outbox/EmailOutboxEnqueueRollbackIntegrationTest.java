@@ -86,7 +86,7 @@ class EmailOutboxEnqueueRollbackIntegrationTest {
                 .when(emailOutboxService).enqueueWelcome(any(), any(RegisterRequest.class));
 
         assertThatThrownBy(() -> authService.register(
-                new RegisterRequest("Ana", "Gomez", email, "secret123")))
+                new RegisterRequest("Ana", "Gomez", email, "Secret123")))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(userRepository.findByEmail(email)).isEmpty();
