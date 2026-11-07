@@ -90,7 +90,11 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional
     public ReservationResponse createReservation(AuthenticatedActor actor, CreateReservationRequest request) {
-        Lodging lodging = lodgingRepository.findById(request.getLodgingId())
+        // Acquire PESSIMISTIC_WRITE (SELECT ... FOR UPDATE) on the parent Lodging row.
+        // This serializes concurrent reservation attempts for the same lodging, ensuring
+        // atomicity and preventing double booking even when there are zero existing reservations
+        // (where reservation-level locks would match no rows).
+        Lodging lodging = lodgingRepository.findByIdForUpdate(request.getLodgingId())
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado"));
 
         long nights = ChronoUnit.DAYS.between(request.getCheckIn(), request.getCheckOut());

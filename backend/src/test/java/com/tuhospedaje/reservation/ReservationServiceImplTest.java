@@ -58,11 +58,40 @@ class ReservationServiceImplTest {
     // --- createReservation ---
 
     @Test
+    void createReservation_acquiresPessimisticWriteLockOnLodging() {
+        User user = buildUser(1L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("100.00"));
+        CreateReservationRequest request = buildRequest(10L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
+        when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Collections.emptyList());
+        Reservation saved = new Reservation();
+        saved.setId(1L);
+        saved.setLodging(lodging);
+        saved.setUser(user);
+        saved.setCheckIn(request.getCheckIn());
+        saved.setCheckOut(request.getCheckOut());
+        saved.setGuestName(user.getFirstName() + " " + user.getLastName());
+        saved.setGuestEmail(user.getEmail());
+        saved.setTotalPrice(new BigDecimal("300.00"));
+        saved.setStatus(ReservationStatus.CONFIRMED);
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(saved);
+
+        ReservationResponse response = serviceAt("2026-08-25T18:30:45Z")
+                .createReservation(actor(user), request);
+
+        assertThat(response).isNotNull();
+        org.mockito.Mockito.verify(lodgingRepository).findByIdForUpdate(10L);
+    }
+
+    @Test
     void createReservation_whenLodgingNotFound_throwsResourceNotFoundException() {
         User user = buildUser(1L, RoleEnum.USER);
         CreateReservationRequest request = buildRequest(999L);
 
-        when(lodgingRepository.findById(999L)).thenReturn(Optional.empty());
+        when(lodgingRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
@@ -77,7 +106,7 @@ class ReservationServiceImplTest {
         Lodging lodging = buildLodging(10L, new BigDecimal("100.00"));
         CreateReservationRequest request = buildRequest(10L);
 
-        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
 
         // Simulate an overlapping existing reservation
         Reservation existing = new Reservation();
@@ -100,7 +129,7 @@ class ReservationServiceImplTest {
         CreateReservationRequest request = buildRequest(10L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
 
@@ -130,7 +159,7 @@ class ReservationServiceImplTest {
         CreateReservationRequest request = buildRequest(10L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
@@ -158,7 +187,7 @@ class ReservationServiceImplTest {
         LocalDateTime expectedCreatedAt = LocalDateTime.of(2026, 8, 25, 15, 30, 45);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
@@ -183,7 +212,7 @@ class ReservationServiceImplTest {
         request.setNotes("   ");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(lodgingRepository.findById(10L)).thenReturn(Optional.of(lodging));
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
         when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
                 .thenReturn(Collections.emptyList());
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {

@@ -7,11 +7,16 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -22,6 +27,33 @@ public class JwtService {
 
     @Value("${app.jwt.expiration}")
     private long expirationMillis;
+
+    @Autowired(required = false)
+    private Environment environment;
+
+    @PostConstruct
+    public void validateSecretKey() {
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret key must not be blank");
+        }
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secretKey.trim());
+        } catch (Exception e) {
+            throw new IllegalStateException("JWT secret key must be valid Base64", e);
+        }
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT secret key must decode to at least 256 bits (32 bytes), but got " + keyBytes.length + " bytes");
+        }
+        if (environment != null && environment.matchesProfiles("prod")) {
+            String decodedString = new String(keyBytes, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+            String rawSecret = secretKey.toLowerCase(Locale.ROOT);
+            if (rawSecret.contains("change-me") || rawSecret.contains("openssl-rand")
+                    || decodedString.contains("change-me") || decodedString.contains("openssl-rand")) {
+                throw new IllegalStateException("Production environment cannot use default or placeholder JWT secret");
+            }
+        }
+    }
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);

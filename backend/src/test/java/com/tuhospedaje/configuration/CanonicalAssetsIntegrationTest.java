@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "app.jwt.secret=test-only-canonical-assets")
+@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
 @Import(TestcontainersConfiguration.class)
@@ -34,6 +34,7 @@ class CanonicalAssetsIntegrationTest {
     @DynamicPropertySource
     static void canonicalAssetProperties(DynamicPropertyRegistry registry) {
         registry.add("tuhospedaje.canonical-assets.root", ASSET_ROOT::toString);
+        registry.add("app.jwt.secret", () -> JwtSecretValidationTest.VALID_TEST_SECRET);
     }
 
     @Test
