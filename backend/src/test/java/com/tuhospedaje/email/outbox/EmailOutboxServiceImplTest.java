@@ -68,7 +68,7 @@ class EmailOutboxServiceImplTest {
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CONFIRMATION", "42"))
                 .thenReturn(Optional.empty());
         when(emailTemplateRenderer.renderReservationConfirmation(user, reservation)).thenReturn(new EmailMessage(
-                "registered@example.com", "Booking confirmed — Hotel Sur", "<p>Your booking is confirmed!</p>",
+                "registered@example.com", "Reserva confirmada — Hotel Sur", "<p>¡Tu reserva está confirmada!</p>",
                 "RESERVATION_CONFIRMATION", "42"));
 
         newService().enqueueReservationConfirmation(user, reservation);
@@ -77,8 +77,8 @@ class EmailOutboxServiceImplTest {
         assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.RESERVATION_CONFIRMATION.name());
         assertThat(saved.getAggregateId()).isEqualTo("42");
         assertThat(saved.getRecipient()).isEqualTo("registered@example.com");
-        assertThat(saved.getSubject()).isEqualTo("Booking confirmed — Hotel Sur");
-        assertThat(saved.getHtmlBody()).isEqualTo("<p>Your booking is confirmed!</p>");
+        assertThat(saved.getSubject()).isEqualTo("Reserva confirmada — Hotel Sur");
+        assertThat(saved.getHtmlBody()).isEqualTo("<p>¡Tu reserva está confirmada!</p>");
         verify(emailTemplateRenderer).renderReservationConfirmation(user, reservation);
     }
 
@@ -90,7 +90,7 @@ class EmailOutboxServiceImplTest {
         when(repository.findByEmailTypeAndAggregateId("RESERVATION_CANCELLATION", "42"))
                 .thenReturn(Optional.empty());
         when(emailTemplateRenderer.renderReservationCancellation(user, reservation)).thenReturn(new EmailMessage(
-                "registered@example.com", "Booking cancelled — Hotel Sur", "<p>Your booking was cancelled</p>",
+                "registered@example.com", "Reserva cancelada — Hotel Sur", "<p>Tu reserva fue cancelada</p>",
                 "RESERVATION_CANCELLATION", "42"));
 
         newService().enqueueReservationCancellation(user, reservation);
@@ -99,8 +99,8 @@ class EmailOutboxServiceImplTest {
         assertThat(saved.getEmailType()).isEqualTo(EmailOutboxType.RESERVATION_CANCELLATION.name());
         assertThat(saved.getAggregateId()).isEqualTo("42");
         assertThat(saved.getRecipient()).isEqualTo("registered@example.com");
-        assertThat(saved.getSubject()).isEqualTo("Booking cancelled — Hotel Sur");
-        assertThat(saved.getHtmlBody()).isEqualTo("<p>Your booking was cancelled</p>");
+        assertThat(saved.getSubject()).isEqualTo("Reserva cancelada — Hotel Sur");
+        assertThat(saved.getHtmlBody()).isEqualTo("<p>Tu reserva fue cancelada</p>");
         verify(emailTemplateRenderer).renderReservationCancellation(user, reservation);
     }
 
