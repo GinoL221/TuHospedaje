@@ -14,10 +14,10 @@ frontend/.env.local
 
 # Environment (secrets)
 .env
-deploy/dev.env
-deploy/local.env
-deploy/local-admin.env
-deploy/prod.env
+.env.*
+!.env.example
+deploy/*.env
+!deploy/*.env.example
 
 # Private local backups and restore evidence (may contain stored credentials)
 /backups/local/
@@ -41,7 +41,6 @@ Thumbs.db
 TuHospedaje.postman_collection.json
 
 # AI assistant config/indexes (local, not part of the project)
-AGENTS.md
 mcp.json
 opencode.json
 .codegraph/
@@ -54,6 +53,11 @@ opencode.json
 *.log
 test-results/
 .vitest/
+coverage/
+playwright-report/
+e2e/playwright-report/
+e2e/test-results/
+.ruff_cache/
 
 # Untracked ODD scratch (tracked odd/tasks stay in git)
 odd/frontend-image-hardening/
