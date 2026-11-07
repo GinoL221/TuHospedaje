@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  * requirement, e.g. category media). See {@link HttpsImageUrlValidator} for the exact
  * accept/reject rules; no remote fetch or content inspection is performed.
  */
-@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = HttpsImageUrlValidator.class)
 public @interface HttpsImageUrl {

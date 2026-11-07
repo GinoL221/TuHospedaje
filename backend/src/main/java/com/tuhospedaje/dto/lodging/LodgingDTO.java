@@ -4,6 +4,7 @@ import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.entity.Policy;
+import com.tuhospedaje.validation.HttpsImageUrl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,7 +57,7 @@ public class LodgingDTO {
     private String email;
 
     @Schema(description = "List of image URLs for the lodging", example = "[\"https://cdn.example.com/lodgings/42/main.jpg\", \"https://cdn.example.com/lodgings/42/room1.jpg\"]")
-    private List<String> imageUrls;
+    private List<@HttpsImageUrl String> imageUrls;
 
     @Schema(description = "ID of the category this lodging belongs to", example = "3")
     private Long categoryId;
@@ -91,6 +92,9 @@ public class LodgingDTO {
 
     @Schema(description = "Total number of ratings received", example = "238")
     private Integer ratingCount;
+
+    @Schema(description = "Optimistic lock version — used internally to detect concurrent updates", example = "0")
+    private Long version;
 
     public Lodging toEntity() {
         Lodging lodging = new Lodging();
@@ -142,6 +146,7 @@ public class LodgingDTO {
                     .map(LodgingImage::getImageUrl)
                     .toList());
         }
+        dto.setVersion(lodging.getVersion());
         return dto;
     }
 }
