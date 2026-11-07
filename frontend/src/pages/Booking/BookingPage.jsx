@@ -11,6 +11,7 @@ import BookingDateFields from "./BookingDateFields";
 import BookingSummary from "./BookingSummary";
 import GuestDetails from "./GuestDetails";
 import { formatLocalDate, parseLocalDate } from "../../utils/dateRange";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 import "./BookingPage.css";
 
@@ -24,6 +25,7 @@ export default function BookingPage() {
 	const initialCheckOut = parseLocalDate(location.state?.checkOut);
 
 	const [lodging, setLodging] = useState(null);
+	useDocumentTitle(lodging?.name ? `Reservar ${lodging.name}` : "Reserva");
 	const [lodgingStatus, setLodgingStatus] = useState("loading");
 	const [resolvedLodgingId, setResolvedLodgingId] = useState(null);
 	const [lodgingRequestAttempt, setLodgingRequestAttempt] = useState(0);

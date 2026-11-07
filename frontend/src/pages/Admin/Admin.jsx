@@ -19,6 +19,7 @@ import AdminFeatures from "./AdminFeatures";
 import AdminUsers from "./AdminUsers";
 import AdminPolicies from "./AdminPolicies";
 import AdminReservations from "./AdminReservations";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "./Admin.css";
 
 const NAV_ITEMS = [
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Admin() {
+	useDocumentTitle("Panel de administración");
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 	const [tab, setTab] = useState("dashboard");
@@ -105,7 +107,7 @@ export default function Admin() {
 					</div>
 				</div>
 
-				<div className="admin-content">
+				<main className="admin-content">
 					{tab === "dashboard" && <AdminDashboard onTabChange={setTab} />}
 					{tab === "lodgings" && <AdminLodgings />}
 					{tab === "categories" && <AdminCategories />}
@@ -113,7 +115,7 @@ export default function Admin() {
 					{tab === "policies" && <AdminPolicies />}
 					{tab === "users" && <AdminUsers />}
 					{tab === "reservations" && <AdminReservations />}
-				</div>
+				</main>
 			</div>
 		</div>
 	);

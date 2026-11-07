@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 import "../App.css";
 import "../assets/css/auth.css";
 
 export default function LoginPage() {
+	useDocumentTitle("Iniciar sesión");
 	const { login } = useAuth();
 	const navigate = useNavigate();
 
