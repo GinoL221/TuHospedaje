@@ -1,25 +1,32 @@
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-
-const readCss = (path) => readFileSync(resolve(process.cwd(), path), "utf8");
-
-function rule(css, selector) {
-	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	return css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1];
-}
+import { readCss, rule } from "./test/cssContractUtils";
 
 describe("Touch targets accessibility contract (WCAG >= 44x44px)", () => {
-	it("ConfirmDialog has its own dedicated stylesheet with touch-accessible actions", () => {
+	it("defines .btn-cancel once in App.css with 44x44px touch target and no duplicates in ConfirmDialog.css or Admin.css", () => {
+		const appCss = readCss("src/App.css");
+		const confirmCss = readCss("src/components/ConfirmDialog.css");
+		const adminCss = readCss("src/pages/Admin/Admin.css");
+
+		const cancelBtn = rule(appCss, ".btn-cancel");
+		expect(cancelBtn).toBeDefined();
+		expect(cancelBtn).toMatch(/min-height:\s*44px/);
+		expect(cancelBtn).toMatch(/min-width:\s*44px/);
+		expect(rule(appCss, ".btn-cancel:focus-visible")).toBeDefined();
+		expect(rule(appCss, ".btn-cancel:disabled")).toBeDefined();
+
+		expect(rule(confirmCss, ".btn-cancel")).toBeUndefined();
+		expect(rule(adminCss, ".btn-cancel")).toBeUndefined();
+		expect(rule(adminCss, ".confirm-dialog")).toBeUndefined();
+		expect(rule(adminCss, ".confirm-message")).toBeUndefined();
+	});
+
+	it("ConfirmDialog has its own dedicated stylesheet with touch-accessible confirm action", () => {
 		const cssPath = "src/components/ConfirmDialog.css";
 		expect(existsSync(resolve(process.cwd(), cssPath))).toBe(true);
 
 		const css = readCss(cssPath);
-		const cancelBtn = rule(css, ".btn-cancel");
 		const confirmBtn = rule(css, ".btn-confirm");
-
-		expect(cancelBtn).toBeDefined();
-		expect(cancelBtn).toMatch(/min-height:\s*44px/);
-		expect(cancelBtn).toMatch(/min-width:\s*44px/);
 
 		expect(confirmBtn).toBeDefined();
 		expect(confirmBtn).toMatch(/min-height:\s*44px/);

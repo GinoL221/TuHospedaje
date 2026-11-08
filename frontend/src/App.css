@@ -179,3 +179,37 @@ body {
     animation: none;
   }
 }
+
+.btn-cancel {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.btn-cancel:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
