@@ -36,6 +36,8 @@ El código de estado depende de la ruta y no cambió al agregar el cuerpo.
 
 La comprobación de CSRF corre antes que la autorización. Por eso un POST anónimo a `/api/reservations` sin token responde 403 y, con token válido, 401.
 
+En las rutas protegidas por método (`@PreAuthorize`), la autorización de rol se declara únicamente en el método del controlador (sin duplicar reglas de rol por URL en `SecurityConfig`). Como Spring MVC resuelve y valida los argumentos del controlador (`@Valid @RequestBody`) antes de ejecutar el interceptor de `@PreAuthorize`, un usuario autenticado sin el rol requerido que envíe un cuerpo inválido recibe 400 en lugar de 403.
+
 ## Cómo lo consume el frontend
 
 `frontend/src/services/api.js`:
