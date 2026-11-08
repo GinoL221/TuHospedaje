@@ -122,6 +122,23 @@ class SecurityErrorBodyIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void invalidCsrfTokenValueReturnsJson403() throws Exception {
+        Cookie csrf = obtainCsrfCookie(mockMvc);
+
+        mockMvc.perform(post("/api/lodgings")
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(regularUserToken))
+                        .cookie(csrf)
+                        .header("X-XSRF-TOKEN", csrf.getValue() + "-corrupted")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.error").value(CSRF_INVALID_ES));
+    }
+
+    @Test
     void anonymousUnsafeCallOnA401RouteWithoutCsrfAnswers403BeforeAuthentication() throws Exception {
         // CsrfFilter runs before authorization, so this route answers 403 here and 401 once a
         // valid token is present. Both are existing behavior; only the body is new.

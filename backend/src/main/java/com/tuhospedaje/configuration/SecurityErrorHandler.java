@@ -56,6 +56,9 @@ public class SecurityErrorHandler implements AccessDeniedHandler {
 
     private void write(HttpServletRequest request, HttpServletResponse response,
                        HttpStatus status, String messageKey) throws IOException {
+        if (response.isCommitted()) {
+            return;
+        }
         String message = messageSource.getMessage(messageKey, null, request.getLocale());
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
