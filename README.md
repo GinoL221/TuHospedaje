@@ -10,10 +10,11 @@ La web del huésped debe adaptarse a dispositivos según los criterios oficiales
 
 ## Stack
 
-- **Backend:** Java 17, Spring Boot 4.0, Spring Security/JWT, Spring Data JPA y MariaDB.
+- **Backend:** Java 17 o 21, Spring Boot 3.4.1, Spring Security 6 / JWT, Spring Data JPA, Flyway y MariaDB 11.4.
 - **Frontend:** React 19, Vite 8, React Router y Lucide React.
 - **E2E:** Playwright para Chromium, Firefox y mobile Chromium.
-- **Proveedores configurables:** Cloudinary para imágenes y SMTP para email. La elección o activación del proveedor no vuelve opcionales los criterios oficiales de imágenes o correo de reserva. Configurar SMTP no prueba la entrega ni la llegada al buzón.
+- **Almacenamiento de imágenes:** Almacenamiento local en el backend mediante `LocalImageStorageService`, con endpoints públicos seguros en `/uploads/**` e imágenes canónicas de seed en `/canonical-lodging-images/**`. Validación estricta con `ImageContentValidator` (magic bytes, JPEG, PNG, WebP, GIF hasta 5 MB y sin SVG).
+- **Correo electrónico:** Outbox transaccional en base de datos (`email_outbox`) con despacho asíncrono vía SMTP (Mailpit en desarrollo, Mailtrap u otro servidor SMTP en producción). Configurar SMTP no prueba la entrega ni la llegada al buzón.
 
 ## Requisitos
 
@@ -85,8 +86,8 @@ antes del arranque, sin borrar sus datos.
    archivo de hash después del primer arranque **no cambia** la contraseña en DB.
 
    El backend monta solo los 38 directorios `masters` en lectura, con los nombres
-   exactos del seed. No copia imágenes al repositorio ni publica notas, prompts,
-   evidencias o Cloudinary. La ruta raíz la define `CANONICAL_ASSETS_HOST_DIR`;
+   exactos del seed. No copia imágenes al repositorio ni publica notas, prompts o
+   evidencias. La ruta raíz la define `CANONICAL_ASSETS_HOST_DIR`;
    un directorio ausente impide el arranque en vez de crear uno vacío.
 
 3. Para detener y volver a arrancar conservando la base:
