@@ -1,7 +1,7 @@
 .my-reservations {
-  --reservation-success: #1a7a4a;
-  --reservation-warning: #b07d00;
-  --reservation-danger: #c0392b;
+  --reservation-success: var(--feedback-success-text);
+  --reservation-warning: var(--feedback-warning-text);
+  --reservation-danger: var(--feedback-danger-text);
 }
 
 /* --- PAGE HEADER --- */

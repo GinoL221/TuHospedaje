@@ -746,14 +746,14 @@ th.sortable[aria-sort="descending"] .sort-icon {
 /* ── FORM HELPERS ────────────────────────────────────────────── */
 .field-error {
   display: block;
-  color: #d32f2f;
+  color: var(--feedback-danger-text);
   font-size: 0.7rem;
   margin-top: 2px;
   font-weight: 500;
 }
 input.input-error,
 textarea.input-error {
-  border-color: #d32f2f;
+  border-color: var(--feedback-danger-border);
   animation: shake 0.3s ease-in-out;
 }
 .admin-image-preview {
