@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import "./ConfirmDialog.css";
 
 const FOCUSABLE_SELECTOR = [
 	"button:not([disabled])",
@@ -109,7 +110,7 @@ export default function ConfirmDialog({
 				</p>
 				<div className="modal-actions">
 					<button
-						className="btn-save"
+						className="btn-save btn-confirm"
 						data-testid={`${testId}-yes`}
 						onClick={handleConfirm}
 						disabled={pending}

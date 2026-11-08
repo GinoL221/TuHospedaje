@@ -577,6 +577,11 @@ th.sortable[aria-sort="descending"] .sort-icon {
   font-weight: 600;
   font-size: 0.85rem;
   font-family: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: opacity 150ms ease;
 }
 .pagination button:disabled {
@@ -684,6 +689,11 @@ th.sortable[aria-sort="descending"] .sort-icon {
   cursor: pointer;
   font-weight: 700;
   font-family: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 150ms ease;
 }
 .btn-save:hover {
@@ -712,6 +722,11 @@ th.sortable[aria-sort="descending"] .sort-icon {
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 150ms ease;
 }
 .btn-cancel:hover {
