@@ -171,7 +171,7 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Password changed; all sessions revoked and caller's cookies cleared", content = @Content),
             @ApiResponse(responseCode = "400", description = "Wrong current password, or the new password fails validation", content = @Content),
-            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "403", description = "Access denied — authentication required or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequest request,

@@ -50,7 +50,7 @@ public class RatingController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Rating submitted successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input or user has no confirmed reservation for this lodging", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied — authentication required or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
     })
     public ResponseEntity<RatingDTO> create(
@@ -78,7 +78,7 @@ public class RatingController {
             description = "Whether the authenticated user has a completed confirmed reservation for this lodging.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Eligibility computed successfully"),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied — authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<RatingEligibilityDTO> getEligibility(
             @AuthenticationPrincipal User user,
