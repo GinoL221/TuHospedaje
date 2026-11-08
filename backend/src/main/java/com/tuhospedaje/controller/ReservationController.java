@@ -129,6 +129,7 @@ public class ReservationController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin reservation page returned"),
             @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PageResponse<ReservationResponse>> getAdminReservations(

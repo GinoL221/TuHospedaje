@@ -43,8 +43,7 @@ public class UserController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Users retrieved successfully",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDTO.class)))),
-            @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Authenticated user does not have ADMIN role", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "403", description = "Access denied — unauthenticated or ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -57,8 +56,7 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Role updated successfully",
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
             @ApiResponse(responseCode = "400", description = "Validation error — role field is missing or blank", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Authenticated user does not have ADMIN role", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied — unauthenticated, ADMIN role required, or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content),
             @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be demoted", content = @Content)
     })
@@ -78,8 +76,7 @@ public class UserController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Account status updated successfully",
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
-            @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Authenticated user does not have ADMIN role", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied — unauthenticated, ADMIN role required, or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content),
             @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be disabled", content = @Content)
     })
