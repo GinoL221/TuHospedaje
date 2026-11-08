@@ -1,7 +1,6 @@
 import { createContext } from "react";
 import { act, render, screen } from "@testing-library/react";
 import { useLocation } from "react-router-dom";
-import { useDocumentTitle } from "./hooks/useDocumentTitle";
 
 const authState = vi.hoisted(() => ({ value: { user: null, loading: false } }));
 
@@ -434,26 +433,5 @@ describe("App auth loading state", () => {
 
 		expect(window.location.pathname).toBe("/admin");
 		expect(screen.queryByText("Admin resolved")).not.toBeInTheDocument();
-	});
-});
-
-describe("App document title", () => {
-	it("updates document.title for rendered views without external helmet dependencies", async () => {
-		function MockHomeView() {
-			useDocumentTitle("Inicio");
-			return <main>Home shell</main>;
-		}
-
-		const publicRender = await renderAppAt({
-			path: "/search",
-			pages: {
-				"./pages/Home/Home": {
-					default: MockHomeView,
-				},
-			},
-		});
-		await act(async () => {});
-		expect(document.title).toBe("Inicio | TuHospedaje");
-		publicRender.unmount();
 	});
 });

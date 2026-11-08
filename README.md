@@ -10,11 +10,11 @@ La web del huésped debe adaptarse a dispositivos según los criterios oficiales
 
 ## Stack
 
-- **Backend:** Java 17 o 21, Spring Boot 3.4.1, Spring Security 6 / JWT, Spring Data JPA, Flyway y MariaDB 11.4.
+- **Backend:** Java 17, Spring Boot 4.0, Spring Security/JWT, Spring Data JPA, Flyway y MariaDB 10.11.
 - **Frontend:** React 19, Vite 8, React Router y Lucide React.
 - **E2E:** Playwright para Chromium, Firefox y mobile Chromium.
 - **Almacenamiento de imágenes:** Almacenamiento local en el backend mediante `LocalImageStorageService`, con endpoints públicos seguros en `/uploads/**` e imágenes canónicas de seed en `/canonical-lodging-images/**`. Validación estricta con `ImageContentValidator` (magic bytes, JPEG, PNG, WebP, GIF hasta 5 MB y sin SVG).
-- **Correo electrónico:** Outbox transaccional en base de datos (`email_outbox`) con despacho asíncrono vía SMTP (Mailpit en desarrollo, Mailtrap u otro servidor SMTP en producción). Configurar SMTP no prueba la entrega ni la llegada al buzón.
+- **Correo electrónico:** Outbox transaccional en base de datos (`email_outbox`) con despacho asíncrono vía SMTP (configurable con las variables `MAILTRAP_*`; en producción, el servidor SMTP del operador). Configurar SMTP no prueba la entrega ni la llegada al buzón.
 
 ## Requisitos
 
