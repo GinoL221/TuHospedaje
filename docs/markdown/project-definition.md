@@ -57,12 +57,12 @@ Para mitigar riesgos de desarrollo y asegurar la entrega en los tiempos estipula
 ## 3. Arquitectura Técnica y Stack Tecnológico
 La solución adopta una arquitectura desacoplada basada en el patrón de diseño **Client-Server**, estructurada en un monorrepositorio para facilitar el despliegue continuo.
 ```
-[ Frontend: React 19 ]  ──( Peticiones HTTP / JSON )──>  [ Backend: Spring Boot 3.4.1 ]  ──>  [ Base de Datos: MariaDB ]
+[ Frontend: React 19 ]  ──( Peticiones HTTP / JSON )──>  [ Backend: Spring Boot 4.0 ]  ──>  [ Base de Datos: MariaDB ]
 ```
 ### 3.1. Infraestructura Tecnológica
 | Capa | Tecnología |
 |------|-----------|
-| **Backend** | Java 17 o 21 / Spring Boot 3.4.1 / Spring Data JPA / Flyway / Lombok |
+| **Backend** | Java 17 / Spring Boot 4.0 / Spring Data JPA / Flyway / Lombok |
 | **Frontend** | React 19 / Vite / React Router (Single Page Application - SPA) |
 | **Base de Datos** | MariaDB (Motor Relacional) |
 | **Almacenamiento** | Local en backend (`/uploads/**`) con validación de magic bytes |
