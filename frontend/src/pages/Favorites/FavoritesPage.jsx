@@ -4,10 +4,12 @@ import {
 	removeFavorite as removeFavoriteRequest,
 } from "../../services/favoriteService";
 import ProductCard from "../../components/ProductCard/ProductCard";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "../../App.css";
 import "./FavoritesPage.css";
 
 export default function FavoritesPage() {
+	useDocumentTitle("Favoritos");
 	const [favorites, setFavorites] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");

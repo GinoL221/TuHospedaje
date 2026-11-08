@@ -9,6 +9,7 @@ import {
 	hasReservationNotes,
 	reservationCreatedAtLabel,
 } from "../../utils/reservationPresentation";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "./MyReservationsPage.css";
 
 const BUSINESS_TIME_ZONE = "America/Argentina/Buenos_Aires";
@@ -49,6 +50,7 @@ function canCancel(reservation) {
 }
 
 export default function MyReservationsPage() {
+	useDocumentTitle("Mis reservas");
 	const [reservations, setReservations] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");

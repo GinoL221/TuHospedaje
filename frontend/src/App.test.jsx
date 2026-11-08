@@ -1,6 +1,7 @@
 import { createContext } from "react";
 import { act, render, screen } from "@testing-library/react";
 import { useLocation } from "react-router-dom";
+import { useDocumentTitle } from "./hooks/useDocumentTitle";
 
 const authState = vi.hoisted(() => ({ value: { user: null, loading: false } }));
 
@@ -437,41 +438,22 @@ describe("App auth loading state", () => {
 });
 
 describe("App document title", () => {
-	it("never sets document.title while resolving public, authenticated, and admin routes", async () => {
-		const titleSetter = vi.spyOn(document, "title", "set");
+	it("updates document.title for rendered views without external helmet dependencies", async () => {
+		function MockHomeView() {
+			useDocumentTitle("Inicio");
+			return <main>Home shell</main>;
+		}
 
 		const publicRender = await renderAppAt({
 			path: "/search",
-		});
-		await act(async () => {});
-		publicRender.unmount();
-
-		const reservations = deferred();
-		const protectedRender = await renderAppAt({
-			path: "/my-reservations",
-			authValue: AUTHENTICATED_USER,
 			pages: {
-				"./pages/MyReservations/MyReservationsPage": reservations.promise,
+				"./pages/Home/Home": {
+					default: MockHomeView,
+				},
 			},
 		});
-		await act(async () =>
-			reservations.resolve({
-				default: () => <main>Reservations resolved</main>,
-			}),
-		);
-		protectedRender.unmount();
-
-		const admin = deferred();
-		const adminRender = await renderAppAt({
-			path: "/admin",
-			authValue: AUTHENTICATED_ADMIN,
-			pages: { "./pages/Admin/Admin": admin.promise },
-		});
-		await act(async () =>
-			admin.resolve({ default: () => <main>Admin resolved</main> }),
-		);
-		adminRender.unmount();
-
-		expect(titleSetter).not.toHaveBeenCalled();
+		await act(async () => {});
+		expect(document.title).toBe("Inicio | TuHospedaje");
+		publicRender.unmount();
 	});
 });

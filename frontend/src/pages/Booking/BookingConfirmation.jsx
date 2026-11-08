@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { CheckCircle, Mail } from "lucide-react";
 import { hasReservationNotes } from "../../utils/reservationPresentation";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "./BookingConfirmation.css";
 
 function fmtDate(str) {
@@ -9,6 +10,7 @@ function fmtDate(str) {
 }
 
 export default function BookingConfirmationPage() {
+	useDocumentTitle("Reserva confirmada");
 	const { state } = useLocation();
 	const navigate = useNavigate();
 

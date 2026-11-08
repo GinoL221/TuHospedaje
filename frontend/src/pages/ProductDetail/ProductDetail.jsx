@@ -16,6 +16,7 @@ import {
 	formatLocalDate,
 	parseLocalDate,
 } from "../../utils/dateRange";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 import "./ProductDetail.css";
 
@@ -125,6 +126,7 @@ export default function ProductDetail() {
 		setLodgingState({ id, lodging: null, error: false });
 	}
 	const { lodging, error: lodgingError } = lodgingState;
+	useDocumentTitle(lodging?.name || "Alojamiento");
 	const [checkIn, setCheckIn] = useState(() =>
 		parseLocalDate(location.state?.checkIn),
 	);

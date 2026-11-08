@@ -13,6 +13,7 @@ import ProductCard from "../../components/ProductCard/ProductCard";
 import Pagination from "../../components/Pagination/Pagination";
 import WelcomeEmailBanner from "../../components/WelcomeEmailBanner/WelcomeEmailBanner";
 import CategoryCard from "./CategoryCard";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "../../App.css";
 import "./Home.css";
 
@@ -36,6 +37,7 @@ const homeCalendarModifiers = [
 ];
 
 export default function Home() {
+	useDocumentTitle("Inicio");
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { search } = location;

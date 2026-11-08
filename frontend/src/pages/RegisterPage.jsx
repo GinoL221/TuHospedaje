@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import "../App.css";
 import "../assets/css/auth.css";
 
 export default function RegisterPage() {
+	useDocumentTitle("Crear cuenta");
 	const { register } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
