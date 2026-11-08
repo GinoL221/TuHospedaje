@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.policy.PolicyDTO;
 import com.tuhospedaje.service.PolicyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,7 +64,7 @@ public class PolicyController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Policy created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PolicyDTO> create(@Valid @RequestBody PolicyDTO dto) {
         PolicyDTO saved = policyService.save(dto);
@@ -76,7 +78,7 @@ public class PolicyController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Policy updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content),
     })
     public ResponseEntity<PolicyDTO> update(@PathVariable Long id, @Valid @RequestBody PolicyDTO dto) {
@@ -91,7 +93,7 @@ public class PolicyController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Policy deleted successfully", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {

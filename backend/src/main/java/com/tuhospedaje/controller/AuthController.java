@@ -1,5 +1,6 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
 import com.tuhospedaje.configuration.AuthCookieFactory;
 import com.tuhospedaje.configuration.RefreshCookieFactory;
 import com.tuhospedaje.configuration.WelcomeEmailProperties;
@@ -79,7 +80,7 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Login successful",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation error — missing or malformed fields", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content)
+            @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
@@ -95,7 +96,7 @@ public class AuthController {
             + "it can always be called safely.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Cookies cleared and the calling device's refresh family revoked (no-op if there was no session)", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Missing/invalid CSRF token", content = @Content)
+            @ApiResponse(responseCode = "403", description = "Missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest httpRequest) {
@@ -112,7 +113,7 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Session is valid",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content)
+            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> me(Authentication authentication) {
@@ -149,7 +150,7 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Refresh succeeded; both cookies rotated",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Missing, invalid, expired, or reused refresh credential", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Missing, invalid, expired, or reused refresh credential", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "429", description = "IP or family refresh rate limit exceeded", content = @Content)
     })
     @PostMapping("/refresh")
@@ -170,7 +171,7 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Password changed; all sessions revoked and caller's cookies cleared", content = @Content),
             @ApiResponse(responseCode = "400", description = "Wrong current password, or the new password fails validation", content = @Content),
-            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content)
+            @ApiResponse(responseCode = "401", description = "No valid session", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequest request,

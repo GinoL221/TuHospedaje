@@ -46,6 +46,7 @@ La matriz conserva separados los requisitos oficiales y los incrementos posterio
 
 - [Auditoría del estado actual](markdown/audits/auditoria-estado-actual.md)
 - [Reporte de hardening de seguridad del backend](markdown/backend-security-hardening/backend-security-hardening-report.md)
+- [Contrato de errores de la API](markdown/api-error-contract.md)
 - [Política de rollback de migraciones](markdown/migrations/migration-rollback-policy.md)
 - [Migraciones Flyway](../backend/src/main/resources/db/migration/)
 

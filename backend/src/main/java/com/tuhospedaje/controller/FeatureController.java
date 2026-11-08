@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.service.FeatureService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,7 +43,7 @@ public class FeatureController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Feature created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<FeatureDTO> create(@Valid @RequestBody FeatureDTO dto) {
         FeatureDTO saved = featureService.save(dto);
@@ -76,7 +78,7 @@ public class FeatureController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Feature updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Feature not found", content = @Content),
     })
     public ResponseEntity<FeatureDTO> update(@PathVariable Long id, @Valid @RequestBody FeatureDTO dto) {
@@ -91,7 +93,7 @@ public class FeatureController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Feature deleted successfully", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Feature not found", content = @Content),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
