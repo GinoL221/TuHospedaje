@@ -35,7 +35,9 @@ class SecurityErrorBodyIntegrationTest extends AbstractIntegrationTest {
 
     private static final String AUTH_REQUIRED_ES = "Necesitás iniciar sesión para continuar.";
     private static final String ACCESS_DENIED_ES = "No tenés permisos para realizar esta acción.";
+    private static final String CSRF_INVALID_ES = "Tu token de seguridad falta o venció. Recargá la página e intentá de nuevo.";
     private static final String AUTH_REQUIRED_EN = "Authentication is required.";
+    private static final String ACCESS_DENIED_EN = "You do not have permission to perform this action.";
 
     @Autowired
     private MockMvc mockMvc;
@@ -116,7 +118,60 @@ class SecurityErrorBodyIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(403))
-                .andExpect(jsonPath("$.error").value(ACCESS_DENIED_ES));
+                .andExpect(jsonPath("$.error").value(CSRF_INVALID_ES));
+    }
+
+    @Test
+    void anonymousUnsafeCallOnA401RouteWithoutCsrfAnswers403BeforeAuthentication() throws Exception {
+        // CsrfFilter runs before authorization, so this route answers 403 here and 401 once a
+        // valid token is present. Both are existing behavior; only the body is new.
+        mockMvc.perform(post("/api/reservations")
+                        .header("Accept-Language", "es")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value(CSRF_INVALID_ES));
+
+        Cookie csrf = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/reservations")
+                        .header("Accept-Language", "es")
+                        .cookie(csrf)
+                        .header("X-XSRF-TOKEN", csrf.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value(AUTH_REQUIRED_ES));
+    }
+
+    @Test
+    void csrfAndWelcomeResendRoutesReturnJson401() throws Exception {
+        mockMvc.perform(get("/api/auth/csrf").header("Accept-Language", "es"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value(AUTH_REQUIRED_ES));
+
+        Cookie csrf = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/auth/welcome-email/resend")
+                        .header("Accept-Language", "es")
+                        .cookie(csrf)
+                        .header("X-XSRF-TOKEN", csrf.getValue()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value(AUTH_REQUIRED_ES));
+    }
+
+    @Test
+    void bodyHasExactlyTheTwoDocumentedFields() throws Exception {
+        mockMvc.perform(get("/api/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.error").exists())
+                .andExpect(jsonPath("$.status").exists());
+    }
+
+    @Test
+    void forbiddenMessageIsAlsoTranslatedToEnglish() throws Exception {
+        mockMvc.perform(get("/api/users").header("Accept-Language", "en"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value(ACCESS_DENIED_EN));
     }
 
     @Test

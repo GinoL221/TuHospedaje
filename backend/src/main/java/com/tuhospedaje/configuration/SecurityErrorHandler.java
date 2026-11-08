@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -30,6 +31,7 @@ public class SecurityErrorHandler implements AccessDeniedHandler {
 
     static final String AUTH_REQUIRED_KEY = "error.auth.required";
     static final String ACCESS_DENIED_KEY = "error.access_denied";
+    static final String CSRF_INVALID_KEY = "error.csrf_invalid";
 
     private final MessageSource messageSource;
     private final JsonMapper jsonMapper;
@@ -40,11 +42,16 @@ public class SecurityErrorHandler implements AccessDeniedHandler {
         return (request, response, authException) -> write(request, response, status, messageKey);
     }
 
-    /** Authenticated caller without the required role, or a request with an invalid CSRF token. */
+    /**
+     * Authenticated caller without the required role, or a request with a missing or invalid
+     * CSRF token. The CSRF case has its own message: telling a user whose token expired that
+     * they have no permissions would be misleading. The status is 403 in both cases.
+     */
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException {
-        write(request, response, HttpStatus.FORBIDDEN, ACCESS_DENIED_KEY);
+        String messageKey = accessDeniedException instanceof CsrfException ? CSRF_INVALID_KEY : ACCESS_DENIED_KEY;
+        write(request, response, HttpStatus.FORBIDDEN, messageKey);
     }
 
     private void write(HttpServletRequest request, HttpServletResponse response,
