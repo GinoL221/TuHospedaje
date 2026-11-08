@@ -27,22 +27,34 @@
 
 .profile-modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   background: none;
   border: none;
   color: #64748b;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
+  padding: 0;
+  border-radius: var(--radius-sm, 4px);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .profile-modal-close:hover {
   background: #f1f5f9;
   color: #1e293b;
+}
+
+.profile-modal-close:focus-visible {
+  outline: 3px solid var(--secondary, #264653);
+  outline-offset: 2px;
 }
 
 .profile-modal-header {
