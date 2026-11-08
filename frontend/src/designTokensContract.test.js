@@ -1,15 +1,4 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-const readCss = (path) => readFileSync(resolve(process.cwd(), path), "utf8");
-
-function rule(css, selector) {
-	if (selector instanceof RegExp) {
-		return css.match(new RegExp(`${selector.source}\\s*\\{([^}]*)\\}`))?.[1];
-	}
-	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	return css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1];
-}
+import { readCss, rule } from "./test/cssContractUtils";
 
 describe("Design tokens consistency contract (Manual de Identidad v2.1)", () => {
 	it("UserProfileModal uses secondary, accent and feedback tokens instead of hardcoded hex", () => {

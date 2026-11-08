@@ -1,12 +1,4 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-const read = (path) => readFileSync(resolve(process.cwd(), path), "utf8");
-
-function rule(css, selector) {
-	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	return css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1];
-}
+import { readCss as read, rule } from "./test/cssContractUtils";
 
 describe("public shell contract", () => {
 	const appCss = read("src/App.css");

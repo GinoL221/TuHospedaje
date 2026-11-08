@@ -713,35 +713,6 @@ th.sortable[aria-sort="descending"] .sort-icon {
   box-shadow: none;
   cursor: not-allowed;
 }
-.btn-cancel {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--text);
-  border: none;
-  padding: 10px 25px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-  font-family: inherit;
-  min-height: 44px;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 150ms ease;
-}
-.btn-cancel:hover {
-  background: rgba(0, 0, 0, 0.15);
-}
-.confirm-dialog {
-  max-width: 400px;
-  text-align: center;
-}
-.confirm-message {
-  font-size: 1rem;
-  margin: 10px 0 20px;
-  color: var(--text);
-  font-weight: 500;
-}
 
 /* ── FORM HELPERS ────────────────────────────────────────────── */
 .field-error {
