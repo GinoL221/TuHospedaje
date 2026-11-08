@@ -65,9 +65,9 @@
 }
 
 .welcome-banner-feedback--scheduled {
-  background: #dcfce7;
-  color: #14532d;
-  border: 1px solid #86efac;
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+  border: 1px solid var(--feedback-success-border);
 }
 
 .welcome-banner-feedback--pending {

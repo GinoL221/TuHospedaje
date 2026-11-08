@@ -70,13 +70,13 @@
   height: 72px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #264653;
+  border: 3px solid var(--secondary);
 }
 
 .profile-modal-header h2 {
   margin: 0;
   font-size: 1.35rem;
-  color: #264653;
+  color: var(--secondary);
 }
 
 .profile-modal-role {
@@ -140,9 +140,9 @@
 }
 
 .profile-modal-feedback--scheduled {
-  background: #dcfce7;
-  color: #14532d;
-  border: 1px solid #86efac;
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+  border: 1px solid var(--feedback-success-border);
 }
 
 .profile-modal-feedback--pending {
@@ -164,7 +164,7 @@
 }
 
 .btn-profile-resend {
-  background: #2a9d8f;
+  background: var(--accent);
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -177,7 +177,7 @@
 }
 
 .btn-profile-resend:hover:not(:disabled) {
-  background: #21867a;
+  background: color-mix(in srgb, var(--accent) 85%, #000);
 }
 
 .btn-profile-resend:disabled {
