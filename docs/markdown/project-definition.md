@@ -57,14 +57,16 @@ Para mitigar riesgos de desarrollo y asegurar la entrega en los tiempos estipula
 ## 3. Arquitectura Técnica y Stack Tecnológico
 La solución adopta una arquitectura desacoplada basada en el patrón de diseño **Client-Server**, estructurada en un monorrepositorio para facilitar el despliegue continuo.
 ```
-[ Frontend: React 19 ]  ──( Peticiones HTTP / JSON )──>  [ Backend: Spring Boot 3.5 ]  ──>  [ Base de Datos: MariaDB ]
+[ Frontend: React 19 ]  ──( Peticiones HTTP / JSON )──>  [ Backend: Spring Boot 3.4.1 ]  ──>  [ Base de Datos: MariaDB ]
 ```
 ### 3.1. Infraestructura Tecnológica
 | Capa | Tecnología |
 |------|-----------|
-| **Backend** | Java 17 / Spring Boot 3.5 / Spring Data JPA / Lombok |
+| **Backend** | Java 17 o 21 / Spring Boot 3.4.1 / Spring Data JPA / Flyway / Lombok |
 | **Frontend** | React 19 / Vite / React Router (Single Page Application - SPA) |
 | **Base de Datos** | MariaDB (Motor Relacional) |
+| **Almacenamiento** | Local en backend (`/uploads/**`) con validación de magic bytes |
+| **Notificaciones** | Outbox transaccional (`email_outbox`) y despacho asíncrono SMTP |
 | **Seguridad** (Sprint 2+) | Spring Security + JSON Web Tokens (JWT) |
 | **Protocolo** | API RESTful en `http://localhost:8080/api/` |
 
@@ -75,8 +77,8 @@ La interfaz vigente usa **CSS puro** mediante **Custom Properties** para el tema
 ### 4.1. Uso del Dominio Semántico `Lodging`
 En lugar de utilizar términos genéricos como `Product`, todo el backend y frontend se alinean bajo el concepto de **Lodging** (Alojamiento). Esto asegura la coherencia del código con el modelo de negocio.
 
-### 4.2. Modelo de Datos Extensible desde el Día 1
-La propiedad `Lodging.category` se diseña como una Foreign Key de tipo **nullable** en el Sprint 1. Esto permite poblar la base de datos de manera inmediata sin requerir migraciones complejas de esquemas (como scripts Flyway o Liquibase) al implementar el Sprint 2.
+### 4.2. Modelo de Datos Extensible y Versionado
+La propiedad `Lodging.category` se diseñó como una Foreign Key de tipo **nullable** en el Sprint 1 para permitir poblar la base de datos de manera inmediata. A partir de las etapas siguientes, el esquema de base de datos se versiona y evoluciona de forma controlada y reproducible mediante migraciones de Flyway (`V1` a `V13`), garantizando integridad referencial, restricciones de unicidad y bloqueos de concurrencia optimista y pesimista.
 
 ### 4.3. Patrón de Backend Desacoplado
 Se implementa un flujo estricto:
