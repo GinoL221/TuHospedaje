@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.upload.UploadResult;
 import com.tuhospedaje.exception.UploadException;
 import com.tuhospedaje.service.ImageStorageService;
@@ -44,7 +46,7 @@ public class UploadController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Image stored successfully — returns the /uploads/ URL and the stored file name"),
             @ApiResponse(responseCode = "400", description = "Empty file, or a content type outside JPEG/PNG/WebP/GIF", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "413", description = "File exceeds spring.servlet.multipart.max-file-size", content = @Content),
             @ApiResponse(responseCode = "500", description = "The image could not be written to the storage directory", content = @Content),
     })

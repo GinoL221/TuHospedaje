@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.admin.AdminStatsResponse;
 import com.tuhospedaje.service.AdminStatsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +36,7 @@ public class AdminController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Counts returned"),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<AdminStatsResponse> stats() {
         return ResponseEntity.ok(adminStatsService.collect());

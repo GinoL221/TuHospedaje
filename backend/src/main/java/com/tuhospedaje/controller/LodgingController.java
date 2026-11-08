@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.lodging.LodgingDTO;
 import com.tuhospedaje.dto.lodging.LodgingSearchResponse;
@@ -57,7 +59,7 @@ public class LodgingController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lodging created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<LodgingDTO> create(@Valid @RequestBody LodgingDTO dto) {
         LodgingDTO saved = lodgingService.save(dto);
@@ -71,7 +73,7 @@ public class LodgingController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lodging updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
     })
     public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @Valid @RequestBody LodgingDTO dto) {
@@ -124,7 +126,7 @@ public class LodgingController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin lodging page returned"),
             @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PageResponse<LodgingDTO>> adminPage(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
@@ -153,7 +155,7 @@ public class LodgingController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Lodging deleted successfully", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {

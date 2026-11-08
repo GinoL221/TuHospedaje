@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -33,6 +32,7 @@ public class SecurityConfig {
     private final AuthRateLimitFilter authRateLimitFilter;
     private final RefreshRateLimitFilter refreshRateLimitFilter;
     private final CorsProperties corsProperties;
+    private final SecurityErrorHandler securityErrorHandler;
 
     @Bean
     public CsrfTokenRepository csrfTokenRepository() {
@@ -101,26 +101,28 @@ public class SecurityConfig {
                         // /api/reservations/** and /api/auth/me return 401 for unauthenticated
                         // requests (Spec Requirement 7: /me must 401, not the generic 403).
                         // All other protected endpoints return 403 to match test expectations.
+                        // Every answer carries the same JSON body as GlobalExceptionHandler.
                         .defaultAuthenticationEntryPointFor(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                securityErrorHandler.entryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/reservations/**")
                         )
                         .defaultAuthenticationEntryPointFor(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                securityErrorHandler.entryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/auth/me")
                         )
                         .defaultAuthenticationEntryPointFor(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                securityErrorHandler.entryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/auth/welcome-email/resend")
                         )
                         .defaultAuthenticationEntryPointFor(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                securityErrorHandler.entryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/auth/csrf")
                         )
                         .defaultAuthenticationEntryPointFor(
-                                new HttpStatusEntryPoint(HttpStatus.FORBIDDEN),
+                                securityErrorHandler.entryPoint(HttpStatus.FORBIDDEN),
                                 PathPatternRequestMatcher.withDefaults().matcher("/**")
                         )
+                        .accessDeniedHandler(securityErrorHandler)
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)

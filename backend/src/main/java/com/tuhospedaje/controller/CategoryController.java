@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.category.CategoryDTO;
 import com.tuhospedaje.dto.category.CategoryValidationGroups;
 import com.tuhospedaje.service.CategoryService;
@@ -42,7 +44,7 @@ public class CategoryController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Category created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<CategoryDTO> create(@Validated(CategoryValidationGroups.OnCreate.class) @RequestBody CategoryDTO dto) {
         CategoryDTO saved = categoryService.save(dto);
@@ -77,7 +79,7 @@ public class CategoryController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Category updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
     })
     public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Validated(CategoryValidationGroups.OnUpdate.class) @RequestBody CategoryDTO dto) {
@@ -92,7 +94,7 @@ public class CategoryController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Category deleted successfully", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {

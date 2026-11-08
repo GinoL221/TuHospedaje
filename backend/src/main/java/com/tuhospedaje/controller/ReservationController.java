@@ -1,5 +1,7 @@
 package com.tuhospedaje.controller;
 
+import com.tuhospedaje.dto.common.ApiError;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.tuhospedaje.dto.common.PageResponse;
 import com.tuhospedaje.dto.reservation.CreateReservationRequest;
 import com.tuhospedaje.dto.reservation.ReservationResponse;
@@ -54,7 +56,7 @@ public class ReservationController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Reservation created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input or date validation error", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
             @ApiResponse(responseCode = "409", description = "Date overlap with an existing confirmed reservation or concurrent update conflict", content = @Content),
     })
@@ -75,7 +77,7 @@ public class ReservationController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservation found"),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Reservation not found or not owned by the requester", content = @Content),
     })
     public ResponseEntity<ReservationResponse> getById(
@@ -91,7 +93,7 @@ public class ReservationController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservation cancelled or already cancelled"),
             @ApiResponse(responseCode = "400", description = "Cancellation deadline passed", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Reservation not found or not owned", content = @Content),
             @ApiResponse(responseCode = "409", description = "Concurrent update conflict", content = @Content)
     })
@@ -110,7 +112,7 @@ public class ReservationController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservations retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<List<ReservationResponse>> getMyReservations(
             @AuthenticationPrincipal User user) {
@@ -127,7 +129,7 @@ public class ReservationController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin reservation page returned"),
             @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PageResponse<ReservationResponse>> getAdminReservations(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
