@@ -1,8 +1,9 @@
 """Validate repository hygiene and .gitignore rules using git check-ignore."""
 
+import json
+from pathlib import Path
 import subprocess
 import unittest
-from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +39,23 @@ class RepoHygieneTest(unittest.TestCase):
         self.assertTrue(self.is_ignored("coverage/lcov.info"), "coverage/ must be ignored")
         self.assertTrue(self.is_ignored("playwright-report/index.html"), "playwright-report/ must be ignored")
         self.assertTrue(self.is_ignored("e2e/playwright-report/index.html"), "e2e/playwright-report/ must be ignored")
+
+    def test_project_versions_are_aligned_to_release(self):
+        # backend pom.xml
+        pom = (ROOT / "backend/pom.xml").read_text(encoding="utf-8")
+        self.assertRegex(pom, r"<artifactId>backend</artifactId>\s*<version>1\.0\.1</version>")
+
+        # frontend package.json
+        frontend_pkg = json.loads((ROOT / "frontend/package.json").read_text(encoding="utf-8"))
+        self.assertEqual(frontend_pkg.get("version"), "1.0.1")
+
+        # e2e package.json
+        e2e_pkg = json.loads((ROOT / "e2e/package.json").read_text(encoding="utf-8"))
+        self.assertEqual(e2e_pkg.get("version"), "1.0.1")
+
+        # OpenApiConfig
+        openapi = (ROOT / "backend/src/main/java/com/tuhospedaje/openapi/OpenApiConfig.java").read_text(encoding="utf-8")
+        self.assertIn('.version("1.0.1")', openapi)
 
 
 if __name__ == "__main__":

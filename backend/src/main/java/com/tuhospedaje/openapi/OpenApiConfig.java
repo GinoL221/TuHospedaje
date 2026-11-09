@@ -15,7 +15,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("TuHospedaje API")
-                        .version("1.0")
+                        .version("1.0.1")
                         .description("API de reservas de alojamientos - Proyecto Digital House"))
                 .components(new Components()
                         .addSecuritySchemes("csrfToken", new SecurityScheme()
