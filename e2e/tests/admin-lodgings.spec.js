@@ -10,7 +10,7 @@
  *   5. Invalid email     — fill all fields with bad email → error-email visible only
  *
  * Fails with the current URL when the admin shell is not reachable.
- * Image upload is OUT OF SCOPE — Cloudinary is not available in test environments.
+ * Image upload is tested separately; createLodging stubs POST /upload.
  * Uses unique timestamped names and emails so concurrent/repeated runs never collide.
  * afterEach removes tracked created ids through the admin UI.
  */

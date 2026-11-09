@@ -22,7 +22,6 @@ class RefreshCookieFactoryTest {
     void setUp() {
         CookieProperties cookieProperties = new CookieProperties(true, "Strict");
         SessionProperties sessionProperties = new SessionProperties(
-                Duration.ofMinutes(15),
                 new SessionProperties.RefreshProperties(true, Duration.ofDays(30), Duration.ofSeconds(5)),
                 new SessionProperties.CleanupProperties(Duration.ofDays(1), 100),
                 new SessionProperties.RateLimitProperties(true, 10, 60));

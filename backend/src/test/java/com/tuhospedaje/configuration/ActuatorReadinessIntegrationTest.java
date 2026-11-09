@@ -35,6 +35,12 @@ class ActuatorReadinessIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void readinessSupportsHeadRequestAnonymously() throws Exception {
+        mockMvc.perform(head("/actuator/health/readiness"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void anonymousRequestsToOtherActuatorPathsAreDenied() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isForbidden());
@@ -43,9 +49,6 @@ class ActuatorReadinessIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/actuator/health/readiness"))
-                .andExpect(status().isForbidden());
-
-        mockMvc.perform(head("/actuator/health/readiness"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(options("/actuator/health/readiness")

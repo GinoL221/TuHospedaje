@@ -3,9 +3,10 @@
 import base64
 import json
 import os
+from pathlib import Path
+import re
 import subprocess
 import unittest
-from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,8 +45,15 @@ class ComposeHygieneTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         data = json.loads(result.stdout)
         self.assertEqual(data["name"], "tuhospedaje-dev")
-        self.assertIn("db", data["services"])
-        self.assertIn("backend", data["services"])
+        for service_name in ("db", "backend", "frontend"):
+            self.assertIn(service_name, data["services"])
+            ports = data["services"][service_name]["ports"]
+            self.assertEqual(len(ports), 1)
+            self.assertEqual(
+                ports[0].get("host_ip"),
+                "127.0.0.1",
+                f"{service_name} port must bind to 127.0.0.1, got {ports[0]}",
+            )
 
     def test_dev_seed_compose_validates_cleanly(self):
         env = {
@@ -128,6 +136,25 @@ class ComposeHygieneTest(unittest.TestCase):
         self.assertIn('add_header X-Content-Type-Options "nosniff" always;', index_location)
         self.assertIn('add_header Referrer-Policy "strict-origin-when-cross-origin" always;', index_location)
         self.assertIn("Content-Security-Policy", index_location)
+
+        # CSP in server block and in location = /index.html must match exactly
+        csp_pattern = re.compile(r'add_header Content-Security-Policy "(.*?)" always;')
+        server_block = content.split("location", 1)[0]
+        server_csp = csp_pattern.search(server_block)
+        index_csp = csp_pattern.search(index_location)
+        self.assertIsNotNone(server_csp, "Server block must define Content-Security-Policy")
+        self.assertIsNotNone(index_csp, "location = /index.html must define Content-Security-Policy")
+        assert server_csp is not None and index_csp is not None
+        self.assertEqual(server_csp.group(1), index_csp.group(1), "CSP policy must be identical in server and index.html")
+
+        # Hashed assets location must also repeat security headers
+        assets_location = content.split('location ~* "^[^/]+-[A-Za-z0-9_-]{8,}', 1)[1].split("}", 1)[0]
+        self.assertIn('add_header X-Frame-Options "DENY" always;', assets_location)
+        self.assertIn('add_header X-Content-Type-Options "nosniff" always;', assets_location)
+        self.assertIn('add_header Referrer-Policy "strict-origin-when-cross-origin" always;', assets_location)
+
+    def test_obsolete_ops_nginx_does_not_exist(self):
+        self.assertFalse((ROOT / "ops/nginx").exists(), "ops/nginx is obsolete and must be removed")
 
 
 if __name__ == "__main__":

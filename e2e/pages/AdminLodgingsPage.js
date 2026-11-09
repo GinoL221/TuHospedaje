@@ -10,15 +10,16 @@ const AdminBasePage = require('./AdminBasePage');
  *               (all text inputs / textarea via LodgingFormModal)
  * Delete mode : "component" (ConfirmDialog — confirm-delete-yes)
  *
- * Note: the form requires at least one image, but Cloudinary is not available in test
- * environments. createLodging stubs POST /upload and attaches a tiny file, so no real
- * upload happens. categoryId, featureIds and policyIds are optional.
+ * Note: the form requires at least one image. createLodging stubs POST /upload
+ * and attaches a tiny file, so no real upload happens. categoryId, featureIds
+ * and policyIds are optional.
  */
 class AdminLodgingsPage extends AdminBasePage {
   /** @param {import('@playwright/test').Page} page */
   constructor(page) {
     super(page);
     this.entityKey = 'lodgings';
+    /** @type {'dialog' | 'component'} */
     this.deleteMode = 'component';
   }
 

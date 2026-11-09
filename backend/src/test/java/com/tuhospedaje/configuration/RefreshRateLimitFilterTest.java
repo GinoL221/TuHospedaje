@@ -56,14 +56,12 @@ class RefreshRateLimitFilterTest {
 
     private SessionProperties propertiesWith(boolean enabled, int refreshPerIpPerMinute) {
         return new SessionProperties(
-                Duration.ofMinutes(15),
                 new SessionProperties.RefreshProperties(true, Duration.ofDays(30), Duration.ofSeconds(5)),
                 new SessionProperties.CleanupProperties(Duration.ofDays(1), 100),
                 new SessionProperties.RateLimitProperties(enabled, 10, refreshPerIpPerMinute));
     }
 
     private static final SessionProperties GENEROUS = new SessionProperties(
-            Duration.ofMinutes(15),
             new SessionProperties.RefreshProperties(true, Duration.ofDays(30), Duration.ofSeconds(5)),
             new SessionProperties.CleanupProperties(Duration.ofDays(1), 100),
             new SessionProperties.RateLimitProperties(true, 10, 1000));
