@@ -4,7 +4,7 @@ Aplicación web React para explorar alojamientos, consultar disponibilidad, gest
 
 ## Requisitos
 
-- Node.js `^20.19.0 || >=22.12.0`, según Vite 8.2.2 fijado en `package-lock.json`.
+- Node.js `>=22.12.0` (recomendado Node 24 LTS, alineado con el CI y el build contenedorizado).
 - npm compatible con el lockfile v3.
 
 El frontend está escrito en JavaScript y JSX. No usa TypeScript ni React Compiler.

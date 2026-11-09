@@ -18,10 +18,10 @@ jobs:
       run:
         working-directory: backend
     steps:
-      # v4.2.2
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      # v4.7.0
-      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12
+      # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      # v6.2.0
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
         with:
           distribution: temurin
           java-version: "17"
@@ -45,12 +45,12 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      # v4.2.2
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      # v4.2.0
-      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+      # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      # v7.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: "20.19"
+          node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -96,21 +96,21 @@ jobs:
           --health-timeout=5s
           --health-retries=10
     steps:
-      # v4.2.2
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      # v4.7.0
-      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12
+      # v6.2.0
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78
         with:
           distribution: temurin
           java-version: "17"
           cache: maven
           cache-dependency-path: backend/pom.xml
 
-      # v4.2.0
-      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+      # v7.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: "20.19"
+          node-version: "24"
           cache: npm
           cache-dependency-path: |
             frontend/package-lock.json
@@ -257,8 +257,8 @@ jobs:
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
-        # v4.6.1
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+        # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: playwright-report-${{ matrix.browser }}
           path: e2e/playwright-report/
@@ -276,8 +276,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      # v4.2.2
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Define immutable image tags
         id: images
@@ -307,13 +307,13 @@ jobs:
             echo "frontend_tags=$FRONTEND_TAGS"
           } >> "$GITHUB_OUTPUT"
 
-      # v3.10.0
+      # v4.4.1
       # yamllint disable-line rule:line-length
-      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
 
       - name: Build backend production image
-        # v6.15.0
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        # v7.4.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         with:
           context: backend
           load: true
@@ -321,8 +321,8 @@ jobs:
           tags: ${{ steps.images.outputs.backend }}
 
       - name: Build frontend production image
-        # v6.15.0
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        # v7.4.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         with:
           context: frontend
           load: true
@@ -357,8 +357,8 @@ jobs:
           ${{ github.event_name == 'push' &&
               (github.ref == 'refs/heads/main' ||
                startsWith(github.ref, 'refs/tags/v')) }}
-        # v3.3.0
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        # v4.8.0
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -417,8 +417,8 @@ jobs:
           ${{ github.event_name == 'push' &&
               (github.ref == 'refs/heads/main' ||
                startsWith(github.ref, 'refs/tags/v')) }}
-        # v4.6.1
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
+        # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: image-references-${{ github.sha }}
           path: image-references.txt
