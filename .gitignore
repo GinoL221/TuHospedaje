@@ -63,5 +63,5 @@ e2e/test-results/
 odd/frontend-image-hardening/
 
 # Locally stored image uploads (LocalImageStorageService) — never versioned
-uploads/
+/uploads/
 backend/uploads/
