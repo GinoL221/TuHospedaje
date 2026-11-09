@@ -233,6 +233,18 @@ Para enviar los correos encolados, configurá **ambas** opciones `TUHOSPEDAJE_EM
 
    Sólo el frontend publica el puerto HTTP configurado (por defecto `127.0.0.1:8080`). El backend permanece dentro de las redes Compose. TLS, certificados y el reverse proxy HTTPS quedan fuera de Compose; el proxy externo debe conservar `Host` y enviar `X-Forwarded-Proto: https`.
 
+### Configurado en el repositorio vs. comprobado en producción
+
+Este repositorio documenta y configura estos controles. Que estén escritos aquí no prueba que se ejecutaron en un entorno productivo.
+
+| Control | Configurado en el repositorio | Comprobado en producción |
+| --- | --- | --- |
+| TLS y reverse proxy | Fuera de Compose; se documenta el contrato (`Host`, `X-Forwarded-Proto: https`) | No comprobado: depende de infraestructura externa |
+| Entrega real de correo | Outbox y SMTP configurables con `TUHOSPEDAJE_EMAIL_OUTBOX_ENABLED` y `MAIL_SMTP_ENABLED` | No comprobado: sin SMTP real no hay evidencia de recepción |
+| Backups externos | Scripts y runbook en [ops/mariadb](ops/mariadb/README.md) y [ops/uploads](ops/uploads/README.md) | No comprobado: no hay ejecución productiva registrada |
+| Imágenes canónicas | Montaje local opcional; los JPEG maestros no forman parte del repositorio | No comprobado: no hay publicación productiva de los JPEG canónicos |
+| Imágenes de contenedor | Build, escaneo Trivy y publicación en GHCR desde CI | Comprobado en CI para v1.0.0; el despliegue en un host propio no se registra |
+
 El volumen `tuhospedaje-prod-db` persiste entre recreaciones. Para una detención normal:
 
 ```bash

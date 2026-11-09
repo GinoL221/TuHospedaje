@@ -1,5 +1,7 @@
 # Entrega académica en main
 
+> **Registro histórico.** Este documento describe el corte local `18d9898` (y `origin/main@a430c73`), anterior a la versión **v1.0.0** (`a3f90a6`) y a los cambios posteriores. `main` está hoy en `9ef737d` y ya no coincide con lo que se afirma abajo. Usalo para reconstruir qué se verificó en ese corte y con qué límites, no como descripción de `main` actual. Para el alcance vigente, leé [product.md](../../../product.md) y el [índice de documentación](../../README.md).
+
 `main` es la entrega. El corte integrado en `main` local es `18d98980b2b3f97a3ade9debe0ca81aba1b96c26`; `origin/main` conserva el corte publicado `a430c73938663df2d7c72eb23b9e730d25c3a48a`. No rearmar las ramas de sprint. La integración no agrega evidencia de ejecución ni cambia el SHA al que corresponde cada verificación.
 
 ## Integración local y alcance de evidencia

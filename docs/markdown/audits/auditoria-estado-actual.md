@@ -1,5 +1,7 @@
 # Auditoría del estado actual de TuHospedaje
 
+> **Registro histórico.** Esta auditoría es del 2026-09-16 y usa la línea base `14264d7`. Desde entonces cambiaron backups, imágenes, seguridad y versiones, y algunos pendientes se cerraron. No tomes sus hallazgos como diagnóstico actual sin volver a comprobarlos contra la revisión que te interese.
+
 > **Fecha:** 2026-09-16
 > **Línea base:** `origin/main` en `14264d71263486b04074e4611ec7b0f60b693191`
 > **Alcance:** auditoría de solo lectura previa a la definición de la próxima funcionalidad.
