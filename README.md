@@ -19,7 +19,7 @@ La web del huésped debe adaptarse a dispositivos según los criterios oficiales
 ## Requisitos
 
 - Java 17 o superior.
-- Node.js `^20.19.0 || >=22.12.0` para Vite 8.
+- Node.js `>=22.12.0` (recomendado Node 24 LTS, alineado con el CI y el build contenedorizado).
 - Docker Compose v2 para el flujo contenedorizado.
 - Python 3 únicamente si vas a cargar el seed demo y necesitás generar un hash bcrypt.
 
