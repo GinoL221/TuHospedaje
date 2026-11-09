@@ -8,16 +8,16 @@ import java.net.URISyntaxException;
 
 /**
  * Validates that a representative-image value, when present, is an absolute
- * {@code https} URL no longer than 2048 characters. {@code null} is always accepted so
- * this constraint composes with {@code @NotBlank} for a create-only requirement: an
- * update that omits the field (null) preserves legacy data, while any non-null value
- * — blank, malformed, or a non-https scheme such as {@code javascript:} or
- * {@code data:} — is rejected. No remote fetch or content-type inspection is
- * performed (avoids SSRF and provider coupling).
+ * {@code https} URL no longer than 255 characters (aligning with database column lengths).
+ * {@code null} is always accepted so this constraint composes with {@code @NotBlank} for
+ * a create-only requirement: an update that omits the field (null) preserves legacy data,
+ * while any non-null value — blank, malformed, or a non-https scheme such as
+ * {@code javascript:} or {@code data:} — is rejected. No remote fetch or content-type
+ * inspection is performed (avoids SSRF and provider coupling).
  */
 public class HttpsImageUrlValidator implements ConstraintValidator<HttpsImageUrl, String> {
 
-    private static final int MAX_LENGTH = 2048;
+    private static final int MAX_LENGTH = 255;
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {

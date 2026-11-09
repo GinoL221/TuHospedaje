@@ -110,6 +110,49 @@ class ImageUrlValidationTest {
         assertThat(violations).noneMatch(v -> v.getPropertyPath().toString().contains("imageUrls"));
     }
 
+    @Test
+    void acceptsHttpsImageUrlOfExactly255Characters() {
+        String base = "https://cdn.example.com/";
+        String suffix = ".jpg";
+        String filler = "a".repeat(255 - base.length() - suffix.length());
+        String url255 = base + filler + suffix;
+        assertThat(url255).hasSize(255);
+
+        CategoryDTO dto = new CategoryDTO();
+        dto.setName("Hoteles");
+        dto.setDescription("Descripción");
+        dto.setImageUrl(url255);
+
+        Set<ConstraintViolation<CategoryDTO>> violations =
+                validator.validate(dto, CategoryValidationGroups.OnCreate.class);
+
+        assertThat(violations).noneMatch(v -> v.getPropertyPath().toString().equals("imageUrl"));
+    }
+
+    @Test
+    void rejectsHttpsImageUrlExceeding255Characters() {
+        String base = "https://cdn.example.com/";
+        String suffix = ".jpg";
+        String filler = "a".repeat(256 - base.length() - suffix.length());
+        String url256 = base + filler + suffix;
+        assertThat(url256).hasSize(256);
+
+        CategoryDTO dto = new CategoryDTO();
+        dto.setName("Hoteles");
+        dto.setDescription("Descripción");
+        dto.setImageUrl(url256);
+
+        Set<ConstraintViolation<CategoryDTO>> violations =
+                validator.validate(dto, CategoryValidationGroups.OnCreate.class);
+
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("imageUrl"));
+
+        LodgingDTO lodging = validLodgingDTO();
+        lodging.setImageUrls(List.of(url256));
+        Set<ConstraintViolation<LodgingDTO>> lodgingViolations = validator.validate(lodging);
+        assertThat(lodgingViolations).anyMatch(v -> v.getPropertyPath().toString().contains("imageUrls"));
+    }
+
     private static LodgingDTO validLodgingDTO() {
         LodgingDTO dto = new LodgingDTO();
         dto.setName("Hotel Valido");
