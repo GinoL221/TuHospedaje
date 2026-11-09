@@ -43,7 +43,15 @@ class HttpsImageUrlValidatorTest {
 
     @Test
     void rejectsValuesLongerThanTheMaximumAllowedLength() {
-        String longUrl = "https://cdn.tuhospedaje.test/" + "a".repeat(2050) + ".jpg";
-        assertThat(validator.isValid(longUrl, null)).isFalse();
+        String base = "https://cdn.tuhospedaje.test/";
+        String suffix = ".jpg";
+        String filler255 = "a".repeat(255 - base.length() - suffix.length());
+        String url255 = base + filler255 + suffix;
+        assertThat(url255).hasSize(255);
+        assertThat(validator.isValid(url255, null)).isTrue();
+
+        String url256 = url255 + "a";
+        assertThat(url256).hasSize(256);
+        assertThat(validator.isValid(url256, null)).isFalse();
     }
 }
