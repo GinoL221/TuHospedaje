@@ -82,13 +82,14 @@ describe("AuthContext - bootstrap on mount", () => {
 		expect(screen.getByTestId("user")).toHaveTextContent("test@example.com");
 	});
 
-	it("leaves the user unauthenticated without throwing when /auth/me rejects (401)", async () => {
+	it("leaves the user unauthenticated without redirecting to /login when bootstrap cannot restore or refresh a session (401)", async () => {
 		renderWithProvider();
 
 		await waitFor(() => {
 			expect(screen.getByTestId("loading")).toHaveTextContent("ready");
 		});
 
+		expect(getCurrentUser).toHaveBeenCalledOnce();
 		expect(screen.getByTestId("user")).toHaveTextContent("no-user");
 		expect(screen.queryByTestId("login-sentinel")).not.toBeInTheDocument();
 	});

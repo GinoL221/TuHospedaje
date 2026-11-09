@@ -23,15 +23,20 @@ const NETWORK_ERROR_MESSAGE =
 // Endpoints that legitimately return 401 for reasons unrelated to an
 // expired/missing session cookie (e.g. wrong credentials on login), plus
 // /auth/refresh itself (its own 401 is terminal and must not recurse back
-// into the refresh coordinator). These must not trigger the global
-// auth:unauthorized redirect from this same branch.
+// into the refresh coordinator). These must never trigger a refresh or the
+// global auth:unauthorized redirect.
 const AUTH_BOOTSTRAP_ENDPOINTS = new Set([
 	"/auth/login",
 	"/auth/register",
-	"/auth/me",
 	"/auth/csrf",
 	"/auth/refresh",
 ]);
+
+// Session bootstrap endpoints that DO attempt a single silent refresh on a 401
+// (so reloading with an expired ACCESS_TOKEN and a valid REFRESH_TOKEN keeps
+// the user signed in), but must NOT dispatch auth:unauthorized when no
+// refreshable session exists.
+const SILENT_REFRESH_ENDPOINTS = new Set(["/auth/me"]);
 
 // Reads the XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository
 // (non-httpOnly by design, readable from JS) and URL-decodes its value —
@@ -110,17 +115,20 @@ async function request(
 	const res = await fetchWithDeadline(`${API_BASE}${endpoint}`, config, signal);
 
 	if (res.status === 401 && !AUTH_BOOTSTRAP_ENDPOINTS.has(endpoint)) {
+		const isSilentBootstrap = SILENT_REFRESH_ENDPOINTS.has(endpoint);
 		if (!alreadyRetried) {
 			// Coalesce this 401 with any other concurrent one behind a single
 			// in-flight /auth/refresh call, then retry the original request ONCE.
-			// `ensureRefreshed` itself dispatches auth:unauthorized (exactly once,
-			// shared across every waiting caller) if the refresh fails, so we
-			// simply propagate that rejection here without dispatching again.
-			await ensureRefreshed();
+			// `ensureRefreshed` dispatches auth:unauthorized (exactly once, shared
+			// across every waiting caller) if the refresh fails and at least one
+			// non-silent caller was waiting on the flight.
+			await ensureRefreshed({ notifyOnFailure: !isSilentBootstrap });
 			return request(method, endpoint, data, true, options);
 		}
-		window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-		throw new Error("Sesión expirada");
+		if (!isSilentBootstrap) {
+			window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+			throw new Error("Sesión expirada");
+		}
 	}
 
 	if (!res.ok) {

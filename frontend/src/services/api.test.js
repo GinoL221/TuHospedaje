@@ -440,11 +440,94 @@ describe("api service - 401 unauthorized", () => {
 		);
 	});
 
-	it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized", async () => {
-		const fetchMock = vi.fn().mockResolvedValue({
-			ok: false,
-			status: 401,
-			json: async () => ({ error: "No autenticado" }),
+	it("refreshes the session and retries /auth/me once when the initial bootstrap returns 401", async () => {
+		let meAttempts = 0;
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: async () => ({ email: "test@example.com" }),
+				});
+			}
+			if (url.includes("/auth/me")) {
+				meAttempts += 1;
+				if (meAttempts === 1) {
+					return Promise.resolve({
+						ok: false,
+						status: 401,
+						json: async () => ({ error: "No autenticado" }),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: async () => ({ email: "test@example.com" }),
+				});
+			}
+			throw new Error(`Unexpected URL: ${url}`);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const eventSpy = vi.fn();
+		window.addEventListener("auth:unauthorized", eventSpy);
+
+		await expect(get("/auth/me")).resolves.toEqual({
+			email: "test@example.com",
+		});
+		expect(meAttempts).toBe(2);
+		expect(eventSpy).not.toHaveBeenCalled();
+
+		window.removeEventListener("auth:unauthorized", eventSpy);
+	});
+
+	it("treats an unauthenticated /auth/me bootstrap as logged out without dispatching auth:unauthorized when /auth/refresh also returns 401", async () => {
+		const hitCounts = {};
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				hitCounts["/auth/refresh"] = (hitCounts["/auth/refresh"] || 0) + 1;
+				return Promise.resolve({
+					ok: false,
+					status: 401,
+					json: async () => ({ error: "Sesión inválida" }),
+				});
+			}
+			hitCounts["/auth/me"] = (hitCounts["/auth/me"] || 0) + 1;
+			return Promise.resolve({
+				ok: false,
+				status: 401,
+				json: async () => ({ error: "No autenticado" }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const eventSpy = vi.fn();
+		window.addEventListener("auth:unauthorized", eventSpy);
+
+		await expect(get("/auth/me")).rejects.toThrow("Sesión inválida");
+		expect(hitCounts["/auth/me"]).toBe(1);
+		expect(hitCounts["/auth/refresh"]).toBe(1);
+		expect(eventSpy).not.toHaveBeenCalled();
+
+		window.removeEventListener("auth:unauthorized", eventSpy);
+	});
+
+	it("does not dispatch auth:unauthorized if /auth/me still returns 401 after a successful /auth/refresh", async () => {
+		let meAttempts = 0;
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: async () => ({}),
+				});
+			}
+			meAttempts += 1;
+			return Promise.resolve({
+				ok: false,
+				status: 401,
+				json: async () => ({ error: "No autenticado" }),
+			});
 		});
 		vi.stubGlobal("fetch", fetchMock);
 
@@ -452,6 +535,7 @@ describe("api service - 401 unauthorized", () => {
 		window.addEventListener("auth:unauthorized", eventSpy);
 
 		await expect(get("/auth/me")).rejects.toThrow("No autenticado");
+		expect(meAttempts).toBe(2);
 		expect(eventSpy).not.toHaveBeenCalled();
 
 		window.removeEventListener("auth:unauthorized", eventSpy);

@@ -129,4 +129,35 @@ describe("refresh coordinator - failed refresh", () => {
 
 		window.removeEventListener("auth:unauthorized", eventSpy);
 	});
+
+	it("still dispatches auth:unauthorized once when a silent /auth/me bootstrap and a protected request share a failing refresh flight", async () => {
+		const fetchMock = vi.fn((url) => {
+			if (url.includes("/auth/refresh")) {
+				return Promise.resolve({
+					ok: false,
+					status: 401,
+					json: async () => ({ error: "Sesión inválida" }),
+				});
+			}
+			return Promise.resolve({
+				ok: false,
+				status: 401,
+				json: async () => ({ error: "No autenticado" }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const eventSpy = vi.fn();
+		window.addEventListener("auth:unauthorized", eventSpy);
+
+		const results = await Promise.allSettled([get("/auth/me"), get("/a")]);
+
+		results.forEach((result) => {
+			expect(result.status).toBe("rejected");
+			expect(result.reason.message).toBe("Sesión inválida");
+		});
+		expect(eventSpy).toHaveBeenCalledTimes(1);
+
+		window.removeEventListener("auth:unauthorized", eventSpy);
+	});
 });
