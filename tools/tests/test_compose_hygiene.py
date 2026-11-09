@@ -3,9 +3,9 @@
 import base64
 import json
 import os
-from pathlib import Path
 import subprocess
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -102,6 +102,32 @@ class ComposeHygieneTest(unittest.TestCase):
                     len(value) > 20 and not value.startswith(("http", "/")),
                     f"Example file {example_file.name} appears to have a concrete secret value for {key}",
                 )
+
+    def test_frontend_nginx_includes_security_headers_and_csp(self):
+        conf_path = ROOT / "frontend/docker/nginx/default.conf"
+        self.assertTrue(conf_path.exists(), "frontend/docker/nginx/default.conf must exist")
+        content = conf_path.read_text(encoding="utf-8")
+
+        # Must include clickjacking, MIME sniffing and referrer protection
+        self.assertIn('add_header X-Frame-Options "DENY" always;', content)
+        self.assertIn('add_header X-Content-Type-Options "nosniff" always;', content)
+        self.assertIn('add_header Referrer-Policy "strict-origin-when-cross-origin" always;', content)
+
+        # Must include CSP with img-src allowing https: for lodging/category images
+        self.assertIn("Content-Security-Policy", content)
+        self.assertIn("default-src 'self'", content)
+        self.assertIn("script-src 'self'", content)
+        self.assertIn("style-src 'self' 'unsafe-inline'", content)
+        self.assertIn("img-src 'self' data: blob: https:", content)
+        self.assertIn("frame-ancestors 'none'", content)
+
+        # Nginx does not inherit parent headers when a location defines its own add_header;
+        # location = /index.html defines Cache-Control, so it must also repeat security headers.
+        index_location = content.split("location = /index.html", 1)[1].split("}", 1)[0]
+        self.assertIn('add_header X-Frame-Options "DENY" always;', index_location)
+        self.assertIn('add_header X-Content-Type-Options "nosniff" always;', index_location)
+        self.assertIn('add_header Referrer-Policy "strict-origin-when-cross-origin" always;', index_location)
+        self.assertIn("Content-Security-Policy", index_location)
 
 
 if __name__ == "__main__":
