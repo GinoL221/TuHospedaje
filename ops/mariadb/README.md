@@ -1,6 +1,6 @@
 # Backup y verificación de restore de MariaDB
 
-Este runbook define los controles de recuperación de MariaDB para release readiness. Es genérico respecto del proveedor porque este repositorio no define la topología de producción.
+Este runbook define los controles de recuperación de MariaDB para release readiness. Es genérico respecto del proveedor porque este repositorio no define la topología de producción. Para la recuperación del volumen de imágenes subidas por administradores, consultar el [runbook de uploads](../uploads/README.md).
 
 ## Política y responsables
 
