@@ -16,10 +16,14 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import tools.jackson.databind.json.JsonMapper;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -391,5 +395,43 @@ class AuthRateLimitFilterTest {
                         + "current-minute live bucket seeded above")
                 .hasSizeLessThan(10)
                 .containsKey("login:ip:10.55.55.55");
+    }
+
+    @Test
+    void productionDefaultLoginPerEmailLimitExceedsLoginPerIpLimitSoSingleIpCannotLockOutOtherUsers() throws Exception {
+        Properties props = new Properties();
+        try (InputStream in = Files.newInputStream(Paths.get("src/main/resources/application.properties"))) {
+            props.load(in);
+        }
+
+        int loginPerIp = Integer.parseInt(props.getProperty("app.auth.rate-limit.login-per-ip-per-minute"));
+        int loginPerEmail = Integer.parseInt(props.getProperty("app.auth.rate-limit.login-per-email-per-minute"));
+        int registerPerIp = Integer.parseInt(props.getProperty("app.auth.rate-limit.register-per-ip-per-minute"));
+        int registerPerEmail = Integer.parseInt(props.getProperty("app.auth.rate-limit.register-per-email-per-minute"));
+        boolean enabled = Boolean.parseBoolean(props.getProperty("app.auth.rate-limit.enabled"));
+
+        assertThat(loginPerIp).isEqualTo(20);
+        assertThat(loginPerEmail).isEqualTo(30).isGreaterThan(loginPerIp);
+
+        AuthRateLimitProperties prodDefaults = new AuthRateLimitProperties(
+                enabled, loginPerIp, loginPerEmail, registerPerIp, registerPerEmail);
+        AuthRateLimitFilter filter = newFilter(prodDefaults, 0L);
+        FilterChain chain = (req, res) -> { };
+
+        // A single attacker IP fires loginPerIp + 1 attempts against victim@test.com
+        // and gets blocked by its own IP ceiling on attempt 21.
+        for (int i = 0; i < loginPerIp; i++) {
+            MockHttpServletResponse attempt = new MockHttpServletResponse();
+            filter.doFilter(loginRequestFrom("198.51.100.77", "victim@test.com"), attempt, chain);
+            assertThat(attempt.getStatus()).isEqualTo(200);
+        }
+        MockHttpServletResponse attackerBlocked = new MockHttpServletResponse();
+        filter.doFilter(loginRequestFrom("198.51.100.77", "victim@test.com"), attackerBlocked, chain);
+        assertThat(attackerBlocked.getStatus()).isEqualTo(429);
+
+        // The real account owner from another IP can still log in.
+        MockHttpServletResponse victimAttempt = new MockHttpServletResponse();
+        filter.doFilter(loginRequestFrom("203.0.113.10", "victim@test.com"), victimAttempt, chain);
+        assertThat(victimAttempt.getStatus()).isEqualTo(200);
     }
 }
