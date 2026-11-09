@@ -51,6 +51,14 @@ async function mockProductDetail(page, baseURL) {
   await page.route('**/*', async route => {
     const request = route.request();
     const url = new URL(request.url());
+    if (request.method() === 'POST' && url.pathname === '/api/auth/refresh') {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Anonymous test session' }),
+      });
+      return;
+    }
     if (!['GET', 'HEAD'].includes(request.method())) {
       writes.push(request.method() + ' ' + url.pathname);
       await route.abort('blockedbyclient');
