@@ -2,9 +2,9 @@
 
 import json
 import os
+from pathlib import Path
 import subprocess
 import unittest
-from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -79,6 +79,32 @@ class ProductionDeliveryConfigTest(unittest.TestCase):
         self.assertIn("cp target/app.jar /workspace/app.jar", dockerfile)
         self.assertIn('ENTRYPOINT ["java", "-jar", "/app/app.jar"]', dockerfile)
         self.assertNotIn("backend-0.0.1-SNAPSHOT.jar", dockerfile)
+
+    def test_optional_production_overrides_are_passed_to_backend(self):
+        # 1. Unset case preserves defaults
+        default_services = self.render()
+        default_backend = default_services["backend"]["environment"]
+        self.assertEqual(default_backend.get("APP_JWT_EXPIRATION"), "900000")
+        self.assertEqual(default_backend.get("SPRINGDOC_API_DOCS_ENABLED"), "false")
+        self.assertEqual(default_backend.get("SPRINGDOC_SWAGGER_UI_ENABLED"), "false")
+        self.assertNotIn("TOMCAT_INTERNAL_PROXIES", default_backend)
+
+        # 2. Overridden case passes explicit values
+        services = self.render(
+            APP_JWT_EXPIRATION="1800000",
+            SPRINGDOC_API_DOCS_ENABLED="true",
+            SPRINGDOC_SWAGGER_UI_ENABLED="true",
+        )
+        backend = services["backend"]["environment"]
+        self.assertEqual(backend.get("APP_JWT_EXPIRATION"), "1800000")
+        self.assertEqual(backend.get("SPRINGDOC_API_DOCS_ENABLED"), "true")
+        self.assertEqual(backend.get("SPRINGDOC_SWAGGER_UI_ENABLED"), "true")
+
+        prod_properties = (ROOT / "backend/src/main/resources/application-prod.properties").read_text()
+        self.assertIn("app.jwt.expiration=${APP_JWT_EXPIRATION:900000}", prod_properties)
+        self.assertIn("server.tomcat.remoteip.internal-proxies=${TOMCAT_INTERNAL_PROXIES:", prod_properties)
+        self.assertIn("springdoc.api-docs.enabled=${SPRINGDOC_API_DOCS_ENABLED:false}", prod_properties)
+        self.assertIn("springdoc.swagger-ui.enabled=${SPRINGDOC_SWAGGER_UI_ENABLED:false}", prod_properties)
 
 
 if __name__ == "__main__":
