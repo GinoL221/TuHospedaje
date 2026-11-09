@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 class RefreshSessionConfigurationTest {
 
     private static final String[] BASE_PROPERTIES = {
-            "app.session.access-token-lifetime=PT15M",
             "app.session.refresh.absolute-lifetime=P30D",
             "app.session.refresh.retry-grace=PT5S",
             "app.session.cleanup.interval=P1D",

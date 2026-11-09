@@ -11,7 +11,6 @@ import java.time.Duration;
 @Validated
 @ConfigurationProperties(prefix = "app.session")
 public record SessionProperties(
-        @NotNull @DurationMin(seconds = 1) Duration accessTokenLifetime,
         @NotNull @Valid RefreshProperties refresh,
         @NotNull @Valid CleanupProperties cleanup,
         @NotNull @Valid RateLimitProperties rateLimit

@@ -74,6 +74,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health/readiness").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/actuator/health/readiness").permitAll()
                         .requestMatchers("/actuator/**").denyAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/refresh").permitAll()
                         .requestMatchers("/api/auth/welcome-email/resend").authenticated()
@@ -84,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/password").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/canonical-lodging-images/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/canonical-lodging-images/**").permitAll()
                         // Locally stored uploads are rendered on the public site, so GET stays
                         // anonymous like the canonical images above; HEAD too (HTTP semantics:
                         // caches and link checkers issue HEAD without a session). Writing stays
@@ -91,10 +93,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/features/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/features/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/policies/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/policies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/lodgings/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/lodgings/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ratings/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/ratings/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions

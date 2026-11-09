@@ -151,7 +151,6 @@ class RefreshSessionFoundationIntegrationTest {
         assertThat(RefreshTokenFamily.class.getAnnotation(jakarta.persistence.Entity.class)).isNotNull();
         assertThat(RefreshToken.class.getAnnotation(jakarta.persistence.Entity.class)).isNotNull();
         assertThat(SessionSecurityEvent.class.getAnnotation(jakarta.persistence.Entity.class)).isNotNull();
-        assertThat(sessionProperties.accessTokenLifetime()).hasSeconds(900);
         assertThat(sessionProperties.refresh().absoluteLifetime()).hasDays(30);
         assertThat(sessionProperties.refresh().retryGrace()).hasSeconds(5);
 
@@ -169,7 +168,6 @@ class RefreshSessionFoundationIntegrationTest {
     void bindsProductionStyleIndexedKeyRingAndResolvesTheActiveKey() {
         StandardEnvironment environment = new StandardEnvironment();
         environment.getPropertySources().addFirst(new MapPropertySource("environment-style-key-ring", Map.ofEntries(
-                Map.entry("app.session.access-token-lifetime", "PT15M"),
                 Map.entry("app.session.refresh.enabled", "false"),
                 Map.entry("app.session.refresh.absolute-lifetime", "P30D"),
                 Map.entry("app.session.refresh.retry-grace", "PT5S"),
