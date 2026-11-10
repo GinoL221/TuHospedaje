@@ -3,10 +3,10 @@
 import base64
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -148,10 +148,28 @@ class ComposeHygieneTest(unittest.TestCase):
         self.assertEqual(server_csp.group(1), index_csp.group(1), "CSP policy must be identical in server and index.html")
 
         # Hashed assets location must also repeat security headers
-        assets_location = content.split('location ~* "^[^/]+-[A-Za-z0-9_-]{8,}', 1)[1].split("}", 1)[0]
+        assets_match = re.search(r'location ~\* "(\^[^"]+)" \{(.*?)\}', content, re.DOTALL)
+        self.assertIsNotNone(assets_match, "hashed assets location not found")
+        assert assets_match is not None
+        assets_location = assets_match.group(2)
         self.assertIn('add_header X-Frame-Options "DENY" always;', assets_location)
         self.assertIn('add_header X-Content-Type-Options "nosniff" always;', assets_location)
         self.assertIn('add_header Referrer-Policy "strict-origin-when-cross-origin" always;', assets_location)
+
+    def test_hashed_assets_location_matches_real_request_uris(self):
+        content = (ROOT / "frontend/docker/nginx/default.conf").read_text()
+        match = re.search(r'location ~\* "(\^[^"]+)" \{(.*?)\}', content, re.DOTALL)
+        self.assertIsNotNone(match, "hashed assets location not found")
+        assert match is not None
+        pattern = re.compile(match.group(1), re.IGNORECASE)
+        # nginx matches the URI, which always starts with "/"
+        for uri in ("/assets/Admin-aM67yFyX.css", "/assets/index-DKc9aB3x.js",
+                    "/assets/vendor-react-Bq1_x-aZ.js", "/assets/hero-1a2B3c4D.webp"):
+            self.assertRegex(uri, pattern, uri)
+        for uri in ("/index.html", "/assets/app.js", "/login", "/uploads/photo-abcdefgh.png",
+                    "/api/lodgings", "/assets/sub/dir-abcdefgh.js"):
+            self.assertNotRegex(uri, pattern, uri)
+        self.assertIn("immutable", match.group(2))
 
     def test_obsolete_ops_nginx_does_not_exist(self):
         self.assertFalse((ROOT / "ops/nginx").exists(), "ops/nginx is obsolete and must be removed")

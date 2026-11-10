@@ -1,9 +1,9 @@
 """Validate repository hygiene and .gitignore rules using git check-ignore."""
 
 import json
-from pathlib import Path
 import subprocess
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +19,13 @@ class RepoHygieneTest(unittest.TestCase):
             capture_output=True,
         )
         return result.returncode == 0
+
+    def test_local_worktrees_and_backups_are_ignored_by_gitignore_itself(self):
+        # git check-ignore also honours .git/info/exclude, which is local to one clone,
+        # so the committed .gitignore must list these paths on its own.
+        lines = {line.strip() for line in GITIGNORE.read_text(encoding="utf-8").splitlines()}
+        self.assertIn("/.worktrees/", lines)
+        self.assertIn("/backups/", lines)
 
     def test_agents_md_is_not_in_gitignore(self):
         content = GITIGNORE.read_text(encoding="utf-8")

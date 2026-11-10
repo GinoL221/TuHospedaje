@@ -20,7 +20,10 @@ deploy/*.env
 !deploy/*.env.example
 
 # Private local backups and restore evidence (may contain stored credentials)
-/backups/local/
+/backups/
+
+# Local git worktrees
+/.worktrees/
 
 # Python
 __pycache__/
