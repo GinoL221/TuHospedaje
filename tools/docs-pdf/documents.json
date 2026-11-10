@@ -2,19 +2,27 @@
   "kinds": {
     "definition": {
       "label": "Definición del proyecto",
-      "accent": "#264653"
+      "accent": "#264653",
+      "tint": "#EAF0F2",
+      "layout": "plain"
     },
     "report": {
       "label": "Informe de sprint",
-      "accent": "#FF6B35"
+      "accent": "#FF6B35",
+      "tint": "#FFF1EA",
+      "layout": "tint"
     },
     "test-plan": {
       "label": "Plan de pruebas",
-      "accent": "#2A9D8F"
+      "accent": "#2A9D8F",
+      "tint": "#E8F5F3",
+      "layout": "metrics"
     },
     "logbook": {
       "label": "Bitácora del proyecto",
-      "accent": "#264653"
+      "accent": "#264653",
+      "tint": "#EAF0F2",
+      "layout": "panel"
     }
   },
   "documents": {

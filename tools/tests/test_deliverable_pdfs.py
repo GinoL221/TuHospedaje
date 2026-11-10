@@ -3,6 +3,8 @@
 import hashlib
 import json
 import re
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -30,7 +32,10 @@ EXPECTED_SOURCES = {
 BUILD_INPUTS = {
     "tools/docs-pdf/brand.css",
     "tools/docs-pdf/build.mjs",
+    "tools/docs-pdf/transform.mjs",
     "tools/docs-pdf/documents.json",
+    "tools/docs-pdf/package-lock.json",
+    "frontend/src/assets/images/TuHospedaje_Imagotipo.png",
 }
 
 KINDS = {"definition", "report", "test-plan", "logbook"}
@@ -94,6 +99,46 @@ class DeliverablePdfsTest(unittest.TestCase):
                 check = fact.get("check")
                 if check:
                     self.assertIn(check, text, f"{source}: {fact['label']}")
+
+    def test_cover_layouts_are_distinct_per_kind(self):
+        kinds = read_documents()["kinds"]
+        layouts = [kinds[k]["layout"] for k in sorted(KINDS)]
+        self.assertEqual(len(set(layouts)), len(KINDS), layouts)
+        for name, kind in kinds.items():
+            self.assertRegex(kind["tint"], r"^#[0-9A-Fa-f]{6}$", name)
+
+    def test_brand_stylesheet_defines_chips_callouts_and_layouts(self):
+        css = (TOOL_DIR / "brand.css").read_text(encoding="utf-8")
+        for selector in (".chip-ok", ".chip-warn", ".chip-fail", ".chip-pending", "blockquote",
+                         ".cover-plain", ".cover-tint", ".cover-metrics", ".cover-panel"):
+            self.assertIn(selector, css, selector)
+
+    @unittest.skipUnless(shutil.which("node"), "node is required")
+    def test_content_transform_behaviour(self):
+        script = (
+            "import {prepareContent} from './transform.mjs';"
+            "const md=['<style>h1{}</style>','','# Title','','Intro','',"
+            "'| Case | Status |','| --- | --- |',"
+            "'| TC-1 | ✔ Pasa |','| TC-2 | ✔ **Verificado** |','| TC-3 | ⚠ Con observaciones |',"
+            "'| TC-4 | ✘ Fallido |','| TC-5 | No comprobado |','| TC-6 | Pasa en CI |','',"
+            "'Prose with ✔ Pasa | not a table'].join('\\n');"
+            "console.log(JSON.stringify(prepareContent(md)));"
+        )
+        out = subprocess.run(
+            ["node", "--input-type=module", "-e", script],
+            cwd=TOOL_DIR, capture_output=True, text=True, check=True,
+        ).stdout
+        text = json.loads(out)
+        self.assertNotIn("<style>", text)
+        self.assertNotIn("# Title", text)
+        self.assertIn("Intro", text)
+        self.assertIn('<span class="chip chip-ok">✔ Pasa</span>', text)
+        self.assertIn('<span class="chip chip-ok">✔ Verificado</span>', text)
+        self.assertIn('<span class="chip chip-warn">⚠ Con observaciones</span>', text)
+        self.assertIn('<span class="chip chip-fail">✘ Fallido</span>', text)
+        self.assertIn('<span class="chip chip-warn">No comprobado</span>', text)
+        self.assertIn("| TC-6 | Pasa en CI |", text)
+        self.assertIn("Prose with ✔ Pasa | not a table", text)
 
     def test_document_kinds_have_distinct_accents(self):
         kinds = read_documents()["kinds"]
