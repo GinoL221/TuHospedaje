@@ -93,6 +93,10 @@ services:
       # Swagger UI and OpenAPI documentation (default false in prod).
       SPRINGDOC_API_DOCS_ENABLED: ${SPRINGDOC_API_DOCS_ENABLED:-false}
       SPRINGDOC_SWAGGER_UI_ENABLED: ${SPRINGDOC_SWAGGER_UI_ENABLED:-false}
+      # Trusted reverse-proxy address regex. No default on purpose: when
+      # unset the variable is not passed and the backend keeps its built-in
+      # private-network default. An empty value would trust no proxy.
+      TOMCAT_INTERNAL_PROXIES:
     restart: unless-stopped
     healthcheck:
       test:

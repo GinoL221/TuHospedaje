@@ -2,9 +2,9 @@
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -81,21 +81,25 @@ class ProductionDeliveryConfigTest(unittest.TestCase):
         self.assertNotIn("backend-0.0.1-SNAPSHOT.jar", dockerfile)
 
     def test_optional_production_overrides_are_passed_to_backend(self):
-        # 1. Unset case preserves defaults
+        # 1. Unset case preserves defaults: compose config renders TOMCAT_INTERNAL_PROXIES
+        # as None (pass-through not set in host), so the container does not receive it
+        # and Spring Boot falls back to its built-in private-network default regex.
         default_services = self.render()
         default_backend = default_services["backend"]["environment"]
         self.assertEqual(default_backend.get("APP_JWT_EXPIRATION"), "900000")
         self.assertEqual(default_backend.get("SPRINGDOC_API_DOCS_ENABLED"), "false")
         self.assertEqual(default_backend.get("SPRINGDOC_SWAGGER_UI_ENABLED"), "false")
-        self.assertNotIn("TOMCAT_INTERNAL_PROXIES", default_backend)
+        self.assertIsNone(default_backend.get("TOMCAT_INTERNAL_PROXIES"))
 
         # 2. Overridden case passes explicit values
         services = self.render(
             APP_JWT_EXPIRATION="1800000",
             SPRINGDOC_API_DOCS_ENABLED="true",
             SPRINGDOC_SWAGGER_UI_ENABLED="true",
+            TOMCAT_INTERNAL_PROXIES="10\\.9\\.8\\.\\d{1,3}",
         )
         backend = services["backend"]["environment"]
+        self.assertEqual(backend.get("TOMCAT_INTERNAL_PROXIES"), "10\\.9\\.8\\.\\d{1,3}")
         self.assertEqual(backend.get("APP_JWT_EXPIRATION"), "1800000")
         self.assertEqual(backend.get("SPRINGDOC_API_DOCS_ENABLED"), "true")
         self.assertEqual(backend.get("SPRINGDOC_SWAGGER_UI_ENABLED"), "true")
