@@ -1,0 +1,18 @@
+{
+  "name": "tuhospedaje-docs-pdf",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reproducible generation of the deliverable PDFs in docs/entregables from docs/markdown.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "gray-matter": "4.0.3",
+    "md-to-pdf": "5.2.5"
+  }
+}

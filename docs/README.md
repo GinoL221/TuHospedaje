@@ -71,6 +71,18 @@ Los reportes y planes de Sprint describen cortes históricos del proyecto. Usalo
 
 Estos PDFs son artefactos de entrega y contexto. No sustituyen los PDFs originales de requisitos cuando se analiza la autoridad de una user story.
 
+### Regenerar los PDFs
+
+Los PDFs se generan desde los Markdown de `docs/markdown/` con una toolchain fijada (`md-to-pdf` 5.2.5, fuente Inter 5.3.0 y los tokens del Manual de Identidad v2.1). Desde la raíz del repositorio:
+
+```bash
+cd tools/docs-pdf
+npm ci
+npm run build
+```
+
+Hace falta Node 22.12 o superior y un Chromium: el script usa el de Playwright (`~/.cache/ms-playwright`) o el que indique `PUPPETEER_EXECUTABLE_PATH`. El build reescribe `docs/entregables/SOURCES.sha256` con el SHA-256 de cada Markdown fuente. Un test de `tools/tests` falla si un fuente cambió y el manifiesto no, así un PDF desactualizado no pasa inadvertido. Los bytes de un PDF no son idénticos entre corridas (llevan fecha de creación); la reproducibilidad es de la toolchain y de las fuentes.
+
 ## Cómo citar evidencia actual
 
 Una afirmación sobre implementación debe indicar, como mínimo:
