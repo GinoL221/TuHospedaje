@@ -63,6 +63,7 @@ Los reportes y planes de Sprint describen cortes históricos del proyecto. Usalo
 
 ## Entregables publicados en el repositorio
 
+- [Bitácora del proyecto](markdown/bitacora-del-proyecto.md) · [PDF](entregables/bitacora-del-proyecto.pdf): línea de tiempo desde el Sprint 1 hasta v1.0.1, con decisiones, exclusiones y límites
 - [Definición del proyecto en PDF](entregables/project-definition.pdf)
 - [Sprint 1 — reporte PDF](entregables/sprint-1-report.pdf) · [test plan PDF](entregables/sprint-1-test-plan.pdf)
 - [Sprint 2 — reporte PDF](entregables/sprint-2-report.pdf) · [test plan PDF](entregables/sprint-2-test-plan.pdf)
@@ -81,7 +82,7 @@ npm ci
 npm run build
 ```
 
-Hace falta Node 22.12 o superior y un Chromium: el script usa el de Playwright (`~/.cache/ms-playwright`) o el que indique `PUPPETEER_EXECUTABLE_PATH`. El build reescribe `docs/entregables/SOURCES.sha256` con el SHA-256 de cada Markdown fuente. Un test de `tools/tests` falla si un fuente cambió y el manifiesto no, así un PDF desactualizado no pasa inadvertido. Los bytes de un PDF no son idénticos entre corridas (llevan fecha de creación); la reproducibilidad es de la toolchain y de las fuentes.
+Hace falta Node 22.12 o superior y un Chromium: el script usa el de Playwright (`~/.cache/ms-playwright`) o el que indique `PUPPETEER_EXECUTABLE_PATH`. Cada tipo de documento (definición, informe de sprint, plan de pruebas y bitácora) tiene su propia portada, color y encabezado, definidos en `tools/docs-pdf/documents.json` y `brand.css`. El build reescribe `docs/entregables/SOURCES.sha256` con el SHA-256 de cada Markdown fuente y de los insumos del build (estilos, transformaciones, logo y lockfile). Las tablas muestran los estados (`✔ Pasa`, `No comprobado`) como etiquetas de color; esa conversión se hace solo al renderizar y no modifica los Markdown. Un test de `tools/tests` falla si un fuente cambió y el manifiesto no, así un PDF desactualizado no pasa inadvertido. Los bytes de un PDF no son idénticos entre corridas (llevan fecha de creación); la reproducibilidad es de la toolchain y de las fuentes.
 
 ## Cómo citar evidencia actual
 

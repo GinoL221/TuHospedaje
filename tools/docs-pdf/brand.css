@@ -1,6 +1,7 @@
-/* Brand styling for the deliverable PDFs.
+/* Editorial styling for the deliverable PDFs.
  * Tokens come from docs/diseno/manual-identidad.md (Manual de Identidad v2.1).
- * The Inter @font-face is injected by build.mjs as an embedded data URI. */
+ * build.mjs injects the Inter @font-face (data URI) and, per document kind,
+ * --kind (accent) and --tint (soft background). */
 
 :root {
   --primary: #FF6B35;
@@ -8,66 +9,124 @@
   --accent: #2A9D8F;
   --surface: #F4F4F9;
   --text: #333333;
-  --rule: #D5DBE0;
+  --muted: #5B6770;
+  --rule: #DCE1E5;
+  --kind: var(--secondary);
+  --tint: #EAF0F2;
 }
+
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
 body,
 .markdown-body {
   font-family: "Inter Variable", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 10pt;
-  line-height: 1.6;
+  font-size: 9.5pt;
+  line-height: 1.58;
   color: var(--text);
 }
 
+p { margin: 0 0 8px; }
+
+/* Headings: the cover carries the document title, so h1 is rare in the body. */
 h1, h2, h3, h4 {
   color: var(--secondary);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
+  page-break-after: avoid;
+  break-after: avoid;
 }
 
-h1 {
-  font-size: 22pt;
-  padding-bottom: 8px;
-  border-bottom: 3px solid var(--primary);
-}
+h1 { font-size: 20pt; margin: 22px 0 10px; }
 
 h2 {
-  font-size: 15pt;
-  padding-bottom: 4px;
+  font-size: 14pt;
+  margin: 26px 0 10px;
+  padding: 1px 0 1px 11px;
+  border-left: 4px solid var(--kind);
+  line-height: 1.3;
+}
+
+h3 { font-size: 11.5pt; margin: 18px 0 6px; }
+
+h4 {
+  font-size: 8.5pt;
+  margin: 14px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+a { color: #1D6F66; text-decoration: none; }
+strong { color: var(--secondary); font-weight: 650; }
+
+ul, ol { margin: 4px 0 10px; padding-left: 20px; }
+li { margin: 3px 0; }
+li::marker { color: var(--kind); }
+
+/* Forced breaks written inside the sources leave large blank areas. */
+[style*="page-break-before"] { page-break-before: auto !important; break-before: auto !important; }
+
+/* Tables */
+table {
+  width: 100%;
+  margin: 10px 0 16px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: 8.6pt;
+  line-height: 1.45;
+}
+
+thead { display: table-header-group; }
+tr { page-break-inside: avoid; break-inside: avoid; }
+
+th, td {
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+  border: 0;
   border-bottom: 1px solid var(--rule);
 }
 
-h3 { font-size: 12pt; }
-h4 { font-size: 10.5pt; color: var(--accent); }
-
-a { color: var(--accent); text-decoration: none; }
-
-strong { color: var(--secondary); }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 9pt;
-}
-
-th, td {
-  border: 1px solid var(--rule);
-  padding: 6px 8px;
-  vertical-align: top;
-}
-
 thead th {
-  background: var(--secondary);
-  color: #FFFFFF;
-  font-weight: 600;
-  border-color: var(--secondary);
+  background: var(--tint);
+  color: var(--secondary);
+  font-size: 7.6pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--kind);
 }
 
-tbody tr:nth-child(even) { background: var(--surface); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) td { background: #FAFAFC; }
+td:first-child { font-weight: 600; color: var(--secondary); }
+td { font-variant-numeric: tabular-nums; }
 
+/* Status chips, produced by transform.mjs. Color is never the only signal:
+ * every chip keeps its symbol and its text. */
+.chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 7.8pt;
+  font-weight: 650;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.chip-ok { color: #166534; background: #F0FDF4; border-color: #86EFAC; }
+.chip-warn { color: #854D0E; background: #FEFCE8; border-color: #FACC15; }
+.chip-fail { color: #991B1B; background: #FEF2F2; border-color: #F87171; }
+.chip-pending { color: var(--muted); background: var(--surface); border-color: var(--rule); }
+
+/* Code */
 code {
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, "DejaVu Sans Mono", monospace;
-  font-size: 0.88em;
+  font-size: 0.8em;
   background: var(--surface);
   color: var(--secondary);
   border-radius: 3px;
@@ -75,61 +134,157 @@ code {
 }
 
 pre {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--rule);
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-left: 4px solid var(--kind);
+  border-radius: 4px;
+  font-size: 8pt;
+  line-height: 1.5;
   page-break-inside: avoid;
 }
 
-pre code { background: none; padding: 0; }
+pre code { padding: 0; background: none; font-size: inherit; }
 
+/* Callouts */
 blockquote {
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 8px 14px;
   margin: 12px 0;
+  padding: 10px 14px 10px 16px;
+  background: var(--tint);
+  border-left: 4px solid var(--kind);
+  border-radius: 0 6px 6px 0;
+  page-break-inside: avoid;
 }
 
-hr { border: 0; border-top: 1px solid var(--rule); }
+blockquote p:last-child { margin-bottom: 0; }
 
-/* Cover page */
+hr { border: 0; border-top: 1px solid var(--rule); margin: 18px 0; }
+img { max-width: 100%; }
+
+/* ---------------------------------------------------------------- Cover
+ * One structure, four layouts (plain, tint, metrics, panel) chosen per kind. */
 .cover {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 235mm;
+  justify-content: space-between;
+  min-height: 236mm;
   page-break-after: always;
+  break-after: page;
 }
 
-.cover img { width: 62mm; margin-bottom: 28mm; }
-
-.cover .cover-rule {
-  width: 40mm;
-  height: 4px;
-  background: var(--primary);
-  margin-bottom: 8mm;
+.cover-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
-.cover h1.cover-title {
-  font-size: 30pt;
-  line-height: 1.15;
-  border: 0;
-  padding: 0;
-  margin: 0 0 6mm;
-}
+.cover-top img { width: 42mm; }
 
-.cover .cover-subtitle {
-  font-size: 13pt;
-  color: var(--text);
-  margin: 0 0 14mm;
-}
-
-.cover .cover-meta {
-  font-size: 10pt;
+.cover-badge {
+  padding: 3px 11px;
+  border: 1px solid var(--kind);
+  border-radius: 999px;
   color: var(--secondary);
-  font-weight: 600;
-  margin: 0;
+  font-size: 7.8pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
+
+.cover-title {
+  margin: 0 0 4mm;
+  padding: 0;
+  border: 0;
+  font-size: 30pt;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--secondary);
+}
+
+.cover-subtitle {
+  margin: 0 0 9mm;
+  font-size: 12pt;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.cover-facts { margin: 0; }
+
+.fact { display: flex; flex-direction: column; gap: 1mm; }
+
+.fact-label {
+  font-size: 7.4pt;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fact-value { font-size: 10.5pt; font-weight: 600; color: var(--secondary); line-height: 1.35; }
+
+.cover-meta {
+  margin: 0;
+  padding-top: 4mm;
+  border-top: 1px solid var(--rule);
+  font-size: 9pt;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* plain: accent rule on the left, facts as ruled rows */
+.cover-plain .cover-main { padding-left: 9mm; border-left: 6px solid var(--kind); }
+.cover-plain .cover-facts { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.cover-plain .fact { padding: 3mm 0; border-bottom: 1px solid var(--rule); }
+
+/* tint: soft card with the accent on top */
+.cover-tint .cover-main {
+  padding: 11mm 11mm 9mm;
+  background: var(--tint);
+  border-top: 6px solid var(--kind);
+  border-radius: 0 0 8px 8px;
+}
+
+.cover-tint .cover-facts { display: grid; gap: 4mm; padding-top: 6mm; border-top: 1px solid rgba(38, 70, 83, 0.18); }
+
+/* metrics: facts become cards */
+.cover-metrics .cover-main { padding-left: 9mm; border-left: 6px solid var(--kind); }
+.cover-metrics .cover-facts { display: flex; gap: 4mm; }
+
+.cover-metrics .fact {
+  flex: 1;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  padding: 5mm 5mm 4mm;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--kind);
+  border-radius: 6px;
+}
+
+.cover-metrics .fact-value { font-size: 14pt; font-weight: 750; line-height: 1.2; }
+
+/* panel: full petrol block with the brand tricolor bar */
+.cover-panel .cover-main {
+  padding: 13mm 12mm 11mm;
+  background: var(--secondary);
+  border-radius: 8px;
+  color: #FFFFFF;
+}
+
+.cover-panel .cover-main::before {
+  content: "";
+  display: block;
+  width: 36mm;
+  height: 5px;
+  margin-bottom: 9mm;
+  background: linear-gradient(90deg, var(--primary) 0 50%, var(--accent) 50% 100%);
+  border-radius: 3px;
+}
+
+.cover-panel .cover-title { color: #FFFFFF; }
+.cover-panel .cover-subtitle { color: #D5E1E6; }
+.cover-panel .cover-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; padding-top: 7mm; border-top: 1px solid rgba(255, 255, 255, 0.28); }
+.cover-panel .fact-label { color: #9FB8C2; }
+.cover-panel .fact-value { color: #FFFFFF; }
