@@ -11,7 +11,10 @@ TOOL_DIR = ROOT / "tools" / "docs-pdf"
 DELIVERABLES = ROOT / "docs" / "entregables"
 MANIFEST = DELIVERABLES / "SOURCES.sha256"
 
+LOGBOOK = "docs/markdown/bitacora-del-proyecto.md"
+
 EXPECTED_SOURCES = {
+    LOGBOOK,
     "docs/markdown/project-definition.md",
     "docs/markdown/sprint-1/sprint-1-report.md",
     "docs/markdown/sprint-1/sprint-1-test-plan.md",
@@ -22,6 +25,19 @@ EXPECTED_SOURCES = {
     "docs/markdown/sprint-4/sprint-4-report.md",
     "docs/markdown/sprint-4/sprint-4-test-plan.md",
 }
+
+# Styling and data inputs that change the PDFs, so they are hashed too.
+BUILD_INPUTS = {
+    "tools/docs-pdf/brand.css",
+    "tools/docs-pdf/build.mjs",
+    "tools/docs-pdf/documents.json",
+}
+
+KINDS = {"definition", "report", "test-plan", "logbook"}
+
+
+def read_documents() -> dict:
+    return json.loads((TOOL_DIR / "documents.json").read_text(encoding="utf-8"))
 
 
 def read_manifest() -> dict[str, str]:
@@ -43,8 +59,8 @@ class DeliverablePdfsTest(unittest.TestCase):
         self.assertEqual(package.get("scripts", {}).get("build"), "node build.mjs")
         self.assertTrue((TOOL_DIR / "package-lock.json").is_file())
 
-    def test_manifest_lists_exactly_the_nine_deliverable_sources(self):
-        self.assertEqual(set(read_manifest()), EXPECTED_SOURCES)
+    def test_manifest_lists_exactly_the_ten_sources_and_build_inputs(self):
+        self.assertEqual(set(read_manifest()), EXPECTED_SOURCES | BUILD_INPUTS)
 
     def test_manifest_hashes_match_current_sources(self):
         for source, expected in read_manifest().items():
@@ -66,10 +82,47 @@ class DeliverablePdfsTest(unittest.TestCase):
         for token in ("#264653", "#FF6B35", "#2A9D8F", "#F4F4F9", "Inter"):
             self.assertIn(token, css)
 
+    def test_every_document_declares_a_kind_and_a_fact_sheet(self):
+        documents = read_documents()["documents"]
+        self.assertEqual(set(documents), EXPECTED_SOURCES)
+        for source, entry in documents.items():
+            self.assertIn(entry["kind"], KINDS, source)
+            self.assertTrue(entry["header"], source)
+            self.assertGreaterEqual(len(entry["facts"]), 2, source)
+            text = (ROOT / source).read_text(encoding="utf-8")
+            for fact in entry["facts"]:
+                check = fact.get("check")
+                if check:
+                    self.assertIn(check, text, f"{source}: {fact['label']}")
+
+    def test_document_kinds_have_distinct_accents(self):
+        kinds = read_documents()["kinds"]
+        self.assertEqual(set(kinds), KINDS)
+        accents = [kinds[k]["accent"] for k in ("definition", "report", "test-plan")]
+        self.assertEqual(len(set(accents)), 3)
+
+    def test_logbook_covers_the_project_timeline(self):
+        text = (ROOT / LOGBOOK).read_text(encoding="utf-8")
+        for heading in (
+            "## 2. Línea de tiempo",
+            "## 3. Sprint por sprint",
+            "## 4. Plan de endurecimiento",
+            "## 5. Release v1.0.0",
+            "## 6. Después de v1.0.0",
+            "## 7. Decisiones",
+            "## 8. Qué quedó fuera",
+            "## 9. Límites conocidos",
+            "## 10. Fuentes",
+        ):
+            self.assertIn(heading, text)
+        for marker in ("74cb8a2", "a3f90a6", "83cda57", "9ef737d", "D2", "D3", "D6", "No comprobado"):
+            self.assertIn(marker, text, marker)
+
     def test_docs_index_documents_the_build_command(self):
         index = (ROOT / "docs" / "README.md").read_text(encoding="utf-8")
         self.assertIn("tools/docs-pdf", index)
         self.assertIn("npm run build", index)
+        self.assertIn("bitacora-del-proyecto.pdf", index)
 
 
 if __name__ == "__main__":

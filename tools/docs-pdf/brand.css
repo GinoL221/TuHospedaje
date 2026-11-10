@@ -28,7 +28,7 @@ h1, h2, h3, h4 {
 h1 {
   font-size: 22pt;
   padding-bottom: 8px;
-  border-bottom: 3px solid var(--primary);
+  border-bottom: 3px solid var(--kind, var(--primary));
 }
 
 h2 {
@@ -95,7 +95,7 @@ blockquote {
 
 hr { border: 0; border-top: 1px solid var(--rule); }
 
-/* Cover page */
+/* Cover page. --kind is the accent of the document kind, set by build.mjs. */
 .cover {
   display: flex;
   flex-direction: column;
@@ -104,27 +104,59 @@ hr { border: 0; border-top: 1px solid var(--rule); }
   page-break-after: always;
 }
 
-.cover img { width: 62mm; margin-bottom: 28mm; }
+.cover img { width: 48mm; margin-bottom: 20mm; }
 
 .cover .cover-rule {
   width: 40mm;
   height: 4px;
-  background: var(--primary);
-  margin-bottom: 8mm;
+  background: var(--kind);
+  margin-bottom: 6mm;
+}
+
+.cover .cover-kicker {
+  margin: 0 0 4mm;
+  font-size: 10pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--secondary);
 }
 
 .cover h1.cover-title {
-  font-size: 30pt;
+  font-size: 28pt;
   line-height: 1.15;
   border: 0;
   padding: 0;
-  margin: 0 0 6mm;
+  margin: 0 0 5mm;
 }
 
 .cover .cover-subtitle {
-  font-size: 13pt;
+  font-size: 12.5pt;
+  margin: 0 0 12mm;
+}
+
+.cover .cover-facts {
+  width: auto;
+  min-width: 110mm;
+  margin: 0 0 12mm;
+  border-top: 3px solid var(--kind);
+  font-size: 10pt;
+}
+
+.cover .cover-facts th,
+.cover .cover-facts td {
+  background: transparent;
   color: var(--text);
-  margin: 0 0 14mm;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 5px 14px 5px 0;
+}
+
+.cover .cover-facts th {
+  color: var(--secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .cover .cover-meta {
@@ -132,4 +164,55 @@ hr { border: 0; border-top: 1px solid var(--rule); }
   color: var(--secondary);
   font-weight: 600;
   margin: 0;
+}
+
+/* Logbook: petrol panel behind the title block */
+.cover-logbook .cover-kicker,
+.cover-logbook h1.cover-title,
+.cover-logbook .cover-subtitle {
+  background: var(--secondary);
+  color: #FFFFFF;
+  margin: 0;
+  padding-left: 10mm;
+  padding-right: 10mm;
+}
+
+.cover-logbook .cover-kicker { padding-top: 10mm; padding-bottom: 3mm; color: #F4F4F9; }
+.cover-logbook h1.cover-title { padding-bottom: 4mm; }
+.cover-logbook .cover-subtitle { padding-bottom: 10mm; margin-bottom: 12mm; }
+
+/* Test plans: the figures are shown as metric cards */
+.cover-test-plan .cover-rule { height: 8px; }
+
+.cover-metrics {
+  display: flex;
+  gap: 5mm;
+  margin: 0 0 12mm;
+}
+
+.cover-metrics .metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  padding: 5mm 5mm 4mm;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--kind);
+  border-radius: 6px;
+}
+
+.cover-metrics .metric-value {
+  font-size: 13pt;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--secondary);
+}
+
+.cover-metrics .metric-label {
+  font-size: 8.5pt;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
 }

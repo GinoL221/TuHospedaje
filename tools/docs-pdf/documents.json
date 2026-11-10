@@ -1,0 +1,215 @@
+{
+  "kinds": {
+    "definition": {
+      "label": "Definición del proyecto",
+      "accent": "#264653"
+    },
+    "report": {
+      "label": "Informe de sprint",
+      "accent": "#FF6B35"
+    },
+    "test-plan": {
+      "label": "Plan de pruebas",
+      "accent": "#2A9D8F"
+    },
+    "logbook": {
+      "label": "Bitácora del proyecto",
+      "accent": "#264653"
+    }
+  },
+  "documents": {
+    "docs/markdown/bitacora-del-proyecto.md": {
+      "kind": "logbook",
+      "header": "Bitácora del proyecto",
+      "facts": [
+        {
+          "label": "Período",
+          "value": "2026-05-18 a 2026-11-10"
+        },
+        {
+          "label": "Hitos",
+          "value": "Sprints 1 a 4, plan P0 a P28, v1.0.0 y v1.0.1"
+        },
+        {
+          "label": "Corte",
+          "value": "main@9ef737d",
+          "check": "9ef737d"
+        }
+      ]
+    },
+    "docs/markdown/project-definition.md": {
+      "kind": "definition",
+      "header": "Definición del proyecto",
+      "facts": [
+        {
+          "label": "Alcance",
+          "value": "4 sprints y 35 historias oficiales",
+          "check": "4 Sprints"
+        },
+        {
+          "label": "Stack",
+          "value": "Spring Boot 4.0 · Java 17 · React 19 · MariaDB",
+          "check": "Spring Boot 4.0"
+        },
+        {
+          "label": "Fuera de alcance",
+          "value": "Pagos, mensajería interna y mapas",
+          "check": "Pasarelas de pago"
+        }
+      ]
+    },
+    "docs/markdown/sprint-1/sprint-1-report.md": {
+      "kind": "report",
+      "header": "Informe · Sprint 1",
+      "facts": [
+        {
+          "label": "Historias",
+          "value": "US #1 a #11",
+          "check": "US #11"
+        },
+        {
+          "label": "Tema",
+          "value": "Base del sistema: catálogo, galería y panel de administración"
+        },
+        {
+          "label": "Inicio del repositorio",
+          "value": "2026-05-18 (commit 74cb8a2)"
+        }
+      ]
+    },
+    "docs/markdown/sprint-1/sprint-1-test-plan.md": {
+      "kind": "test-plan",
+      "header": "Plan de pruebas · Sprint 1",
+      "facts": [
+        {
+          "label": "Casos",
+          "value": "TC-01 a TC-11, todos aprobados",
+          "check": "TC-11"
+        },
+        {
+          "label": "Automatizadas",
+          "value": "37 tests de backend (29 base + 8 de mapeo)",
+          "check": "29 casos de prueba automatizados"
+        }
+      ]
+    },
+    "docs/markdown/sprint-2/sprint-2-report.md": {
+      "kind": "report",
+      "header": "Informe · Sprint 2",
+      "facts": [
+        {
+          "label": "Historias",
+          "value": "US #12 a #21",
+          "check": "US #21"
+        },
+        {
+          "label": "Opcional",
+          "value": "US #19, correo de confirmación de registro",
+          "check": "US #19"
+        },
+        {
+          "label": "Tema",
+          "value": "Autenticación JWT, roles, categorías y características"
+        }
+      ]
+    },
+    "docs/markdown/sprint-2/sprint-2-test-plan.md": {
+      "kind": "test-plan",
+      "header": "Plan de pruebas · Sprint 2",
+      "facts": [
+        {
+          "label": "Casos",
+          "value": "TC-12 a TC-20",
+          "check": "TC-20"
+        },
+        {
+          "label": "Automatizadas",
+          "value": "49 tests sin fallos",
+          "check": "0 fallos detectados"
+        }
+      ]
+    },
+    "docs/markdown/sprint-3/sprint-3-report.md": {
+      "kind": "report",
+      "header": "Informe · Sprint 3",
+      "facts": [
+        {
+          "label": "Historias",
+          "value": "US #22 a #29",
+          "check": "US #29"
+        },
+        {
+          "label": "Integrado",
+          "value": "2026-06-04 (commit 7c29cf7)"
+        },
+        {
+          "label": "Backend",
+          "value": "139 tests en verde",
+          "check": "139"
+        }
+      ]
+    },
+    "docs/markdown/sprint-3/sprint-3-test-plan.md": {
+      "kind": "test-plan",
+      "header": "Plan de pruebas · Sprint 3",
+      "facts": [
+        {
+          "label": "Escenarios funcionales",
+          "value": "62 de 62 verificados",
+          "check": "62/62"
+        },
+        {
+          "label": "Automatizadas",
+          "value": "139 tests de backend",
+          "check": "139 tests"
+        },
+        {
+          "label": "Mejoras complementarias",
+          "value": "TC-30 a TC-34",
+          "check": "TC-34"
+        }
+      ]
+    },
+    "docs/markdown/sprint-4/sprint-4-report.md": {
+      "kind": "report",
+      "header": "Informe · Sprint 4",
+      "facts": [
+        {
+          "label": "Historias",
+          "value": "US #30 a #35",
+          "check": "US #35"
+        },
+        {
+          "label": "Integrado en main",
+          "value": "2026-07-23 (PR #36)"
+        },
+        {
+          "label": "E2E",
+          "value": "45 escenarios en 13 specs",
+          "check": "45 escenarios"
+        }
+      ]
+    },
+    "docs/markdown/sprint-4/sprint-4-test-plan.md": {
+      "kind": "test-plan",
+      "header": "Plan de pruebas · Sprint 4",
+      "facts": [
+        {
+          "label": "Escenarios funcionales",
+          "value": "152 de 152 verificados",
+          "check": "152/152"
+        },
+        {
+          "label": "Backend en CI",
+          "value": "422 de 422",
+          "check": "422/422"
+        },
+        {
+          "label": "Frontend en CI",
+          "value": "416 de 416 (53 archivos)",
+          "check": "416/416"
+        }
+      ]
+    }
+  }
+}
