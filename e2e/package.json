@@ -1,6 +1,6 @@
 {
   "name": "tuhospedaje-e2e",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Playwright E2E tests for TuHospedaje — POM + fixtures pattern",
   "type": "commonjs",
   "scripts": {
