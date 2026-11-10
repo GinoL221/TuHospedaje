@@ -160,7 +160,7 @@ class DeliverablePdfsTest(unittest.TestCase):
             "## 10. Fuentes",
         ):
             self.assertIn(heading, text)
-        for marker in ("74cb8a2", "a3f90a6", "83cda57", "9ef737d", "D2", "D3", "D6", "No comprobado"):
+        for marker in ("74cb8a2", "a3f90a6", "83cda57", "9ef737d", "c9d91d0", "D2", "D3", "D6", "No comprobado"):
             self.assertIn(marker, text, marker)
 
     def test_docs_index_documents_the_build_command(self):
