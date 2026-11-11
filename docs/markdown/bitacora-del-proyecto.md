@@ -11,7 +11,7 @@ date: "Noviembre 2026"
 
 Esta bitácora cuenta en orden cronológico cómo se construyó TuHospedaje: qué se entregó en cada etapa, qué se decidió y por qué, qué quedó fuera a propósito y qué no se comprobó. Cada hito cita su fuente (commit, pull request o documento) para que pueda verificarse.
 
-- **Corte:** 2026-11-10. Los hitos hasta `main@9ef737d` están integrados; las tareas T9 a T12 de v1.0.1 están en ramas pendientes de merge.
+- **Corte:** 2026-11-10. Todos los hitos hasta `main@c9d91d0` (incluyendo T1 a T13) están integrados. Esta entrega final cierra las tareas documentales previas al tag v1.0.1.
 - **Alcance:** resume y enlaza los informes y planes de prueba de cada sprint. No los reemplaza ni redefine el alcance de [product.md](../../product.md).
 - **Límite:** no afirma que el sistema esté desplegado ni verificado en producción. La sección 9 detalla qué falta comprobar.
 
@@ -29,8 +29,7 @@ Esta bitácora cuenta en orden cronológico cómo se construyó TuHospedaje: qu�
 | 2026-11-04 | Rediseño visual integrado en `main` | PR #343 (`ab73d8e`) |
 | 2026-11-07 | Release **v1.0.0** y cierre del plan de endurecimiento | PR #413, tag `v1.0.0` en `a3f90a6` |
 | 2026-11-08 | Unificación de errores 401/403 y deuda técnica posterior al release | PR #415 a #423, `main@83cda57` |
-| 2026-11-08 a 11-09 | Correcciones de v1.0.1 (T1 a T8) | PR #425 a #439, `main@9ef737d` |
-| 2026-11-09 a 11-10 | T9 versión 1.0.1, T10 PDFs reproducibles, T11 claridad de estado, T12 esta bitácora | issues #440 a #443, pendientes de merge |
+| 2026-11-08 a 11-10 | Correcciones y entrega de v1.0.1 (T1 a T13) | PR #425 a #449, `main@c9d91d0` |
 
 ## 3. Sprint por sprint
 
@@ -89,7 +88,7 @@ Al final de esta etapa `main` quedó en `83cda57` (793 tests de backend con 1 om
 
 ### 6.2 Correcciones de v1.0.1
 
-Una revisión general de `main@83cda57` produjo la lista de correcciones y endurecimientos de v1.0.1. Seguimiento: `odd/tasks/v1.0.1-pre-release-fixes.md`.
+Una revisión general de `main@83cda57` produjo la lista de correcciones y endurecimientos de v1.0.1. Las tareas T1 a T8 se integraron en `main@9ef737d` y la secuencia T9 a T13 llevó `main` a `c9d91d0`. Seguimiento: `odd/tasks/v1.0.1-pre-release-fixes.md`.
 
 | Tarea | PR | Resultado |
 | --- | --- | --- |
@@ -101,7 +100,11 @@ Una revisión general de `main@83cda57` produjo la lista de correcciones y endur
 | T6 | #435 | Cabeceras de seguridad y CSP en el nginx del frontend |
 | T7 | #437 | CI, Dockerfile y acciones migrados a Node 24 |
 | T8 | #439 | Higiene previa al release: puertos en loopback, `HEAD` en GET públicos, configuración obsoleta eliminada |
-| T9 a T12 | #440 a #443 | Versión 1.0.1, PDFs reproducibles, claridad de estado en documentos de entrega y esta bitácora (pendientes de merge) |
+| T9 | #445 | Versión 1.0.1 alineada en backend, frontend, e2e y OpenAPI |
+| T10 | #448 | Toolchain reproducible de PDFs con manifiesto `SOURCES.sha256` |
+| T11 | #446 | Claridad de estado: avisos de registro histórico y tabla configurado vs comprobado |
+| T12 | #449 | Bitácora del proyecto y rediseño editorial de portadas y tablas |
+| T13 | #447 | Cierre de reservas: pass-through de `TOMCAT_INTERNAL_PROXIES`, regex de assets en nginx y gitignore |
 
 ## 7. Decisiones
 
@@ -113,6 +116,7 @@ Una revisión general de `main@83cda57` produjo la lista de correcciones y endur
 | **D2:** límite de login por email en 30 por minuto | Evita que un atacante bloquee la cuenta de otra persona; el límite por IP se alcanza antes | T2 |
 | **D3:** largo máximo de URL de imagen en 255, sin migración V14 | Alinea la validación con la columna `VARCHAR(255)` sin tocar el esquema | T3 |
 | **D6:** cabeceras estándar y CSP con `img-src 'self' data: blob: https:` | Protección base del navegador sin romper la carga de imágenes | T6 |
+| **D7:** regex de assets en nginx y proxies en T13; `Category.imageUrl` diferido | Resuelve las reservas de despliegue sin introducir una migración V14 antes del release | T13 |
 | H5 pospuesto a después de v1.0.1 | Cambiar el usuario del contenedor de desarrollo podía desestabilizar los permisos de los volúmenes locales | T8 |
 | Política offline para autochequeos | Maven y Testcontainers no descargan ni sustituyen imágenes; es una regla de conveniencia, no un sandbox | `offline-safetyunit.md` |
 
@@ -123,6 +127,7 @@ Las decisiones que cambian contratos o comportamiento visible se consultaron ant
 - **Alcance del producto:** pasarela de pagos, mensajería interna y mapas interactivos.
 - **N6:** depende de la configuración del proxy TLS externo.
 - **H5:** contenedor de desarrollo como root sobre `./backend`, pospuesto por la razón de la sección 7.
+- **Migración V14 para `Category.imageUrl`:** en base es `VARCHAR(2048)` (`V6`) mientras `HttpsImageUrlValidator` valida hasta 255; se difiere para no alterar el esquema antes del corte.
 - **N10 a N19, H7 y H8:** hallazgos menores y limpieza local, reservados para issues posteriores. El detalle de cada uno está en el seguimiento interno de la auditoría, no en este repositorio.
 
 ## 9. Límites conocidos
@@ -135,6 +140,7 @@ Esta tabla separa lo que el repositorio configura de lo que se comprobó en un e
 | Entrega real de correo | Outbox y SMTP configurables, desactivados por defecto | No comprobado |
 | Backups externos | Scripts y runbooks para MariaDB y uploads | No comprobado |
 | Imágenes canónicas | Montaje local opcional; los JPEG maestros no están en el repositorio | No comprobado |
+| Longitud URL de categoría | Base admite 2048 (`V6`), validador restringe a 255 sin migración V14 | Restringido por API, esquema diferido |
 
 Los informes anteriores a v1.0.0, como `auditoria-estado-actual.md` y `current-main.md`, son registros históricos y no describen el estado actual.
 
