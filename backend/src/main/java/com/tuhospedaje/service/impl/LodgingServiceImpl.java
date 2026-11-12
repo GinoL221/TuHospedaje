@@ -10,6 +10,7 @@ import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.entity.Policy;
+import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
@@ -102,10 +103,10 @@ public class LodgingServiceImpl implements LodgingService {
     @Transactional
     public LodgingDTO save(LodgingDTO dto) {
         if (lodgingRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Ya existe un alojamiento con el nombre: " + dto.getName());
+            throw new DuplicateResourceException("error.lodging.duplicate_name", dto.getName());
         }
         if (dto.getEmail() != null && lodgingRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Ya existe un alojamiento con el email: " + dto.getEmail());
+            throw new DuplicateResourceException("error.lodging.duplicate_email", dto.getEmail());
         }
         Lodging lodging = dto.toEntity();
         lodging.setCategory(resolveCategory(dto.getCategoryId()));
@@ -122,11 +123,11 @@ public class LodgingServiceImpl implements LodgingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + dto.getId()));
         if (dto.getName() != null && !dto.getName().equals(lodging.getName())
                 && lodgingRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Ya existe un alojamiento con el nombre: " + dto.getName());
+            throw new DuplicateResourceException("error.lodging.duplicate_name", dto.getName());
         }
         if (dto.getEmail() != null && !dto.getEmail().equals(lodging.getEmail())
                 && lodgingRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Ya existe un alojamiento con el email: " + dto.getEmail());
+            throw new DuplicateResourceException("error.lodging.duplicate_email", dto.getEmail());
         }
         if (dto.getVersion() != null && !dto.getVersion().equals(lodging.getVersion())) {
             throw new ObjectOptimisticLockingFailureException(Lodging.class, dto.getId());

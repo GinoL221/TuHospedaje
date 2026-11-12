@@ -60,6 +60,7 @@ public class LodgingController {
             @ApiResponse(responseCode = "201", description = "Lodging created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A lodging with that name or email already exists", content = @Content),
     })
     public ResponseEntity<LodgingDTO> create(@Valid @RequestBody LodgingDTO dto) {
         LodgingDTO saved = lodgingService.save(dto);
@@ -75,6 +76,7 @@ public class LodgingController {
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A lodging with that name or email already exists", content = @Content),
     })
     public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @Valid @RequestBody LodgingDTO dto) {
         dto.setId(id);

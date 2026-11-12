@@ -25,7 +25,9 @@ El mensaje sale de `messages_es.properties` o `messages.properties` según el he
 
 ## 409 por duplicados
 
-Crear o renombrar una categoría, característica o política con un nombre que ya existe responde 409 Conflict, no 400. El mensaje sale de `messages_es.properties` o `messages.properties` según `Accept-Language` e incluye el nombre rechazado. El registro con un email ya usado también responde 409, con `code: "duplicate_email"` en el cuerpo.
+Crear o renombrar una categoría, característica o política con un nombre que ya existe responde 409 Conflict, no 400. Crear un alojamiento con un nombre o un email que ya existe, o actualizarlo a un nombre o email que otro alojamiento ya tiene, también responde 409. El mensaje sale de `messages_es.properties` o `messages.properties` según `Accept-Language` e incluye el nombre o el email rechazado. El registro con un email ya usado también responde 409, con `code: "duplicate_email"` en el cuerpo.
+
+Actualizar un alojamiento manteniendo su propio nombre y su propio email sigue siendo válido: el control solo rechaza el valor cuando otro alojamiento ya lo tiene.
 
 Dos reglas de negocio siguen en 400 y solo cambiaron a mensajes localizados: eliminar una categoría que tiene alojamientos y puntuar un alojamiento sin una estadía finalizada.
 
