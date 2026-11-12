@@ -189,6 +189,18 @@ Guest-facing responsive behavior remains subject to the device criteria in the o
 | **Implemented** | Route chunk failures provide a manual page-reload recovery action. |
 | **Implemented** | Primary CTAs use petroleum `#264653` with light `#F4F4F9` text (`9.19:1`), dark `#333333` hover/active surfaces with light text (`11.52:1`), and an outlined disabled state (`9.19:1`). Orange is reserved as an action accent (active borders, focus ring offsets, badges, highlights, rating stars, calendar selections), with artificial button bottom stripes removed to eliminate UI anti-patterns. The `3px` water-green focus indicator has `3.03:1` contrast against both the default CTA and adjacent light surface, and `3.80:1` against hover/active. Shared, authentication, booking, search, reservation, review, and Admin selectors use the semantic contract; focused contract and behavior tests, full frontend lint, and the production build pass. |
 | **Implemented** | Home search uses an accessible petroleum/light action pair, Spanish-localized date pickers, and a Home-scoped calendar surface with keyboard-visible states and practical day/navigation targets. Login and registration reserve the fixed Header plus stable top and bottom spacing, use natural vertical flow, and keep the Footer after content on short viewports. |
+| **Implemented** | `LodgingsTable` renders the Admin lodging table with an empty state, sortable `Id`/`Nombre` columns, edit/delete row actions, and a `Pagination` footer; `AdminLodgings.test.jsx` pins the row actions, header-click sorting, and paginated endpoints, and no focused component test exists. |
+| **Implemented** | `SortableTh` is a keyboard-reachable header cell (`tabIndex` plus Enter) that declares `aria-sort` and a direction glyph; its sorting effect is pinned through `AdminLodgings.test.jsx` ("fetches and renders sorted server data when a sortable header is clicked"), and it has no focused component test. |
+| **Implemented** | `IconPicker` opens a fixed-position portal popover with query filtering over the `ICON_MAP` keys, a `role="listbox"` selection grid, and Escape/outside-click/scroll closing; `AdminFeatures.test.jsx` pins the trigger-and-select flow, and no focused component test exists. |
+| **Partially implemented** | `Icons/Icon` maps a name to its `ICON_MAP` Lucide component and falls back to a text glyph for unknown names; it is exercised but not asserted by any focused or indirect test. |
+| **Implemented** | `Header` renders the fixed navigation with the official isologotype, a hamburger-controlled menu, and auth-aware destinations (profile modal, favorites, reservations, admin links, logout) while publishing header-height clearance variables through a `ResizeObserver`; `Header.test.jsx` pins the auth-state destinations and menu behavior and `HeaderCsrf.test.jsx` pins the logout-failure message. |
+| **Implemented** | `Footer` renders the isologotype, copyright, Facebook/Instagram links, and mounts the single fixed WhatsApp action; `Footer.test.jsx` pins the brand asset, destinations, and WhatsApp mounting. |
+| **Implemented** | `Pagination` renders first/previous/next/last controls with a 1-indexed page indicator, disables out-of-range controls, and renders nothing for a single page; `Pagination.test.jsx` pins each of these behaviors. |
+| **Implemented** | `UserProfileModal` is a dialog with initial/return focus, focus containment, Escape and overlay close, user details, and a guarded welcome-email resend with status feedback; `UserProfileModal.test.jsx` pins the resend flow, Escape close, and focus trap, and `touchTargetsContract.test.js` pins its `44px` close target. |
+| **Implemented** | `WelcomeEmailBanner` announces the welcome email through `role="status"` with `aria-live="polite"`, offers a guarded resend with scheduled/pending/cooldown/error feedback, and supports dismissal; `WelcomeEmailBanner.test.jsx` pins the resend states. |
+| **Implemented** | `/booking/confirmation` (under `RequireAuth`) renders the reservation summary from router state and redirects to `/` with `replace` when the state is missing; `BookingConfirmation.test.jsx` pins the content, links, and redirect, `reservationPathContract.test.jsx` pins the replace navigation and surface tokens, and `landmarksSemantic.test.jsx` pins its single `main` landmark. |
+| **Implemented** | `/unauthorized` shows a Spanish permission message with a link back home; `Unauthorized.test.jsx` pins the message and destination, `landmarksSemantic.test.jsx` pins its single `main` landmark, and `accountSharedAuditContract.test.jsx` pins the message text at source level. |
+| **Implemented** | `/my-reservations` (under `RequireAuth`) lists the signed-in user's reservations with computed nights, status badges, guarded cancellation with inline errors, and an empty state; `MyReservationsPage.test.jsx` pins the list, cancellation, and empty-state flows, `typographyContract.test.js` pins its H1 tokens, and `designTokensContract.test.js` maps its status colors to feedback tokens. |
 
 ### Interaction and navigation: preservation rules and proposals
 
@@ -217,6 +229,23 @@ These technical requirements extend the brand manual; its section 8 already spec
 - Respect `prefers-reduced-motion`; current product-wide coverage is partial.
 
 SearchResults, ConfirmDialog, ShareModal, and LodgingFormModal have the local accessibility coverage recorded above. Product-wide focus, touch-target, error-association, and reduced-motion coverage remains partial.
+
+### Contract test files
+
+The repository enforces part of the recorded contracts through automated checks under `frontend/src/`. These tests parse CSS and source text directly with the helpers in `src/test/cssContractUtils.js`; they verify source conventions and computed contrast pairs, not rendered output or browser behavior.
+
+| File | What it enforces |
+|---|---|
+| `designTokensContract.test.js` | Pins `UserProfileModal`, Admin form errors, and `MyReservationsPage` status colors to semantic and `--feedback-*` tokens instead of hardcoded hex values. |
+| `adminSurfaceContract.test.js` | Keeps the Admin top bar on the light raised surface with petroleum AA text, allows horizontal content scrolling, and collapses the sidebar on narrow viewports. |
+| `publicShellContract.test.js` | Pins the shared shell tokens, fixed header, scroll-clearance variables, layer z-index roles, and style load order across `App.css`, `layout.css`, and the entry files. |
+| `reservationPathContract.test.jsx` | Keeps gallery, ProductDetail, Booking, confirmation, and reviews surfaces on semantic tokens, with mobile card containment and page titles below the fixed header. |
+| `typographyContract.test.js` | Pins the semantic H1/H2/Body/Label/Caption scale and the explicit Body baseline in `App.css`, then applies the H1/H2 tokens to the verified page titles. |
+| `touchTargetsContract.test.js` | Enforces `44x44px` targets for cancel/confirm, pagination, and modal-close controls and forbids duplicate `.btn-cancel` definitions outside `App.css`. |
+| `landmarksSemantic.test.jsx` | Asserts Login, Register, NotFound, Unauthorized, BookingConfirmation, and the Admin desktop shell render exactly one `main` landmark (Admin also one `aside` navigation). |
+| `visualIntegrationPolish.test.js` | Pins the Home search action states, Home-scoped calendar states and targets, weekday/month/city visuals, and fixed-header spacing on the authentication pages. |
+| `accountSharedAuditContract.test.jsx` | Keeps auth, favorites, and reservation surfaces on scoped semantic tokens with contrast-safe links and errors, pins the shared empty-state border, and gives the password visibility toggle a `44px` target. |
+| `primaryActionContrast.test.js` | Pins the `--action-primary-*` token values and verifies `>= 4.5:1` text contrast (and `>= 3:1` focus contrast) for primary actions, header links, and Admin table actions. |
 
 ## Known brand deviations
 

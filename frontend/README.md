@@ -60,6 +60,9 @@ El hook versionado de pre-commit conserva Gitleaks y aplica el formateo staged m
 - `src/hooks/`: hooks de autenticación, disponibilidad, búsqueda, tablas, recomendaciones y reservas.
 - `src/services/`: acceso HTTP y servicios de dominio.
 - `src/utils/`: utilidades compartidas.
+- `src/test/`: configuración y utilidades de las pruebas; `setup.js` carga `@testing-library/jest-dom/vitest` y `cssContractUtils.js` aporta helpers para leer archivos CSS y calcular contraste en los tests de contrato.
+- `src/assets/`: recursos empaquetados, con el CSS de autenticación (`css/auth.css`) y las imágenes oficiales de marca en `images/`.
+- `src/styles/datepicker.css`: estilos compartidos de los calendarios, importados desde `main.jsx`.
 
 ### Rutas principales
 
@@ -67,7 +70,7 @@ Las rutas se declaran en [`src/App.jsx`](src/App.jsx):
 
 - Públicas: `/`, `/search` (redirige al inicio conservando la búsqueda), `/login`, `/register`, `/lodgings/:id`, `/unauthorized` y la ruta de no encontrado.
 - Requieren autenticación: `/booking/:lodgingId`, `/booking/confirmation`, `/my-reservations` y `/favorites`.
-- Requiere rol ADMIN: `/administración`. `/admin` es un alias que redirige a la ruta canónica.
+- Requiere rol ADMIN: `/administración`. `/admin` es un alias que redirige a la ruta canónica. Ambas rutas quedan dentro del guard `RequireAdmin` (`App.jsx:82-89`), de modo que una visita anónima a `/admin` termina en `/login` y no en el panel. En esas rutas el shell público no se renderiza: `App.jsx:37-40` detecta los prefijos `/administración` y `/admin` y suprime `Header` y `Footer` (`App.jsx:49-51` y `App.jsx:94-96`).
 
 Pantallas principales:
 
@@ -91,11 +94,11 @@ Pantallas principales:
 - [`src/services/adminCatalogService.js`](src/services/adminCatalogService.js): operaciones del catálogo administrativo.
 - [`src/services/categoryService.js`](src/services/categoryService.js): categorías públicas.
 
-Los guards [`src/components/RequireAuth.jsx`](src/components/RequireAuth.jsx) y [`src/components/RequireAdmin.jsx`](src/components/RequireAdmin.jsx) protegen los recorridos que requieren sesión o rol.
+Los guards [`src/components/RequireAuth.jsx`](src/components/RequireAuth.jsx) y [`src/components/RequireAdmin.jsx`](src/components/RequireAdmin.jsx) protegen los recorridos que requieren sesión o rol. Mientras la sesión se resuelve, ambos muestran `RouteLoadingFallback` (`RequireAuth.jsx:9`, `RequireAdmin.jsx:11`). Una visita anónima a cualquier recorrido protegido va a `/login` con la ruta de origen en `from` y un mensaje para la persona usuaria (`RequireAuth.jsx:11-19`, `RequireAdmin.jsx:13-21`); quien inicia sesión sin rol `ADMIN` es enviado a `/unauthorized` (`RequireAdmin.jsx:25`).
 
 ## Testing y cobertura
 
-Vitest está configurado en [`vite.config.js`](vite.config.js) con entorno `jsdom`, globals, CSS deshabilitado para los tests y setup en [`src/test/setup.js`](src/test/setup.js). Los tests se mantienen junto al código, usando nombres `*.test.js` y `*.test.jsx`.
+Vitest está configurado en [`vite.config.js`](vite.config.js) con entorno `jsdom`, globals, CSS deshabilitado para los tests y setup en [`src/test/setup.js`](src/test/setup.js). Además limpia y restablece los mocks entre tests (`clearMocks` y `restoreMocks`, `vite.config.js:13-14`), aplica un `testTimeout` de 10000 ms (`vite.config.js:15`) y en CI impide tests marcados como `only` con `forbidOnly` (`vite.config.js:16`). Los tests se mantienen junto al código, usando nombres `*.test.js` y `*.test.jsx`.
 
 `npm run coverage` genera reportes de texto y HTML en `frontend/coverage/`. Los umbrales configurados son:
 
@@ -103,6 +106,8 @@ Vitest está configurado en [`vite.config.js`](vite.config.js) con entorno `jsdo
 - Branches: `80%`
 - Functions: `74%`
 - Lines: `87%`
+
+El cálculo excluye `src/main.jsx`, todo `src/test/` y los propios archivos de test (`vite.config.js:26-30`).
 
 Los escenarios Playwright no viven en este paquete: la configuración y los tests E2E están en el directorio hermano [`../e2e/`](../e2e/). El frontend README no afirma que esos escenarios puedan ejecutarse sin el backend, la base de datos y los servicios requeridos.
 
