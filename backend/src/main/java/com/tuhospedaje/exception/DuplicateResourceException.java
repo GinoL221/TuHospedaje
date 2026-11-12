@@ -1,8 +1,8 @@
 package com.tuhospedaje.exception;
 
 /**
- * Thrown when a create or update would produce a duplicate unique name (Category,
- * Feature, Policy). Carries a message key plus arguments so
+ * Thrown when a create or update would produce a duplicate unique name or email
+ * (Category, Feature, Policy, Lodging). Carries a message key plus arguments so
  * {@code GlobalExceptionHandler} can resolve a localized message through
  * {@code MessageSource} and answer 409 Conflict, instead of the former hardcoded
  * {@code IllegalArgumentException} text answered as 400.
