@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -64,8 +65,8 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User registered successfully",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error — missing or malformed fields", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Email address is already registered", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Validation error — missing or malformed fields", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Email address is already registered", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
@@ -79,7 +80,7 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login successful",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error — missing or malformed fields", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Validation error — missing or malformed fields", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/login")
@@ -122,6 +123,19 @@ public class AuthController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Resend the welcome email", description = "Re-schedules the account's welcome email if the "
+            + "resend cooldown allows it. CSRF is skipped only when the request carries no ACCESS_TOKEN "
+            + "cookie; an authenticated call without the X-XSRF-TOKEN header answers 403. Returns "
+            + "202 when the email was scheduled, 200 with a pending marker when one is already scheduled, and "
+            + "429 with a Retry-After header while the cooldown is active.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "202", description = "Welcome email scheduled for delivery", content = @Content),
+            @ApiResponse(responseCode = "200", description = "A welcome email is already scheduled and still pending",
+                    content = @Content(schema = @Schema(type = "object", example = "{\"status\": \"pending\"}"))),
+            @ApiResponse(responseCode = "429", description = "Resend cooldown active; wait the indicated seconds",
+                    headers = @Header(name = "Retry-After", description = "Seconds until the next resend is allowed"),
+                    content = @Content)
+    })
     @PostMapping("/welcome-email/resend")
     public ResponseEntity<?> resendWelcome(Authentication authentication) {
         WelcomeResendResult result = authService.resendWelcome(authentication.getName());
@@ -151,7 +165,7 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Refresh succeeded; both cookies rotated",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
             @ApiResponse(responseCode = "401", description = "Missing, invalid, expired, or reused refresh credential", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "429", description = "IP or family refresh rate limit exceeded", content = @Content)
+            @ApiResponse(responseCode = "429", description = "IP or family refresh rate limit exceeded", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(HttpServletRequest httpRequest) {
@@ -170,7 +184,7 @@ public class AuthController {
             + "cleared in this response so re-authentication is required on every device.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Password changed; all sessions revoked and caller's cookies cleared", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Wrong current password, or the new password fails validation", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Wrong current password, or the new password fails validation", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — authentication required or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/password")

@@ -51,10 +51,12 @@ El cambio no modifica el frontend ni el esquema de base de datos.
 ### 2.1. Flujo de Request (sin cambios estructurales)
 
 ```
-HTTP → JwtAuthenticationFilter → SecurityFilterChain
+HTTP → AuthRateLimitFilter / RefreshRateLimitFilter → JwtAuthenticationFilter → SecurityFilterChain
      → @RestController → Service (Interface + Impl)
      → JpaRepository → MariaDB
 ```
+
+Los dos filtros de rate limit (`AuthRateLimitFilter`, `RefreshRateLimitFilter`) se registran antes del `JwtAuthenticationFilter` en la cadena (`backend/src/main/java/com/tuhospedaje/configuration/SecurityConfig.java:135-137`), de modo que un intento bloqueado nunca llega a la validación de credenciales.
 
 Los cambios refuerzan cada capa sin alterar la estructura:
 

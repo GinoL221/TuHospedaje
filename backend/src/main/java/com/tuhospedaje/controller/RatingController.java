@@ -49,9 +49,9 @@ public class RatingController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Rating submitted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or user has no confirmed reservation for this lodging", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input or user has no confirmed reservation for this lodging", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — authentication required or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<RatingDTO> create(
             @AuthenticationPrincipal User user,

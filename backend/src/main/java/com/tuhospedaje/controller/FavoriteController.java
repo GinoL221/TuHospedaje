@@ -45,7 +45,7 @@ public class FavoriteController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lodging added to favorites", content = @Content),
             @ApiResponse(responseCode = "403", description = "Authentication required — access denied", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<Void> addFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
         userService.addFavorite(user.getId(), lodgingId);
@@ -62,7 +62,7 @@ public class FavoriteController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Lodging removed from favorites", content = @Content),
             @ApiResponse(responseCode = "403", description = "Authentication required — access denied", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<Void> removeFavorite(@AuthenticationPrincipal User user, @PathVariable Long lodgingId) {
         userService.removeFavorite(user.getId(), lodgingId);
@@ -75,7 +75,6 @@ public class FavoriteController {
             summary = "List favorite lodgings",
             description = "Returns the full list of lodgings the authenticated user has marked as favorites."
     )
-    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Favorite lodgings retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Authentication required — access denied", content = @Content(schema = @Schema(implementation = ApiError.class))),

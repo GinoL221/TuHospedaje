@@ -47,11 +47,7 @@ El Objetivo del Sprint 1 consistió en establecer las bases de la arquitectura d
 
 ### 2.1. Backend (Spring Boot)
 
-Se implementó una arquitectura en capas con un flujo unidireccional y desacoplado:
-
-```
-Controller → Service (Interface + Impl) → Repository → Entity / DTO
-```
+Se implementó una arquitectura en capas con un flujo unidireccional y desacoplado: `Controller → Service (Interface + Impl) → Repository → Entity / DTO`. El detalle vigente de esa arquitectura está en [backend-architecture.md](../backend-architecture.md); este reporte no la redefine.
 
 - **Desacoplamiento de Datos:** Intercambio de información gestionado mediante una entidad unificada `LodgingDTO` que encapsula la lógica de conversión mediante los métodos estáticos `toEntity()` y `fromEntity()`.
 - **Exposición de Imágenes:** El `LodgingDTO` expone `List<String> imageUrls` mapeado desde la relación `@OneToMany` con `LodgingImage`, permitiendo al frontend consumir las URLs sin acoplamiento a la entidad.

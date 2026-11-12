@@ -45,11 +45,7 @@ El Objetivo del Sprint 2 se centró en dotar a la plataforma de una infraestruct
 
 ### 2.1. Backend (Spring Boot + Spring Security 6)
 
-Se expandió la arquitectura base mediante el desacoplamiento de servicios y la incorporación del motor de seguridad reactiva por anotaciones:
-
-```
-Controller → Service (Interface + Impl) → Repository → Entity / DTO
-```
+Se expandió la arquitectura base mediante el desacoplamiento de servicios y la incorporación del motor de seguridad reactiva por anotaciones. El diagrama de capas vigente está en [backend-architecture.md](../backend-architecture.md): `Controller → Service (Interface + Impl) → Repository → Entity / DTO`; este reporte no lo redefine.
 
 #### Matriz de Componentes Introducidos:
 

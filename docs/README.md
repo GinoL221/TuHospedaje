@@ -30,6 +30,9 @@ Seguí este orden cuando necesites resolver una duda:
 - [Manual de identidad visual](diseno/manual-identidad.md)
 - [Sistema técnico de diseño](../DESIGN.md)
 - [Definición del proyecto, arquitectura y ADRs](markdown/project-definition.md)
+- [Arquitectura del backend — fuente única de verdad](markdown/backend-architecture.md)
+
+La arquitectura del backend se documenta con referencias `path:line` al código actual; ese documento es la descripción autoritativa y los informes históricos enlazan a él en lugar de redefinirla. Para la auto-verificación offline de la política de Testcontainers, leé [offline-safetyunit.md](markdown/offline-safetyunit.md).
 
 Estos documentos deben enlazar a su autoridad superior cuando traducen una decisión. No dupliques aquí sus reglas: usá el índice para encontrarlas.
 

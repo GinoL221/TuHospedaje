@@ -309,7 +309,7 @@ Al actualizar Playwright, actualizá también el pin exacto de `@playwright/test
 
 ## Documentación y recorridos
 
-- [`docs/markdown/delivery/current-main.md`](docs/markdown/delivery/current-main.md): entrada de la entrega académica. `main` es el entregable; los reportes históricos no aprueban una historia por sí solos.
+- [`docs/markdown/delivery/current-main.md`](docs/markdown/delivery/current-main.md): registro histórico de la entrega académica del corte `18d9898` (anterior a v1.0.0). No describe el `main` actual; el historial y las verificaciones ligadas a ese SHA viven aquí.
 - [`product.md`](product.md): resumen de alcance subordinado a los PDF originales; recorridos de demostración, excepción móvil de Admin e incrementos posteriores.
 - [`DESIGN.md`](DESIGN.md): traducción técnica de identidad, convenciones registradas y diferencias pendientes frente a los requisitos oficiales; no sustituye su aceptación.
 - [`docs/diseno/manual-identidad.md`](docs/diseno/manual-identidad.md): autoridad de identidad visual.

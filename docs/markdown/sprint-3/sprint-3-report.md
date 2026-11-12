@@ -43,11 +43,7 @@ Como mejoras complementarias, se implementó una galería de imágenes con modal
 
 ### 2.1. Backend (Spring Boot + Spring Security 6)
 
-Se expandió la arquitectura base con nuevos módulos y se refinaron los existentes:
-
-```
-Controller → Service (Interface + Impl) → Repository → Entity / DTO
-```
+Se expandió la arquitectura base con nuevos módulos y se refinaron los existentes. El diagrama de capas vigente está en [backend-architecture.md](../backend-architecture.md): `Controller → Service (Interface + Impl) → Repository → Entity / DTO`; este reporte no lo redefine.
 
 #### Matriz de Componentes Introducidos:
 

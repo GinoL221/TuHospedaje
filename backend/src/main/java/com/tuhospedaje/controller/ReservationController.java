@@ -55,10 +55,10 @@ public class ReservationController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Reservation created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or date validation error", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input or date validation error", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Date overlap with an existing confirmed reservation or concurrent update conflict", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Date overlap with an existing confirmed reservation or concurrent update conflict", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<ReservationResponse> create(
             @AuthenticationPrincipal User user,
@@ -74,11 +74,10 @@ public class ReservationController {
             description = "Returns a reservation by its ID. To prevent IDOR, non-owner users " +
                           "receive a 404 instead of 403 — the resource existence is not disclosed."
     )
-    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservation found"),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Reservation not found or not owned by the requester", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Reservation not found or not owned by the requester", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<ReservationResponse> getById(
             @PathVariable Long id,
@@ -92,10 +91,10 @@ public class ReservationController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservation cancelled or already cancelled"),
-            @ApiResponse(responseCode = "400", description = "Cancellation deadline passed", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Cancellation deadline passed", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Reservation not found or not owned", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Concurrent update conflict", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Reservation not found or not owned", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Concurrent update conflict", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<ReservationResponse> cancel(
             @PathVariable Long id,
@@ -109,7 +108,6 @@ public class ReservationController {
             summary = "List my reservations",
             description = "Returns all reservations belonging to the authenticated user, ordered by check-in date descending."
     )
-    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Reservations retrieved successfully"),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -125,10 +123,9 @@ public class ReservationController {
             summary = "List reservations for Admin",
             description = "Returns server-paginated reservation rows for the Admin table."
     )
-    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin reservation page returned"),
-            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })

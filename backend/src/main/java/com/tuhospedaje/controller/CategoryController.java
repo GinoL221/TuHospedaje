@@ -43,9 +43,9 @@ public class CategoryController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Category created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "409", description = "A category with that name already exists", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A category with that name already exists", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<CategoryDTO> create(@Validated(CategoryValidationGroups.OnCreate.class) @RequestBody CategoryDTO dto) {
         CategoryDTO saved = categoryService.save(dto);
@@ -65,7 +65,7 @@ public class CategoryController {
     @Operation(summary = "Get category by ID", description = "Returns a single category by its unique identifier.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Category found"),
-            @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Category not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<CategoryDTO> findById(@PathVariable Long id) {
         return categoryService.findById(id)
@@ -79,10 +79,10 @@ public class CategoryController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Category updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "A category with that name already exists", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Category not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A category with that name already exists", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Validated(CategoryValidationGroups.OnUpdate.class) @RequestBody CategoryDTO dto) {
         dto.setId(id);
@@ -96,8 +96,9 @@ public class CategoryController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Category deleted successfully", content = @Content),
+            @ApiResponse(responseCode = "400", description = "The category still has lodgings assigned", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Category not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         categoryService.delete(id);
