@@ -1,13 +1,20 @@
 """Validate repository hygiene and .gitignore rules using git check-ignore."""
 
 import json
+import re
 import subprocess
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 GITIGNORE = ROOT / ".gitignore"
+
+
+def _require_match(pattern: re.Pattern[str], text: str, message: str) -> re.Match[str]:
+    match = pattern.search(text)
+    if match is None:
+        raise AssertionError(message)
+    return match
 
 
 class RepoHygieneTest(unittest.TestCase):
@@ -48,21 +55,53 @@ class RepoHygieneTest(unittest.TestCase):
         self.assertTrue(self.is_ignored("e2e/playwright-report/index.html"), "e2e/playwright-report/ must be ignored")
 
     def test_project_versions_are_aligned_to_release(self):
-        # backend pom.xml
+        expected = "1.0.1"
+
+        # backend pom.xml (the release manifest)
         pom = (ROOT / "backend/pom.xml").read_text(encoding="utf-8")
-        self.assertRegex(pom, r"<artifactId>backend</artifactId>\s*<version>1\.0\.1</version>")
+        pom_match = _require_match(
+            re.compile(r"<artifactId>backend</artifactId>\s*<version>([^<]+)</version>"),
+            pom,
+            "backend/pom.xml must declare the project version after the backend artifactId",
+        )
+        pom_version = pom_match.group(1)
 
         # frontend package.json
         frontend_pkg = json.loads((ROOT / "frontend/package.json").read_text(encoding="utf-8"))
-        self.assertEqual(frontend_pkg.get("version"), "1.0.1")
+        self.assertEqual(frontend_pkg.get("version"), pom_version)
 
         # e2e package.json
         e2e_pkg = json.loads((ROOT / "e2e/package.json").read_text(encoding="utf-8"))
-        self.assertEqual(e2e_pkg.get("version"), "1.0.1")
+        self.assertEqual(e2e_pkg.get("version"), pom_version)
 
-        # OpenApiConfig
+        # OpenApiConfig must read the version from the Spring property, not a Java literal
         openapi = (ROOT / "backend/src/main/java/com/tuhospedaje/openapi/OpenApiConfig.java").read_text(encoding="utf-8")
-        self.assertIn('.version("1.0.1")', openapi)
+        self.assertNotIn('.version("', openapi, "OpenApiConfig must not hardcode the release version in Java")
+        self.assertIn("${app.api-version", openapi, "OpenApiConfig must read the version from the app.api-version property")
+
+        # application.properties carries the release version; it must match the pom
+        props = (ROOT / "backend/src/main/resources/application.properties").read_text(encoding="utf-8")
+        props_match = _require_match(
+            re.compile(r"^app\.api-version=(.+)$", re.MULTILINE),
+            props,
+            "application.properties must define app.api-version",
+        )
+        self.assertEqual(props_match.group(1).strip(), pom_version,
+                         "app.api-version in application.properties must match the version in backend/pom.xml")
+
+        # the test tree REPLACES application.properties on the test classpath, so it must
+        # carry the same version — otherwise every @SpringBootTest publishes a stale one
+        test_props = (ROOT / "backend/src/test/resources/application.properties").read_text(encoding="utf-8")
+        test_props_match = _require_match(
+            re.compile(r"^app\.api-version=(.+)$", re.MULTILINE),
+            test_props,
+            "backend/src/test/resources/application.properties must define app.api-version",
+        )
+        self.assertEqual(test_props_match.group(1).strip(), pom_version,
+                         "app.api-version in the test tree must match the version in backend/pom.xml")
+
+        # guard against the expected release drifting silently
+        self.assertEqual(pom_version, expected)
 
 
 if __name__ == "__main__":

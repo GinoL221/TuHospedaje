@@ -49,7 +49,7 @@ public class PolicyController {
     @Operation(summary = "Get policy by ID", description = "Returns a single policy by its unique identifier.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Policy found"),
-            @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PolicyDTO> findById(@PathVariable Long id) {
         return policyService.findById(id)
@@ -63,9 +63,9 @@ public class PolicyController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Policy created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "409", description = "A policy with that name already exists", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A policy with that name already exists", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PolicyDTO> create(@Valid @RequestBody PolicyDTO dto) {
         PolicyDTO saved = policyService.save(dto);
@@ -78,10 +78,10 @@ public class PolicyController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Policy updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "A policy with that name already exists", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A policy with that name already exists", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PolicyDTO> update(@PathVariable Long id, @Valid @RequestBody PolicyDTO dto) {
         dto.setId(id);
@@ -96,7 +96,7 @@ public class PolicyController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Policy deleted successfully", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         policyService.delete(id);

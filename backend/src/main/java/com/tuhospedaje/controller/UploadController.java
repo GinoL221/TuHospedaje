@@ -45,10 +45,10 @@ public class UploadController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Image stored successfully — returns the /uploads/ URL and the stored file name"),
-            @ApiResponse(responseCode = "400", description = "Empty file, or a content type outside JPEG/PNG/WebP/GIF", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Empty file, or a content type outside JPEG/PNG/WebP/GIF", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "413", description = "File exceeds spring.servlet.multipart.max-file-size", content = @Content),
-            @ApiResponse(responseCode = "500", description = "The image could not be written to the storage directory", content = @Content),
+            @ApiResponse(responseCode = "413", description = "File exceeds spring.servlet.multipart.max-file-size", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "500", description = "The image could not be written to the storage directory", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<UploadResult> upload(@RequestParam("file") MultipartFile file) {
         try {

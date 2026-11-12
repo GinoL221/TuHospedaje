@@ -58,9 +58,9 @@ public class LodgingController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lodging created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "409", description = "A lodging with that name or email already exists", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A lodging with that name or email already exists", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<LodgingDTO> create(@Valid @RequestBody LodgingDTO dto) {
         LodgingDTO saved = lodgingService.save(dto);
@@ -73,10 +73,10 @@ public class LodgingController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lodging updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "A lodging with that name or email already exists", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A lodging with that name or email already exists", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<LodgingDTO> update(@PathVariable Long id, @Valid @RequestBody LodgingDTO dto) {
         dto.setId(id);
@@ -88,6 +88,7 @@ public class LodgingController {
     @Operation(summary = "List lodgings", description = "Returns all lodgings. Supports optional pagination (?page=0&size=10) and category filtering (?category=1).")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lodgings retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "A pagination or filter parameter is out of range", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<?> findAll(
             @RequestParam(required = false) @Min(value = 0, message = "{error.page.negative}") Integer page,
@@ -104,6 +105,11 @@ public class LodgingController {
 
     @GetMapping("/recommendations")
     @Operation(summary = "Get stable random recommendations", description = "Returns a deterministic recommendation page for a client seed and catalog revision.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Recommendation page returned",
+                    content = @Content(schema = @Schema(implementation = RecommendationPageResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid seed, page or size parameters", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     public ResponseEntity<RecommendationPageResponse> recommendations(
             @RequestParam @Pattern(regexp = "[A-Za-z0-9_-]{16,64}") String seed,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "{error.page.negative}") int page,
@@ -124,10 +130,9 @@ public class LodgingController {
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List lodgings for Admin", description = "Returns server-paginated lodging rows for the Admin table.")
-    @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Admin lodging page returned"),
-            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<PageResponse<LodgingDTO>> adminPage(
@@ -143,7 +148,7 @@ public class LodgingController {
     @Operation(summary = "Get lodging by ID", description = "Returns a single lodging by its unique identifier.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lodging found"),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<LodgingDTO> findById(@PathVariable Long id) {
         return lodgingService.findById(id)
@@ -157,8 +162,9 @@ public class LodgingController {
     @SecurityRequirement(name = "csrfToken")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Lodging deleted successfully", content = @Content),
+            @ApiResponse(responseCode = "400", description = "The lodging still has reservations assigned", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         lodgingService.delete(id);
@@ -169,7 +175,7 @@ public class LodgingController {
     @Operation(summary = "Search lodgings", description = "Filters lodgings by city, check-in/check-out dates, number of guests, one or more categories, and price range, with pagination (?page=0&size=9 by default). All filter parameters are optional.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Search results returned as a paginated wrapper ({lodgings, currentPage, totalItems, totalPages})"),
-            @ApiResponse(responseCode = "400", description = "Invalid pagination parameters (e.g. negative page)", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination parameters (e.g. negative page)", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<LodgingSearchResponse> search(
             @RequestParam(required = false) String city,
@@ -211,7 +217,7 @@ public class LodgingController {
     @Operation(summary = "Check lodging availability", description = "Returns availability status for a lodging in the given date range.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Availability information returned"),
-            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Lodging not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
     })
     public ResponseEntity<AvailabilityResponse> availability(
             @PathVariable Long id,

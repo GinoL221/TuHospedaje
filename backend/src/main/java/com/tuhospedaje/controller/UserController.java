@@ -30,7 +30,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "User management — requires ADMIN role")
-@SecurityRequirement(name = "csrfToken")
 public class UserController {
 
     private final UserService userService;
@@ -55,11 +54,12 @@ public class UserController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Role updated successfully",
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error — role field is missing or blank", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Validation error — role field is missing or blank", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — unauthenticated, ADMIN role required, or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content),
-            @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be demoted", content = @Content)
+            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be demoted", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
+    @SecurityRequirement(name = "csrfToken")
     @PutMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateRole(
@@ -77,9 +77,10 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Account status updated successfully",
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
             @ApiResponse(responseCode = "403", description = "Access denied — unauthenticated, ADMIN role required, or missing/invalid CSRF token", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content),
-            @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be disabled", content = @Content)
+            @ApiResponse(responseCode = "404", description = "User not found for the given ID", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "The last enabled administrator cannot be disabled", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
+    @SecurityRequirement(name = "csrfToken")
     @PatchMapping("/{id}/enabled")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> setEnabled(
