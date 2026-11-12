@@ -2,6 +2,7 @@ package com.tuhospedaje.feature;
 
 import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.entity.Feature;
+import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.service.impl.FeatureServiceImpl;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -57,7 +60,14 @@ class FeatureServiceImplTest {
 
         when(featureRepository.existsByNameIgnoreCase("WiFi")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> featureService.save(dto));
+        // T1 contract (#452): a duplicate feature name is a conflict, not a malformed
+        // request — the service throws the key-carrying DuplicateResourceException with
+        // the rejected name as its MessageSource argument; the handler maps it to 409.
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> featureService.save(dto));
+        assertEquals("error.feature.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"WiFi"}, ex.getArgs());
     }
 
     @Test
@@ -161,7 +171,11 @@ class FeatureServiceImplTest {
         when(featureRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(featureRepository.findByNameIgnoreCase("WiFi Premium")).thenReturn(conflicting);
 
-        assertThrows(IllegalArgumentException.class, () -> featureService.update(input));
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> featureService.update(input));
+        assertEquals("error.feature.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"WiFi Premium"}, ex.getArgs());
     }
 
     @Test

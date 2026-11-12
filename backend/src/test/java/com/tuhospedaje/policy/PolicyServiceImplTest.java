@@ -2,6 +2,7 @@ package com.tuhospedaje.policy;
 
 import com.tuhospedaje.dto.policy.PolicyDTO;
 import com.tuhospedaje.entity.Policy;
+import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.service.impl.PolicyServiceImpl;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -61,7 +64,14 @@ class PolicyServiceImplTest {
 
         when(policyRepository.existsByName("Check-in")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> policyService.save(dto));
+        // T1 contract (#452): a duplicate policy name is a conflict, not a malformed
+        // request — the service throws the key-carrying DuplicateResourceException with
+        // the rejected name as its MessageSource argument; the handler maps it to 409.
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> policyService.save(dto));
+        assertEquals("error.policy.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Check-in"}, ex.getArgs());
     }
 
     @Test
@@ -191,7 +201,11 @@ class PolicyServiceImplTest {
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(policyRepository.existsByName("Check-out")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> policyService.update(input));
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> policyService.update(input));
+        assertEquals("error.policy.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Check-out"}, ex.getArgs());
     }
 
     @Test

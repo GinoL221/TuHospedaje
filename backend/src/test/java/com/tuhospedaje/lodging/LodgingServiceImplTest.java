@@ -7,6 +7,7 @@ import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.exception.ResourceNotFoundException;
+import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -28,6 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -62,11 +65,16 @@ class LodgingServiceImplTest {
     }
 
     @Test
-    void shouldThrowWhenSaveDuplicateName() {
+    void shouldThrowKeyCarryingDuplicateResourceWhenSaveDuplicateName() {
         LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
         when(lodgingRepository.existsByName(dto.getName())).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> lodgingService.save(dto));
+        // The controller contract maps this key-carrying exception to a localized 409.
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.save(dto));
+        assertEquals("error.lodging.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Gran Hotel"}, ex.getArgs());
     }
 
     @Test
@@ -118,7 +126,7 @@ class LodgingServiceImplTest {
     }
 
     @Test
-    void shouldRejectDuplicateEmailOnUpdate() {
+    void shouldThrowKeyCarryingDuplicateResourceWhenUpdateDuplicateEmail() {
         Lodging existing = lodging(1L, "Hotel");
         existing.setEmail("old@test.com");
         LodgingDTO dto = lodgingDto("Hotel", "new@test.com");
@@ -126,11 +134,16 @@ class LodgingServiceImplTest {
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(lodgingRepository.existsByEmail("new@test.com")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> lodgingService.update(dto));
+        // The controller contract maps this key-carrying exception to a localized 409.
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.update(dto));
+        assertEquals("error.lodging.duplicate_email", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"new@test.com"}, ex.getArgs());
     }
 
     @Test
-    void shouldRejectDuplicateNameOnUpdate() {
+    void shouldThrowKeyCarryingDuplicateResourceWhenUpdateDuplicateName() {
         Lodging existing = lodging(1L, "Hotel Antiguo");
         existing.setEmail("old@test.com");
         LodgingDTO dto = lodgingDto("Hotel Existente", "old@test.com");
@@ -138,7 +151,12 @@ class LodgingServiceImplTest {
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(lodgingRepository.existsByName("Hotel Existente")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> lodgingService.update(dto));
+        // The controller contract maps this key-carrying exception to a localized 409.
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.update(dto));
+        assertEquals("error.lodging.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Hotel Existente"}, ex.getArgs());
     }
 
     @Test

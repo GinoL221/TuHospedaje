@@ -18,6 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -92,7 +95,7 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenCreatingDuplicateFeature() throws Exception {
+    void shouldReturnConflictWhenCreatingDuplicateFeature() throws Exception {
         Feature existing = new Feature();
         existing.setName("FT-Cochera");
         existing.setIcon("car-icon");
@@ -104,13 +107,77 @@ class FeatureControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/features")
+                        .locale(Locale.forLanguageTag("es"))
                         .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una característica con el nombre: FT-Cochera"));
+
+        mockMvc.perform(post("/api/features")
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A feature with the name FT-Cochera already exists."));
+
+        // The rejected request must leave stored data unchanged.
+        assertEquals(1, featureRepository.count());
+    }
+
+    @Test
+    void shouldReturnConflictWhenUpdatingFeatureWithDuplicateName() throws Exception {
+        Feature first = new Feature();
+        first.setName("FT-WiFi-Clash");
+        first.setIcon("wifi-icon");
+        Feature savedFirst = featureRepository.save(first);
+
+        Feature second = new Feature();
+        second.setName("FT-Cochera-Clash");
+        second.setIcon("car-icon");
+        Feature savedSecond = featureRepository.save(second);
+
+        FeatureDTO request = new FeatureDTO();
+        request.setName("FT-Cochera-Clash");
+        request.setIcon("wifi-icon");
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/features/{id}", savedFirst.getId())
+                        .locale(Locale.forLanguageTag("es"))
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una característica con el nombre: FT-Cochera-Clash"));
+
+        mockMvc.perform(put("/api/features/{id}", savedFirst.getId())
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A feature with the name FT-Cochera-Clash already exists."));
+
+        // The rejected request must leave stored data unchanged.
+        assertEquals("FT-WiFi-Clash", featureRepository.findById(savedFirst.getId()).orElseThrow().getName());
+        assertEquals("FT-Cochera-Clash", featureRepository.findById(savedSecond.getId()).orElseThrow().getName());
     }
 
     @Test

@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,7 +166,7 @@ class PolicyControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenCreatingDuplicatePolicy() throws Exception {
+    void shouldReturnConflictWhenCreatingDuplicatePolicy() throws Exception {
         Policy existing = new Policy();
         existing.setName("PL-Duplicate");
         existing.setDescription("Duplicada");
@@ -179,13 +180,82 @@ class PolicyControllerIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie();
         mockMvc.perform(post("/api/policies")
+                        .locale(Locale.forLanguageTag("es"))
                         .cookie(accessCookie(adminAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una política con el nombre: PL-Duplicate"));
+
+        mockMvc.perform(post("/api/policies")
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A policy with the name PL-Duplicate already exists."));
+
+        // The rejected request must leave stored data unchanged (this class does not
+        // roll back, so count only the rejected name instead of the whole table).
+        assertThat(policyRepository.findAll().stream()
+                .filter(p -> p.getName().equals("PL-Duplicate")).count()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldReturnConflictWhenUpdatingPolicyWithDuplicateName() throws Exception {
+        Policy base = new Policy();
+        base.setName("PL-Update-Base");
+        base.setDescription("Base");
+        base.setIcon("fa-solid fa-clock");
+        Policy savedBase = policyRepository.save(base);
+
+        Policy other = new Policy();
+        other.setName("PL-Update-Clash");
+        other.setDescription("Clash");
+        other.setIcon("fa-solid fa-ban");
+        Policy savedOther = policyRepository.save(other);
+
+        PolicyDTO request = new PolicyDTO();
+        request.setName("PL-Update-Clash");
+        request.setDescription("Renombrada");
+        request.setIcon("fa-solid fa-clock");
+
+        Cookie csrfCookie = obtainCsrfCookie();
+        mockMvc.perform(put("/api/policies/{id}", savedBase.getId())
+                        .locale(Locale.forLanguageTag("es"))
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una política con el nombre: PL-Update-Clash"));
+
+        mockMvc.perform(put("/api/policies/{id}", savedBase.getId())
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A policy with the name PL-Update-Clash already exists."));
+
+        // The rejected request must leave stored data unchanged.
+        assertThat(policyRepository.findById(savedBase.getId()).orElseThrow().getName()).isEqualTo("PL-Update-Base");
+        assertThat(policyRepository.findById(savedOther.getId()).orElseThrow().getName()).isEqualTo("PL-Update-Clash");
     }
 
     @Test

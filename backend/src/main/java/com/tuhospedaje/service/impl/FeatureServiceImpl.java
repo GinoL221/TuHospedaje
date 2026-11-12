@@ -2,6 +2,7 @@ package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.entity.Feature;
+import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.service.FeatureService;
@@ -25,7 +26,7 @@ public class FeatureServiceImpl implements FeatureService {
     @Transactional
     public FeatureDTO save(FeatureDTO dto) {
         if (featureRepository.existsByNameIgnoreCase(dto.getName())) {
-            throw new IllegalArgumentException("Ya existe una característica con el nombre: " + dto.getName());
+            throw new DuplicateResourceException("error.feature.duplicate_name", dto.getName());
         }
         Feature feature = dto.toEntity();
         Feature saved = featureRepository.save(feature);
@@ -39,7 +40,7 @@ public class FeatureServiceImpl implements FeatureService {
                 .orElseThrow(() -> new ResourceNotFoundException("Característica no encontrada con ID: " + dto.getId()));
         Optional<Feature> existingWithName = Optional.ofNullable(featureRepository.findByNameIgnoreCase(dto.getName()));
         if (existingWithName.isPresent() && !existingWithName.get().getId().equals(dto.getId())) {
-            throw new IllegalArgumentException("Ya existe una característica con el nombre: " + dto.getName());
+            throw new DuplicateResourceException("error.feature.duplicate_name", dto.getName());
         }
         feature.setName(dto.getName());
         feature.setIcon(dto.getIcon());
