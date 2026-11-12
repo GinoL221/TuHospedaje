@@ -1,0 +1,32 @@
+# Duplicates answer 409 with localized messages
+
+Issue #452, branch `fix/duplicate-conflict-409`. Derived from a read-only review of the backend (2026-11-12). Starts from `main@bd3bc43` (tag `v1.0.1`).
+
+## Specs
+
+- **S1.** Creating or renaming a Category, Feature or Policy with a name that already exists answers `409 Conflict`, not `400`. Covers the six `throw new IllegalArgumentException` in `CategoryServiceImpl` (create and update), `FeatureServiceImpl` and `PolicyServiceImpl`. The response body keeps the shape `{"error": "<localized message>", "status": 409}`.
+- **S2.** `DuplicateEmailException` (register with an email already in use) answers `409`, not `400`. The body keeps `code: "duplicate_email"`, so the frontend check in `RegisterPage.jsx:102` (`err.code === "duplicate_email"`) keeps working. The body `status` field becomes `409`.
+- **S3.** Two cases stay `400` and only get a localized message: deleting a category that has lodgings (`CategoryServiceImpl`, `"No se puede eliminar la categoría: N alojamiento(s)..."`) and rating a lodging without a finished stay (`RatingServiceImpl`). User decision: only duplicates move to 409.
+- **S4.** No hardcoded text in those eight `throw` sites. Each one carries a message key plus arguments (the duplicate name, the lodging count) resolved through `MessageSource`. Both `messages.properties` and `messages_es.properties` get the keys. With `Accept-Language: es` the message is Spanish; with `en` it is English. Today the category message is English and the feature and policy messages are Spanish, with no translation.
+- **S5.** Unchanged behavior: any other `IllegalArgumentException` (for example the invalid sort field in `LodgingQueryServiceImpl`) still answers `400` with `{error, status}`. The handler still resolves a message that is a plain key. `ReservationConflictException`, `LastEnabledAdminException` and the locking handlers keep their current `409` bodies.
+- **S6.** The contract documentation and OpenAPI agree with the code: `docs/markdown/api-error-contract.md` (the `code` row and the status list) and the `@ApiResponse` annotations of the affected controller endpoints (`400` becomes `409` where the cause is a duplicate). `OpenApiSecurityDocumentationIntegrationTest` must keep passing.
+- **S7.** Test first. For each of the 7 covered behaviors, a RED test is observed before the change: duplicate create and update for Category, Feature and Policy, and duplicate email. The existing `isBadRequest()` asserts that pin a duplicate are rewritten to `isConflict()`, not deleted. The asserts for S3 and S5 stay `400`. Each test asserts status, `error` text in `es` and `en`, and that the rejected request leaves stored data unchanged.
+- **S8.** The full backend suite passes (`JAVA_HOME=/usr/lib/jvm/java-17-openjdk ./mvnw -B clean verify`) and the frontend tests that touch `api.js` and `RegisterPage` pass. The fixture in `frontend/src/services/api.test.js` that mocks `duplicate_email` with `status: 400` is updated to `409`.
+- **S9.** Out of scope, listed so nobody widens the diff: the `@Autowired(required = false) Environment` in `JwtService` (separate follow-up, touches authentication), the package reorganization (`service/impl`, `configuration` vs `security`) and the DTO record-vs-class unification. Push, merge and release remain the user's decision, one by one.
+
+## Tasks
+
+| ID | Task | Specs | Route | Commit |
+| --- | --- | --- | --- | --- |
+| T1 ✅ | RED tests, `DuplicateResourceException`, handler, message keys, rewire the throw sites, docs, OpenAPI, frontend fixture | S1-S8 | one `gentle-ai-worker` (one unit of behavior: code, tests and docs together) | — |
+| T2 | Independent verification: this changes a contract others consume (risk item 3) | S1-S8 | `gentle-ai-verify`, verdict per `S#` | — |
+| T3 | Commit, push, PR (user confirms each) | S9 | inline | — |
+
+Allowed edit surfaces for T1: `backend/src/main/java/com/tuhospedaje/exception/`, `backend/src/main/java/com/tuhospedaje/service/impl/` (Category, Feature, Policy, Rating, Auth and `RegistrationPersistenceService` only), `backend/src/main/java/com/tuhospedaje/controller/` (annotations only), `backend/src/main/resources/messages.properties`, `backend/src/main/resources/messages_es.properties`, `backend/src/test/java/com/tuhospedaje/` (category, feature, policy, rating, auth, exception), `docs/markdown/api-error-contract.md`, `frontend/src/services/api.test.js`, and this file.
+
+## Log
+
+- **L1.** «como esta organizado el backend del proyecto? es consistente?» → «revisalas y arma un plan para solucioanrlo» → «lo pasamos a 409 si decis que es lo mas correcto».
+- **L2.** (evidence, 2026-11-12) The frontend reads no duplicate status: `api.js` only handles `401` and `204`, and the only duplicate check is `err.code === "duplicate_email"` (`RegisterPage.jsx:102`). Nothing in the frontend reads `409`. The 10 `isBadRequest()` asserts are in the Category, Feature, Policy and Rating tests, plus the duplicate case in `AuthControllerIntegrationTest.java:105-107`.
+- **L3.** (2026-11-12) The three `@Autowired` hits from the review: two are on constructors (`AuthServiceImpl`, `EmailOutboxServiceImpl`, the second has two constructors) and are correct. Only `JwtService` injects a field. Moved to S9 as a separate follow-up.
+- **L4.** (2026-11-12, T1 verification) RED observed for the 7 covered behaviors (7× `Status expected:<409> but was:<400>` + 1× unlocalized in-use message) before the change; GREEN observed after. Full `clean verify` in an isolated copy (`.pi/t1-409-verify/backend`, copy proven identical via `diff -rq --exclude=target`): **Tests run: 802, Failures: 0, Errors: 0, Skipped: 1 — BUILD SUCCESS, JaCoCo "All coverage checks have been met"**. `OpenApiSecurityDocumentationIntegrationTest` passed (2/2). In-place verify was impossible because `tuhospedaje-local-backend-1` runs `mvn spring-boot:run` as root and left root-owned remnants under `backend/target` (169 entries); the container was stopped and restarted by the user around the isolated run. The in-place `backend/target` root-owned remnants remain (pre-existing, out of scope). The 5 service-unit tests pinning the old duplicate contract were updated to expect `DuplicateResourceException`/`LocalizedIllegalArgumentException` with keys (S3/S5 contract preserved: `LocalizedIllegalArgumentException` still is an `IllegalArgumentException`); the rating controller test gained es/en message asserts on the not-eligible 400. Frontend 53/53, python tools 52/52.

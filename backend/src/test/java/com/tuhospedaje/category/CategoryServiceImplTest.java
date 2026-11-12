@@ -2,6 +2,8 @@ package com.tuhospedaje.category;
 
 import com.tuhospedaje.dto.category.CategoryDTO;
 import com.tuhospedaje.entity.Category;
+import com.tuhospedaje.exception.DuplicateResourceException;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -16,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -61,7 +65,14 @@ class CategoryServiceImplTest {
 
         when(categoryRepository.existsByName("Cabaña")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> categoryService.save(dto));
+        // T1 contract (#452): a duplicate category name is a conflict, not a malformed
+        // request — the service throws the key-carrying DuplicateResourceException with
+        // the rejected name as its MessageSource argument; the handler maps it to 409.
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> categoryService.save(dto));
+        assertEquals("error.category.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Cabaña"}, ex.getArgs());
     }
 
     @Test
@@ -190,7 +201,13 @@ class CategoryServiceImplTest {
         when(categoryRepository.findById(5L)).thenReturn(Optional.of(category));
         when(lodgingRepository.countByCategoryId(5L)).thenReturn(1L);
 
-        assertThrows(IllegalArgumentException.class, () -> categoryService.delete(5L));
+        // T1 contract (#452): deleting an in-use category stays 400, but the message
+        // travels as a key plus the lodging count argument.
+        LocalizedIllegalArgumentException ex = assertThrows(
+                LocalizedIllegalArgumentException.class,
+                () -> categoryService.delete(5L));
+        assertEquals("error.category.in_use", ex.getErrorCode());
+        assertArrayEquals(new Object[]{1L}, ex.getArgs());
     }
 
     @Test

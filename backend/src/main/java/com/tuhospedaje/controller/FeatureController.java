@@ -44,6 +44,7 @@ public class FeatureController {
             @ApiResponse(responseCode = "201", description = "Feature created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A feature with that name already exists", content = @Content),
     })
     public ResponseEntity<FeatureDTO> create(@Valid @RequestBody FeatureDTO dto) {
         FeatureDTO saved = featureService.save(dto);
@@ -80,6 +81,7 @@ public class FeatureController {
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Feature not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A feature with that name already exists", content = @Content),
     })
     public ResponseEntity<FeatureDTO> update(@PathVariable Long id, @Valid @RequestBody FeatureDTO dto) {
         dto.setId(id);

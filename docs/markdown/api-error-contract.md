@@ -10,7 +10,7 @@ Las respuestas de error que produce la aplicación son JSON con esta forma (no s
 | --- | --- | --- |
 | `error` | string | Siempre. Mensaje en el idioma de la petición. |
 | `status` | número | Siempre. Repite el código HTTP de la respuesta. |
-| `code` | string | Solo en dos casos: `duplicate_email` (registro con email ya usado) y `last_enabled_admin` (intento de dejar el sistema sin administrador habilitado). |
+| `code` | string | Solo en dos casos: `duplicate_email` (registro con email ya usado, respuesta 409) y `last_enabled_admin` (intento de dejar el sistema sin administrador habilitado, respuesta 409). |
 | `fields` | objeto | Solo en errores de validación 400 de un cuerpo de petición: campo → mensaje. |
 
 ## Idioma
@@ -22,6 +22,12 @@ El mensaje sale de `messages_es.properties` o `messages.properties` según el he
 - `GlobalExceptionHandler` responde los errores que ocurren dentro de un controlador o de la validación: 400, 404, 405, 409, 413, 415, 429 y 500, y el 401 de credenciales inválidas en el login.
 - `SecurityErrorHandler` responde los 401 y 403 que decide la cadena de filtros de seguridad, antes de que corra cualquier controlador. Usa el mismo formato.
 - Tres productores propios usan también `{error, status}`: `AuthController.handleRefreshRejected` (401 al rechazar el refresco de sesión), `AuthRateLimitFilter` y `RefreshRateLimitFilter` (429 por límite de peticiones).
+
+## 409 por duplicados
+
+Crear o renombrar una categoría, característica o política con un nombre que ya existe responde 409 Conflict, no 400. El mensaje sale de `messages_es.properties` o `messages.properties` según `Accept-Language` e incluye el nombre rechazado. El registro con un email ya usado también responde 409, con `code: "duplicate_email"` en el cuerpo.
+
+Dos reglas de negocio siguen en 400 y solo cambiaron a mensajes localizados: eliminar una categoría que tiene alojamientos y puntuar un alojamiento sin una estadía finalizada.
 
 ## 401 y 403 de seguridad
 

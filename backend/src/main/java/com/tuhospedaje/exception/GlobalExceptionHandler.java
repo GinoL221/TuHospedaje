@@ -80,11 +80,26 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateEmail(DuplicateEmailException ex, Locale locale) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of(
                         "error", resolveMessage("error.auth.duplicate_email", locale),
-                        "status", 400,
+                        "status", 409,
                         "code", DuplicateEmailException.ERROR_CODE));
+    }
+
+    /**
+     * A create or update whose name already belongs to another Category, Feature or
+     * Policy (issue #452): the request is valid but conflicts with stored state, so it
+     * answers 409 with the localized message. The message comes from the key plus
+     * arguments carried by the exception ({@code error.<resource>.duplicate_name} with
+     * the duplicate name as argument), not from the exception's own message.
+     */
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateResource(DuplicateResourceException ex, Locale locale) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error",
+                        messageSource.getMessage(ex.getErrorCode(), ex.getArgs(), locale),
+                        "status", 409));
     }
 
     /**
@@ -118,6 +133,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex, Locale locale) {
+        // Key-carrying subclass (S3: in-use category, not-eligible rating): still 400,
+        // but the message resolves through MessageSource with arguments.
+        if (ex instanceof LocalizedIllegalArgumentException localized) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error",
+                            messageSource.getMessage(localized.getErrorCode(), localized.getArgs(), locale),
+                            "status", 400));
+        }
         String resolvedMsg;
         try {
             resolvedMsg = messageSource.getMessage(ex.getMessage(), null, locale);

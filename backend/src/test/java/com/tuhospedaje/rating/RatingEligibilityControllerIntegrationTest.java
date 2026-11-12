@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Locale;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -145,6 +146,7 @@ class RatingEligibilityControllerIntegrationTest extends AbstractIntegrationTest
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/ratings")
+                        .locale(Locale.forLanguageTag("es"))
                         .cookie(accessCookie(authHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
@@ -152,7 +154,20 @@ class RatingEligibilityControllerIntegrationTest extends AbstractIntegrationTest
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").exists());
+                .andExpect(jsonPath("$.error").value(
+                        "Solo los huéspedes con una estadía confirmada y finalizada pueden puntuar este alojamiento"));
+
+        mockMvc.perform(post("/api/ratings")
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value(
+                        "Only guests with a confirmed and finished stay can rate this lodging."));
     }
 
     private void assertEligibility(boolean expected) throws Exception {

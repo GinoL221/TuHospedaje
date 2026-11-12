@@ -65,6 +65,7 @@ public class PolicyController {
             @ApiResponse(responseCode = "201", description = "Policy created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A policy with that name already exists", content = @Content),
     })
     public ResponseEntity<PolicyDTO> create(@Valid @RequestBody PolicyDTO dto) {
         PolicyDTO saved = policyService.save(dto);
@@ -80,6 +81,7 @@ public class PolicyController {
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Policy not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A policy with that name already exists", content = @Content),
     })
     public ResponseEntity<PolicyDTO> update(@PathVariable Long id, @Valid @RequestBody PolicyDTO dto) {
         dto.setId(id);

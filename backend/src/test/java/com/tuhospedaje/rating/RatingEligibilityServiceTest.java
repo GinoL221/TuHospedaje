@@ -6,6 +6,7 @@ import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
@@ -83,13 +84,19 @@ class RatingEligibilityServiceTest {
 
     // rejected ineligible POST (create/update)
     @Test
-    void createRating_whenIneligible_throwsWithPreciseMessage() {
+    void createRating_whenIneligible_throwsWithLocalizedMessageKey() {
         stubExists(false);
 
+        // T1 contract (#452): the not-eligible rule stays 400, but the message travels
+        // as a key resolved through MessageSource — no hardcoded sentence fragment.
         assertThatThrownBy(() -> ratingService.createRating(user(1L), 10L, 5, "great"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("confirmada")
-                .hasMessageContaining("finalizada");
+                .isInstanceOf(LocalizedIllegalArgumentException.class)
+                .satisfies(ex -> {
+                    org.junit.jupiter.api.Assertions.assertEquals(
+                            "error.rating.not_eligible", ((LocalizedIllegalArgumentException) ex).getErrorCode());
+                    org.junit.jupiter.api.Assertions.assertArrayEquals(
+                            new Object[]{}, ((LocalizedIllegalArgumentException) ex).getArgs());
+                });
     }
 
     @Test

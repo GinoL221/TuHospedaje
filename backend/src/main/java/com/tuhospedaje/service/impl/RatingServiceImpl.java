@@ -6,6 +6,7 @@ import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
@@ -41,8 +42,7 @@ public class RatingServiceImpl implements RatingService {
     @Transactional
     public RatingDTO createRating(User user, Long lodgingId, Integer score, String comment) {
         if (!isEligible(user.getId(), lodgingId)) {
-            throw new IllegalArgumentException(
-                    "Solo los huéspedes con una estadía confirmada y finalizada pueden puntuar este alojamiento");
+            throw new LocalizedIllegalArgumentException("error.rating.not_eligible");
         }
 
         Lodging lodging = lodgingRepository.findById(lodgingId)

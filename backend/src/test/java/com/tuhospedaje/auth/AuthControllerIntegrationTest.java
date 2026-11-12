@@ -91,7 +91,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturn400WithDuplicateEmailCodeWhenEmailAlreadyRegistered() throws Exception {
+    void shouldReturn409WithDuplicateEmailCodeWhenEmailAlreadyRegistered() throws Exception {
         RegisterRequest first = new RegisterRequest("Juan", "Pérez", "duplicate@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,12 +100,26 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
         RegisterRequest again = new RegisterRequest("Otro", "Nombre", "duplicate@test.com", "Pass1234");
         mockMvc.perform(post("/api/auth/register")
+                        .locale(Locale.forLanguageTag("es"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(again)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.code").value("duplicate_email"))
-                .andExpect(jsonPath("$.error").isNotEmpty());
+                .andExpect(jsonPath("$.error").value("Ese email ya está registrado."));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .locale(Locale.ENGLISH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(again)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.code").value("duplicate_email"))
+                .andExpect(jsonPath("$.error").value("This email is already registered."));
+
+        // The rejected request must leave stored data unchanged: the first account survives intact.
+        assertThat(userRepository.findByEmail("duplicate@test.com"))
+                .hasValueSatisfying(user -> assertThat(user.getFirstName()).isEqualTo("Juan"));
     }
 
     @Test

@@ -45,6 +45,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "201", description = "Category created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "A category with that name already exists", content = @Content),
     })
     public ResponseEntity<CategoryDTO> create(@Validated(CategoryValidationGroups.OnCreate.class) @RequestBody CategoryDTO dto) {
         CategoryDTO saved = categoryService.save(dto);
@@ -81,6 +82,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "403", description = "Access denied — ADMIN role required", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "A category with that name already exists", content = @Content),
     })
     public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @Validated(CategoryValidationGroups.OnUpdate.class) @RequestBody CategoryDTO dto) {
         dto.setId(id);

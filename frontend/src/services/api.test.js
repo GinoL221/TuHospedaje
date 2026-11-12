@@ -240,10 +240,10 @@ describe("api service - non-OK HTTP errors", () => {
 	it("attaches errorData.code onto the thrown error when the server sends one", async () => {
 		const fetchMock = mockFetchResolved({
 			ok: false,
-			status: 400,
+			status: 409,
 			json: async () => ({
 				error: "Ese email ya está registrado",
-				status: 400,
+				status: 409,
 				code: "duplicate_email",
 			}),
 		});

@@ -6,6 +6,7 @@ import com.tuhospedaje.entity.Rating;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.repository.RatingRepository;
@@ -28,6 +29,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -59,16 +62,19 @@ class RatingServiceImplTest {
     // --- createRating ---
 
     @Test
-    void createRating_whenNoConfirmedReservation_throwsIllegalArgumentException() {
+    void createRating_whenNoConfirmedReservation_throwsLocalizedIllegalArgument() {
         User user = buildUser(1L);
         when(reservationRepository.existsByUserIdAndLodgingIdAndStatusAndCheckOutBefore(
                 1L, 10L, ReservationStatus.CONFIRMED, LocalDate.now(FIXED_CLOCK))).thenReturn(false);
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
+        // T1 contract (#452): the not-eligible rule stays 400 (it still is an
+        // IllegalArgumentException), but the message travels as a key plus arguments.
+        LocalizedIllegalArgumentException ex = assertThrows(
+                LocalizedIllegalArgumentException.class,
                 () -> ratingService.createRating(user, 10L, 4, "Great stay")
         );
-        assertThat(ex.getMessage()).contains("confirmada");
+        assertEquals("error.rating.not_eligible", ex.getErrorCode());
+        assertArrayEquals(new Object[]{}, ex.getArgs());
         verify(lodgingRepository, never()).findById(any());
     }
 

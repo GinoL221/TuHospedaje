@@ -2,6 +2,8 @@ package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.category.CategoryDTO;
 import com.tuhospedaje.entity.Category;
+import com.tuhospedaje.exception.DuplicateResourceException;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -28,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDTO save(CategoryDTO dto) {
         if (categoryRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Category name already exists: " + dto.getName());
+            throw new DuplicateResourceException("error.category.duplicate_name", dto.getName());
         }
 
         Category category = dto.toEntity();
@@ -44,7 +46,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Optional<Category> existingWithName = categoryRepository.findByNameIgnoreCase(dto.getName());
         if (existingWithName.isPresent() && !existingWithName.get().getId().equals(dto.getId())) {
-            throw new IllegalArgumentException("Category name already exists: " + dto.getName());
+            throw new DuplicateResourceException("error.category.duplicate_name", dto.getName());
         }
 
         category.setName(dto.getName());
@@ -68,9 +70,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         long lodgingCount = lodgingRepository.countByCategoryId(id);
         if (lodgingCount > 0) {
-            throw new IllegalArgumentException(
-                    "No se puede eliminar la categoría: " + lodgingCount + " alojamiento(s) la están usando"
-            );
+            throw new LocalizedIllegalArgumentException("error.category.in_use", lodgingCount);
         }
 
         categoryRepository.deleteById(id);

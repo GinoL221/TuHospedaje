@@ -19,6 +19,10 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -87,7 +91,7 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenCreatingDuplicateCategory() throws Exception {
+    void shouldReturnConflictWhenCreatingDuplicateCategory() throws Exception {
         Category existing = new Category();
         existing.setName("Cabaña");
         existing.setDescription("Inicial");
@@ -100,13 +104,78 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/categories")
+                        .locale(Locale.forLanguageTag("es"))
                         .cookie(accessCookie(authHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una categoría con el nombre: Cabaña"));
+
+        mockMvc.perform(post("/api/categories")
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A category with the name Cabaña already exists."));
+
+        // The rejected request must leave stored data unchanged.
+        assertEquals(1, categoryRepository.count());
+        assertTrue(categoryRepository.existsByName("Cabaña"));
+    }
+
+    @Test
+    void shouldReturnConflictWhenUpdatingCategoryWithDuplicateName() throws Exception {
+        Category first = new Category();
+        first.setName("Hotel");
+        first.setDescription("Original");
+        Category savedFirst = categoryRepository.save(first);
+
+        Category second = new Category();
+        second.setName("Hostel");
+        second.setDescription("Otro");
+        Category savedSecond = categoryRepository.save(second);
+
+        CategoryDTO request = new CategoryDTO();
+        request.setName("Hostel");
+        request.setDescription("Renombrada");
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/categories/{id}", savedFirst.getId())
+                        .locale(Locale.forLanguageTag("es"))
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una categoría con el nombre: Hostel"));
+
+        mockMvc.perform(put("/api/categories/{id}", savedFirst.getId())
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A category with the name Hostel already exists."));
+
+        // The rejected request must leave stored data unchanged.
+        assertEquals("Hotel", categoryRepository.findById(savedFirst.getId()).orElseThrow().getName());
+        assertEquals("Hostel", categoryRepository.findById(savedSecond.getId()).orElseThrow().getName());
     }
 
     @Test
@@ -286,12 +355,24 @@ class CategoryControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(delete("/api/categories/{id}", savedCategory.getId())
+                        .locale(Locale.forLanguageTag("es"))
                         .cookie(accessCookie(authHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value(
                         "No se puede eliminar la categoría: 1 alojamiento(s) la están usando"));
+
+        mockMvc.perform(delete("/api/categories/{id}", savedCategory.getId())
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(authHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value(
+                        "Cannot delete the category: 1 lodging(s) are using it."));
 
         assertTrue(categoryRepository.existsById(savedCategory.getId()));
         assertTrue(lodgingRepository.countByCategoryId(savedCategory.getId()) == 1);

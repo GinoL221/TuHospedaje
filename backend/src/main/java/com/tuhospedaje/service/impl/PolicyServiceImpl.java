@@ -2,6 +2,7 @@ package com.tuhospedaje.service.impl;
 
 import com.tuhospedaje.dto.policy.PolicyDTO;
 import com.tuhospedaje.entity.Policy;
+import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.service.PolicyService;
@@ -25,7 +26,7 @@ public class PolicyServiceImpl implements PolicyService {
     @Transactional
     public PolicyDTO save(PolicyDTO dto) {
         if (policyRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Ya existe una política con el nombre: " + dto.getName());
+            throw new DuplicateResourceException("error.policy.duplicate_name", dto.getName());
         }
         Policy policy = dto.toEntity();
         Policy saved = policyRepository.save(policy);
@@ -39,7 +40,7 @@ public class PolicyServiceImpl implements PolicyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Política no encontrada con ID: " + dto.getId()));
 
         if (!policy.getName().equals(dto.getName()) && policyRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Ya existe una política con el nombre: " + dto.getName());
+            throw new DuplicateResourceException("error.policy.duplicate_name", dto.getName());
         }
 
         policy.setName(dto.getName());
