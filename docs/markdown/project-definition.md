@@ -59,6 +59,9 @@ La solución adopta una arquitectura desacoplada basada en el patrón de diseño
 ```
 [ Frontend: React 19 ]  ──( Peticiones HTTP / JSON )──>  [ Backend: Spring Boot 4.0 ]  ──>  [ Base de Datos: MariaDB ]
 ```
+
+La descripción autoritativa y actualizada de cómo está construido el backend (paquetes, flujo de request, locking, refresh token families, outbox, rate limiting y errores) está en [backend-architecture.md](markdown/backend-architecture.md); este documento no la repite aquí.
+
 ### 3.1. Infraestructura Tecnológica
 | Capa | Tecnología |
 |------|-----------|
@@ -82,10 +85,14 @@ La propiedad `Lodging.category` se diseñó como una Foreign Key de tipo **nulla
 
 ### 4.3. Patrón de Backend Desacoplado
 Se implementa un flujo estricto:
+
 ```
 Controller → Service (Interface + Impl) → Repository → Entity / DTO
 ```
-Los controladores se inyectan estrictamente a través de constructores (evitando la directiva `@Autowired` en atributos para facilitar pruebas unitarias), y la conversión de datos se centraliza en los DTOs mediante métodos estáticos de mapeo (`toEntity()` / `fromEntity()`).
+
+Es el patrón dominante, no una regla sin excepciones: los beans de orquestación e infraestructura del outbox — `EmailOutboxTransactionService`, `EmailOutboxDispatcher`, `EmailOutboxScheduler` — y `RegistrationPersistenceService` son clases concretas en `service/impl` sin interfaz, porque coordinan transacciones y scheduling en vez de exponer operaciones de dominio. El detalle está en [backend-architecture.md](markdown/backend-architecture.md), sección 3.
+
+Los controladores y servicios se inyectan a través de constructores. La regla no es absoluta: `JwtService` mantiene un `@Autowired(required = false)` sobre un atributo opcional (`backend/src/main/java/com/tuhospedaje/configuration/JwtService.java:31`), y `AuthServiceImpl` y `EmailOutboxServiceImpl` anotan sus constructores con `@Autowired`. La conversión de datos vive en los DTOs: `fromEntity()` es un método estático de mapeo y `toEntity()` es un método de instancia en los DTOs de escritura (`CategoryDTO`, `FeatureDTO`, `LodgingDTO`, `PolicyDTO`).
 
 ### 4.4. Inyección de Configuración mediante Entornos
 El Frontend se desacopla del entorno de ejecución utilizando variables de entorno (`.env`) mediante el prefijo `VITE_API_URL`, asegurando que la transición a servidores de producción sea transparente.

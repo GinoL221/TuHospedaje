@@ -39,6 +39,8 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 
 ### TC-12: Módulo de Categorías (CRUD e Integridad Referencial)
 
+> **Nota de vigencia (registro histórico).** Este corte del plan describe los duplicados como 400 Bad Request y la autenticación con cabecera Bearer. Hoy los duplicados (nombre de categoría repetido y email ya registrado) responden 409 Conflict, y la autenticación es por cookie de sesión con token CSRF, no cabecera Bearer; el borrado de una categoría en uso sigue respondiendo 400. El contrato vigente está en [api-error-contract.md](../api-error-contract.md).
+
 * **Historias de Usuario Asociadas:** US #12 (Categorizar productos) y US #21 (Agregar categoría).
 * **Precondiciones:** Servidor de backend e instancia de MariaDB activos; Token JWT de Administrador provisto en la cabecera HTTP.
 * **Tipos de Verificación:** API Rest, Interfaz de Usuario (UI) y Test de Integración Automatizado.

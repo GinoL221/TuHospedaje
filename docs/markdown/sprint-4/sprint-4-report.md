@@ -31,7 +31,7 @@ h1, h2, h3, h4 { page-break-after: avoid; }
 # BITÁCORA DE EJECUCIÓN Y CIERRE — SPRINT 4
 
 **Foco del Incremento:** Reservas, Historial y Comunicación (Incremento 1) · Tablas Uniformes y Dashboard de Reservas (Incremento 2) · Refactor de Arquitectura y Mejoras (Incremento 3) · Autenticación Segura, Cancelación de Reservas y Confiabilidad de Frontend (Incremento 4)
-**Stack Tecnológico:** Java 17 / Spring Boot 3.5 / Spring Security 6 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
+**Stack Tecnológico:** Java 17 / Spring Boot 4.0 / Spring Security 7 / JavaMailSender / MariaDB / React 19 / Vite / Testcontainers / SpringDoc OpenAPI
 
 Este documento consolida los cuatro incrementos ejecutados sobre la rama `sprint-4`: el alcance original del sprint (reservas, WhatsApp, email), la consolidación posterior del panel de administración (previamente documentada como "Sprint 4.5"), el refactor de arquitectura, y el endurecimiento de autenticación junto con la cancelación de reservas y mejoras de confiabilidad del frontend. Se presentan de forma unificada, no como reportes separados, para reflejar el estado final del incremento. El corte histórico quedó integrado a `main` mediante el merge commit `8a3fd43` (PR #36) el 23 de julio de 2026; el estado vigente de `main` incluye los PR #73 y #75 y se referencia en la Sección 9.
 
@@ -114,11 +114,7 @@ Los archivos JSON de `content/lodgings/` son la fuente canónica para construir 
 
 ### 2.1. Backend (Spring Boot + Spring Security 6)
 
-Se expandió la arquitectura existente sin introducir nuevos módulos estructurales:
-
-```
-Controller → Service (Interface + Impl) → Repository → Entity / DTO
-```
+Se expandió la arquitectura existente sin introducir nuevos módulos estructurales. El diagrama de capas vigente está en [backend-architecture.md](../backend-architecture.md): `Controller → Service (Interface + Impl) → Repository → Entity / DTO`; este reporte no lo redefine.
 
 #### Matriz de Componentes Introducidos o Modificados:
 

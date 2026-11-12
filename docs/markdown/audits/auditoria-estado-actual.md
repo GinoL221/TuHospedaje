@@ -1,6 +1,6 @@
 # Auditoría del estado actual de TuHospedaje
 
-> **Registro histórico.** Esta auditoría es del 2026-09-16 y usa la línea base `14264d7`. Desde entonces cambiaron backups, imágenes, seguridad y versiones, y algunos pendientes se cerraron. No tomes sus hallazgos como diagnóstico actual sin volver a comprobarlos contra la revisión que te interese.
+> **Registro histórico.** Esta auditoría es del 2026-09-16 y usa la línea base `14264d7`. Desde entonces cambiaron backups, imágenes, seguridad y versiones, y algunos pendientes se cerraron. No tomes sus hallazgos como diagnóstico actual sin volver a comprobarlos contra la revisión que te interese. Las referencias a `CloudinaryServiceImpl` y `CloudinaryConfig`, clases que ya no existen, se reemplazaron por la clase de storage vigente (`LocalImageStorageService`) y el texto mínimo para que lea contra el storage local; la fecha, la línea base y el alcance del corte no cambiaron.
 
 > **Fecha:** 2026-09-16
 > **Línea base:** `origin/main` en `14264d71263486b04074e4611ec7b0f60b693191`
@@ -29,13 +29,13 @@ La línea base tiene capas Spring claras, manejo HTTP centralizado en el fronten
 | Autorización | Las operaciones sensibles de reservas, usuarios y uploads tienen autorización a nivel de método. | `ReservationController.java:43-44,85-86,119-120`; `UserController.java:49,64,84`; `UploadController.java:31-32`. | Confirmado — Alta |
 | CSRF y cookies | CSRF usa intercambio cookie/header. Las cookies de acceso y refresh son HTTP-only y permiten configurar `Secure` y `SameSite`. Refresh está excluido de CSRF de forma deliberada. | `SecurityConfig.java:50-58`; `AuthCookieFactory.java:28-32`; `RefreshCookieFactory.java:30-34`; `api.js:73-81`. | Controles: Confirmados; abuso desde mismo sitio: Sospechado — Media |
 | CORS | CORS permite credenciales, pero restringe orígenes mediante configuración. No se inspeccionaron los valores efectivos de producción. | `SecurityConfig.java:130-133`; `CorsProperties.java:9`. | Implementación: Confirmada; despliegue: Desconocido |
-| Uploads | La validación confía en el MIME declarado por el cliente y no verifica firmas ni decodifica la imagen antes de subirla a Cloudinary. | `CloudinaryServiceImpl.java:37,54-59,70`. | Confirmado — Alta |
+| Uploads | La validación confía en el MIME declarado por el cliente y no verifica firmas ni decodifica la imagen antes de persistirla en el almacenamiento del backend. | `LocalImageStorageService.java:39,46-59`. | Confirmado — Alta |
 | Seguridad del navegador | Nginx de producción no muestra una CSP, `X-Content-Type-Options`, `Referrer-Policy` ni política contra framing. | `frontend/docker/nginx/default.conf:7-42`. | Confirmado — Alta |
 | Exposición de API | Swagger/OpenAPI está permitido públicamente. | `SecurityConfig.java:85`. | Confirmado — Alta |
 | Corrección | Disponibilidad puede responder para un alojamiento inexistente porque consulta reservas por ID sin cargar primero el alojamiento, aunque documenta una respuesta 404. | `LodgingController.java:191-201`; `LodgingServiceImpl.java:424-443`. | Confirmado — Alta |
 | Corrección | La búsqueda pública no limita el tamaño máximo de página ni valida claramente el orden de fechas, huéspedes y rango de precios antes de armar la consulta. | `LodgingController.java:168-179`; `LodgingServiceImpl.java:357-396`. | Confirmado — Alta |
 | Confiabilidad | El upload del frontend evita el cliente HTTP compartido y no tiene una cancelación por timeout. | `ImageUpload.jsx:39-45`; `services/api.js:16-17,56-70`. | Confirmado — Alta |
-| Confiabilidad | El cliente Cloudinary no tiene timeouts explícitos observables en el repositorio. No se verificaron los valores por defecto de la biblioteca. | `CloudinaryConfig.java:25`; `CloudinaryServiceImpl.java:34-40`. | Configuración ausente: Confirmada; impacto: Sospechado |
+| Confiabilidad | El cliente de storage no tenía deadlines explícitos observables en el repositorio. No se verificaron los valores por defecto de la escritura local. | `LocalImageStorageService.java:46-53` (configuración de storage del corte); el equivalente de `CloudinaryConfig` ya no existe. | Configuración ausente: Confirmada; impacto: Sospechado |
 | Confiabilidad | El scheduler del outbox no aísla excepciones inesperadas de cada dispatcher; sólo captura errores del cleanup. | `EmailOutboxScheduler.java:25-47`; `EmailOutboxDispatcher.java:50-60`. | Confirmado — Alta |
 | Confiabilidad | La entrega de email es intencionalmente “al menos una vez”; perder el lease después de la aceptación SMTP puede producir duplicados. | `EmailOutboxDispatcher.java:50-56`; `EmailOutboxDispatcherTest.java:174-188`. | Confirmado — Alta |
 | Concurrencia | La protección contra doble reserva depende de los locks de MariaDB/InnoDB para una consulta de solapamiento vacía. Tiene una prueba real con MariaDB 10.11, pero depende del motor y aislamiento. | `ReservationRepository.java:24-35`; `ReservationConcurrencyTest.java:133-194`. | Hecho: Alta; riesgo de portabilidad: Media |
@@ -83,17 +83,17 @@ La línea base tiene capas Spring claras, manejo HTTP centralizado en el fronten
 ### 4. El upload confía en metadatos enviados por el cliente
 
 - **Severidad:** Media
-- **Impacto:** Una cuenta administrativa comprometida puede enviar bytes arbitrarios etiquetados como imagen. El impacto final depende del procesamiento de Cloudinary.
-- **Evidencia:** `CloudinaryServiceImpl.java:37,54-59,70`.
-- **Mitigación recomendada:** Validar firmas, decodificar formatos permitidos, re-encodear cuando corresponda y rechazar contenido malformado antes de la integración externa.
+- **Impacto:** Una cuenta administrativa comprometida puede enviar bytes arbitrarios etiquetados como imagen. El impacto final depende de cómo los consuma el almacenamiento y el frontend.
+- **Evidencia:** `LocalImageStorageService.java:39,46-59`.
+- **Mitigación recomendada:** Validar firmas, decodificar formatos permitidos, re-encodear cuando corresponda y rechazar contenido malformado antes de escribir en disco.
 - **Esfuerzo estimado:** Medio, 2–3 días con pruebas.
 
 ### 5. Los uploads no tienen deadlines de extremo a extremo
 
 - **Severidad:** Media
-- **Impacto:** Una llamada lenta a Cloudinary puede retener threads del backend y dejar el frontend indefinidamente en estado de carga.
-- **Evidencia:** `ImageUpload.jsx:39-45`; `CloudinaryConfig.java:25`; `CloudinaryServiceImpl.java:34-40`.
-- **Mitigación recomendada:** Enviar uploads mediante un servicio frontend con timeout y configurar límites explícitos de conexión y lectura en Cloudinary.
+- **Impacto:** Un upload lento puede retener threads del backend y dejar el frontend indefinidamente en estado de carga.
+- **Evidencia:** `ImageUpload.jsx:39-45`; `LocalImageStorageService.java:46-53`.
+- **Mitigación recomendada:** Enviar uploads mediante un servicio frontend con timeout y configurar deadlines explícitos en el upload.
 - **Esfuerzo estimado:** Bajo–Medio, 1–2 días.
 
 ### 6. Búsqueda y disponibilidad aceptan solicitudes inseguras o engañosas
@@ -150,7 +150,7 @@ La línea base tiene capas Spring claras, manejo HTTP centralizado en el fronten
 | 4 | Administración no está disponible en dispositivos táctiles de hasta 1024 px. | Medio: operadores no pueden resolver tareas urgentes desde móvil o tablet. | Medio; requiere decisión de alcance |
 | 5 | Reservas termina en confirmado/cancelado. | Potencialmente alto: no hay pagos, modificación, reembolso, expiración ni estados operativos. | Alto; requiere definición de producto |
 | 6 | Reservas reutiliza proyecciones amplias con PII entre audiencias. | Medio: exposición innecesaria a medida que se agreguen roles. | Medio |
-| 7 | Cloudinary es requerido por el servicio, pero su bean depende de configuración condicional. | Medio: un entorno sin Cloudinary puede fallar al iniciar o exponer un flujo inutilizable. | Bajo–Medio |
+| 7 | El storage de imágenes usa el disco local y su directorio y prefijo público dependen de configuración. | Medio: un entorno sin el volumen de uploads montado puede fallar al guardar o exponer un flujo inutilizable. | Bajo–Medio |
 
 ## Hoja de ruta recomendada
 
@@ -186,13 +186,13 @@ La línea base tiene capas Spring claras, manejo HTTP centralizado en el fronten
 
 - **Título:** Agregar parsing verificado y deadlines al upload de imágenes
 - **Por qué importa:** El flujo confía en MIME y puede quedar pendiente ante una integración lenta.
-- **Archivos o subsistemas:** `CloudinaryServiceImpl`, `CloudinaryConfig`, excepciones de upload, `ImageUpload`, servicio frontend y pruebas.
+- **Archivos o subsistemas:** `LocalImageStorageService`, `ImageContentValidator`, excepciones de upload, `ImageUpload`, servicio frontend y pruebas.
 - **Criterios de aceptación:**
   - Rechaza MIME falso, archivos malformados, demasiado grandes y formatos no soportados.
   - Las llamadas externas tienen deadlines explícitos.
   - El frontend cancela y muestra un error recuperable específico.
   - JPEG, PNG y WebP válidos mantienen su comportamiento.
-- **Plan de verificación:** Fixtures de bytes malformados, simulaciones de timeout y pruebas frontend sin llamadas reales a Cloudinary.
+- **Plan de verificación:** Fixtures de bytes malformados, simulaciones de timeout y pruebas frontend sin escrituras reales al almacenamiento.
 - **Riesgo:** Medio; una validación estricta puede rechazar archivos antes aceptados.
 - **Tamaño esperado:** 300–390 líneas cambiadas.
 
