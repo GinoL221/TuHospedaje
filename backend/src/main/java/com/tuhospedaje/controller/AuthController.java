@@ -124,7 +124,8 @@ public class AuthController {
 
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Resend the welcome email", description = "Re-schedules the account's welcome email if the "
-            + "resend cooldown allows it. CSRF-exempt (see SecurityConfig): authentication is enough. Returns "
+            + "resend cooldown allows it. CSRF is skipped only when the request carries no ACCESS_TOKEN "
+            + "cookie; an authenticated call without the X-XSRF-TOKEN header answers 403. Returns "
             + "202 when the email was scheduled, 200 with a pending marker when one is already scheduled, and "
             + "429 with a Retry-After header while the cooldown is active.")
     @ApiResponses({
