@@ -60,7 +60,7 @@ La solución adopta una arquitectura desacoplada basada en el patrón de diseño
 [ Frontend: React 19 ]  ──( Peticiones HTTP / JSON )──>  [ Backend: Spring Boot 4.0 ]  ──>  [ Base de Datos: MariaDB ]
 ```
 
-La descripción autoritativa y actualizada de cómo está construido el backend (paquetes, flujo de request, locking, refresh token families, outbox, rate limiting y errores) está en [backend-architecture.md](markdown/backend-architecture.md); este documento no la repite aquí.
+La descripción autoritativa y actualizada de cómo está construido el backend (paquetes, flujo de request, locking, refresh token families, outbox, rate limiting y errores) está en [backend-architecture.md](backend-architecture.md); este documento no la repite aquí.
 
 ### 3.1. Infraestructura Tecnológica
 | Capa | Tecnología |
@@ -90,7 +90,7 @@ Se implementa un flujo estricto:
 Controller → Service (Interface + Impl) → Repository → Entity / DTO
 ```
 
-Es el patrón dominante, no una regla sin excepciones: los beans de orquestación e infraestructura del outbox — `EmailOutboxTransactionService`, `EmailOutboxDispatcher`, `EmailOutboxScheduler` — y `RegistrationPersistenceService` son clases concretas en `service/impl` sin interfaz, porque coordinan transacciones y scheduling en vez de exponer operaciones de dominio. El detalle está en [backend-architecture.md](markdown/backend-architecture.md), sección 3.
+Es el patrón dominante, no una regla sin excepciones: los beans de orquestación e infraestructura del outbox — `EmailOutboxTransactionService`, `EmailOutboxDispatcher`, `EmailOutboxScheduler` — y `RegistrationPersistenceService` son clases concretas en `service/impl` sin interfaz, porque coordinan transacciones y scheduling en vez de exponer operaciones de dominio. El detalle está en [backend-architecture.md](backend-architecture.md), sección 3.
 
 Los controladores y servicios se inyectan a través de constructores. La regla no es absoluta: `JwtService` mantiene un `@Autowired(required = false)` sobre un atributo opcional (`backend/src/main/java/com/tuhospedaje/configuration/JwtService.java:31`), y `AuthServiceImpl` y `EmailOutboxServiceImpl` anotan sus constructores con `@Autowired`. La conversión de datos vive en los DTOs: `fromEntity()` es un método estático de mapeo y `toEntity()` es un método de instancia en los DTOs de escritura (`CategoryDTO`, `FeatureDTO`, `LodgingDTO`, `PolicyDTO`).
 

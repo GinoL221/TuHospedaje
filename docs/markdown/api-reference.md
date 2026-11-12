@@ -118,8 +118,7 @@ generated OpenAPI spec (`/v3/api-docs`); a test
 ### Categories, features, policies (`/api/categories`, `/api/features`, `/api/policies`)
 
 - No pagination on any read endpoint.
-- `DELETE /api/categories/{id}` answers `400` when the category still has lodgings —
-  the spec annotation does not list this status today (see below).
+- `DELETE /api/categories/{id}` answers `400` when the category still has lodgings.
 
 ### Ratings (`/api/ratings`)
 
