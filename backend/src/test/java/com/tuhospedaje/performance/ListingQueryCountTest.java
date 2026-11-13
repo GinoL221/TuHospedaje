@@ -1,5 +1,6 @@
 package com.tuhospedaje.performance;
 
+import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.configuration.TestcontainersConfiguration;
 import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -92,6 +94,9 @@ class ListingQueryCountTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private EntityManagerFactory entityManagerFactory;
@@ -258,6 +263,10 @@ class ListingQueryCountTest {
     }
 
     private void cleanAll() {
+        // Same FK-children cleanup the abstract test runs before every test: this class
+        // cannot extend it (its @Transactional would break the query-count measurement),
+        // so it reuses the shared helper instead of copying the SQL.
+        AbstractIntegrationTest.clearForeignKeyChildrenOfUsers(jdbcTemplate);
         ratingRepository.deleteAll();
         reservationRepository.deleteAll();
         lodgingRepository.deleteAll();
