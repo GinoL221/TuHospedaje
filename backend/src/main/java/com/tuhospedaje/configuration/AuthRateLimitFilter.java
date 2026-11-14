@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -185,7 +186,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
      * IP-only keying; the controller downstream still returns its normal 400 via
      * Jackson deserializing the re-readable body.
      */
-    private String extractEmailKey(byte[] body) {
+    private @Nullable String extractEmailKey(byte[] body) {
         if (body.length == 0 || body.length > MAX_BODY_BYTES) {
             return null;
         }

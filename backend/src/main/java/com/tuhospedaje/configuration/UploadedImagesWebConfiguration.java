@@ -1,5 +1,6 @@
 package com.tuhospedaje.configuration;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -56,7 +57,7 @@ public class UploadedImagesWebConfiguration implements WebMvcConfigurer {
     static final class HiddenSegmentRejectingResolver extends PathResourceResolver {
 
         @Override
-        protected Resource getResource(String resourcePath, Resource location) throws IOException {
+        protected @Nullable Resource getResource(String resourcePath, Resource location) throws IOException {
             for (String segment : resourcePath.split("/")) {
                 if (segment.startsWith(".")) {
                     return null;

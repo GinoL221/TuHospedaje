@@ -3,6 +3,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -18,12 +19,15 @@ import java.time.Duration;
 public class WelcomeEmailProperties {
 
     @NotBlank
-    private String publicBaseUrl;
+    private @Nullable String publicBaseUrl;
 
     private Duration resendCooldown = Duration.ofMinutes(5);
 
     @AssertTrue(message = "public-base-url must be a safe absolute HTTPS public URL")
     public boolean isPublicBaseUrlSafe() {
+        if (publicBaseUrl == null) {
+            return false;
+        }
         try {
             URI uri = new URI(publicBaseUrl);
             if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
@@ -38,7 +42,7 @@ public class WelcomeEmailProperties {
     }
 
     public String getNormalizedPublicBaseUrl() {
-        if (!isPublicBaseUrlSafe()) {
+        if (publicBaseUrl == null || !isPublicBaseUrlSafe()) {
             throw new IllegalStateException("Welcome public base URL is invalid");
         }
         return publicBaseUrl.replaceAll("/+$", "");
