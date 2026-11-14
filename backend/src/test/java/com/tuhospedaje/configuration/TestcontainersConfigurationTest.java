@@ -1,7 +1,7 @@
 package com.tuhospedaje.configuration;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ class TestcontainersConfigurationTest {
 
     @Test
     void rejectsReusableContainerBeforeStartingIt() {
-        MariaDBContainer<?> container = mock(MariaDBContainer.class);
+        MariaDBContainer container = mock(MariaDBContainer.class);
         when(container.isShouldBeReused()).thenReturn(true);
 
         assertThatThrownBy(() -> TestcontainersConfiguration.requireDisposable(container))
@@ -37,7 +37,7 @@ class TestcontainersConfigurationTest {
 
     @Test
     void rejectsFixedHostPortBeforeStartingContainer() {
-        MariaDBContainer<?> container = mock(MariaDBContainer.class);
+        MariaDBContainer container = mock(MariaDBContainer.class);
         when(container.getPortBindings()).thenReturn(List.of("3306:3306"));
 
         assertThatThrownBy(() -> TestcontainersConfiguration.requireDisposable(container))
@@ -49,7 +49,7 @@ class TestcontainersConfigurationTest {
 
     @Test
     void factoryKeepsTheSharedContainerDisposableAndOnRandomHostPorts() {
-        MariaDBContainer<?> container = new TestcontainersConfiguration().mariadbContainer();
+        MariaDBContainer container = new TestcontainersConfiguration().mariadbContainer();
 
         assertThat(container.isShouldBeReused()).isFalse();
         assertThat(container.getPortBindings()).isEmpty();

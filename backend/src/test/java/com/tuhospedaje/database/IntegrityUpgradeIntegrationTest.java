@@ -4,7 +4,7 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,7 +13,7 @@ class IntegrityUpgradeIntegrationTest {
 
     @Test
     void upgradesLegacyReservationsWithoutChangingExistingVersions() {
-        try (MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.11")) {
+        try (MariaDBContainer database = new MariaDBContainer("mariadb:10.11")) {
             database.start();
             flyway(database, "12").migrate();
             JdbcTemplate jdbc = jdbc(database);
@@ -29,7 +29,7 @@ class IntegrityUpgradeIntegrationTest {
 
     @Test
     void rejectsConflictingHistoricalDataBeforeChangingSchemaOrRows() {
-        try (MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.11")) {
+        try (MariaDBContainer database = new MariaDBContainer("mariadb:10.11")) {
             database.start();
             flyway(database, "12").migrate();
             JdbcTemplate jdbc = jdbc(database);
@@ -61,7 +61,7 @@ class IntegrityUpgradeIntegrationTest {
 
     @Test
     void rejectsInvalidHistoricalDatesBeforeChangingSchemaOrRows() {
-        try (MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.11")) {
+        try (MariaDBContainer database = new MariaDBContainer("mariadb:10.11")) {
             database.start();
             flyway(database, "12").migrate();
             JdbcTemplate jdbc = jdbc(database);
@@ -83,7 +83,7 @@ class IntegrityUpgradeIntegrationTest {
 
     @Test
     void retriesV13AfterVersionModificationCommittedByPartialDdl() {
-        try (MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.11")) {
+        try (MariaDBContainer database = new MariaDBContainer("mariadb:10.11")) {
             database.start();
             flyway(database, "12").migrate();
             JdbcTemplate jdbc = jdbc(database);
@@ -105,7 +105,7 @@ class IntegrityUpgradeIntegrationTest {
 
     @Test
     void retriesV13AfterUniqueIndexCommittedByPartialDdl() {
-        try (MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.11")) {
+        try (MariaDBContainer database = new MariaDBContainer("mariadb:10.11")) {
             database.start();
             flyway(database, "12").migrate();
             JdbcTemplate jdbc = jdbc(database);
@@ -126,17 +126,17 @@ class IntegrityUpgradeIntegrationTest {
         }
     }
 
-    private static Flyway flyway(MariaDBContainer<?> database, String target) {
+    private static Flyway flyway(MariaDBContainer database, String target) {
         return Flyway.configure().dataSource(database.getJdbcUrl(), database.getUsername(), database.getPassword())
                 .locations("classpath:db/migration").target(target).load();
     }
 
-    private static Flyway latestFlyway(MariaDBContainer<?> database) {
+    private static Flyway latestFlyway(MariaDBContainer database) {
         return Flyway.configure().dataSource(database.getJdbcUrl(), database.getUsername(), database.getPassword())
                 .locations("classpath:db/migration").load();
     }
 
-    private static JdbcTemplate jdbc(MariaDBContainer<?> database) {
+    private static JdbcTemplate jdbc(MariaDBContainer database) {
         return new JdbcTemplate(new DriverManagerDataSource(
                 database.getJdbcUrl(), database.getUsername(), database.getPassword()));
     }

@@ -3,7 +3,7 @@ package com.tuhospedaje.reservation;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ class ReservationMigrationIntegrationTest {
 
     @Test
     void v7BackfillsLegacyReservationsAndAppliesDefaultsForNewRows() {
-        try (MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.11")) {
+        try (MariaDBContainer database = new MariaDBContainer("mariadb:10.11")) {
             database.start();
             Flyway.configure()
                     .dataSource(database.getJdbcUrl(), database.getUsername(), database.getPassword())

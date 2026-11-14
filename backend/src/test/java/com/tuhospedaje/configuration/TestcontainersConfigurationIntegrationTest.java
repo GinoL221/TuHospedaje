@@ -5,7 +5,7 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 import javax.sql.DataSource;
 import java.net.URI;
@@ -26,7 +26,7 @@ class TestcontainersConfigurationIntegrationTest extends AbstractIntegrationTest
     private Flyway flyway;
 
     @Autowired
-    private MariaDBContainer<?> mariadbContainer;
+    private MariaDBContainer mariadbContainer;
 
     @Test
     void applicationAndFlywayConnectToTheSharedContainerDatabase() throws SQLException {
