@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -214,7 +215,7 @@ public class AuthController {
                 .body(Map.of("error", messageSource.getMessage("error.session.refresh_invalid", null, locale), "status", 401));
     }
 
-    private String resolveRefreshToken(HttpServletRequest request) {
+    private @Nullable String resolveRefreshToken(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {

@@ -1,6 +1,7 @@
 package com.tuhospedaje.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -121,12 +122,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ReservationConflictException.class)
     public ResponseEntity<Map<String, Object>> handleReservationConflict(ReservationConflictException ex, Locale locale) {
-        String resolvedMsg;
-        try {
-            resolvedMsg = messageSource.getMessage(ex.getMessage(), null, locale);
-        } catch (NoSuchMessageException e) {
-            resolvedMsg = ex.getMessage();
-        }
+        String resolvedMsg = resolveExceptionMessage(ex.getMessage(), "error.internal", locale);
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", resolvedMsg, "status", 409));
     }
@@ -141,12 +137,7 @@ public class GlobalExceptionHandler {
                             messageSource.getMessage(localized.getErrorCode(), localized.getArgs(), locale),
                             "status", 400));
         }
-        String resolvedMsg;
-        try {
-            resolvedMsg = messageSource.getMessage(ex.getMessage(), null, locale);
-        } catch (NoSuchMessageException e) {
-            resolvedMsg = ex.getMessage();
-        }
+        String resolvedMsg = resolveExceptionMessage(ex.getMessage(), "error.request.malformed", locale);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", resolvedMsg, "status", 400));
     }
@@ -193,17 +184,33 @@ public class GlobalExceptionHandler {
     private String resolveTemplateMessage(String messageTemplate, String fallback, Locale locale) {
         if (messageTemplate != null && messageTemplate.startsWith("{") && messageTemplate.endsWith("}")) {
             String key = messageTemplate.substring(1, messageTemplate.length() - 1);
-            return messageSource.getMessage(key, null, fallback, locale);
+            String resolved = messageSource.getMessage(key, null, fallback, locale);
+            return resolved != null ? resolved : fallback;
         }
         return fallback;
     }
 
     private String resolveResolvableMessage(MessageSourceResolvable resolvable, Locale locale) {
         try {
-            return messageSource.getMessage(resolvable, locale);
+            String resolved = messageSource.getMessage(resolvable, locale);
+            if (resolved != null) {
+                return resolved;
+            }
         } catch (NoSuchMessageException e) {
-            String[] codes = resolvable.getCodes();
-            return (codes != null && codes.length > 0) ? codes[codes.length - 1] : "Validation error";
+            // Fall through to code/fallback below
+        }
+        String[] codes = resolvable.getCodes();
+        return (codes != null && codes.length > 0) ? codes[codes.length - 1] : "Validation error";
+    }
+
+    private String resolveExceptionMessage(@Nullable String message, String fallbackKey, Locale locale) {
+        if (message == null) {
+            return resolveMessage(fallbackKey, locale);
+        }
+        try {
+            return messageSource.getMessage(message, null, locale);
+        } catch (NoSuchMessageException e) {
+            return message;
         }
     }
 

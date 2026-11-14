@@ -52,8 +52,9 @@ public class UploadController {
     })
     public ResponseEntity<UploadResult> upload(@RequestParam("file") MultipartFile file) {
         try {
+            String contentType = file.getContentType();
             return ResponseEntity.ok(imageStorageService.store(
-                    new UploadImageCommand(file.getBytes(), file.getContentType())
+                    new UploadImageCommand(file.getBytes(), contentType != null ? contentType : "")
             ));
         } catch (IOException e) {
             throw new UploadException("No se pudo leer la imagen", e);

@@ -1,6 +1,7 @@
 package com.tuhospedaje.repository;
 
 import jakarta.persistence.EntityManager;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,7 @@ public class EmailOutboxRepositoryImpl implements EmailOutboxClaimRepository {
                 .addValue("emailType", emailType)
                 .addValue("now", mariaDbDateTime(now))
                 .addValue("batchSize", batchSize);
-        List<Long> ids = jdbcTemplate.queryForList(SELECT_ELIGIBLE_IDS, parameters, Long.class);
+        List<@Nullable Long> ids = jdbcTemplate.queryForList(SELECT_ELIGIBLE_IDS, parameters, Long.class);
         if (ids.isEmpty()) {
             return 0;
         }

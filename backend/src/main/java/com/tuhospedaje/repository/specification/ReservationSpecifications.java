@@ -3,6 +3,7 @@ package com.tuhospedaje.repository.specification;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
 import jakarta.persistence.criteria.Predicate;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public final class ReservationSpecifications {
                 criteriaBuilder.equal(root.get("status"), status);
     }
 
-    public static Specification<Reservation> withSearchQuery(String q) {
+    public static @Nullable Specification<Reservation> withSearchQuery(@Nullable String q) {
         if (q == null || q.trim().isEmpty()) {
             return null;
         }
@@ -34,7 +35,7 @@ public final class ReservationSpecifications {
         };
     }
 
-    public static Specification<Reservation> withStatusAndSearchQuery(ReservationStatus status, String q) {
+    public static Specification<Reservation> withStatusAndSearchQuery(ReservationStatus status, @Nullable String q) {
         Specification<Reservation> statusSpec = withStatus(status);
         Specification<Reservation> searchSpec = withSearchQuery(q);
         

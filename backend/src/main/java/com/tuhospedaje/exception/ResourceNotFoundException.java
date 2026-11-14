@@ -1,9 +1,11 @@
 package com.tuhospedaje.exception;
 
+import org.jspecify.annotations.Nullable;
+
 public class ResourceNotFoundException extends RuntimeException {
 
-    private final String errorCode;
-    private final Object[] args;
+    private final @Nullable String errorCode;
+    private final Object @Nullable [] args;
 
     public ResourceNotFoundException(String message) {
         super(message);
@@ -25,11 +27,11 @@ public class ResourceNotFoundException extends RuntimeException {
         this.args = args;
     }
 
-    public String getErrorCode() {
+    public @Nullable String getErrorCode() {
         return errorCode;
     }
 
-    public Object[] getArgs() {
+    public Object @Nullable [] getArgs() {
         return args;
     }
 }

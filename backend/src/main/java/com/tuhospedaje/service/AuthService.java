@@ -3,6 +3,7 @@ package com.tuhospedaje.service;
 import com.tuhospedaje.dto.auth.AuthResponse;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
+import org.jspecify.annotations.Nullable;
 import com.tuhospedaje.service.EmailOutboxService.WelcomeResendResult;
 
 public interface AuthService {
@@ -60,5 +61,5 @@ public interface AuthService {
      * (already-consumed/unknown/reused credential) is deliberately swallowed here so
      * logout stays idempotent/204 regardless of the credential's state.
      */
-    void logout(String refreshCredential);
+    void logout(@Nullable String refreshCredential);
 }

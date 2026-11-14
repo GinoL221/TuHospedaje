@@ -2,6 +2,7 @@ package com.tuhospedaje.repository;
 
 import com.tuhospedaje.entity.User;
 import jakarta.persistence.LockModeType;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -24,7 +25,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Modifying
     @Query(value = "UPDATE users SET welcome_resend_requested_at = :requestedAt WHERE id = :id", nativeQuery = true)
-    int updateWelcomeResendRequestedAt(@Param("id") Long id, @Param("requestedAt") Instant requestedAt);
+    int updateWelcomeResendRequestedAt(@Param("id") Long id, @Param("requestedAt") @Nullable Instant requestedAt);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.role = com.tuhospedaje.enums.RoleEnum.ADMIN AND u.enabled = true ORDER BY u.id ASC")
