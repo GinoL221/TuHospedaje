@@ -9,7 +9,6 @@ import com.tuhospedaje.service.AuthService.AuthResult;
 import com.tuhospedaje.service.RefreshSessionService;
 import com.tuhospedaje.service.impl.AuthServiceImpl;
 import com.tuhospedaje.service.impl.RegistrationPersistenceService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.AuthenticationManager;
