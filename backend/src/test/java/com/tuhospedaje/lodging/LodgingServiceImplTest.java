@@ -6,7 +6,6 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Policy;
-import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
