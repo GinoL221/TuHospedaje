@@ -255,7 +255,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex, Locale locale) {
         log.warn("Upload rejected: exceeds max size ({} bytes)", ex.getMaxUploadSize());
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
                 .body(Map.of("error", resolveMessage("error.upload.too_large", locale), "status", 413));
     }
 

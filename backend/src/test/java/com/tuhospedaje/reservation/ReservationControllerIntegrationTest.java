@@ -356,7 +356,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
         JsonNode nonOwnerResponse = objectMapper.readTree(nonOwnerBody);
         assertThat(nonOwnerResponse.get("status").asInt()).isEqualTo(404);
-        assertThat(nonOwnerResponse.get("error").isTextual()).isTrue();
+        assertThat(nonOwnerResponse.get("error").isString()).isTrue();
         assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
                 .isEqualTo(ReservationStatus.CONFIRMED);
 
@@ -370,7 +370,7 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
         JsonNode missingResponse = objectMapper.readTree(missingBody);
         assertThat(missingResponse.get("status").asInt()).isEqualTo(404);
-        assertThat(missingResponse.get("error").isTextual()).isTrue();
+        assertThat(missingResponse.get("error").isString()).isTrue();
         assertThat(nonOwnerResponse.get("status")).isEqualTo(missingResponse.get("status"));
         assertThat(nonOwnerResponse.get("error")).isEqualTo(missingResponse.get("error"));
     }

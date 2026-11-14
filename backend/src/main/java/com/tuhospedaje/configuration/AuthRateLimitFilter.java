@@ -190,7 +190,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return null;
         }
         try {
-            String raw = objectMapper.readTree(body).path("email").asText(null);
+            String raw = objectMapper.readTree(body).path("email").asString(null);
             if (raw != null && !raw.isBlank()) {
                 return raw.trim().toLowerCase(Locale.ROOT);
             }
