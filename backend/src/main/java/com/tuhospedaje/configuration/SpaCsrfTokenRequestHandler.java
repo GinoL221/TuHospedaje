@@ -2,6 +2,7 @@ package com.tuhospedaje.configuration;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
@@ -35,7 +36,7 @@ public final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler
     }
 
     @Override
-    public String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
+    public @Nullable String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
         String headerValue = request.getHeader(csrfToken.getHeaderName());
         CsrfTokenRequestHandler handler = StringUtils.hasText(headerValue) ? plain : xor;
         return handler.resolveCsrfTokenValue(request, csrfToken);
