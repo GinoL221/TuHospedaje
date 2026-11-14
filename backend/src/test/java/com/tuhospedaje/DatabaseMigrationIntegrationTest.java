@@ -14,7 +14,7 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,7 +55,7 @@ class DatabaseMigrationIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private MariaDBContainer<?> mariadbContainer;
+    private MariaDBContainer mariadbContainer;
 
     @TempDir
     private Path isolatedConfigRoot;
@@ -336,7 +336,7 @@ assertThat(probeJdbcTemplate.queryForObject(
 
     @Test
     void migratesAndValidatesTheProductionChainInAnIndependentSecondMariaDbContainer() {
-        try (MariaDBContainer<?> independentContainer = new MariaDBContainer<>("mariadb:10.11")
+        try (MariaDBContainer independentContainer = new MariaDBContainer("mariadb:10.11")
                 .withDatabaseName("independent_v1_probe")
                 .withUsername("test")
                 .withPassword("test")) {
@@ -615,7 +615,7 @@ assertThat(probeJdbcTemplate.queryForObject(
         String probeSuffix = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         String probeUsername = "profile_" + probeSuffix;
         String probePassword = UUID.randomUUID().toString();
-        try (MariaDBContainer<?> profileContainer = new MariaDBContainer<>("mariadb:10.11")
+        try (MariaDBContainer profileContainer = new MariaDBContainer("mariadb:10.11")
                 .withDatabaseName(databaseName)
                 .withUsername(probeUsername)
                 .withPassword(probePassword)) {
@@ -666,7 +666,7 @@ assertThat(probeJdbcTemplate.queryForObject(
         String probeSuffix = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         String probeUsername = "dev_profile_" + probeSuffix;
         String probePassword = UUID.randomUUID().toString();
-        try (MariaDBContainer<?> profileContainer = new MariaDBContainer<>("mariadb:10.11")
+        try (MariaDBContainer profileContainer = new MariaDBContainer("mariadb:10.11")
                 .withDatabaseName("dev_profile_probe")
                 .withUsername(probeUsername)
                 .withPassword(probePassword)) {
