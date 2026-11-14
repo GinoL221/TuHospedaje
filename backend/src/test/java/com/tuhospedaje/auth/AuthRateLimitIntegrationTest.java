@@ -6,7 +6,6 @@ import com.tuhospedaje.AbstractIntegrationTest;
 import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.service.EmailOutboxService;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
