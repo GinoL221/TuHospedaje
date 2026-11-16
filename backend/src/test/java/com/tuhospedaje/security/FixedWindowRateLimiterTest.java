@@ -119,4 +119,85 @@ class FixedWindowRateLimiterTest {
                         + "bucket was retained rather than reset to a fresh count=1")
                 .isTrue();
     }
+
+    // --- LIM-7: attempt budget across a real-minute rollover (pigeonhole bound) ---
+    //
+    // The integration test AuthRateLimitIntegrationTest drives real HTTP attempts
+    // against the real clock, so a minute boundary can land anywhere inside its
+    // attempt sequence and split it across two windows as k + (total - k). These
+    // tests pin, with explicit Instants and no real clock, that exactly
+    // 2 x ceiling attempts FAIL at the split k = ceiling (ceiling + ceiling, neither
+    // window exceeds — the flaky failure mode of issue #469), while 2 x ceiling + 1
+    // attempts exceed for EVERY possible split position, per pigeonhole.
+
+    /**
+     * Replays a sequence of {@code total} attempts against a fresh limiter, with the
+     * first {@code splitAt} attempts in minute M (epoch second 0) and the rest in
+     * minute M+1 (epoch second 61), and reports whether ANY attempt was blocked.
+     */
+    private boolean anyAttemptExceedsAcrossRollover(int ceiling, int total, int splitAt) {
+        FixedWindowRateLimiter rolloverLimiter = new FixedWindowRateLimiter();
+        Instant minuteM = Instant.ofEpochSecond(0L);
+        Instant minuteMPlusOne = Instant.ofEpochSecond(61L);
+        for (int i = 1; i <= total; i++) {
+            Instant now = i <= splitAt ? minuteM : minuteMPlusOne;
+            if (rolloverLimiter.exceeds("key", now, ceiling)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Test
+    void twoTimesCeilingAttemptsNeverExceedWhenTheRolloverSplitsExactlyAtTheCeiling() {
+        // The failure mode behind the flaky integration test: 6 attempts against a
+        // ceiling of 3 with the boundary landing after attempt 3 split the sequence
+        // 3 + 3 — each window reaches exactly the ceiling and neither exceeds, so no
+        // 429 ever appears. The same evenly-split hole exists for every ceiling.
+        assertThat(anyAttemptExceedsAcrossRollover(3, 2 * 3, 3))
+                .as("2 x 3 attempts split 3 + 3 across the rollover must NOT trip a ceiling of 3 "
+                        + "— this is exactly why the old integration budget of 6 was flaky")
+                .isFalse();
+        assertThat(anyAttemptExceedsAcrossRollover(2, 2 * 2, 2))
+                .as("2 x 2 attempts split 2 + 2 must NOT trip a ceiling of 2")
+                .isFalse();
+        assertThat(anyAttemptExceedsAcrossRollover(1, 2 * 1, 1))
+                .as("2 x 1 attempts split 1 + 1 must NOT trip a ceiling of 1")
+                .isFalse();
+    }
+
+    @Test
+    void twoTimesCeilingAttemptsDoExceedAtEveryOtherSplitPosition() {
+        // Triangulation: the old budget is not universally broken — only the exact
+        // even split k = ceiling slips through. Every other rollover position gives
+        // one window more than the ceiling.
+        for (int splitAt = 0; splitAt <= 2 * 3; splitAt++) {
+            if (splitAt == 3) {
+                continue;
+            }
+            assertThat(anyAttemptExceedsAcrossRollover(3, 2 * 3, splitAt))
+                    .as("with 2 x 3 attempts and the rollover after attempt %d, one window "
+                            + "receives more than 3 attempts and must exceed", splitAt)
+                    .isTrue();
+        }
+    }
+
+    @Test
+    void twoTimesCeilingPlusOneAttemptsExceedForEveryRolloverPosition() {
+        // Pigeonhole: total = 2 x ceiling + 1 attempts over two windows forces one
+        // window to receive at least ceiling + 1 attempts, wherever the boundary
+        // falls — including the boundary-free splits k = 0 and k = total (all
+        // attempts land in a single window).
+        int[] ceilings = {3, 2, 1};
+        for (int ceiling : ceilings) {
+            int total = 2 * ceiling + 1;
+            for (int splitAt = 0; splitAt <= total; splitAt++) {
+                assertThat(anyAttemptExceedsAcrossRollover(ceiling, total, splitAt))
+                        .as("ceiling %d with %d attempts and the rollover after attempt %d "
+                                        + "must exceed for every possible split position",
+                                ceiling, total, splitAt)
+                        .isTrue();
+            }
+        }
+    }
 }
