@@ -94,13 +94,37 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
+     * Attempt budgets for the rollover-tolerant bound. These mirror the per-class
+     * overrides in the {@link SpringBootTest @SpringBootTest} properties above; keep
+     * them in sync when those properties change.
+     */
+    private static final int LOGIN_PER_IP_CEILING = 3;
+    private static final int LOGIN_PER_EMAIL_CEILING = 2;
+
+    /**
+     * Smallest attempt count that guarantees a {@code 429} even if one real
+     * minute-boundary rollover lands anywhere inside the sequence (the sequence must
+     * still be shorter than a minute). The limiter keys its bucket by the real clock
+     * (no fixed clock override at the integration level — that would require
+     * overriding the shared {@code Supplier<Clock>} bean used by session/JWT logic
+     * too), so {@code maxAttempts} attempts can split across two windows as
+     * {@code k + (maxAttempts - k)} for any k. By pigeonhole, {@code 2 x ceiling + 1}
+     * attempts force one window to receive at least {@code ceiling + 1} attempts no
+     * matter where the boundary falls, while exactly {@code 2 x ceiling} attempts
+     * fail at the split {@code k = ceiling} ({@code ceiling + ceiling}, neither
+     * window exceeds — see the deterministic unit test in
+     * {@code FixedWindowRateLimiterTest}).
+     */
+    private static int attemptsToTripAcrossRollover(int ceiling) {
+        return 2 * ceiling + 1;
+    }
+
+    /**
      * Finds the first {@code 429} response while attempting up to {@code maxAttempts}
-     * times. The rate limiter's window is keyed by the real system clock (no fixed
-     * clock override at the integration level — that would require overriding the
-     * shared {@code Supplier<Clock>} bean used by session/JWT logic too), so a handful
-     * of extra attempts of headroom over the configured ceiling absorbs the
-     * astronomically rare case of a real minute-boundary rollover landing mid-sequence,
-     * without weakening the assertion that the system DOES eventually block.
+     * times. Callers should pass {@link #attemptsToTripAcrossRollover(int)} for the
+     * ceiling the call actually exercises, so the assertion survives a real
+     * minute-boundary rollover landing mid-sequence without weakening the assertion
+     * that the system DOES eventually block.
      */
     private interface AttemptFn {
         MvcResult apply(int attemptNumber) throws Exception;
@@ -122,7 +146,8 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     void fourthLoginAttemptFromSameIpWithin3IsRateLimited() throws Exception {
         String ip = "10.1.1.1";
 
-        MvcResult blocked = firstBlocked(6, i -> login(ip, "int1-" + i + "@test.com", "wrong-password"));
+        MvcResult blocked = firstBlocked(attemptsToTripAcrossRollover(LOGIN_PER_IP_CEILING),
+                i -> login(ip, "int1-" + i + "@test.com", "wrong-password"));
 
         assertThat(blocked).as("IP ceiling of 3 must eventually trip").isNotNull();
         assertThat(blocked.getResponse().getHeader(HttpHeaders.RETRY_AFTER)).isNotNull();
@@ -137,7 +162,8 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     void rateLimitedLoginSetsNoAccessTokenCookieAndLeaksNoJwt() throws Exception {
         String ip = "10.1.1.2";
 
-        MvcResult blocked = firstBlocked(6, i -> login(ip, "int2-" + i + "@test.com", "wrong-password"));
+        MvcResult blocked = firstBlocked(attemptsToTripAcrossRollover(LOGIN_PER_IP_CEILING),
+                i -> login(ip, "int2-" + i + "@test.com", "wrong-password"));
 
         assertThat(blocked).as("IP ceiling of 3 must eventually trip").isNotNull();
         assertThat(blocked.getResponse().getCookie("ACCESS_TOKEN")).isNull();
@@ -167,7 +193,8 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     @Test
     void refreshAndWelcomeResendAreUnaffectedAfterLoginLimitIsExhausted() throws Exception {
         String ip = "10.1.1.5";
-        MvcResult blocked = firstBlocked(6, i -> login(ip, "int5-" + i + "@test.com", "wrong-password"));
+        MvcResult blocked = firstBlocked(attemptsToTripAcrossRollover(LOGIN_PER_IP_CEILING),
+                i -> login(ip, "int5-" + i + "@test.com", "wrong-password"));
         assertThat(blocked).as("login IP ceiling must be exhausted before checking other endpoints").isNotNull();
 
         MvcResult refresh = mockMvc.perform(post("/api/auth/refresh").with(fromIp(ip))).andReturn();
@@ -182,7 +209,9 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     @Test
     void successfulLoginsAlsoConsumeTheIpQuota() throws Exception {
         String loginIp = "10.1.1.6";
-        int headroomAttempts = 6;
+        // One real account per attempt: the first successful login plus the remaining
+        // attempts inside firstBlocked must each use a distinct, fully valid account.
+        int headroomAttempts = attemptsToTripAcrossRollover(LOGIN_PER_IP_CEILING);
         for (int i = 1; i <= headroomAttempts; i++) {
             registerRealUser("10.1.1.6" + i, "int6-" + i + "@test.com");
         }
@@ -196,6 +225,9 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
         // account each time) — proves a SUCCESSFUL login consumes the IP quota just
         // like a failed one, since the IP ceiling eventually trips despite every
         // attempt being individually legitimate.
+        // IP dimension: every attempt originates from the same dedicated IP but uses a
+        // different email, so only the IP counter accumulates — the binding ceiling
+        // here is login-per-ip (3), not login-per-email (2).
         MvcResult blocked = firstBlocked(headroomAttempts - 1, i -> login(loginIp, "int6-" + (i + 1) + "@test.com", "Pass1234"));
         assertThat(blocked).as("IP ceiling of 3 must eventually trip even though every login succeeded").isNotNull();
     }
@@ -205,7 +237,8 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
     @Test
     void the429BodyHasExactlyErrorAndStatusKeysMatchingTheHttpStatus() throws Exception {
         String ip = "10.1.1.7";
-        MvcResult blocked = firstBlocked(6, i -> login(ip, "int7-" + i + "@test.com", "wrong-password"));
+        MvcResult blocked = firstBlocked(attemptsToTripAcrossRollover(LOGIN_PER_IP_CEILING),
+                i -> login(ip, "int7-" + i + "@test.com", "wrong-password"));
 
         assertThat(blocked).as("IP ceiling of 3 must eventually trip").isNotNull();
         JsonNode body = objectMapper.readTree(blocked.getResponse().getContentAsString());
@@ -224,8 +257,13 @@ class AuthRateLimitIntegrationTest extends AbstractIntegrationTest {
         String registeredIp = "10.1.1.81";
         String unregisteredIp = "10.1.1.82";
 
-        MvcResult blockedRegistered = firstBlocked(6, i -> login(registeredIp, registeredEmail, "wrong-password"));
-        MvcResult blockedUnregistered = firstBlocked(6, i -> login(unregisteredIp, "int8-fake@test.com", "wrong-password"));
+        // Per-email dimension: each call reuses ONE email from a dedicated IP, so the
+        // email counter (ceiling 2) accumulates faster than the IP counter (ceiling 3)
+        // and per-email is the dimension that trips first.
+        MvcResult blockedRegistered = firstBlocked(attemptsToTripAcrossRollover(LOGIN_PER_EMAIL_CEILING),
+                i -> login(registeredIp, registeredEmail, "wrong-password"));
+        MvcResult blockedUnregistered = firstBlocked(attemptsToTripAcrossRollover(LOGIN_PER_EMAIL_CEILING),
+                i -> login(unregisteredIp, "int8-fake@test.com", "wrong-password"));
 
         assertThat(blockedRegistered).as("registered email's per-email ceiling must eventually trip").isNotNull();
         assertThat(blockedUnregistered).as("unregistered email's per-email ceiling must eventually trip").isNotNull();
