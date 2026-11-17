@@ -5,9 +5,11 @@ import com.tuhospedaje.entity.Category;
 import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
+import com.tuhospedaje.exception.UniqueConstraintViolationSupport;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.service.CategoryService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ import java.util.Optional;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
+
+    private static final String CATEGORY_NAME_CONSTRAINT = "UK_categories_name";
 
     private final CategoryRepository categoryRepository;
     private final LodgingRepository lodgingRepository;
@@ -34,8 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         Category category = dto.toEntity();
-        Category saved = categoryRepository.save(category);
-        return CategoryDTO.fromEntity(saved);
+        return persistAndTranslateDuplicate(category, dto.getName());
     }
 
     @Override
@@ -58,8 +61,19 @@ public class CategoryServiceImpl implements CategoryService {
         if (dto.getImageUrl() != null) {
             category.setImageUrl(dto.getImageUrl());
         }
-        Category updated = categoryRepository.save(category);
-        return CategoryDTO.fromEntity(updated);
+        return persistAndTranslateDuplicate(category, dto.getName());
+    }
+
+    private CategoryDTO persistAndTranslateDuplicate(Category category, String candidateName) {
+        try {
+            Category saved = categoryRepository.saveAndFlush(category);
+            return CategoryDTO.fromEntity(saved);
+        } catch (DataIntegrityViolationException ex) {
+            if (UniqueConstraintViolationSupport.matchesConstraint(ex, CATEGORY_NAME_CONSTRAINT)) {
+                throw new DuplicateResourceException("error.category.duplicate_name", candidateName);
+            }
+            throw ex;
+        }
     }
 
     @Override

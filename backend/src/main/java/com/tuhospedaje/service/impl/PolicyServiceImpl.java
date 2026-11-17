@@ -4,8 +4,10 @@ import com.tuhospedaje.dto.policy.PolicyDTO;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
+import com.tuhospedaje.exception.UniqueConstraintViolationSupport;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.service.PolicyService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import java.util.Optional;
 
 @Service
 public class PolicyServiceImpl implements PolicyService {
+
+    private static final String POLICY_NAME_CONSTRAINT = "UK_policies_name";
 
     private final PolicyRepository policyRepository;
 
@@ -29,8 +33,7 @@ public class PolicyServiceImpl implements PolicyService {
             throw new DuplicateResourceException("error.policy.duplicate_name", dto.getName());
         }
         Policy policy = dto.toEntity();
-        Policy saved = policyRepository.save(policy);
-        return PolicyDTO.fromEntity(saved);
+        return persistAndTranslateDuplicate(policy, dto.getName());
     }
 
     @Override
@@ -47,8 +50,19 @@ public class PolicyServiceImpl implements PolicyService {
         policy.setDescription(dto.getDescription());
         policy.setIcon(dto.getIcon());
 
-        Policy updated = policyRepository.save(policy);
-        return PolicyDTO.fromEntity(updated);
+        return persistAndTranslateDuplicate(policy, dto.getName());
+    }
+
+    private PolicyDTO persistAndTranslateDuplicate(Policy policy, String candidateName) {
+        try {
+            Policy saved = policyRepository.saveAndFlush(policy);
+            return PolicyDTO.fromEntity(saved);
+        } catch (DataIntegrityViolationException ex) {
+            if (UniqueConstraintViolationSupport.matchesConstraint(ex, POLICY_NAME_CONSTRAINT)) {
+                throw new DuplicateResourceException("error.policy.duplicate_name", candidateName);
+            }
+            throw ex;
+        }
     }
 
     @Override

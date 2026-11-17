@@ -9,6 +9,7 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.LodgingService;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -311,5 +313,49 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
                 handler.handleMaxUploadSizeExceeded(new MaxUploadSizeExceededException(5_242_880L), new Locale("es"));
 
         assertThat(response.getBody().get("error")).isEqualTo("La imagen supera el tamaño máximo permitido.");
+    }
+
+    @Test
+    void handleDataIntegrity_withUsersEmailUniqueConstraint_returns409WithDuplicateEmailCode() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "Duplicate entry", new SQLException("Duplicate entry 'dup@test.com' for key 'UK_users_email'"),
+                "UK_users_email");
+        DataIntegrityViolationException ex = new DataIntegrityViolationException("could not execute statement", cve);
+
+        ResponseEntity<Map<String, Object>> esResponse = handler.handleDataIntegrity(ex, Locale.forLanguageTag("es"));
+        assertThat(esResponse.getStatusCode().value()).isEqualTo(409);
+        assertThat(esResponse.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "error", "Ese email ya está registrado.",
+                "status", 409,
+                "code", DuplicateEmailException.ERROR_CODE));
+
+        ResponseEntity<Map<String, Object>> enResponse = handler.handleDataIntegrity(ex, Locale.ENGLISH);
+        assertThat(enResponse.getStatusCode().value()).isEqualTo(409);
+        assertThat(enResponse.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "error", "This email is already registered.",
+                "status", 409,
+                "code", DuplicateEmailException.ERROR_CODE));
+    }
+
+    @Test
+    void handleDataIntegrity_withNonDuplicateConstraint_returns400() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler(messageSource);
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "CHECK constraint failed", new SQLException("CONSTRAINT CK_reservations_date_range failed"),
+                "CK_reservations_date_range");
+        DataIntegrityViolationException ex = new DataIntegrityViolationException("could not execute statement", cve);
+
+        ResponseEntity<Map<String, Object>> esResponse = handler.handleDataIntegrity(ex, Locale.forLanguageTag("es"));
+        assertThat(esResponse.getStatusCode().value()).isEqualTo(400);
+        assertThat(esResponse.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "error", "Faltan campos obligatorios o hay datos inválidos.",
+                "status", 400));
+
+        ResponseEntity<Map<String, Object>> enResponse = handler.handleDataIntegrity(ex, Locale.ENGLISH);
+        assertThat(enResponse.getStatusCode().value()).isEqualTo(400);
+        assertThat(enResponse.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "error", "Missing required fields or invalid data.",
+                "status", 400));
     }
 }

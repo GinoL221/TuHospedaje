@@ -29,6 +29,8 @@ Crear o renombrar una categoría, característica o política con un nombre que 
 
 Actualizar un alojamiento manteniendo su propio nombre y su propio email sigue siendo válido: el control solo rechaza el valor cuando otro alojamiento ya lo tiene.
 
+Si dos peticiones simultáneas pasan la comprobación inicial y la segunda choca contra una restricción única de la base de datos (`UK_categories_name`, `UK_features_name`, `UK_policies_name`, `UK_lodgings_name`, `UK_lodgings_email`, `UK_users_email`), la violación se traduce a la misma respuesta `409 Conflict` y a la misma clave de mensaje localizado (`error.<resource>.duplicate_*` o `error.auth.duplicate_email` con `code: "duplicate_email"`) que el camino secuencial. El resto de las violaciones de integridad (`DataIntegrityViolationException` por claves foráneas, `NOT NULL` o restricciones `CHECK`) siguen respondiendo `400 Bad Request` con `error.data_integrity`.
+
 Dos reglas de negocio siguen en 400 y solo cambiaron a mensajes localizados: eliminar una categoría que tiene alojamientos y puntuar un alojamiento sin una estadía finalizada.
 
 ## 401 y 403 de seguridad

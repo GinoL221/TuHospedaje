@@ -15,13 +15,16 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingQueryService;
 import com.tuhospedaje.service.impl.LodgingServiceImpl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +58,7 @@ class LodgingServiceImplTest {
         Lodging saved = lodging(1L, "Gran Hotel");
         when(lodgingRepository.existsByName(dto.getName())).thenReturn(false);
         when(lodgingRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-        when(lodgingRepository.save(any(Lodging.class))).thenReturn(saved);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class))).thenReturn(saved);
 
         LodgingDTO response = lodgingService.save(dto);
 
@@ -97,7 +100,7 @@ class LodgingServiceImplTest {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(featureRepository.findAllById(Set.of(2L))).thenReturn(List.of(feature));
         when(policyRepository.findAllById(Set.of(3L))).thenReturn(List.of(policy));
-        when(lodgingRepository.save(any(Lodging.class))).thenReturn(saved);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class))).thenReturn(saved);
 
         LodgingDTO response = lodgingService.save(dto);
 
@@ -115,7 +118,7 @@ class LodgingServiceImplTest {
         dto.setPricePerNight(new BigDecimal("27500.50"));
         dto.setMaxGuests(7);
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.save(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(lodgingRepository.saveAndFlush(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         LodgingDTO response = lodgingService.update(dto);
 
@@ -277,5 +280,90 @@ class LodgingServiceImplTest {
         lodging.setId(id);
         lodging.setName(name);
         return lodging;
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnSaveToDuplicateResourceException() {
+        LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
+        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
+        when(lodgingRepository.existsByEmail("hotel@test.com")).thenReturn(false);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class)))
+                .thenThrow(constraintViolation("UK_lodgings_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.save(dto));
+        assertEquals("error.lodging.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Gran Hotel"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldTranslateUniqueEmailConstraintViolationOnSaveToDuplicateResourceException() {
+        LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
+        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
+        when(lodgingRepository.existsByEmail("hotel@test.com")).thenReturn(false);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class)))
+                .thenThrow(constraintViolation("UK_lodgings_email"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.save(dto));
+        assertEquals("error.lodging.duplicate_email", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"hotel@test.com"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnUpdateToDuplicateResourceException() {
+        Lodging existing = lodging(1L, "Hotel Antiguo");
+        existing.setEmail("old@test.com");
+        LodgingDTO dto = lodgingDto("Hotel Nuevo", "old@test.com");
+        dto.setId(1L);
+        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.existsByName("Hotel Nuevo")).thenReturn(false);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class)))
+                .thenThrow(constraintViolation("UK_lodgings_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.update(dto));
+        assertEquals("error.lodging.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Hotel Nuevo"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldTranslateUniqueEmailConstraintViolationOnUpdateToDuplicateResourceException() {
+        Lodging existing = lodging(1L, "Hotel Antiguo");
+        existing.setEmail("old@test.com");
+        LodgingDTO dto = lodgingDto("Hotel Antiguo", "dup@test.com");
+        dto.setId(1L);
+        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.existsByEmail("dup@test.com")).thenReturn(false);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class)))
+                .thenThrow(constraintViolation("UK_lodgings_email"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> lodgingService.update(dto));
+        assertEquals("error.lodging.duplicate_email", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"dup@test.com"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldPropagateNonDuplicateDataIntegrityViolationOnSave() {
+        LodgingDTO dto = lodgingDto("Gran Hotel", "hotel@test.com");
+        when(lodgingRepository.existsByName("Gran Hotel")).thenReturn(false);
+        when(lodgingRepository.existsByEmail("hotel@test.com")).thenReturn(false);
+        when(lodgingRepository.saveAndFlush(any(Lodging.class)))
+                .thenThrow(constraintViolation("FK_lodgings_category"));
+
+        assertThrows(DataIntegrityViolationException.class, () -> lodgingService.save(dto));
+    }
+
+    private DataIntegrityViolationException constraintViolation(String constraintName) {
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "Constraint violation",
+                new SQLException("Constraint failed: " + constraintName),
+                constraintName);
+        return new DataIntegrityViolationException("could not execute statement", cve);
     }
 }

@@ -12,6 +12,7 @@ import com.tuhospedaje.entity.LodgingImage;
 import com.tuhospedaje.entity.Policy;
 import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
+import com.tuhospedaje.exception.UniqueConstraintViolationSupport;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -20,6 +21,7 @@ import com.tuhospedaje.repository.RatingRepository;
 import com.tuhospedaje.repository.ReservationRepository;
 import com.tuhospedaje.service.LodgingQueryService;
 import com.tuhospedaje.service.LodgingService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class LodgingServiceImpl implements LodgingService {
+
+    private static final String LODGING_NAME_CONSTRAINT = "UK_lodgings_name";
+    private static final String LODGING_EMAIL_CONSTRAINT = "UK_lodgings_email";
 
     private final LodgingRepository lodgingRepository;
     private final CategoryRepository categoryRepository;
@@ -113,7 +118,7 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
         replaceImages(lodging, dto.getImageUrls());
-        return enrichWithRatings(LodgingDTO.fromEntity(lodgingRepository.save(lodging)));
+        return persistAndEnrich(lodging, dto);
     }
 
     @Override
@@ -145,7 +150,21 @@ public class LodgingServiceImpl implements LodgingService {
         lodging.setFeatures(resolveFeatures(dto.getFeatureIds()));
         lodging.setPolicies(resolvePolicies(dto.getPolicyIds()));
         replaceImages(lodging, dto.getImageUrls());
-        return enrichWithRatings(LodgingDTO.fromEntity(lodgingRepository.save(lodging)));
+        return persistAndEnrich(lodging, dto);
+    }
+
+    private LodgingDTO persistAndEnrich(Lodging lodging, LodgingDTO dto) {
+        try {
+            return enrichWithRatings(LodgingDTO.fromEntity(lodgingRepository.saveAndFlush(lodging)));
+        } catch (DataIntegrityViolationException ex) {
+            if (UniqueConstraintViolationSupport.matchesConstraint(ex, LODGING_NAME_CONSTRAINT)) {
+                throw new DuplicateResourceException("error.lodging.duplicate_name", dto.getName());
+            }
+            if (UniqueConstraintViolationSupport.matchesConstraint(ex, LODGING_EMAIL_CONSTRAINT)) {
+                throw new DuplicateResourceException("error.lodging.duplicate_email", dto.getEmail());
+            }
+            throw ex;
+        }
     }
 
     @Override

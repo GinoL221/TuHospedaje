@@ -6,12 +6,15 @@ import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.service.impl.FeatureServiceImpl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +46,7 @@ class FeatureServiceImplTest {
         savedEntity.setIcon("wifi-icon");
 
         when(featureRepository.existsByNameIgnoreCase("WiFi")).thenReturn(false);
-        when(featureRepository.save(any(Feature.class))).thenReturn(savedEntity);
+        when(featureRepository.saveAndFlush(any(Feature.class))).thenReturn(savedEntity);
 
         FeatureDTO response = featureService.save(dto);
 
@@ -130,7 +133,7 @@ class FeatureServiceImplTest {
 
         when(featureRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(featureRepository.findByNameIgnoreCase("WiFi Premium")).thenReturn(null);
-        when(featureRepository.save(any(Feature.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(featureRepository.saveAndFlush(any(Feature.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         FeatureDTO response = featureService.update(input);
 
@@ -198,5 +201,67 @@ class FeatureServiceImplTest {
         when(featureRepository.findById(404L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> featureService.delete(404L));
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnSaveToDuplicateResourceException() {
+        FeatureDTO dto = new FeatureDTO();
+        dto.setName("WiFi");
+        dto.setIcon("wifi-icon");
+
+        when(featureRepository.existsByNameIgnoreCase("WiFi")).thenReturn(false);
+        when(featureRepository.saveAndFlush(any(Feature.class)))
+                .thenThrow(constraintViolation("UK_features_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> featureService.save(dto));
+        assertEquals("error.feature.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"WiFi"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnUpdateToDuplicateResourceException() {
+        Feature existing = new Feature();
+        existing.setId(1L);
+        existing.setName("WiFi");
+        existing.setIcon("old-icon");
+
+        FeatureDTO input = new FeatureDTO();
+        input.setId(1L);
+        input.setName("Piscina");
+        input.setIcon("new-icon");
+
+        when(featureRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(featureRepository.findByNameIgnoreCase("Piscina")).thenReturn(null);
+        when(featureRepository.saveAndFlush(any(Feature.class)))
+                .thenThrow(constraintViolation("UK_features_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> featureService.update(input));
+        assertEquals("error.feature.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Piscina"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldPropagateNonDuplicateDataIntegrityViolationOnSave() {
+        FeatureDTO dto = new FeatureDTO();
+        dto.setName("WiFi");
+        dto.setIcon("wifi-icon");
+
+        when(featureRepository.existsByNameIgnoreCase("WiFi")).thenReturn(false);
+        when(featureRepository.saveAndFlush(any(Feature.class)))
+                .thenThrow(constraintViolation("FK_other_constraint"));
+
+        assertThrows(DataIntegrityViolationException.class, () -> featureService.save(dto));
+    }
+
+    private DataIntegrityViolationException constraintViolation(String constraintName) {
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "Constraint violation",
+                new SQLException("Constraint failed: " + constraintName),
+                constraintName);
+        return new DataIntegrityViolationException("could not execute statement", cve);
     }
 }

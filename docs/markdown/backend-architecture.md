@@ -15,7 +15,7 @@ All components live under `com.tuhospedaje`, with `BackendApplication.java` (1 c
 | `dto` | 28 | Transfer objects grouped by domain (`auth`, `lodging`, `reservation`, `email`, `common`), including `ApiError` and `PageResponse`. |
 | `entity` | 13 | JPA entities: `User`, `Lodging`, `Reservation`, `Category`, `Feature`, `Policy`, `Rating`, `RefreshToken`, `RefreshTokenFamily`, `EmailOutbox`, `SessionSecurityEvent`, `LodgingImage`, `AdminInvariantLock`. |
 | `enums` | 4 | Domain enums: `EmailOutboxStatus`, `EmailOutboxType`, `ReservationStatus`, `RoleEnum`. |
-| `exception` | 9 | Domain exceptions with HTTP status semantics plus `GlobalExceptionHandler`. |
+| `exception` | 10 | Domain exceptions with HTTP status semantics, `UniqueConstraintViolationSupport`, and `GlobalExceptionHandler`. |
 | `openapi` | 1 | `OpenApiConfig`: metadata for Swagger/OpenAPI. |
 | `repository` | 16 | Spring Data repositories (including `EmailOutboxClaimRepository` with its JDBC implementation `EmailOutboxRepositoryImpl`, the `CityProjection` interface, and `specification/ReservationSpecifications`). |
 | `security` | 2 | `FixedWindowRateLimiter` (reusable fixed-window counter) and `RefreshTokenHasher` (HMAC hashing of refresh credentials). |
@@ -126,10 +126,10 @@ Shared details:
 | `HttpRequestMethodNotSupportedException` | 405 | :298-303 |
 | `HttpMediaTypeNotSupportedException` | 415 | :305-310 |
 | `MissingServletRequestParameterException` | 400 | :312-317 |
-| `UploadException` | 500 | :319-324 |
-| `DataIntegrityViolationException` | 400 | :326-330 |
-| `MethodArgumentTypeMismatchException` | 400 | :332-336 |
-| `Exception` (catch-all) | 500; re-throws `AccessDeniedException` toward Spring Security | :343-351 |
+| `UploadException` | 500 | :326-331 |
+| `DataIntegrityViolationException` | 400 (`409` + `code: duplicate_email` on `UK_users_email`) | :333-340 |
+| `MethodArgumentTypeMismatchException` | 400 | :342-346 |
+| `Exception` (catch-all) | 500; re-throws `AccessDeniedException` toward Spring Security | :353-361 |
 
 The two message paths:
 

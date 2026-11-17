@@ -6,12 +6,15 @@ import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.PolicyRepository;
 import com.tuhospedaje.service.impl.PolicyServiceImpl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +48,7 @@ class PolicyServiceImplTest {
         savedEntity.setIcon("fa-solid fa-clock");
 
         when(policyRepository.existsByName("Check-in")).thenReturn(false);
-        when(policyRepository.save(any(Policy.class))).thenReturn(savedEntity);
+        when(policyRepository.saveAndFlush(any(Policy.class))).thenReturn(savedEntity);
 
         PolicyDTO response = policyService.save(dto);
 
@@ -139,7 +142,7 @@ class PolicyServiceImplTest {
 
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(policyRepository.existsByName("Check-in actualizado")).thenReturn(false);
-        when(policyRepository.save(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(policyRepository.saveAndFlush(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PolicyDTO response = policyService.update(input);
 
@@ -163,7 +166,7 @@ class PolicyServiceImplTest {
         input.setIcon("fa-solid fa-clock");
 
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(policyRepository.save(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(policyRepository.saveAndFlush(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PolicyDTO response = policyService.update(input);
 
@@ -229,5 +232,71 @@ class PolicyServiceImplTest {
         when(policyRepository.findById(404L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> policyService.delete(404L));
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnSaveToDuplicateResourceException() {
+        PolicyDTO dto = new PolicyDTO();
+        dto.setName("Check-in");
+        dto.setDescription("A partir de las 14:00");
+        dto.setIcon("fa-solid fa-clock");
+
+        when(policyRepository.existsByName("Check-in")).thenReturn(false);
+        when(policyRepository.saveAndFlush(any(Policy.class)))
+                .thenThrow(constraintViolation("UK_policies_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> policyService.save(dto));
+        assertEquals("error.policy.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Check-in"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnUpdateToDuplicateResourceException() {
+        Policy existing = new Policy();
+        existing.setId(1L);
+        existing.setName("Check-in");
+        existing.setDescription("A partir de las 14:00");
+        existing.setIcon("fa-solid fa-clock");
+
+        PolicyDTO input = new PolicyDTO();
+        input.setId(1L);
+        input.setName("Check-out");
+        input.setDescription("Hasta las 11:00");
+        input.setIcon("fa-solid fa-clock");
+
+        when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(policyRepository.existsByName("Check-out")).thenReturn(false);
+        when(policyRepository.saveAndFlush(any(Policy.class)))
+                .thenThrow(constraintViolation("UK_policies_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> policyService.update(input));
+        assertEquals("error.policy.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Check-out"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldPropagateNonDuplicateDataIntegrityViolationOnSave() {
+        PolicyDTO dto = new PolicyDTO();
+        dto.setName("Check-in");
+        dto.setDescription("A partir de las 14:00");
+        dto.setIcon("fa-solid fa-clock");
+
+        when(policyRepository.existsByName("Check-in")).thenReturn(false);
+        when(policyRepository.saveAndFlush(any(Policy.class)))
+                .thenThrow(constraintViolation("FK_other_constraint"));
+
+        assertThrows(DataIntegrityViolationException.class, () -> policyService.save(dto));
+    }
+
+    private DataIntegrityViolationException constraintViolation(String constraintName) {
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "Constraint violation",
+                new SQLException("Constraint failed: " + constraintName),
+                constraintName);
+        return new DataIntegrityViolationException("could not execute statement", cve);
     }
 }

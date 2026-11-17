@@ -8,12 +8,15 @@ import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CategoryRepository;
 import com.tuhospedaje.repository.LodgingRepository;
 import com.tuhospedaje.service.impl.CategoryServiceImpl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,7 +51,7 @@ class CategoryServiceImplTest {
         savedEntity.setDescription("Alojamiento urbano");
 
         when(categoryRepository.existsByName("Hotel")).thenReturn(false);
-        when(categoryRepository.save(any(Category.class))).thenReturn(savedEntity);
+        when(categoryRepository.saveAndFlush(any(Category.class))).thenReturn(savedEntity);
 
         CategoryDTO response = categoryService.save(dto);
 
@@ -137,7 +140,7 @@ class CategoryServiceImplTest {
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(categoryRepository.findByNameIgnoreCase("Hotel Boutique")).thenReturn(Optional.empty());
-        when(categoryRepository.save(any(Category.class))).thenReturn(updated);
+        when(categoryRepository.saveAndFlush(any(Category.class))).thenReturn(updated);
 
         CategoryDTO response = categoryService.update(input);
 
@@ -159,7 +162,7 @@ class CategoryServiceImplTest {
 
         when(categoryRepository.findById(3L)).thenReturn(Optional.of(existing));
         when(categoryRepository.findByNameIgnoreCase("Hotel")).thenReturn(Optional.empty());
-        when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(categoryRepository.saveAndFlush(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CategoryDTO response = categoryService.update(input);
 
@@ -215,5 +218,64 @@ class CategoryServiceImplTest {
         when(categoryRepository.findById(404L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> categoryService.delete(404L));
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnSaveToDuplicateResourceException() {
+        CategoryDTO dto = new CategoryDTO();
+        dto.setName("Hotel");
+        dto.setDescription("Alojamiento urbano");
+
+        when(categoryRepository.existsByName("Hotel")).thenReturn(false);
+        when(categoryRepository.saveAndFlush(any(Category.class)))
+                .thenThrow(constraintViolation("UK_categories_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> categoryService.save(dto));
+        assertEquals("error.category.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Hotel"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldTranslateUniqueNameConstraintViolationOnUpdateToDuplicateResourceException() {
+        Category existing = new Category();
+        existing.setId(1L);
+        existing.setName("Hotel");
+
+        CategoryDTO input = new CategoryDTO();
+        input.setId(1L);
+        input.setName("Cabana");
+
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(categoryRepository.findByNameIgnoreCase("Cabana")).thenReturn(Optional.empty());
+        when(categoryRepository.saveAndFlush(any(Category.class)))
+                .thenThrow(constraintViolation("UK_categories_name"));
+
+        DuplicateResourceException ex = assertThrows(
+                DuplicateResourceException.class,
+                () -> categoryService.update(input));
+        assertEquals("error.category.duplicate_name", ex.getErrorCode());
+        assertArrayEquals(new Object[]{"Cabana"}, ex.getArgs());
+    }
+
+    @Test
+    void shouldPropagateNonDuplicateDataIntegrityViolationOnSave() {
+        CategoryDTO dto = new CategoryDTO();
+        dto.setName("Hotel");
+
+        when(categoryRepository.existsByName("Hotel")).thenReturn(false);
+        when(categoryRepository.saveAndFlush(any(Category.class)))
+                .thenThrow(constraintViolation("FK_other_constraint"));
+
+        assertThrows(DataIntegrityViolationException.class, () -> categoryService.save(dto));
+    }
+
+    private DataIntegrityViolationException constraintViolation(String constraintName) {
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "Constraint violation",
+                new SQLException("Constraint failed: " + constraintName),
+                constraintName);
+        return new DataIntegrityViolationException("could not execute statement", cve);
     }
 }

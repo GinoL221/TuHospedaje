@@ -4,8 +4,10 @@ import com.tuhospedaje.dto.features.FeatureDTO;
 import com.tuhospedaje.entity.Feature;
 import com.tuhospedaje.exception.DuplicateResourceException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
+import com.tuhospedaje.exception.UniqueConstraintViolationSupport;
 import com.tuhospedaje.repository.FeatureRepository;
 import com.tuhospedaje.service.FeatureService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import java.util.Optional;
 
 @Service
 public class FeatureServiceImpl implements FeatureService {
+
+    private static final String FEATURE_NAME_CONSTRAINT = "UK_features_name";
 
     private final FeatureRepository featureRepository;
 
@@ -29,8 +33,7 @@ public class FeatureServiceImpl implements FeatureService {
             throw new DuplicateResourceException("error.feature.duplicate_name", dto.getName());
         }
         Feature feature = dto.toEntity();
-        Feature saved = featureRepository.save(feature);
-        return FeatureDTO.fromEntity(saved);
+        return persistAndTranslateDuplicate(feature, dto.getName());
     }
 
     @Override
@@ -44,8 +47,19 @@ public class FeatureServiceImpl implements FeatureService {
         }
         feature.setName(dto.getName());
         feature.setIcon(dto.getIcon());
-        Feature updated = featureRepository.save(feature);
-        return FeatureDTO.fromEntity(updated);
+        return persistAndTranslateDuplicate(feature, dto.getName());
+    }
+
+    private FeatureDTO persistAndTranslateDuplicate(Feature feature, String candidateName) {
+        try {
+            Feature saved = featureRepository.saveAndFlush(feature);
+            return FeatureDTO.fromEntity(saved);
+        } catch (DataIntegrityViolationException ex) {
+            if (UniqueConstraintViolationSupport.matchesConstraint(ex, FEATURE_NAME_CONSTRAINT)) {
+                throw new DuplicateResourceException("error.feature.duplicate_name", candidateName);
+            }
+            throw ex;
+        }
     }
 
     @Override
