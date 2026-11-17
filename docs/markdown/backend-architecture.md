@@ -134,7 +134,7 @@ Shared details:
 The two message paths:
 
 1. **Fixed key via `MessageSource`**: most handlers resolve a fixed key (`error.rate_limit`, `error.auth.invalid`, `error.optimistic_lock`, etc., at the line ranges cited above).
-2. **Literal with fallback**: for `IllegalArgumentException` and `ReservationConflictException` the exception message itself is tried as a key and, on `NoSuchMessageException`, the raw text is returned (documented comment at :65-73, implementation at :122-132,144-149) — today those throw sites use Spanish literals, not keys.
+2. **Literal with fallback**: for `IllegalArgumentException` and `ReservationConflictException` the exception message itself is tried as a key and, on `NoSuchMessageException`, the raw text is returned (implemented at :112-132, :195-204) — key-carrying exceptions (`LocalizedIllegalArgumentException` and `ResourceNotFoundException(errorCode, args, fallback)`) resolve directly through `MessageSource`.
 
 The active message catalog lives in **two bundles**: `backend/src/main/resources/messages.properties` (neutral/English) and `messages_es.properties` (Spanish), selected by `Accept-Language`. `spring.messages.fallback-to-system-locale=false` (`backend/src/main/resources/application.properties:99-106`) keeps resolution deterministic regardless of the host OS locale (with the rationale in the comment at :101-105). Security errors that never reach MVC — the boundary 401/403 — share the same body shape via `SecurityErrorHandler` with its own keys (`error.auth.required`, `error.access_denied`, `error.csrf_invalid`, `configuration/SecurityErrorHandler.java:33-36`).
 

@@ -9,6 +9,7 @@ import com.tuhospedaje.dto.reservation.OccupiedRange;
 import com.tuhospedaje.entity.Lodging;
 import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.enums.ReservationStatus;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.CityProjection;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -114,10 +115,10 @@ public class LodgingQueryServiceImpl implements LodgingQueryService {
     @Transactional(readOnly = true)
     public PageResponse<LodgingDTO> findAdminPage(int page, int size, String sort, String direction, String query) {
         if (!ADMIN_SORT_FIELDS.contains(sort)) {
-            throw new IllegalArgumentException("Campo de ordenamiento inválido: " + sort);
+            throw new LocalizedIllegalArgumentException("error.sort.invalid_field", sort);
         }
         Sort.Direction sortDirection = Sort.Direction.fromOptionalString(direction)
-                .orElseThrow(() -> new IllegalArgumentException("Dirección de ordenamiento inválida: " + direction));
+                .orElseThrow(() -> new LocalizedIllegalArgumentException("error.sort.invalid_direction", direction));
         Page<Lodging> lodgingPage = lodgingRepository.findAll(adminSearchSpec(query), PageRequest.of(page, size, Sort.by(sortDirection, sort)));
         List<LodgingDTO> lodgings = enrichWithRatings(lodgingPage.getContent().stream()
                 .map(LodgingDTO::fromEntity)

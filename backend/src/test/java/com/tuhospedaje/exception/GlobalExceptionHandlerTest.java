@@ -228,13 +228,9 @@ class GlobalExceptionHandlerTest extends AbstractIntegrationTest {
     }
 
     /**
-     * i18n scope note: the 13 real {@link IllegalArgumentException} throw sites in this
-     * codebase all use hardcoded literal Spanish text (e.g. {@code AuthServiceImpl},
-     * {@code LodgingServiceImpl}), not message keys. {@code handleIllegalArgument} tries
-     * {@code messageSource.getMessage(ex.getMessage(), null, locale)} first — since the
-     * literal text is never a registered key, this MUST fall back to the literal message
-     * unchanged, regardless of {@code Accept-Language}. This is accepted, documented
-     * behavior (see design doc), not a bug.
+     * {@code handleIllegalArgument} tries {@code messageSource.getMessage(ex.getMessage(),
+     * null, locale)} first; when a literal message is not a registered key, it falls back
+     * to the literal message unchanged regardless of {@code Accept-Language}.
      */
     @Test
     void illegalArgument_withUnregisteredLiteralMessage_fallsBackVerbatim_regardlessOfLocale() throws Exception {

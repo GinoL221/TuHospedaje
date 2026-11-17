@@ -396,11 +396,19 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         Long lodgingId = createTestLodging();
         Reservation reservation = saveReservation(lodgingId, LocalDate.now(clock));
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
-
         mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
+                        .header("Accept-Language", "en")
                         .cookie(accessCookie(userAuthHeader)).cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("The reservation can no longer be cancelled."));
+
+        mockMvc.perform(patch("/api/reservations/{id}/cancel", reservation.getId())
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(userAuthHeader)).cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("La reserva ya no se puede cancelar"));
 
         assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
                 .isEqualTo(ReservationStatus.CONFIRMED);
@@ -604,6 +612,18 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
 
         Cookie csrfCookie = obtainCsrfCookie(mockMvc);
         mockMvc.perform(post("/api/reservations")
+                        .header("Accept-Language", "en")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("The lodging is not available for the selected dates."));
+
+        mockMvc.perform(post("/api/reservations")
+                        .header("Accept-Language", "es")
                         .cookie(accessCookie(userAuthHeader))
                         .cookie(csrfCookie)
                         .header("X-XSRF-TOKEN", csrfCookie.getValue())
@@ -614,18 +634,41 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.error").value("El alojamiento no está disponible para las fechas seleccionadas"));
     }
 
-    /**
-     * Real reservation-not-found path (ReservationServiceImpl.getReservationById), the
-     * only production throw site for ResourceNotFoundException today. It uses the plain
-     * `(String message)` constructor (no errorCode), so the handler's fallback branch —
-     * `messageSource.getMessage("error.resource.not_found", new Object[]{ex.getMessage()},
-     * locale)` — is the one actually exercised. `error.resource.not_found={0}` in both
-     * bundles is a passthrough: the underlying message stays in whatever language it was
-     * thrown in, only the wrapping resolution changes (proving the fallback resolves
-     * instead of throwing an uncaught NoSuchMessageException, which would 500).
-     */
     @Test
-    void shouldReturnNotFoundWithOriginalMessageWhenAcceptLanguageIsEs() throws Exception {
+    void createReservationWithMissingLodgingReturnsLocalizedNotFoundInEnglishAndSpanish() throws Exception {
+        Map<String, Object> request = Map.of(
+                "lodgingId", 999999L,
+                "checkIn", LocalDate.now().plusDays(11).toString(),
+                "checkOut", LocalDate.now().plusDays(13).toString(),
+                "guestName", "Juan Perez",
+                "guestEmail", "juan-reservas@test.com",
+                "guestPhone", "+5491122334455"
+        );
+
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(post("/api/reservations")
+                        .header("Accept-Language", "en")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Lodging not found."));
+
+        mockMvc.perform(post("/api/reservations")
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(userAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Alojamiento no encontrado"));
+    }
+
+    @Test
+    void shouldReturnLocalizedNotFoundWhenAcceptLanguageIsEs() throws Exception {
         mockMvc.perform(get("/api/reservations/999999")
                         .cookie(accessCookie(userAuthHeader))
                         .header("Accept-Language", "es"))
@@ -634,11 +677,11 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnNotFoundWithOriginalMessageWhenAcceptLanguageIsMissing() throws Exception {
+    void shouldReturnLocalizedNotFoundWhenAcceptLanguageIsEnOrMissing() throws Exception {
         mockMvc.perform(get("/api/reservations/999999")
                         .cookie(accessCookie(userAuthHeader)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Reserva no encontrada con ID: 999999"));
+                .andExpect(jsonPath("$.error").value("Reservation not found with ID: 999999"));
     }
 
     @Test
@@ -646,12 +689,24 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         String adminAuth = createAdminAuth();
 
         mockMvc.perform(get("/api/reservations/admin")
+                        .header("Accept-Language", "en")
                         .cookie(accessCookie(adminAuth))
                         .param("page", "0")
                         .param("size", "10")
                         .param("sort", "invalidField")
                         .param("direction", "asc"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid sort field: invalidField"));
+
+        mockMvc.perform(get("/api/reservations/admin")
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(adminAuth))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "invalidField")
+                        .param("direction", "asc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Campo de ordenamiento inválido: invalidField"));
     }
 
     @Test
@@ -659,12 +714,24 @@ class ReservationControllerIntegrationTest extends AbstractIntegrationTest {
         String adminAuth = createAdminAuth();
 
         mockMvc.perform(get("/api/reservations/admin")
+                        .header("Accept-Language", "en")
                         .cookie(accessCookie(adminAuth))
                         .param("page", "0")
                         .param("size", "10")
                         .param("sort", "id")
                         .param("direction", "invalid"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid sort direction: invalid"));
+
+        mockMvc.perform(get("/api/reservations/admin")
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(adminAuth))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "id")
+                        .param("direction", "invalid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Dirección de ordenamiento inválida: invalid"));
     }
 
     @Test

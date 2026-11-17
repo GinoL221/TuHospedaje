@@ -7,6 +7,7 @@ import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ReservationConflictException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -97,7 +98,7 @@ class ReservationServiceImplTest {
                 ResourceNotFoundException.class,
                 () -> reservationService.createReservation(actor(user), request)
         );
-        assertThat(ex.getMessage()).contains("Alojamiento no encontrado");
+        assertThat(ex.getErrorCode()).isEqualTo("error.reservation.lodging_not_found");
     }
 
     @Test
@@ -119,7 +120,7 @@ class ReservationServiceImplTest {
                 ReservationConflictException.class,
                 () -> reservationService.createReservation(actor(user), request)
         );
-        assertThat(ex.getMessage()).contains("no está disponible");
+        assertThat(ex.getMessage()).isEqualTo("error.reservation.not_available");
     }
 
     @Test
@@ -289,7 +290,8 @@ class ReservationServiceImplTest {
                 ResourceNotFoundException.class,
                 () -> reservationService.getReservationById(999L, actor(requester))
         );
-        assertThat(ex.getMessage()).contains("999");
+        assertThat(ex.getErrorCode()).isEqualTo("error.reservation.not_found");
+        assertThat(ex.getArgs()).containsExactly("999");
     }
 
     @Test
@@ -317,7 +319,8 @@ class ReservationServiceImplTest {
                 ResourceNotFoundException.class,
                 () -> reservationService.getReservationById(42L, actor(otherUser))
         );
-        assertThat(ex.getMessage()).contains("42");
+        assertThat(ex.getErrorCode()).isEqualTo("error.reservation.not_found");
+        assertThat(ex.getArgs()).containsExactly("42");
     }
 
     @Test
@@ -344,6 +347,43 @@ class ReservationServiceImplTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(42L);
+    }
+
+    @Test
+    void cancelReservation_whenNotConfirmed_throwsLocalizedCannotCancel() {
+        ReservationServiceImpl fixedService = serviceAt("2026-08-19T12:00:00Z");
+        User owner = buildUser(1L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("100.00"));
+        Reservation nonConfirmed = new Reservation();
+        nonConfirmed.setId(77L);
+        nonConfirmed.setLodging(lodging);
+        nonConfirmed.setUser(owner);
+        nonConfirmed.setStatus(null);
+        when(reservationRepository.findByIdForUpdate(77L)).thenReturn(Optional.of(nonConfirmed));
+
+        LocalizedIllegalArgumentException cancelEx = assertThrows(
+                LocalizedIllegalArgumentException.class,
+                () -> fixedService.cancelReservation(77L, actor(owner))
+        );
+        assertThat(cancelEx.getErrorCode()).isEqualTo("error.reservation.cannot_cancel");
+    }
+
+    @Test
+    void createReservation_whenUserNotFound_throwsLocalizedUserNotFound() {
+        User user = buildUser(99L, RoleEnum.USER);
+        Lodging lodging = buildLodging(10L, new BigDecimal("100.00"));
+        CreateReservationRequest request = buildRequest(10L);
+
+        when(lodgingRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(lodging));
+        when(reservationRepository.lockByLodgingIdAndStatus(eq(10L), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Collections.emptyList());
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> reservationService.createReservation(actor(user), request)
+        );
+        assertThat(ex.getErrorCode()).isEqualTo("error.user.not_found");
     }
 
     // --- helpers ---

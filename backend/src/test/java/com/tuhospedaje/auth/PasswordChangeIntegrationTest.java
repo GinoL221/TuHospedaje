@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -106,13 +107,24 @@ class PasswordChangeIntegrationTest extends AbstractIntegrationTest {
         LoginCookies cookies = loginAndGetCookies(email);
         Long userId = userRepository.findByEmail(email).orElseThrow().getId();
 
-        PasswordChangeRequest request = new PasswordChangeRequest("not-the-real-password", "newSecurePass1");
+        PasswordChangeRequest request = new PasswordChangeRequest("WrongPass1", "newSecurePass1");
         mockMvc.perform(post("/api/auth/password")
+                        .header("Accept-Language", "en")
                         .cookie(cookies.accessToken(), cookies.csrfToken())
                         .header("X-XSRF-TOKEN", cookies.csrfToken().getValue())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Current password is incorrect."));
+
+        mockMvc.perform(post("/api/auth/password")
+                        .header("Accept-Language", "es")
+                        .cookie(cookies.accessToken(), cookies.csrfToken())
+                        .header("X-XSRF-TOKEN", cookies.csrfToken().getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("La contraseña actual es incorrecta"));
 
         assertThat(sessionSecurityEventRepository.findAll().stream()
                 .filter(event -> event.getUser().getId().equals(userId))

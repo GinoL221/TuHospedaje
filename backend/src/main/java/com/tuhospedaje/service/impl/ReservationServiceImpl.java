@@ -8,6 +8,7 @@ import com.tuhospedaje.entity.Reservation;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.enums.ReservationStatus;
 import com.tuhospedaje.enums.RoleEnum;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.exception.ReservationConflictException;
 import com.tuhospedaje.exception.ResourceNotFoundException;
 import com.tuhospedaje.repository.LodgingRepository;
@@ -69,11 +70,11 @@ public class ReservationServiceImpl implements ReservationService {
             return ReservationResponse.fromEntity(reservation);
         }
         if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
-            throw new IllegalArgumentException("La reserva no se puede cancelar");
+            throw new LocalizedIllegalArgumentException("error.reservation.cannot_cancel");
         }
         if (!LocalDate.now(clock).isBefore(reservation.getCheckIn())) {
             log.info("reservation.cancel.rejected_deadline reservationId={}", id);
-            throw new IllegalArgumentException("La reserva ya no se puede cancelar");
+            throw new LocalizedIllegalArgumentException("error.reservation.cancel_deadline_passed");
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
@@ -84,7 +85,10 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private ResourceNotFoundException reservationNotFound(Long id) {
-        return new ResourceNotFoundException("Reserva no encontrada con ID: " + id);
+        return new ResourceNotFoundException(
+                "error.reservation.not_found",
+                new Object[]{String.valueOf(id)},
+                "Reservation not found with ID: " + id);
     }
 
     @Override
@@ -95,7 +99,10 @@ public class ReservationServiceImpl implements ReservationService {
         // atomicity and preventing double booking even when there are zero existing reservations
         // (where reservation-level locks would match no rows).
         Lodging lodging = lodgingRepository.findByIdForUpdate(request.getLodgingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "error.reservation.lodging_not_found",
+                        new Object[0],
+                        "Lodging not found"));
 
         long nights = ChronoUnit.DAYS.between(request.getCheckIn(), request.getCheckOut());
         BigDecimal totalPrice = lodging.getPricePerNight().multiply(BigDecimal.valueOf(nights));
@@ -110,11 +117,14 @@ public class ReservationServiceImpl implements ReservationService {
                         && r.getCheckOut().isAfter(request.getCheckIn()));
 
         if (hasOverlap) {
-            throw new ReservationConflictException("El alojamiento no está disponible para las fechas seleccionadas");
+            throw new ReservationConflictException("error.reservation.not_available");
         }
 
         User user = userRepository.findById(actor.id())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "error.user.not_found",
+                        new Object[0],
+                        "User not found"));
         Reservation reservation = new Reservation();
         reservation.setLodging(lodging);
         reservation.setUser(user);
@@ -147,12 +157,12 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional(readOnly = true)
     public ReservationResponse getReservationById(Long id, AuthenticatedActor requester) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + id));
+                .orElseThrow(() -> reservationNotFound(id));
         boolean isOwner = reservation.getUser().getId().equals(requester.id());
         boolean isAdmin = requester.role() == RoleEnum.ADMIN;
         if (!isOwner && !isAdmin) {
             // 404 instead of 403 to hide resource existence (IDOR prevention)
-            throw new ResourceNotFoundException("Reserva no encontrada con ID: " + id);
+            throw reservationNotFound(id);
         }
         return ReservationResponse.fromEntity(reservation);
     }
@@ -178,11 +188,11 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional(readOnly = true)
     public PageResponse<ReservationResponse> getAdminReservations(int page, int size, String sort, String direction, String status, String q) {
         if (!ADMIN_SORT_FIELDS.contains(sort)) {
-            throw new IllegalArgumentException("Campo de ordenamiento inválido: " + sort);
+            throw new LocalizedIllegalArgumentException("error.sort.invalid_field", sort);
         }
 
         Sort.Direction sortDirection = Sort.Direction.fromOptionalString(direction)
-                .orElseThrow(() -> new IllegalArgumentException("Dirección de ordenamiento inválida: " + direction));
+                .orElseThrow(() -> new LocalizedIllegalArgumentException("error.sort.invalid_direction", direction));
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
 
         Page<Reservation> reservationPage;

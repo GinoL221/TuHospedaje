@@ -6,6 +6,7 @@ import com.tuhospedaje.dto.auth.LoginRequest;
 import com.tuhospedaje.dto.auth.RegisterRequest;
 import com.tuhospedaje.entity.User;
 import com.tuhospedaje.exception.DuplicateEmailException;
+import com.tuhospedaje.exception.LocalizedIllegalArgumentException;
 import com.tuhospedaje.repository.UserRepository;
 import com.tuhospedaje.service.AuthService;
 import com.tuhospedaje.service.EmailOutboxService;
@@ -66,7 +67,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResult register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new DuplicateEmailException("El email ya está registrado");
+            throw new DuplicateEmailException("error.auth.duplicate_email");
         }
 
         try {
@@ -74,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
             return buildAuthResult(user);
         } catch (RuntimeException exception) {
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new DuplicateEmailException("El email ya está registrado");
+                throw new DuplicateEmailException("error.auth.duplicate_email");
             }
             throw exception;
         }
@@ -93,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
                         request.getEmail(), request.getPassword()));
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
+                .orElseThrow(() -> new LocalizedIllegalArgumentException("error.auth.invalid"));
 
         return buildAuthResult(user);
     }
@@ -102,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public AuthResponse currentUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new LocalizedIllegalArgumentException("error.user.not_found"));
 
         return buildAuthResponse(user);
     }
@@ -111,7 +112,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public WelcomeResendResult resendWelcome(String email) {
         User user = userRepository.lockByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new LocalizedIllegalArgumentException("error.user.not_found"));
         WelcomeResendResult result = emailOutboxService.resendWelcome(user);
         if (result == WelcomeResendResult.SCHEDULED
                 && userRepository.updateWelcomeResendRequestedAt(user.getId(), user.getWelcomeResendRequestedAt()) != 1) {
@@ -147,9 +148,9 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void changePassword(String email, String currentPassword, String newPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new LocalizedIllegalArgumentException("error.user.not_found"));
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new IllegalArgumentException("La contraseña actual es incorrecta");
+            throw new LocalizedIllegalArgumentException("error.auth.current_password.incorrect");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setPasswordChangedAt(Instant.now());
