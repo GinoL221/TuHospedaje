@@ -57,4 +57,4 @@ En las rutas protegidas por método (`@PreAuthorize`), la autorización de rol s
 
 ## Dónde se documenta en OpenAPI
 
-Las respuestas 401 y 403 de los controladores referencian el esquema `ApiError` (`dto/common/ApiError.java`). Esa clase solo documenta la forma; las respuestas no se construyen con ella.
+Todas las respuestas de error (`4xx`/`5xx`) con cuerpo en los controladores —incluidos todos los `409`— referencian el esquema `ApiError` (`dto/common/ApiError.java`), verificado contra `/v3/api-docs` en `OpenApiSecurityDocumentationIntegrationTest`. La única excepción sin cuerpo es `POST /api/auth/welcome-email/resend` (`429`), que responde solo con el header `Retry-After`. Esa clase solo documenta la forma; las respuestas no se construyen con ella.
