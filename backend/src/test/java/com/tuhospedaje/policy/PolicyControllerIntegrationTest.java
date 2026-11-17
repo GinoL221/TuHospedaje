@@ -302,6 +302,73 @@ class PolicyControllerIntegrationTest {
     }
 
     @Test
+    void shouldAllowUpdatingPolicyChangingOnlyLetterCase() throws Exception {
+        Policy policy = new Policy();
+        policy.setName("PL-Case-Rename");
+        policy.setDescription("Original");
+        policy.setIcon("fa-solid fa-clock");
+        Policy saved = policyRepository.save(policy);
+
+        PolicyDTO request = new PolicyDTO();
+        request.setName("pl-case-rename");
+        request.setDescription("Actualizada");
+        request.setIcon("fa-solid fa-clock");
+
+        Cookie csrfCookie = obtainCsrfCookie();
+        mockMvc.perform(put("/api/policies/{id}", saved.getId())
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(saved.getId()))
+                .andExpect(jsonPath("$.name").value("pl-case-rename"));
+
+        assertThat(policyRepository.findById(saved.getId()).orElseThrow().getName())
+                .isEqualTo("pl-case-rename");
+        policyRepository.deleteById(saved.getId());
+    }
+
+    @Test
+    void shouldReturnConflictWhenUpdatingPolicyToAnotherPolicyNameWithDifferentCase() throws Exception {
+        Policy first = new Policy();
+        first.setName("PL-Case-First");
+        first.setDescription("First");
+        first.setIcon("fa-solid fa-clock");
+        Policy savedFirst = policyRepository.save(first);
+
+        Policy second = new Policy();
+        second.setName("PL-Case-Second");
+        second.setDescription("Second");
+        second.setIcon("fa-solid fa-ban");
+        Policy savedSecond = policyRepository.save(second);
+
+        PolicyDTO request = new PolicyDTO();
+        request.setName("pl-case-second");
+        request.setDescription("Attempt");
+        request.setIcon("fa-solid fa-clock");
+
+        Cookie csrfCookie = obtainCsrfCookie();
+        mockMvc.perform(put("/api/policies/{id}", savedFirst.getId())
+                        .locale(Locale.forLanguageTag("es"))
+                        .cookie(accessCookie(adminAuthHeader))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe una política con el nombre: pl-case-second"));
+
+        assertThat(policyRepository.findById(savedFirst.getId()).orElseThrow().getName())
+                .isEqualTo("PL-Case-First");
+        policyRepository.deleteById(savedFirst.getId());
+        policyRepository.deleteById(savedSecond.getId());
+    }
+
+    @Test
     void shouldReturnNotFoundWhenUpdatingPolicyDoesNotExist() throws Exception {
         PolicyDTO request = new PolicyDTO();
         request.setName("PL-No-Existe");

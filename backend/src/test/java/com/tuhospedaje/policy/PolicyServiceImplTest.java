@@ -141,7 +141,7 @@ class PolicyServiceImplTest {
         input.setIcon("fa-solid fa-clock");
 
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(policyRepository.existsByName("Check-in actualizado")).thenReturn(false);
+        when(policyRepository.findByNameIgnoreCase("Check-in actualizado")).thenReturn(Optional.empty());
         when(policyRepository.saveAndFlush(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PolicyDTO response = policyService.update(input);
@@ -166,12 +166,36 @@ class PolicyServiceImplTest {
         input.setIcon("fa-solid fa-clock");
 
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(policyRepository.findByNameIgnoreCase("Check-in")).thenReturn(Optional.of(existing));
         when(policyRepository.saveAndFlush(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PolicyDTO response = policyService.update(input);
 
         assertThat(response.getName()).isEqualTo("Check-in");
         assertThat(response.getDescription()).isEqualTo("Descripción actualizada");
+    }
+
+    @Test
+    void shouldAllowUpdateWhenRenamingPolicyChangingOnlyLetterCase() {
+        Policy existing = new Policy();
+        existing.setId(1L);
+        existing.setName("Check-In");
+        existing.setDescription("A partir de las 14:00");
+        existing.setIcon("fa-solid fa-clock");
+
+        PolicyDTO input = new PolicyDTO();
+        input.setId(1L);
+        input.setName("check-in");
+        input.setDescription("A partir de las 14:00");
+        input.setIcon("fa-solid fa-clock");
+
+        when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(policyRepository.findByNameIgnoreCase("check-in")).thenReturn(Optional.of(existing));
+        when(policyRepository.saveAndFlush(any(Policy.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PolicyDTO response = policyService.update(input);
+
+        assertThat(response.getName()).isEqualTo("check-in");
     }
 
     @Test
@@ -201,8 +225,12 @@ class PolicyServiceImplTest {
         input.setDescription("Hasta las 11:00");
         input.setIcon("fa-solid fa-clock");
 
+        Policy conflicting = new Policy();
+        conflicting.setId(2L);
+        conflicting.setName("Check-out");
+
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(policyRepository.existsByName("Check-out")).thenReturn(true);
+        when(policyRepository.findByNameIgnoreCase("Check-out")).thenReturn(Optional.of(conflicting));
 
         DuplicateResourceException ex = assertThrows(
                 DuplicateResourceException.class,
@@ -267,7 +295,7 @@ class PolicyServiceImplTest {
         input.setIcon("fa-solid fa-clock");
 
         when(policyRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(policyRepository.existsByName("Check-out")).thenReturn(false);
+        when(policyRepository.findByNameIgnoreCase("Check-out")).thenReturn(Optional.empty());
         when(policyRepository.saveAndFlush(any(Policy.class)))
                 .thenThrow(constraintViolation("UK_policies_name"));
 

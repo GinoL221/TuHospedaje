@@ -370,7 +370,7 @@ class UniqueConstraintRaceIntegrationTest {
         Lodging first = lodgingRepository.saveAndFlush(buildLodging("Hotel Race Uno", "uno@tuhospedaje.com"));
         lodgingRepository.saveAndFlush(buildLodging("Hotel Race Dos", "dos@tuhospedaje.com"));
 
-        doReturn(false).when(lodgingRepository).existsByName("Hotel Race Dos");
+        doReturn(Optional.empty()).when(lodgingRepository).findByNameIgnoreCase("Hotel Race Dos");
 
         Map<String, Object> request = lodgingPayload("Hotel Race Dos", "uno@tuhospedaje.com", first.getVersion());
 
@@ -408,7 +408,7 @@ class UniqueConstraintRaceIntegrationTest {
         Lodging first = lodgingRepository.saveAndFlush(buildLodging("Hotel Race Uno", "uno@tuhospedaje.com"));
         lodgingRepository.saveAndFlush(buildLodging("Hotel Race Dos", "dos@tuhospedaje.com"));
 
-        doReturn(false).when(lodgingRepository).existsByEmail("dos@tuhospedaje.com");
+        doReturn(Optional.empty()).when(lodgingRepository).findByEmailIgnoreCase("dos@tuhospedaje.com");
 
         Map<String, Object> request = lodgingPayload("Hotel Race Uno", "dos@tuhospedaje.com", first.getVersion());
 

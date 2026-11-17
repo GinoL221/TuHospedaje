@@ -372,6 +372,94 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldAllowUpdatingLodgingChangingOnlyNameAndEmailLetterCase() throws Exception {
+        Long id = createTestLodging("Hotel Case Propio", "PropioCase@test.com");
+
+        Map<String, Object> updateRequest = Map.of(
+                "name", "hotel case propio",
+                "description", "Descripción actualizada",
+                "address", "Nueva dirección",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "propiocase@test.com",
+                "pricePerNight", new BigDecimal("45000.00"),
+                "maxGuests", 6
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/lodgings/{id}", id)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("hotel case propio"))
+                .andExpect(jsonPath("$.email").value("propiocase@test.com"));
+
+        Lodging stored = lodgingRepository.findById(id).orElseThrow();
+        assertThat(stored.getName()).isEqualTo("hotel case propio");
+        assertThat(stored.getEmail()).isEqualTo("propiocase@test.com");
+    }
+
+    @Test
+    void shouldReturnConflictWhenUpdatingLodgingToAnotherLodgingNameOrEmailWithDifferentCase() throws Exception {
+        Long firstId = createTestLodging("Hotel Case Primero", "case-primero@test.com");
+        createTestLodging("Hotel Case Segundo", "Case-Segundo@test.com");
+
+        Map<String, Object> duplicateNameRequest = Map.of(
+                "name", "hotel case segundo",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "case-primero@test.com",
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4
+        );
+        Cookie csrfCookie = obtainCsrfCookie(mockMvc);
+        mockMvc.perform(put("/api/lodgings/{id}", firstId)
+                        .locale(Locale.forLanguageTag("es"))
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(duplicateNameRequest)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Ya existe un alojamiento con el nombre: hotel case segundo"));
+
+        Map<String, Object> duplicateEmailRequest = Map.of(
+                "name", "Hotel Case Primero",
+                "description", "Descripción",
+                "address", "Calle 123",
+                "city", "Ciudad",
+                "country", "País",
+                "phoneNumber", "123456789",
+                "email", "case-segundo@test.com",
+                "pricePerNight", new BigDecimal("30000.00"),
+                "maxGuests", 4
+        );
+        mockMvc.perform(put("/api/lodgings/{id}", firstId)
+                        .locale(Locale.ENGLISH)
+                        .cookie(accessCookie(adminToken))
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(duplicateEmailRequest)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("A lodging with the email case-segundo@test.com already exists."));
+
+        Lodging stored = lodgingRepository.findById(firstId).orElseThrow();
+        assertThat(stored.getName()).isEqualTo("Hotel Case Primero");
+        assertThat(stored.getEmail()).isEqualTo("case-primero@test.com");
+    }
+
+    @Test
     void shouldCreateLodgingWithImagesSuccessfully() throws Exception {
         Map<String, Object> request = Map.of(
                 "name", "Hotel Con Imagenes Test",

@@ -17,6 +17,10 @@ public interface LodgingRepository extends JpaRepository<Lodging, Long>, JpaSpec
 
     Optional<Lodging> findByName(String name);
 
+    Optional<Lodging> findByNameIgnoreCase(String name);
+
+    Optional<Lodging> findByEmailIgnoreCase(String email);
+
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);

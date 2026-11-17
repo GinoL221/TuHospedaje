@@ -42,7 +42,8 @@ public class PolicyServiceImpl implements PolicyService {
         Policy policy = policyRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Política no encontrada con ID: " + dto.getId()));
 
-        if (!policy.getName().equals(dto.getName()) && policyRepository.existsByName(dto.getName())) {
+        Optional<Policy> existingWithName = policyRepository.findByNameIgnoreCase(dto.getName());
+        if (existingWithName.isPresent() && !existingWithName.get().getId().equals(dto.getId())) {
             throw new DuplicateResourceException("error.policy.duplicate_name", dto.getName());
         }
 
