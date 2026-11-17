@@ -8,7 +8,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
@@ -25,8 +33,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = "app.api-version=9.9.9-doc-test")
 class OpenApiSecurityDocumentationIntegrationTest extends AbstractIntegrationTest {
 
+    private static final Set<String> HTTP_METHODS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE");
+
+    // AuthController#resendWelcome answers 429 with Retry-After and an empty body (.build()).
+    private static final Set<String> BODYLESS_ERROR_RESPONSES = Set.of(
+            "POST /api/auth/welcome-email/resend 429");
+
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JsonMapper jsonMapper;
 
     @Test
     @DisplayName("OpenAPI reflects 403 (and no 401) on endpoints protected by default entry point")
@@ -78,18 +95,60 @@ class OpenApiSecurityDocumentationIntegrationTest extends AbstractIntegrationTes
     @Test
     @DisplayName("OpenAPI error responses reference the shared ApiError schema")
     void openApiErrorResponsesReferenceApiErrorSchema() throws Exception {
-        mockMvc.perform(get("/v3/api-docs"))
+        String specJson = mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.components.schemas", hasKey("ApiError")))
-                // sample of transformed statuses across controllers
-                .andExpect(jsonPath("$.paths['/api/auth/login'].post.responses['400']"
-                        + ".content['*/*'].schema.$ref", equalTo("#/components/schemas/ApiError")))
-                .andExpect(jsonPath("$.paths['/api/lodgings/{id}'].get.responses['404']"
-                        + ".content['*/*'].schema.$ref", equalTo("#/components/schemas/ApiError")))
-                .andExpect(jsonPath("$.paths['/api/upload'].post.responses['413']"
-                        + ".content['*/*'].schema.$ref", equalTo("#/components/schemas/ApiError")))
-                .andExpect(jsonPath("$.paths['/api/auth/refresh'].post.responses['429']"
-                        + ".content['*/*'].schema.$ref", equalTo("#/components/schemas/ApiError")));
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode spec = jsonMapper.readTree(specJson);
+        List<String> invalidErrors = new ArrayList<>();
+        List<String> inspectedConflicts = new ArrayList<>();
+
+        spec.path("paths").properties().forEach(pathEntry -> {
+            String path = pathEntry.getKey();
+            pathEntry.getValue().properties().forEach(itemEntry -> {
+                String method = itemEntry.getKey().toUpperCase(Locale.ROOT);
+                if (!HTTP_METHODS.contains(method)) {
+                    return;
+                }
+                itemEntry.getValue().path("responses").properties().forEach(responseEntry -> {
+                    String statusCode = responseEntry.getKey();
+                    if (!statusCode.startsWith("4") && !statusCode.startsWith("5")) {
+                        return;
+                    }
+                    String key = method + " " + path + " " + statusCode;
+                    JsonNode contentNode = responseEntry.getValue().path("content");
+                    if (BODYLESS_ERROR_RESPONSES.contains(key)) {
+                        if (!contentNode.isMissingNode() && !contentNode.isEmpty()) {
+                            invalidErrors.add(key + ": listed as bodyless error but defines content");
+                        }
+                        return;
+                    }
+                    if ("409".equals(statusCode)) {
+                        inspectedConflicts.add(key);
+                    }
+                    if (contentNode.isMissingNode() || contentNode.isEmpty()) {
+                        invalidErrors.add(key + ": missing content schema");
+                        return;
+                    }
+                    contentNode.properties().forEach(mediaEntry -> {
+                        String ref = mediaEntry.getValue().path("schema").path("$ref").asString("");
+                        if (!"#/components/schemas/ApiError".equals(ref)) {
+                            invalidErrors.add(key + " [" + mediaEntry.getKey() + "]: expected ApiError ref, got '" + ref + "'");
+                        }
+                    });
+                });
+            });
+        });
+
+        assertThat(inspectedConflicts)
+                .as("Generated OpenAPI spec must document the API 409 Conflict responses")
+                .isNotEmpty();
+        assertThat(invalidErrors)
+                .as("Every documented 4xx/5xx error response (except explicitly bodyless ones) must reference ApiError")
+                .isEmpty();
     }
 
     @Test
