@@ -332,6 +332,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex, Locale locale) {
+        if (UniqueConstraintViolationSupport.matchesConstraint(ex, "UK_users_email")) {
+            return handleDuplicateEmail(new DuplicateEmailException("Duplicate email"), locale);
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", resolveMessage("error.data_integrity", locale), "status", 400));
     }
