@@ -44,12 +44,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Resolves via {@code MessageSource}. Handles the only real throw site
-     * ({@code ReservationServiceImpl.getReservationById}), which uses the plain
-     * {@code (String message)} constructor — no {@code errorCode} — so the fallback
-     * branch ({@code error.resource.not_found={0}}, a passthrough) is the one actually
-     * exercised in production today. The {@code errorCode}/{@code args} branch exists for
-     * future callers that want real per-key localization.
+     * Resolves via {@code MessageSource}. Prefers {@code errorCode}/{@code args} when
+     * supplied by the exception (e.g. {@code LodgingQueryServiceImpl},
+     * {@code ReservationServiceImpl}), and falls back to the passthrough key
+     * {@code error.resource.not_found={0}} for plain-message throw sites.
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex, Locale locale) {
@@ -63,15 +61,6 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", resolvedMsg, "status", 404));
     }
 
-    /**
-     * Resolves via {@code MessageSource}, keyed by the exception message itself. The 13
-     * real throw sites in this codebase (e.g. {@code AuthServiceImpl},
-     * {@code LodgingServiceImpl}) all use hardcoded literal Spanish text, not message
-     * keys, so none of them match a registered key — the {@link NoSuchMessageException}
-     * fallback to {@code ex.getMessage()} verbatim is what actually runs for all of them
-     * today, regardless of {@code Accept-Language}. This is documented, accepted
-     * behavior, not a regression: converting those 13 sites to keys is out of scope.
-     */
     /**
      * Kept distinct from {@link #handleIllegalArgument} so this response body can carry
      * a stable {@code code} the frontend discriminates on ({@code err.code}), instead of

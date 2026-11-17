@@ -712,17 +712,35 @@ class LodgingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void adminLodgings_rejectsUnknownSortField() throws Exception {
         mockMvc.perform(get("/api/lodgings/admin")
+                        .header("Accept-Language", "en")
                         .cookie(accessCookie(adminToken))
                         .param("sort", "notARealField"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid sort field: notARealField"));
+
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(adminToken))
+                        .param("sort", "notARealField"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Campo de ordenamiento inválido: notARealField"));
     }
 
     @Test
     void adminLodgings_rejectsUnknownSortDirection() throws Exception {
         mockMvc.perform(get("/api/lodgings/admin")
+                        .header("Accept-Language", "en")
                         .cookie(accessCookie(adminToken))
                         .param("direction", "sideways"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid sort direction: sideways"));
+
+        mockMvc.perform(get("/api/lodgings/admin")
+                        .header("Accept-Language", "es")
+                        .cookie(accessCookie(adminToken))
+                        .param("direction", "sideways"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Dirección de ordenamiento inválida: sideways"));
     }
 
     @Test

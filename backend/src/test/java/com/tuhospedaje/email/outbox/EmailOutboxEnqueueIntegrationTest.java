@@ -249,7 +249,7 @@ class EmailOutboxEnqueueIntegrationTest {
             assertThat(outcomes.stream().filter(DuplicateEmailException.class::isInstance)
                     .map(DuplicateEmailException.class::cast)
                     .map(Throwable::getMessage))
-                    .containsExactly("El email ya está registrado");
+                    .containsExactly("error.auth.duplicate_email");
         } finally {
             executor.shutdownNow();
         }
