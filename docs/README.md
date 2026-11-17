@@ -31,6 +31,7 @@ Seguí este orden cuando necesites resolver una duda:
 - [Sistema técnico de diseño](../DESIGN.md)
 - [Definición del proyecto, arquitectura y ADRs](markdown/project-definition.md)
 - [Arquitectura del backend — fuente única de verdad](markdown/backend-architecture.md)
+- [Referencia de la API HTTP — 50 operaciones verificadas contra `/v3/api-docs`](markdown/api-reference.md)
 
 La arquitectura del backend se documenta con referencias `path:line` al código actual; ese documento es la descripción autoritativa y los informes históricos enlazan a él en lugar de redefinirla. Para la auto-verificación offline de la política de Testcontainers, leé [offline-safetyunit.md](markdown/offline-safetyunit.md).
 

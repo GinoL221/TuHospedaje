@@ -11,7 +11,7 @@ date: "Noviembre 2026"
 
 Esta bitácora cuenta en orden cronológico cómo se construyó TuHospedaje: qué se entregó en cada etapa, qué se decidió y por qué, qué quedó fuera a propósito y qué no se comprobó. Cada hito cita su fuente (commit, pull request o documento) para que pueda verificarse.
 
-- **Corte:** 2026-11-10. Todos los hitos hasta `main@c9d91d0` (incluyendo T1 a T13) están integrados. Esta entrega final cierra las tareas documentales previas al tag v1.0.1.
+- **Corte:** 2026-11-17. Todos los hitos hasta `main@53d554a` están integrados: las tareas T1 a T14 cerraron en `main@c9d91d0` y el tag `v1.0.1` (`bd3bc43`), seguidas por el cierre del contrato `409`, la documentación técnica de backend/API/frontend, la higiene de compilación y el primer lote de `NullAway` (PRs #453 a #474).
 - **Alcance:** resume y enlaza los informes y planes de prueba de cada sprint. No los reemplaza ni redefine el alcance de [product.md](../../product.md).
 - **Límite:** no afirma que el sistema esté desplegado ni verificado en producción. La sección 9 detalla qué falta comprobar.
 
@@ -29,7 +29,9 @@ Esta bitácora cuenta en orden cronológico cómo se construyó TuHospedaje: qu�
 | 2026-11-04 | Rediseño visual integrado en `main` | PR #343 (`ab73d8e`) |
 | 2026-11-07 | Release **v1.0.0** y cierre del plan de endurecimiento | PR #413, tag `v1.0.0` en `a3f90a6` |
 | 2026-11-08 | Unificación de errores 401/403 y deuda técnica posterior al release | PR #415 a #423, `main@83cda57` |
-| 2026-11-08 a 11-10 | Correcciones y entrega de v1.0.1 (T1 a T13) | PR #425 a #449, `main@c9d91d0` |
+| 2026-11-08 a 11-10 | Correcciones de v1.0.1 (T1 a T13) | PR #425 a #449, `main@c9d91d0` |
+| 2026-11-11 | Release **v1.0.1** (T14) con entregables regenerados | PR #451, tag `v1.0.1` en `bd3bc43` |
+| 2026-11-12 a 11-17 | Cierre posterior a v1.0.1: contrato 409, docs de API/backend, guards de compilación y NullAway lote 1 | PR #453 a #474, `main@53d554a` |
 
 ## 3. Sprint por sprint
 
@@ -105,6 +107,23 @@ Una revisión general de `main@83cda57` produjo la lista de correcciones y endur
 | T11 | #446 | Claridad de estado: avisos de registro histórico y tabla configurado vs comprobado |
 | T12 | #449 | Bitácora del proyecto y rediseño editorial de portadas y tablas |
 | T13 | #447 | Cierre de reservas: pass-through de `TOMCAT_INTERNAL_PROXIES`, regex de assets en nginx y gitignore |
+| T14 | #451 | Pulido documental final y entregables regenerados para el tag `v1.0.1` (`bd3bc43`) |
+
+### 6.3 Cierre posterior a v1.0.1 (2026-11-12 a 2026-11-17)
+
+Después del tag `v1.0.1` se cerró el contrato HTTP `409 Conflict` para duplicados y carreras de unicidad, se documentaron en detalle el backend y los 50 endpoints de la API con pruebas anti-deriva contra `/v3/api-docs`, se corrigió el aislamiento de limpieza en `AbstractIntegrationTest` y se activaron guards de compilación junto con el primer lote de `NullAway`.
+
+| PR | Cambio |
+| --- | --- |
+| #453, #458 | Nombres y emails duplicados responden `409 Conflict` con mensajes localizados (`es`/`en`) |
+| #459 | Referencia de los 50 endpoints (`api-reference.md`), arquitectura del backend (`backend-architecture.md`) y test anti-deriva contra `/v3/api-docs` |
+| #461 | Limpieza de tablas hijas con FK a `users` (`email_outbox`, `refresh_tokens`) en `AbstractIntegrationTest` |
+| #463 a #466 | Migración de deprecaciones de Jackson 3, `HttpStatus` y `MariaDBContainer`, limpieza de dependencias/imports y `failOnWarning` + Checkstyle en `verify` |
+| #467, #468 | Piloto y lote 1 de Error Prone + `NullAway` con `@NullMarked` en 11 paquetes del backend |
+| #470 | Estabilidad del test de rate limit ante cambio de minuto |
+| #471 a #474 | Cierre de los seguimientos `#454` a `#457`: carreras de constraint única a `409`, renombre solo por mayúsculas/minúsculas en políticas y alojamientos, mensajes localizados en `Auth`/`Reservation`/`LodgingQuery` y verificación completa de `ApiError` en `/v3/api-docs` |
+
+Al cierre de esta etapa `main` quedó en `53d554a` (861 tests de backend corridos con 1 omitido, 52 tests en `tools/tests` y los 6 jobs de CI en verde).
 
 ## 7. Decisiones
 
@@ -128,6 +147,7 @@ Las decisiones que cambian contratos o comportamiento visible se consultaron ant
 - **N6:** depende de la configuración del proxy TLS externo.
 - **H5:** contenedor de desarrollo como root sobre `./backend`, pospuesto por la razón de la sección 7.
 - **Migración V14 para `Category.imageUrl`:** en base es `VARCHAR(2048)` (`V6`) mientras `HttpsImageUrlValidator` valida hasta 255; se difiere para no alterar el esquema antes del corte.
+- **Extensión de `@NullMarked` a `service/impl`, `dto/**` y `entity`:** tras cubrir 11 paquetes en `#467` y `#468`, el resto se difiere para no modificar entidades JPA ni DTOs en el corte de entrega.
 - **N10 a N19, H7 y H8:** hallazgos menores y limpieza local, reservados para issues posteriores. El detalle de cada uno está en el seguimiento interno de la auditoría, no en este repositorio.
 
 ## 9. Límites conocidos
@@ -148,6 +168,7 @@ Los informes anteriores a v1.0.0, como `auditoria-estado-actual.md` y `current-m
 
 - Informes y planes de prueba de los Sprints 1 a 4: `docs/markdown/sprint-{1..4}/`.
 - Plan de endurecimiento: `odd/tasks/v1-release-hardening.md`.
-- Correcciones de v1.0.1: `odd/tasks/v1.0.1-pre-release-fixes.md`.
+- Correcciones de v1.0.1: `odd/tasks/v1.0.1-pre-release-fixes.md` y `odd/tasks/error-contract-409.md`.
+- Referencia técnica vigente: `docs/markdown/backend-architecture.md`, `docs/markdown/api-reference.md` y `docs/markdown/api-error-contract.md`.
 - Historia de Git: commits y pull requests citados en cada tabla.
 - Alcance oficial: [product.md](../../product.md) y la [matriz de trazabilidad](compliance/close-user-story-gaps-traceability.md).
