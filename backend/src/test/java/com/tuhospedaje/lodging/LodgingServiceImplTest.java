@@ -118,6 +118,8 @@ class LodgingServiceImplTest {
         dto.setPricePerNight(new BigDecimal("27500.50"));
         dto.setMaxGuests(7);
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.findByNameIgnoreCase("Hotel Boutique")).thenReturn(Optional.empty());
+        when(lodgingRepository.findByEmailIgnoreCase("old@test.com")).thenReturn(Optional.of(existing));
         when(lodgingRepository.saveAndFlush(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         LodgingDTO response = lodgingService.update(dto);
@@ -128,13 +130,33 @@ class LodgingServiceImplTest {
     }
 
     @Test
+    void shouldAllowUpdateWhenChangingOnlyNameAndEmailLetterCase() {
+        Lodging existing = lodging(1L, "Gran Hotel");
+        existing.setEmail("Hotel@test.com");
+        LodgingDTO dto = lodgingDto("gran hotel", "hotel@test.com");
+        dto.setId(1L);
+        when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(lodgingRepository.findByNameIgnoreCase("gran hotel")).thenReturn(Optional.of(existing));
+        when(lodgingRepository.findByEmailIgnoreCase("hotel@test.com")).thenReturn(Optional.of(existing));
+        when(lodgingRepository.saveAndFlush(any(Lodging.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        LodgingDTO response = lodgingService.update(dto);
+
+        assertThat(response.getName()).isEqualTo("gran hotel");
+        assertThat(response.getEmail()).isEqualTo("hotel@test.com");
+    }
+
+    @Test
     void shouldThrowKeyCarryingDuplicateResourceWhenUpdateDuplicateEmail() {
         Lodging existing = lodging(1L, "Hotel");
         existing.setEmail("old@test.com");
+        Lodging conflicting = lodging(2L, "Other");
+        conflicting.setEmail("new@test.com");
         LodgingDTO dto = lodgingDto("Hotel", "new@test.com");
         dto.setId(1L);
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.existsByEmail("new@test.com")).thenReturn(true);
+        when(lodgingRepository.findByNameIgnoreCase("Hotel")).thenReturn(Optional.of(existing));
+        when(lodgingRepository.findByEmailIgnoreCase("new@test.com")).thenReturn(Optional.of(conflicting));
 
         // The controller contract maps this key-carrying exception to a localized 409.
         DuplicateResourceException ex = assertThrows(
@@ -148,10 +170,11 @@ class LodgingServiceImplTest {
     void shouldThrowKeyCarryingDuplicateResourceWhenUpdateDuplicateName() {
         Lodging existing = lodging(1L, "Hotel Antiguo");
         existing.setEmail("old@test.com");
+        Lodging conflicting = lodging(2L, "Hotel Existente");
         LodgingDTO dto = lodgingDto("Hotel Existente", "old@test.com");
         dto.setId(1L);
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.existsByName("Hotel Existente")).thenReturn(true);
+        when(lodgingRepository.findByNameIgnoreCase("Hotel Existente")).thenReturn(Optional.of(conflicting));
 
         // The controller contract maps this key-carrying exception to a localized 409.
         DuplicateResourceException ex = assertThrows(
@@ -319,7 +342,8 @@ class LodgingServiceImplTest {
         LodgingDTO dto = lodgingDto("Hotel Nuevo", "old@test.com");
         dto.setId(1L);
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.existsByName("Hotel Nuevo")).thenReturn(false);
+        when(lodgingRepository.findByNameIgnoreCase("Hotel Nuevo")).thenReturn(Optional.empty());
+        when(lodgingRepository.findByEmailIgnoreCase("old@test.com")).thenReturn(Optional.of(existing));
         when(lodgingRepository.saveAndFlush(any(Lodging.class)))
                 .thenThrow(constraintViolation("UK_lodgings_name"));
 
@@ -337,7 +361,8 @@ class LodgingServiceImplTest {
         LodgingDTO dto = lodgingDto("Hotel Antiguo", "dup@test.com");
         dto.setId(1L);
         when(lodgingRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(lodgingRepository.existsByEmail("dup@test.com")).thenReturn(false);
+        when(lodgingRepository.findByNameIgnoreCase("Hotel Antiguo")).thenReturn(Optional.of(existing));
+        when(lodgingRepository.findByEmailIgnoreCase("dup@test.com")).thenReturn(Optional.empty());
         when(lodgingRepository.saveAndFlush(any(Lodging.class)))
                 .thenThrow(constraintViolation("UK_lodgings_email"));
 

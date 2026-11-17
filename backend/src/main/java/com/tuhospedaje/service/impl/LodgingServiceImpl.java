@@ -126,13 +126,17 @@ public class LodgingServiceImpl implements LodgingService {
     public LodgingDTO update(LodgingDTO dto) throws ResourceNotFoundException {
         Lodging lodging = lodgingRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Alojamiento no encontrado con ID: " + dto.getId()));
-        if (dto.getName() != null && !dto.getName().equals(lodging.getName())
-                && lodgingRepository.existsByName(dto.getName())) {
-            throw new DuplicateResourceException("error.lodging.duplicate_name", dto.getName());
+        if (dto.getName() != null) {
+            Optional<Lodging> existingWithName = lodgingRepository.findByNameIgnoreCase(dto.getName());
+            if (existingWithName.isPresent() && !existingWithName.get().getId().equals(dto.getId())) {
+                throw new DuplicateResourceException("error.lodging.duplicate_name", dto.getName());
+            }
         }
-        if (dto.getEmail() != null && !dto.getEmail().equals(lodging.getEmail())
-                && lodgingRepository.existsByEmail(dto.getEmail())) {
-            throw new DuplicateResourceException("error.lodging.duplicate_email", dto.getEmail());
+        if (dto.getEmail() != null) {
+            Optional<Lodging> existingWithEmail = lodgingRepository.findByEmailIgnoreCase(dto.getEmail());
+            if (existingWithEmail.isPresent() && !existingWithEmail.get().getId().equals(dto.getId())) {
+                throw new DuplicateResourceException("error.lodging.duplicate_email", dto.getEmail());
+            }
         }
         if (dto.getVersion() != null && !dto.getVersion().equals(lodging.getVersion())) {
             throw new ObjectOptimisticLockingFailureException(Lodging.class, dto.getId());
