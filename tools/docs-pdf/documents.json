@@ -32,7 +32,7 @@
       "facts": [
         {
           "label": "Período",
-          "value": "2026-05-18 a 2026-11-10"
+          "value": "2026-05-18 a 2026-11-17"
         },
         {
           "label": "Hitos",
@@ -40,8 +40,8 @@
         },
         {
           "label": "Corte",
-          "value": "main@c9d91d0",
-          "check": "c9d91d0"
+          "value": "main@53d554a",
+          "check": "53d554a"
         }
       ]
     },
