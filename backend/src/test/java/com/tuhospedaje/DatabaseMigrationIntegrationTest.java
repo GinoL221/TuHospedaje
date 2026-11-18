@@ -50,6 +50,8 @@ class DatabaseMigrationIntegrationTest {
             "SELECT, INSERT, UPDATE, DELETE, CREATE, CREATE TEMPORARY TABLES, ALTER, DROP, INDEX, REFERENCES";
     private static final String DEV_ADMIN_PASSWORD = "local-dev-admin-password";
     private final String validDevAdminPasswordHash = new BCryptPasswordEncoder(14).encode(DEV_ADMIN_PASSWORD);
+    private static final String DEV_GUEST_PASSWORD = "local-dev-guest-password";
+    private final String validDevGuestPasswordHash = new BCryptPasswordEncoder(10).encode(DEV_GUEST_PASSWORD);
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -209,16 +211,17 @@ class DatabaseMigrationIntegrationTest {
                         "--spring.datasource.password=" + probe.password(),
                         "--spring.flyway.locations=classpath:db/migration,classpath:db/dev",
                         "--spring.flyway.placeholders.dev_admin_password_hash=" + validDevAdminPasswordHash(),
+                        "--spring.flyway.placeholders.dev_guest_password_hash=" + validDevGuestPasswordHash,
                         "--tuhospedaje.email.welcome.public-base-url=https://app.test"
                 )) {
             JdbcTemplate probeJdbcTemplate = context.getBean(JdbcTemplate.class);
             assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev");
 assertThat(probeJdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(14);
+                    "SELECT COUNT(*) FROM flyway_schema_history", Integer.class)).isEqualTo(15);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories", Integer.class)).isEqualTo(6);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM features", Integer.class)).isEqualTo(8);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM policies", Integer.class)).isEqualTo(6);
-            assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class)).isEqualTo(1);
+            assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class)).isEqualTo(2);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM lodgings", Integer.class)).isEqualTo(38);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM lodging_images", Integer.class)).isEqualTo(190);
             assertThat(probeJdbcTemplate.queryForObject("SELECT COUNT(*) FROM lodging_features", Integer.class)).isEqualTo(154);
@@ -237,6 +240,14 @@ assertThat(probeJdbcTemplate.queryForObject(
             assertThat(new BCryptPasswordEncoder().matches(
                     validDevAdminPassword(),
                     probeJdbcTemplate.queryForObject("SELECT password FROM users WHERE id = 1", String.class)))
+                    .isTrue();
+            assertThat(probeJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM users WHERE email = 'huesped@tuhospedaje.com' AND role = 'USER' AND enabled = TRUE",
+                    Integer.class)).isEqualTo(1);
+            assertThat(new BCryptPasswordEncoder().matches(
+                    DEV_GUEST_PASSWORD,
+                    probeJdbcTemplate.queryForObject(
+                            "SELECT password FROM users WHERE email = 'huesped@tuhospedaje.com'", String.class)))
                     .isTrue();
             assertCanonicalSeedManifest(probeJdbcTemplate);
             }
@@ -270,6 +281,25 @@ assertThat(probeJdbcTemplate.queryForObject(
                 assertThatThrownBy(() -> configuredDevSeedFlyway(probe, invalidHash).migrate())
                         .hasMessageContaining("chk_dev_seed_bcrypt_hash");
                 assertSeedOwnedTablesAreEmpty(jdbcTemplateFor(probe));
+            } finally {
+                dropProbeDatabase(probe);
+            }
+        }
+    }
+
+    @Test
+    void rejectsMissingOrMalformedGuestBcryptHashWithoutInsertingTheGuest() {
+        for (String invalidGuestHash : new String[]{
+                "",
+                "$2a$09$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }) {
+            ProbeDatabase probe = createProbeDatabase("dev_invalid_guest_hash_probe");
+            try {
+                assertThatThrownBy(() -> configuredDevSeedFlyway(
+                        probe, validDevAdminPasswordHash(), invalidGuestHash).migrate())
+                        .hasMessageContaining("chk_dev_seed_guest_bcrypt_hash");
+                assertThat(jdbcTemplateFor(probe).queryForObject(
+                        "SELECT COUNT(*) FROM users WHERE role = 'USER'", Integer.class)).isZero();
             } finally {
                 dropProbeDatabase(probe);
             }
@@ -698,10 +728,16 @@ assertThat(probeJdbcTemplate.queryForObject(
     }
 
     private Flyway configuredDevSeedFlyway(ProbeDatabase probe, String adminPasswordHash) {
+        return configuredDevSeedFlyway(probe, adminPasswordHash, validDevGuestPasswordHash);
+    }
+
+    private Flyway configuredDevSeedFlyway(ProbeDatabase probe, String adminPasswordHash, String guestPasswordHash) {
         return Flyway.configure()
                 .dataSource(probe.jdbcUrl(), probe.username(), probe.password())
                 .locations("classpath:db/migration", "classpath:db/dev")
-                .placeholders(Map.of("dev_admin_password_hash", adminPasswordHash))
+                .placeholders(Map.of(
+                        "dev_admin_password_hash", adminPasswordHash,
+                        "dev_guest_password_hash", guestPasswordHash))
                 .outOfOrder(true)
                 .load();
     }

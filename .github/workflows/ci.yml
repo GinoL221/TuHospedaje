@@ -123,24 +123,32 @@ jobs:
           JWT_SECRET=$(printf '%s' "$JWT_CONTEXT" | base64 -w 0)
           printf 'CI_JWT_SECRET=%s\n' "$JWT_SECRET" >> "$GITHUB_ENV"
 
-      # The seeded admin (db/dev/V1_9000__dev_demo_data.sql) requires its
-      # bcrypt hash as a Flyway placeholder — generated here so no secret
-      # needs to be stored for a fixed dev-only password.
-      - name: Generate dev admin bcrypt hash
+      # The seeded admin (db/dev/V1_9000__dev_demo_data.sql) and demo guest
+      # (db/dev/V1_9001__dev_demo_guest.sql) require their bcrypt hashes as
+      # Flyway placeholders — generated here so no secret needs to be stored
+      # for fixed dev-only passwords. The e2e suite does not log in as the
+      # demo guest; it registers its own user below.
+      - name: Generate dev admin and guest bcrypt hashes
         id: admin-hash
         env:
           DEV_ADMIN_PASSWORD: ${{ env.CI_ADMIN_PASSWORD }}
+          DEV_GUEST_PASSWORD: G${{ github.run_id }}
         run: |
           python3 -m pip install --quiet bcrypt
-          HASH=$(python3 - <<'PY'
+          hash_of() {
+            python3 - "$1" <<'PY'
           import bcrypt
           import os
+          import sys
           print(bcrypt.hashpw(
-              os.environ['DEV_ADMIN_PASSWORD'].encode(), bcrypt.gensalt(10)
+              os.environ[sys.argv[1]].encode(), bcrypt.gensalt(10)
           ).decode())
           PY
-          )
+          }
+          HASH=$(hash_of DEV_ADMIN_PASSWORD)
+          GUEST_HASH=$(hash_of DEV_GUEST_PASSWORD)
           echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          echo "guest-hash=$GUEST_HASH" >> "$GITHUB_OUTPUT"
 
       - name: Start backend (dev profile + demo seed)
         working-directory: backend
@@ -148,6 +156,7 @@ jobs:
           SPRING_PROFILES_ACTIVE: dev
           SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
           DEV_ADMIN_PASSWORD_HASH: ${{ steps.admin-hash.outputs.hash }}
+          DEV_GUEST_PASSWORD_HASH: ${{ steps.admin-hash.outputs.guest-hash }}
           # application.properties hardcodes the DB name to "tuhospedaje";
           # override it to match the service container's tuhospedaje_test.
           SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/tuhospedaje_test
