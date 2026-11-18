@@ -8,6 +8,41 @@ Pasarelas de pago, chat interno y mapas en vivo quedan fuera de esta entrega. **
 
 La web del huésped debe adaptarse a dispositivos según los criterios oficiales; no se exige una app móvil nativa. **Admin es la excepción de #9:** no debe ser responsive y debe mostrar un mensaje de no disponibilidad en móvil. Los breakpoints concretos son decisiones técnicas. Las diferencias documentadas de calendario doble y ubicación móvil de WhatsApp están [pendientes de reconciliación](DESIGN.md#official-requirements-reconciliation), sin aprobación implícita ni cambios de interfaz en este ajuste.
 
+## Para corregir: inicio rápido
+
+Requisitos para este flujo: **Docker Compose v2** e internet en el primer build (Java y Node solo hacen falta para correr fuera de contenedores).
+
+1. Generá `deploy/dev.env` con secretos aleatorios y los hashes demo:
+
+   ```bash
+   ./scripts/dev-setup.sh
+   ```
+
+2. Levantá MariaDB, backend con datos demo y frontend:
+
+   ```bash
+   docker compose --env-file deploy/dev.env \
+     -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
+   ```
+
+   El primer build descarga dependencias de Maven y npm y tarda varios minutos. Sin `compose.dev-assets.yaml`, los alojamientos muestran imágenes placeholder.
+
+3. Abrí `http://localhost:5173` (usá `localhost`, **no** `127.0.0.1`, por la política CORS de desarrollo). El panel de administración muestra por diseño un mensaje de no disponibilidad en móvil (#9). Swagger UI queda en `http://localhost:8080/swagger-ui/index.html`.
+
+   | Rol | Email | Contraseña |
+   | --- | --- | --- |
+   | `ADMIN` | `admin@tuhospedaje.com` | `Admin1234` |
+   | `USER` (huésped) | `huesped@tuhospedaje.com` | `Huesped1234` |
+
+4. Para detener sin borrar datos, usá `down`; para reiniciar la base demo (o si una migración de seed falla), usá `down -v` con los mismos tres archivos:
+
+   ```bash
+   docker compose --env-file deploy/dev.env \
+     -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml down -v
+   ```
+
+**Dónde mirar:** [índice de documentación](docs/README.md) · [alcance (`product.md`)](product.md) · [matriz de trazabilidad](docs/markdown/compliance/close-user-story-gaps-traceability.md) · [guía de demo académica](docs/markdown/sprint-4/academic-demo-guide.md) · [referencia de la API](docs/markdown/api-reference.md) · [arquitectura del backend](docs/markdown/backend-architecture.md).
+
 ## Stack
 
 - **Backend:** Java 17, Spring Boot 4.0, Spring Security/JWT, Spring Data JPA, Flyway y MariaDB 10.11.
@@ -21,7 +56,7 @@ La web del huésped debe adaptarse a dispositivos según los criterios oficiales
 - Java 17 o superior.
 - Node.js `>=22.12.0` (recomendado Node 24 LTS, alineado con el CI y el build contenedorizado).
 - Docker Compose v2 para el flujo contenedorizado.
-- Python 3 únicamente si vas a cargar el seed demo y necesitás generar un hash bcrypt.
+- Python 3 únicamente para la alternativa manual de hashes bcrypt en el seed demo (no hace falta con `scripts/dev-setup.sh`).
 
 ## Inicio rápido
 
@@ -59,7 +94,59 @@ Este es el flujo recomendado para desarrollo. Levanta MariaDB, backend y fronten
 
    Para eliminar la base descartable de desarrollo, agregá `-v`. Nunca uses `down -v` sobre producción.
 
+### Datos demo opcionales
+
+El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH` y `DEV_GUEST_PASSWORD_HASH` en `deploy/dev.env`. Compose no debe interpolar esos valores: un hash bcrypt contiene `$` y Compose lo corta. El entrypoint del seed lee el archivo y los exporta sin pasarlos por la interpolación.
+
+La forma recomendada es generar `deploy/dev.env` con el script del repositorio (usa `htpasswd` del host o la imagen `httpd:2.4-alpine` en Docker y escribe ambos hashes entre comillas simples):
+
+```bash
+./scripts/dev-setup.sh
+```
+
+Si preferís generar los hashes manualmente con Python (`bcrypt`, costo 10–14) para tus propias contraseñas de desarrollo, agregá en `deploy/dev.env` las líneas `DEV_ADMIN_PASSWORD_HASH='...'` y `DEV_GUEST_PASSWORD_HASH='...'` (las comillas simples son opcionales, pero evitan que Compose intente interpolar `$`).
+
+El entrypoint lee `DEV_ADMIN_PASSWORD_HASH` y `DEV_GUEST_PASSWORD_HASH`, acepta un par opcional de comillas simples envolventes, y valida 60 caracteres, prefijos `$2a$`, `$2b$` o `$2y$`, costo de `04` a `31` y el alfabeto bcrypt (`./A-Za-z0-9`). Un valor ausente o malformado detiene el arranque sin imprimir el hash. Esta validación comprueba el formato; no verifica una contraseña ni calcula hashes. El desarrollo sin el overlay de seed mantiene su entrypoint habitual.
+
+Para verificar el entrypoint sin bases ni archivos privados, usá una imagen **ya instalada** con `/bin/sh`, `awk`, `cut` y `grep`:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 SEED_TEST_IMAGE=ID_DE_IMAGEN_LOCAL \
+  python3 -m unittest discover -s backend/docker -p test_seed_entrypoint.py -v
+shellcheck backend/docker/seed-entrypoint.sh
+```
+
+Las pruebas usan contenedores sin red y sin descargas, raíz de sólo lectura, capacidades eliminadas, fixtures ficticios y un proceso testigo en lugar del backend. Sólo escriben en temporales propios, que se eliminan al terminar.
+
+Después, levantá el overlay:
+
+```bash
+docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
+```
+
+Las cuentas demo cargadas por `scripts/dev-setup.sh` son `admin@tuhospedaje.com` / `Admin1234` (rol `ADMIN`) y `huesped@tuhospedaje.com` / `Huesped1234` (rol `USER`), o las contraseñas cuyos hashes hayas cargado manualmente. Si una migración demo falla a mitad de camino, recreá únicamente la base del proyecto seeded antes de reintentar:
+
+```bash
+docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml down -v
+```
+
+### Imágenes canónicas opcionales
+
+Los JPEG maestros no forman parte del repositorio. Para montarlos de forma local, `CANONICAL_ASSETS_HOST_DIR` debe ser una ruta absoluta existente en tu máquina:
+
+```bash
+CANONICAL_ASSETS_HOST_DIR=/ruta/absoluta/a/canonical-lodging-images \
+  docker compose --env-file deploy/dev.env \
+  -f compose.yaml -f compose.dev.yaml -f compose.dev-assets.yaml up --build
+```
+
+Podés combinar `compose.dev-seed.yaml` y `compose.dev-assets.yaml` en el mismo comando cuando necesites ambos overlays.
+
 ### Entorno local persistente con imágenes aprobadas
+
+Este modo requiere los directorios externos de JPEG canónicos (38 carpetas `masters` bajo `CANONICAL_ASSETS_HOST_DIR`) y falla al iniciar si faltan; para evaluar el proyecto usá el inicio rápido de arriba.
 
 Usá `compose.local.yaml` como archivo independiente (sin los overlays dev/prod).
 Crea el proyecto `tuhospedaje-local` y el volumen `tuhospedaje-local-db`, sin usar
@@ -68,10 +155,11 @@ solo en loopback, en `5173` y `8080`. Detené cualquier demo que use esos puerto
 antes del arranque, sin borrar sus datos.
 
 1. Prepará `deploy/local.env` siguiendo `deploy/local.env.example`, con claves
-   aleatorias propias. Conservá esas claves entre arranques. Guardá el hash
-   bcrypt del admin (costo 10–14, literal y sin comillas) en una línea
-   `DEV_ADMIN_PASSWORD_HASH=...` de **`deploy/local-admin.env`**, separado del
-   archivo que Compose interpola. Ambos archivos están ignorados por Git:
+   aleatorias propias. Conservá esas claves entre arranques. Prepará
+   **`deploy/local-admin.env`** a partir de `deploy/local-admin.env.example` con
+   los hashes bcrypt (costo 10–14) de `DEV_ADMIN_PASSWORD_HASH` y
+   `DEV_GUEST_PASSWORD_HASH`, separado del archivo que Compose interpola. Ambos
+   archivos están ignorados por Git:
 
    ```bash
    chmod 600 deploy/local.env deploy/local-admin.env
@@ -110,55 +198,6 @@ Para verificar la configuración pública sin secretos ni servicios:
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
   -s tools/tests -p test_local_persistent_config.py -v
 ```
-
-### Datos demo opcionales
-
-El seed usa un proyecto y volumen separados (`tuhospedaje-dev-seeded`). Requiere `DEV_ADMIN_PASSWORD_HASH` en `deploy/dev.env`. Compose no debe interpolar ese valor: un hash bcrypt contiene `$` y Compose lo corta. El entrypoint del seed lee el archivo y lo exporta sin pasarlo por la interpolación. Generá el hash con una contraseña de desarrollo que no uses en otro entorno:
-
-```bash
-python3 -m venv /tmp/bcrypt-venv
-/tmp/bcrypt-venv/bin/pip install --quiet bcrypt
-export DEV_ADMIN_PASSWORD_HASH=$(/tmp/bcrypt-venv/bin/python3 -c \
-  "import bcrypt, getpass; print(bcrypt.hashpw(getpass.getpass().encode(), bcrypt.gensalt(10)).decode())")
-```
-
-Guardá el resultado en una línea literal `DEV_ADMIN_PASSWORD_HASH=...` de `deploy/dev.env`, sin comillas ni espacios alrededor de `=`. El entrypoint acepta 60 caracteres, prefijos `$2a$`, `$2b$` o `$2y$`, costo de `04` a `31` y el alfabeto bcrypt (`./A-Za-z0-9`). Un valor ausente o malformado detiene el arranque sin imprimir el hash. Esta validación comprueba el formato; no verifica una contraseña ni calcula hashes. El desarrollo sin el overlay de seed mantiene su entrypoint habitual.
-
-Para verificar el entrypoint sin bases ni archivos privados, usá una imagen **ya instalada** con `/bin/sh`, `awk`, `cut` y `grep`:
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 SEED_TEST_IMAGE=ID_DE_IMAGEN_LOCAL \
-  python3 -m unittest discover -s backend/docker -p test_seed_entrypoint.py -v
-shellcheck backend/docker/seed-entrypoint.sh
-```
-
-Las pruebas usan contenedores sin red y sin descargas, raíz de sólo lectura, capacidades eliminadas, fixtures ficticios y un proceso testigo en lugar del backend. Sólo escriben en temporales propios, que se eliminan al terminar.
-
-Después, levantá el overlay:
-
-```bash
-docker compose --env-file deploy/dev.env \
-  -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
-```
-
-El usuario administrador demo es `admin@tuhospedaje.com`; la contraseña es la que usaste para generar el hash. Si una migración demo falla a mitad de camino, recreá únicamente la base del proyecto seeded antes de reintentar:
-
-```bash
-docker compose --env-file deploy/dev.env \
-  -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml down -v
-```
-
-### Imágenes canónicas opcionales
-
-Los JPEG maestros no forman parte del repositorio. Para montarlos de forma local, `CANONICAL_ASSETS_HOST_DIR` debe ser una ruta absoluta existente en tu máquina:
-
-```bash
-CANONICAL_ASSETS_HOST_DIR=/ruta/absoluta/a/canonical-lodging-images \
-  docker compose --env-file deploy/dev.env \
-  -f compose.yaml -f compose.dev.yaml -f compose.dev-assets.yaml up --build
-```
-
-Podés combinar `compose.dev-seed.yaml` y `compose.dev-assets.yaml` en el mismo comando cuando necesites ambos overlays.
 
 ### Ejecución manual en el host
 
@@ -309,6 +348,10 @@ Al actualizar Playwright, actualizá también el pin exacto de `@playwright/test
 
 ## Documentación y recorridos
 
+- [`docs/README.md`](docs/README.md): índice general de documentación y jerarquía de fuentes.
+- [`docs/markdown/api-reference.md`](docs/markdown/api-reference.md): referencia de la API HTTP (50 operaciones verificadas contra `/v3/api-docs`). En desarrollo, Swagger UI está en `http://localhost:8080/swagger-ui/index.html` y el esquema OpenAPI en `/v3/api-docs`; no hay colección Postman en el repositorio porque Swagger/OpenAPI la reemplaza.
+- [`docs/markdown/backend-architecture.md`](docs/markdown/backend-architecture.md): arquitectura del backend.
+- [`docs/markdown/bitacora-del-proyecto.md`](docs/markdown/bitacora-del-proyecto.md): bitácora del proyecto desde el Sprint 1 hasta v1.0.1.
 - [`docs/markdown/delivery/current-main.md`](docs/markdown/delivery/current-main.md): registro histórico de la entrega académica del corte `18d9898` (anterior a v1.0.0). No describe el `main` actual; el historial y las verificaciones ligadas a ese SHA viven aquí.
 - [`product.md`](product.md): resumen de alcance subordinado a los PDF originales; recorridos de demostración, excepción móvil de Admin e incrementos posteriores.
 - [`DESIGN.md`](DESIGN.md): traducción técnica de identidad, convenciones registradas y diferencias pendientes frente a los requisitos oficiales; no sustituye su aceptación.
