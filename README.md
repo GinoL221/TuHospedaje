@@ -25,7 +25,7 @@ Requisitos para este flujo: **Docker Compose v2** e internet en el primer build 
      -f compose.yaml -f compose.dev.yaml -f compose.dev-seed.yaml up --build
    ```
 
-   El primer build descarga dependencias de Maven y npm y tarda varios minutos. Sin `compose.dev-assets.yaml`, los alojamientos muestran imágenes placeholder.
+   El primer build descarga dependencias de Maven y npm y tarda varios minutos. Sin `compose.dev-assets.yaml`, los alojamientos muestran imágenes placeholder. Los puertos `5173`, `8080` y `3307` tienen que estar libres: si otro stack de TuHospedaje (por ejemplo `compose.local.yaml`) está corriendo, detenelo antes.
 
 3. Abrí `http://localhost:5173` (usá `localhost`, **no** `127.0.0.1`, por la política CORS de desarrollo). El panel de administración muestra por diseño un mensaje de no disponibilidad en móvil (#9). Swagger UI queda en `http://localhost:8080/swagger-ui/index.html`.
 
@@ -34,7 +34,7 @@ Requisitos para este flujo: **Docker Compose v2** e internet en el primer build 
    | `ADMIN` | `admin@tuhospedaje.com` | `Admin1234` |
    | `USER` (huésped) | `huesped@tuhospedaje.com` | `Huesped1234` |
 
-4. Para detener sin borrar datos, usá `down`; para reiniciar la base demo (o si una migración de seed falla), usá `down -v` con los mismos tres archivos:
+4. Para detener sin borrar datos, usá `down`; para reiniciar la base demo, usá `down -v` con los mismos tres archivos. Hacé lo mismo si una migración de seed falla, o si el backend no arranca con `Access denied for user 'tuhospedaje_dev'`: MariaDB solo aplica la contraseña de `deploy/dev.env` al crear el volumen, así que un volumen de una corrida anterior conserva la contraseña vieja.
 
    ```bash
    docker compose --env-file deploy/dev.env \

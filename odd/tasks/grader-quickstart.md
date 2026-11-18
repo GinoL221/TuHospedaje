@@ -17,10 +17,12 @@ Branch: `feat/grader-quickstart` from `main@2113c00`. Engram mirror: `odd/grader
 
 - T1 [S3, S4] seed guest user + tests + CI — inline — commit: `e5f268d` (slice 1, Risk: item 5 — CI)
 - T2 [S1, S2] `scripts/dev-setup.sh` + `tools/tests/test_dev_setup.py` — inline — commit: `2036387` (slice 2; ~400-line boundary noted after 568 cumulative lines across slices 1–2)
-- T3 [S5, S6, S7] README, `dev.env.example`, demo guide — inline — commit: final slice (docs + task closure)
+- T3 [S5, S6, S7] README, `dev.env.example`, demo guide — inline — commit: `8924b9d`, follow-up `docs(readme): note port conflicts and stale dev DB volume` commit (README troubleshooting from the smoke test; cumulative 767 lines across 4 commits, delivered as one PR)
 
 ## Log
 
 - L1 (user, verbatim): "podes hacer un analisis general del proyecto antes de la entrega? ya es facilmente ejecutable y navegable para corregir?"
 - L2 (user, verbatim, answering whether example files and the seed may change, not only docs): "si permite"
 - L3 (decision): hygiene test forbids >20-char values in `deploy/*.env.example`; user chose a generator script over committing fixed values, and a seeded guest via `V1_9001`.
+- L4 (evidence): native review blocked by `managed_assets_outdated` even after `gentle-ai sync --agent pi` (binary skew, see gentle-ai #4379/#4271); user chose to skip it and rely on independent verify + real CI.
+- L5 (evidence): smoke test of the README quickstart on a fresh volume: db/backend/frontend healthy, `http://localhost:5173` 200, login 200 for `admin@tuhospedaje.com` (ADMIN) and `huesped@tuhospedaje.com` (USER), CORS preflight from `localhost:5173` OK. First attempt failed with `Access denied for user 'tuhospedaje_dev'` because a stale `tuhospedaje-dev-seeded-db` volume kept an old password, and port 5173 was held by `tuhospedaje-local`; README now documents both.
