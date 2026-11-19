@@ -16,6 +16,10 @@ SCRIPT = DIRECTORY / "seed-entrypoint.sh"
 VALID_HASH = "$2b$12$" + "." * 53  # Synthetic bcrypt-format fixture, never a credential.
 MALFORMED = "dev admin hash is missing or malformed\n"
 WRONG_LENGTH = "dev admin hash has the wrong length\n"
+GUEST_MALFORMED = "dev guest hash is missing or malformed\n"
+GUEST_WRONG_LENGTH = "dev guest hash has the wrong length\n"
+GUEST_HASH = "$2a$10$" + "/" * 53  # Synthetic bcrypt-format fixture, never a credential.
+GUEST_LINE = f"DEV_GUEST_PASSWORD_HASH={GUEST_HASH}\n"
 
 
 class SeedEntrypointTest(unittest.TestCase):
@@ -41,7 +45,7 @@ class SeedEntrypointTest(unittest.TestCase):
             spy = root / "spy.sh"
             spy.write_text(
                 '#!/bin/sh\nset -eu\n'
-                'printf "%s" "$DEV_ADMIN_PASSWORD_HASH" > /result/hash\n'
+                'printf "%s\\n%s" "$DEV_ADMIN_PASSWORD_HASH" "$DEV_GUEST_PASSWORD_HASH" > /result/hash\n'
                 'printf "1\\n" > /result/calls\n',
                 encoding="utf-8",
             )
@@ -66,7 +70,10 @@ class SeedEntrypointTest(unittest.TestCase):
             self.assertEqual(source.read_text(encoding="utf-8"), contents)
             self.assertEqual(
                 (result / "hash").read_text(encoding="utf-8"),
-                "unchanged" if expected_error else contents.split("DEV_ADMIN_PASSWORD_HASH=", 1)[1].splitlines()[0],
+                "unchanged" if expected_error else "\n".join((
+                    contents.split("DEV_ADMIN_PASSWORD_HASH=", 1)[1].splitlines()[0],
+                    contents.split("DEV_GUEST_PASSWORD_HASH=", 1)[1].splitlines()[0],
+                )),
             )
             self.assertEqual(
                 (result / "calls").read_text(encoding="utf-8"),
@@ -74,41 +81,55 @@ class SeedEntrypointTest(unittest.TestCase):
             )
 
     def test_valid_hash_is_preserved_without_interpolation_or_logging(self):
-        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH}\n")
+        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH}\n" + GUEST_LINE)
 
     def test_missing_value_stops_before_backend(self):
-        self.exercise("UNRELATED=test-only\n", MALFORMED)
+        self.exercise("UNRELATED=test-only\n" + GUEST_LINE, MALFORMED)
 
     def test_empty_value_is_rejected(self):
-        self.exercise("DEV_ADMIN_PASSWORD_HASH=\n", MALFORMED)
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=\n" + GUEST_LINE, MALFORMED)
 
     def test_invalid_prefix_is_rejected(self):
-        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2x$12$" + "." * 53 + "\n", MALFORMED)
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2x$12$" + "." * 53 + "\n" + GUEST_LINE, MALFORMED)
 
     def test_wrong_length_is_rejected(self):
-        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH[:-1]}\n", WRONG_LENGTH)
+        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH[:-1]}\n" + GUEST_LINE, WRONG_LENGTH)
 
     def test_malformed_payload_of_correct_length_is_rejected(self):
-        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$12$" + "!" * 53 + "\n", MALFORMED)
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$12$" + "!" * 53 + "\n" + GUEST_LINE, MALFORMED)
 
     def test_invalid_cost_of_correct_length_is_rejected(self):
-        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$xx$" + "." * 53 + "\n", MALFORMED)
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$xx$" + "." * 53 + "\n" + GUEST_LINE, MALFORMED)
 
     def test_cost_below_bcrypt_range_is_rejected(self):
-        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$03$" + "." * 53 + "\n", MALFORMED)
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$03$" + "." * 53 + "\n" + GUEST_LINE, MALFORMED)
 
     def test_cost_above_bcrypt_range_is_rejected(self):
-        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$32$" + "." * 53 + "\n", MALFORMED)
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=$2b$32$" + "." * 53 + "\n" + GUEST_LINE, MALFORMED)
 
     def test_existing_supported_prefixes_are_preserved(self):
         for prefix in ("2a", "2b", "2y"):
             with self.subTest(prefix=prefix):
-                self.exercise(f"DEV_ADMIN_PASSWORD_HASH=${prefix}$12$" + "." * 53 + "\n")
+                self.exercise(f"DEV_ADMIN_PASSWORD_HASH=${prefix}$12$" + "." * 53 + "\n" + GUEST_LINE)
 
     def test_bcrypt_cost_boundaries_are_accepted_without_hashing(self):
         for cost in ("04", "31"):
             with self.subTest(cost=cost):
-                self.exercise(f"DEV_ADMIN_PASSWORD_HASH=$2b${cost}$" + "." * 53 + "\n")
+                self.exercise(f"DEV_ADMIN_PASSWORD_HASH=$2b${cost}$" + "." * 53 + "\n" + GUEST_LINE)
+
+    def test_missing_guest_hash_stops_before_backend(self):
+        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH}\n", GUEST_MALFORMED)
+
+    def test_malformed_guest_hash_is_rejected(self):
+        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH}\nDEV_GUEST_PASSWORD_HASH=$2x$10$" + "." * 53 + "\n",
+                      GUEST_MALFORMED)
+
+    def test_guest_hash_with_wrong_length_is_rejected(self):
+        self.exercise(f"DEV_ADMIN_PASSWORD_HASH={VALID_HASH}\nDEV_GUEST_PASSWORD_HASH={GUEST_HASH[:-1]}\n",
+                      GUEST_WRONG_LENGTH)
+
+    def test_admin_error_is_reported_before_guest_error(self):
+        self.exercise("DEV_ADMIN_PASSWORD_HASH=\n", MALFORMED)
 
 
 if __name__ == "__main__":

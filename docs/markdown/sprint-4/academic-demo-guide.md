@@ -15,7 +15,7 @@ La demostración usa un entorno local descartable. El hardening operativo de pro
 5. Iniciar el frontend en `http://localhost:5173`.
 6. Abrir una ventana incógnito para el recorrido de huésped y otra ventana normal para el administrador.
 
-El usuario administrador de demo usa la credencial de desarrollo documentada en el README. Crear un usuario huésped nuevo durante la demo o usar uno creado previamente en la base descartable.
+El usuario administrador de demo usa la credencial de desarrollo documentada en el README. Para el recorrido de huésped podés usar directamente el usuario demo sembrado (`huesped@tuhospedaje.com` / `Huesped1234`), o crear una cuenta nueva si querés mostrar el registro (#16/#17).
 
 ## Recorrido recomendado
 
@@ -31,8 +31,7 @@ El usuario administrador de demo usa la credencial de desarrollo documentada en 
 
 ### 2. Registro, autenticación y favoritos — huésped
 
-- Crear una cuenta desde **Crear cuenta**.
-- Iniciar sesión con la cuenta creada.
+- Crear una cuenta desde **Crear cuenta** e iniciar sesión con ella (o saltar el registro e iniciar sesión con el huésped demo sembrado `huesped@tuhospedaje.com` / `Huesped1234`).
 - Mostrar en el encabezado el usuario autenticado, **Favoritos**, **Mis reservas** y **Cerrar sesión**.
 - Agregar el alojamiento seleccionado a favoritos y abrir la sección **Favoritos**.
 - Recargar la página para mostrar que la sesión persiste mediante cookies.
@@ -51,7 +50,7 @@ Como evidencia técnica opcional, mostrar en las herramientas del navegador que 
 - Mostrar la pantalla de confirmación con alojamiento, fechas, huésped, total y aviso de email.
 - Seguir **Ver mis reservas**.
 
-Para el entorno local, si SMTP está deshabilitado, presentar el log de `ConsoleEmailServiceImpl` como evidencia de solicitud de envío. No afirmar que el email llegó a un buzón sin Mailtrap configurado.
+Para el entorno local, si el outbox o SMTP están deshabilitados (`TUHOSPEDAJE_EMAIL_OUTBOX_ENABLED` o `MAIL_SMTP_ENABLED` en `false`), los correos quedan registrados como filas `PENDING` en la tabla `email_outbox` (mediante `EmailOutboxServiceImpl`). Mostrar esa fila en base de datos como evidencia de solicitud de envío; no afirmar que el email llegó a un buzón sin Mailtrap configurado.
 
 **Evidencia:** TC-30, TC-31, TC-32 y TC-35.
 
@@ -122,6 +121,6 @@ Los escenarios de imágenes canónicas sin sus JPEG maestros externos, SMTP sin 
 ## Límites de evidencia
 
 - Las imágenes canónicas externas no se presentan como verificadas cuando faltan los JPEG maestros; usar placeholders y dejar constancia de la omisión.
-- Con SMTP local, el log de `ConsoleEmailServiceImpl` prueba la solicitud de envío, no la recepción en un buzón. La entrega real requiere Mailtrap u otro buzón de prueba configurado.
+- Con el outbox o SMTP deshabilitados, las filas `PENDING` en `email_outbox` prueban la solicitud de envío, no la recepción en un buzón. La entrega real requiere habilitar ambos flags y configurar Mailtrap u otro servidor SMTP.
 - La existencia de `ops/mariadb/backup.sh` y `restore-verify.sh` documenta el procedimiento, pero no prueba una ejecución real de backup/restore.
 - `backend/.env.example` fue actualizado manualmente con una plantilla sanitizada; esta sesión no leyó ni verificó el archivo local porque la política de seguridad bloqueó esa ruta.
