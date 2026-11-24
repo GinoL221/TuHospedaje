@@ -142,6 +142,11 @@ async function exerciseReviews(page, baseURL) {
   await expect(comment).toHaveValue('Comentario que debe conservarse');
   await expect(submit).toBeEnabled();
   await expect(submit).toBeFocused();
+  // Wait two frames so WebKit commits the newly re-enabled textarea and alert
+  // layout into the focus/layout tree before Shift+Tab traverses backwards.
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
   await page.keyboard.press('Shift+Tab');
   await expect(comment).toBeFocused();
   await page.keyboard.press('Tab');
