@@ -93,6 +93,18 @@ describe("AdminLodgings - listing", () => {
 		).toBeInTheDocument();
 	});
 
+	it("wraps the lodgings table in a keyboard-scrollable named region", async () => {
+		mockGetDefaults();
+		renderAdminLodgings();
+
+		await screen.findByText("Cabaña del Lago");
+		const region = screen.getByRole("region", {
+			name: "Tabla de alojamientos",
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("renders the empty state when there are no lodgings", async () => {
 		mockGetDefaults({ lodgings: [] });
 		renderAdminLodgings();

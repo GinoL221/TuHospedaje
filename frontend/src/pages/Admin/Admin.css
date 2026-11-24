@@ -10,7 +10,7 @@
 /* SIDEBAR */
 .admin-sidebar {
   background: var(--secondary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -26,7 +26,7 @@
 .admin-sidebar-brand-text {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--surface-on-dark-text);
   letter-spacing: 0.01em;
 }
 .admin-sidebar-brand-sub {
@@ -34,7 +34,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #7fd8cc;
+  color: var(--accent-on-dark);
 }
 .admin-nav {
   display: flex;
@@ -60,12 +60,12 @@
 }
 .admin-nav-item:hover {
   background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .admin-nav-item.active {
   border-left-color: var(--accent);
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--surface-on-dark-text);
   font-weight: 600;
 }
 
@@ -186,7 +186,7 @@
 .admin-table-controls select {
   padding: 0 12px;
   border: 1px solid rgba(0, 0, 0, 0.15);
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--text);
 }
 
@@ -228,7 +228,7 @@
 .admin-table-controls button:hover {
   border-color: var(--secondary);
   background: var(--secondary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 
 /* MOBILE BLOCK */
@@ -285,7 +285,7 @@
 .stat-label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #595959;
+  color: var(--content-muted);
 }
 
 /* ── FAB ─────────────────────────────────────────────────────── */
@@ -383,7 +383,7 @@
 }
 .btn-delete:hover {
   background: var(--feedback-danger-text);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .btn-delete:focus-visible {
   outline: 3px solid var(--feedback-danger-text);
@@ -405,7 +405,7 @@
 .btn-edit:hover {
   background: var(--secondary);
   border-color: var(--secondary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .btn-edit:focus-visible {
   outline: 3px solid var(--action-primary-focus);
@@ -426,7 +426,7 @@
 .btn-promote:hover {
   background: var(--feedback-success-text);
   border-color: var(--feedback-success-text);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .btn-promote:focus-visible {
   outline: 3px solid var(--feedback-success-text);
@@ -446,7 +446,7 @@
 }
 .btn-demote:hover {
   background: var(--feedback-danger-text);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .btn-demote:focus-visible {
   outline: 3px solid var(--feedback-danger-text);
@@ -459,15 +459,27 @@
 }
 
 /* ── TABLES ──────────────────────────────────────────────────── */
+.admin-table-wrapper {
+  overflow: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.admin-table-wrapper:focus-visible {
+  outline: 3px solid var(--action-primary-focus);
+  outline-offset: 2px;
+}
 table {
   width: 100%;
   min-width: 580px;
   table-layout: fixed;
   border-collapse: collapse;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
+}
+table thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
 }
 table th:first-child,
 table td:first-child {
@@ -492,13 +504,13 @@ td {
 }
 th {
   background: var(--secondary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
   font-weight: 600;
   font-size: var(--type-label-size);
   letter-spacing: 0.02em;
 }
 tbody tr:hover {
-  background: rgba(38, 70, 83, 0.03);
+  background: color-mix(in srgb, var(--secondary) 3%, transparent);
 }
 tbody tr:last-child td {
   border-bottom: none;
@@ -514,7 +526,7 @@ tbody tr:last-child td {
 }
 .role-admin {
   background: var(--primary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .role-user {
   background: rgba(0, 0, 0, 0.08);
@@ -546,7 +558,7 @@ th.sortable {
   user-select: none;
 }
 th.sortable:hover {
-  background: var(--secondary-dark, #1a4f6e);
+  background: color-mix(in srgb, var(--secondary) 85%, black);
 }
 .sort-icon {
   margin-left: 6px;
@@ -568,7 +580,7 @@ th.sortable[aria-sort="descending"] .sort-icon {
 }
 .pagination button {
   background: var(--secondary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
   border: none;
   padding: 7px 16px;
   border-radius: var(--radius-sm);
@@ -597,7 +609,7 @@ th.sortable[aria-sort="descending"] .sort-icon {
   color: var(--text);
   font-size: 1rem;
   padding: 40px 20px;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: var(--radius-md);
   border: 1px dashed rgba(0, 0, 0, 0.15);
 }
@@ -759,7 +771,7 @@ textarea.input-error {
   padding: 8px 16px;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface-raised);
   font-weight: 500;
   font-size: 0.85rem;
   color: var(--text);
@@ -782,7 +794,7 @@ textarea.input-error {
 .feature-checkbox:has(input:checked) {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
 }
 .feature-checkbox:has(input:focus-visible) {
   outline: 2px solid var(--accent);
@@ -800,14 +812,14 @@ textarea.input-error {
 }
 .required-dot::before {
   content: "●";
-  color: #d32f2f;
+  color: var(--feedback-danger-text);
   font-size: 0.5rem;
   vertical-align: middle;
   margin-right: 4px;
 }
 .required-note {
   font-size: 0.75rem;
-  color: #d32f2f;
+  color: var(--feedback-danger-text);
   margin: 0 0 10px;
   text-align: left;
 }
@@ -820,7 +832,7 @@ textarea.input-error {
 }
 .btn-upload {
   background-color: var(--secondary);
-  color: #fff;
+  color: var(--surface-on-dark-text);
   border: none;
   padding: 10px 20px;
   border-radius: var(--radius-sm);
@@ -856,7 +868,7 @@ textarea.input-error {
   top: 2px;
   right: 2px;
   background: rgba(0, 0, 0, 0.6);
-  color: white;
+  color: var(--surface-on-dark-text);
   border: none;
   border-radius: 50%;
   width: 20px;

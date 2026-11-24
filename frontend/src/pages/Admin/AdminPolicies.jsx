@@ -172,73 +172,80 @@ export default function AdminPolicies() {
 			)}
 			{!initialLoadError && policyList.length > 0 && (
 				<>
-					<table>
-						<thead>
-							<tr>
-								<SortableTh
-									columnKey="id"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									ID
-								</SortableTh>
-								<SortableTh
-									columnKey="name"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Nombre
-								</SortableTh>
-								<SortableTh
-									columnKey="description"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Descripción
-								</SortableTh>
-								<SortableTh
-									columnKey="icon"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Ícono
-								</SortableTh>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody>
-							{pageItems.map((p) => (
-								<tr key={p.id} data-testid={`row-${p.id}`}>
-									<td>{p.id}</td>
-									<td>{p.name}</td>
-									<td>{p.description || "—"}</td>
-									<td>
-										<Icon name={p.icon} /> <code>{p.icon}</code>
-									</td>
-									<td>
-										<button
-											className="btn-edit"
-											data-testid="row-edit-btn"
-											onClick={() => openModal(p)}
-										>
-											Editar
-										</button>
-										<button
-											className="btn-delete"
-											data-testid="row-delete-btn"
-											onClick={() => handleDelete(p.id, p.name)}
-										>
-											Eliminar
-										</button>
-									</td>
+					<div
+						className="admin-table-wrapper"
+						role="region"
+						tabIndex={0}
+						aria-label="Tabla de políticas"
+					>
+						<table>
+							<thead>
+								<tr>
+									<SortableTh
+										columnKey="id"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										ID
+									</SortableTh>
+									<SortableTh
+										columnKey="name"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Nombre
+									</SortableTh>
+									<SortableTh
+										columnKey="description"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Descripción
+									</SortableTh>
+									<SortableTh
+										columnKey="icon"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Ícono
+									</SortableTh>
+									<th>Acciones</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{pageItems.map((p) => (
+									<tr key={p.id} data-testid={`row-${p.id}`}>
+										<td>{p.id}</td>
+										<td>{p.name}</td>
+										<td>{p.description || "—"}</td>
+										<td>
+											<Icon name={p.icon} /> <code>{p.icon}</code>
+										</td>
+										<td>
+											<button
+												className="btn-edit"
+												data-testid="row-edit-btn"
+												onClick={() => openModal(p)}
+											>
+												Editar
+											</button>
+											<button
+												className="btn-delete"
+												data-testid="row-delete-btn"
+												onClick={() => handleDelete(p.id, p.name)}
+											>
+												Eliminar
+											</button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 					<Pagination
 						page={page}
 						totalPages={totalPages}

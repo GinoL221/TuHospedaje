@@ -236,6 +236,18 @@ describe("AdminDashboard - recent lodgings table", () => {
 		expect(screen.getByText("Hotel Sol")).toBeInTheDocument();
 	});
 
+	it("wraps the recent lodgings table in a keyboard-scrollable named region", async () => {
+		mockGetDefaults({ recentLodgings: [{ id: 1, name: "Hotel Sol" }] });
+		render(<AdminDashboard onTabChange={vi.fn()} />);
+
+		await screen.findByText("Hotel Sol");
+		const region = screen.getByRole("region", {
+			name: "Últimos alojamientos",
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("does not render the recent lodgings table when the list is empty", async () => {
 		mockGetDefaults();
 		render(<AdminDashboard onTabChange={vi.fn()} />);
@@ -284,6 +296,28 @@ describe("AdminDashboard - recent reservations table", () => {
 		expect(await screen.findByText("Últimas reservas")).toBeInTheDocument();
 		expect(screen.getByText("Confirmada")).toBeInTheDocument();
 		expect(screen.getByText("Cancelada")).toBeInTheDocument();
+	});
+
+	it("wraps the recent reservations table in a keyboard-scrollable named region", async () => {
+		mockGetDefaults({
+			reservations: [
+				{
+					id: 1,
+					lodgingName: "Cabaña",
+					guestName: "Ana García",
+					checkIn: "2026-07-01",
+					checkOut: "2026-07-04",
+					totalPrice: 300,
+					status: "CONFIRMED",
+				},
+			],
+		});
+		render(<AdminDashboard onTabChange={vi.fn()} />);
+
+		await screen.findByText("Últimas reservas");
+		const region = screen.getByRole("region", { name: "Últimas reservas" });
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
 	});
 
 	it("shows reservation notes and labels derived creation times as estimated", async () => {

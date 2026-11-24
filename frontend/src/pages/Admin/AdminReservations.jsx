@@ -122,7 +122,7 @@ export default function AdminReservations() {
 	return (
 		<>
 			<div className="admin-section-header">
-				<h2>Reservas</h2>
+				<h2 id="admin-reservations-heading">Reservas</h2>
 			</div>
 
 			<div className="admin-table-controls">
@@ -173,77 +173,86 @@ export default function AdminReservations() {
 				<p className="empty-state">No hay reservas registradas.</p>
 			) : (
 				<>
-					<table data-testid="reservations-table">
-						<thead>
-							<tr>
-								<SortableTh
-									columnKey="id"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={handleSort}
-								>
-									ID
-								</SortableTh>
-								<th>Alojamiento</th>
-								<th>Huésped</th>
-								<th>Creación</th>
-								<th>Notas</th>
-								<SortableTh
-									columnKey="checkIn"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={handleSort}
-								>
-									Check-in
-								</SortableTh>
-								<SortableTh
-									columnKey="checkOut"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={handleSort}
-								>
-									Check-out
-								</SortableTh>
-								<SortableTh
-									columnKey="totalPrice"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={handleSort}
-								>
-									Total
-								</SortableTh>
-								<SortableTh
-									columnKey="status"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={handleSort}
-								>
-									Estado
-								</SortableTh>
-							</tr>
-						</thead>
-						<tbody>
-							{reservations.map((r) => (
-								<tr key={r.id} data-testid={`row-${r.id}`}>
-									<td>{r.id}</td>
-									<td>{r.lodgingName}</td>
-									<td>{r.guestName}</td>
-									<td>{reservationCreatedAtLabel(r)}</td>
-									<td>{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}</td>
-									<td>{r.checkIn}</td>
-									<td>{r.checkOut}</td>
-									<td>${r.totalPrice}</td>
-									<td>
-										<span
-											className={`status-badge status-${r.status.toLowerCase()}`}
-										>
-											{STATUS_CONFIG[r.status]?.rowLabel ?? r.status}
-										</span>
-									</td>
+					<div
+						className="admin-table-wrapper"
+						role="region"
+						tabIndex={0}
+						aria-labelledby="admin-reservations-heading"
+					>
+						<table data-testid="reservations-table">
+							<thead>
+								<tr>
+									<SortableTh
+										columnKey="id"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={handleSort}
+									>
+										ID
+									</SortableTh>
+									<th>Alojamiento</th>
+									<th>Huésped</th>
+									<th>Creación</th>
+									<th>Notas</th>
+									<SortableTh
+										columnKey="checkIn"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={handleSort}
+									>
+										Check-in
+									</SortableTh>
+									<SortableTh
+										columnKey="checkOut"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={handleSort}
+									>
+										Check-out
+									</SortableTh>
+									<SortableTh
+										columnKey="totalPrice"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={handleSort}
+									>
+										Total
+									</SortableTh>
+									<SortableTh
+										columnKey="status"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={handleSort}
+									>
+										Estado
+									</SortableTh>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{reservations.map((r) => (
+									<tr key={r.id} data-testid={`row-${r.id}`}>
+										<td>{r.id}</td>
+										<td>{r.lodgingName}</td>
+										<td>{r.guestName}</td>
+										<td>{reservationCreatedAtLabel(r)}</td>
+										<td>
+											{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}
+										</td>
+										<td>{r.checkIn}</td>
+										<td>{r.checkOut}</td>
+										<td>${r.totalPrice}</td>
+										<td>
+											<span
+												className={`status-badge status-${r.status.toLowerCase()}`}
+											>
+												{STATUS_CONFIG[r.status]?.rowLabel ?? r.status}
+											</span>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 					<Pagination
 						page={page}
 						totalPages={totalPages}

@@ -84,84 +84,91 @@ export default function AdminUsers() {
 			)}
 			{!loadError && users.length > 0 && (
 				<>
-					<table>
-						<thead>
-							<tr>
-								<SortableTh
-									columnKey="id"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									ID
-								</SortableTh>
-								<SortableTh
-									columnKey="name"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Nombre
-								</SortableTh>
-								<SortableTh
-									columnKey="email"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Email
-								</SortableTh>
-								<SortableTh
-									columnKey="role"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Rol
-								</SortableTh>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody>
-							{pageItems.map((u) => (
-								<tr key={u.id} data-testid={`row-${u.id}`}>
-									<td>{u.id}</td>
-									<td>
-										{u.firstName} {u.lastName}
-									</td>
-									<td>{u.email}</td>
-									<td>
-										<span
-											className={
-												"role-badge " +
-												(u.role === "ADMIN" ? "role-admin" : "role-user")
-											}
-										>
-											{u.role}
-										</span>
-									</td>
-									<td>
-										<button
-											className={
-												"btn-role " +
-												(u.role === "ADMIN" ? "btn-demote" : "btn-promote")
-											}
-											data-testid="row-role-btn"
-											onClick={() => toggleRole(u)}
-											disabled={u.email === currentUser?.email}
-											title={
-												u.email === currentUser?.email
-													? "No podés cambiarte tu propio rol"
-													: ""
-											}
-										>
-											{u.role === "ADMIN" ? "Quitar admin" : "Hacer admin"}
-										</button>
-									</td>
+					<div
+						className="admin-table-wrapper"
+						role="region"
+						tabIndex={0}
+						aria-label="Tabla de usuarios"
+					>
+						<table>
+							<thead>
+								<tr>
+									<SortableTh
+										columnKey="id"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										ID
+									</SortableTh>
+									<SortableTh
+										columnKey="name"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Nombre
+									</SortableTh>
+									<SortableTh
+										columnKey="email"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Email
+									</SortableTh>
+									<SortableTh
+										columnKey="role"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Rol
+									</SortableTh>
+									<th>Acciones</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{pageItems.map((u) => (
+									<tr key={u.id} data-testid={`row-${u.id}`}>
+										<td>{u.id}</td>
+										<td>
+											{u.firstName} {u.lastName}
+										</td>
+										<td>{u.email}</td>
+										<td>
+											<span
+												className={
+													"role-badge " +
+													(u.role === "ADMIN" ? "role-admin" : "role-user")
+												}
+											>
+												{u.role}
+											</span>
+										</td>
+										<td>
+											<button
+												className={
+													"btn-role " +
+													(u.role === "ADMIN" ? "btn-demote" : "btn-promote")
+												}
+												data-testid="row-role-btn"
+												onClick={() => toggleRole(u)}
+												disabled={u.email === currentUser?.email}
+												title={
+													u.email === currentUser?.email
+														? "No podés cambiarte tu propio rol"
+														: ""
+												}
+											>
+												{u.role === "ADMIN" ? "Quitar admin" : "Hacer admin"}
+											</button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 					<Pagination
 						page={page}
 						totalPages={totalPages}

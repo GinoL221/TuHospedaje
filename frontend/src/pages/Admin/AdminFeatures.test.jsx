@@ -77,6 +77,18 @@ describe("AdminFeatures - listing", () => {
 		expect(screen.getByText("fa-solid fa-water-ladder")).toBeInTheDocument();
 	});
 
+	it("wraps the features table in a keyboard-scrollable named region", async () => {
+		get.mockResolvedValue([featureFixture()]);
+		renderAdminFeatures();
+
+		await screen.findByText("WiFi");
+		const region = screen.getByRole("region", {
+			name: "Tabla de características",
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("fetches from GET /features on mount", async () => {
 		get.mockResolvedValue([featureFixture()]);
 		renderAdminFeatures();
