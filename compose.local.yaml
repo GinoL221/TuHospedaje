@@ -58,6 +58,7 @@ services:
       - type: bind
         source: ./backend
         target: /workspace
+      - backend-target:/workspace/target
       - maven-cache:/root/.m2
       - local-uploads:/uploads
       - type: bind
@@ -379,6 +380,7 @@ networks:
 volumes:
   db-data:
     name: tuhospedaje-local-db
+  backend-target:
   maven-cache:
   frontend-node-modules:
   local-uploads:
