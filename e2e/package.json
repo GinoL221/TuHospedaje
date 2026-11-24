@@ -8,6 +8,9 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:chrome": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:mobile": "playwright test --project=mobile-chromium",
+    "test:webkit": "E2E_ENABLE_WEBKIT=1 playwright test --project=mobile-webkit",
     "report": "playwright show-report",
     "clean": "rm -rf test-results playwright-report"
   },

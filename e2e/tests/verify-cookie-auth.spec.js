@@ -1,8 +1,14 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-const FRONTEND = 'http://localhost:5173';
-const BACKEND  = 'http://localhost:8080';
+const FRONTEND = (
+  process.env.BASE_URL || `http://localhost:${process.env.E2E_FRONTEND_PORT || '5173'}`
+).replace(/\/+$/, '');
+const BACKEND = (
+  process.env.API_BASE_URL || `http://localhost:${process.env.E2E_BACKEND_PORT || '8080'}`
+)
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '');
 const EMAIL    = 'admin@tuhospedaje.com';
 const PASS     = process.env.TEST_ADMIN_PASSWORD;
 if (!PASS) throw new Error('TEST_ADMIN_PASSWORD must be set');

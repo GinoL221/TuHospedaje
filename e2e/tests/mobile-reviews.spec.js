@@ -52,12 +52,17 @@ async function expectNoReviewsOverflow(page) {
   }
 }
 
-/** @param {import('@playwright/test').Page} page */
-async function interceptReviewsApi(page) {
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {string | undefined} baseURL
+ */
+async function interceptReviewsApi(page, baseURL) {
+  const cookieUrl =
+    baseURL || process.env.BASE_URL || `http://localhost:${process.env.E2E_FRONTEND_PORT || '5173'}`;
   await page.context().addCookies([{
     name: 'XSRF-TOKEN',
     value: CSRF_TOKEN,
-    url: 'http://localhost:5173',
+    url: cookieUrl,
     sameSite: 'Lax',
   }]);
 
@@ -87,9 +92,12 @@ async function interceptReviewsApi(page) {
   });
 }
 
-/** @param {import('@playwright/test').Page} page */
-async function exerciseReviews(page) {
-  await interceptReviewsApi(page);
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {string | undefined} baseURL
+ */
+async function exerciseReviews(page, baseURL) {
+  await interceptReviewsApi(page, baseURL);
   const ratingsRoute = `**/api/ratings/lodging/${LODGING_ID}`;
   await page.route(ratingsRoute, (route) => route.fulfill({
     status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Temporal' }),
@@ -142,15 +150,15 @@ async function exerciseReviews(page) {
 }
 
 test.describe('Mobile ReviewsSection at the project viewport', () => {
-  test('keeps reviews accessible, usable, and contained at 390x844', async ({ page }) => {
-    await exerciseReviews(page);
+  test('keeps reviews accessible, usable, and contained at 390x844', async ({ page, baseURL }) => {
+    await exerciseReviews(page, baseURL);
   });
 });
 
 test.describe('Mobile ReviewsSection at 320x844', () => {
   test.use({ viewport: { width: 320, height: 844 } });
 
-  test('keeps reviews accessible, usable, and contained at 320x844', async ({ page }) => {
-    await exerciseReviews(page);
+  test('keeps reviews accessible, usable, and contained at 320x844', async ({ page, baseURL }) => {
+    await exerciseReviews(page, baseURL);
   });
 });
