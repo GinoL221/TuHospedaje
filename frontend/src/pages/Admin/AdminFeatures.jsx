@@ -32,7 +32,8 @@ export default function AdminFeatures() {
 	const [initialLoadError, setInitialLoadError] = useState(false);
 	const [loadAttempt, setLoadAttempt] = useState(0);
 	const [deleteConfirm, setDeleteConfirm] = useState(null);
-	const focusInvalidFieldTimeoutRef = useRef(null);
+	const nameInputRef = useRef(null);
+	const iconContainerRef = useRef(null);
 
 	const resetForm = () => setForm({ name: "", icon: "" });
 	const cancel = useConfirmCancel(form.name || form.icon, () => {
@@ -40,10 +41,6 @@ export default function AdminFeatures() {
 		resetForm();
 		setShowModal(false);
 	});
-
-	useEffect(() => {
-		return () => clearTimeout(focusInvalidFieldTimeoutRef.current);
-	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -99,10 +96,11 @@ export default function AdminFeatures() {
 		const errs = validate();
 		setFieldErrors(errs);
 		if (Object.keys(errs).length > 0) {
-			focusInvalidFieldTimeoutRef.current = setTimeout(
-				() => document.querySelector(".input-error")?.focus(),
-				100,
-			);
+			if (errs.name) {
+				nameInputRef.current?.focus();
+			} else if (errs.icon) {
+				iconContainerRef.current?.querySelector("button")?.focus();
+			}
 			return;
 		}
 
@@ -245,12 +243,22 @@ export default function AdminFeatures() {
 							{editing ? "Editar característica" : "Nueva característica"}
 						</h2>
 						<form onSubmit={handleSubmit} noValidate>
-							<label className="required-dot">
+							<label htmlFor="admin-feature-name" className="required-dot">
 								Nombre
 								<input
+									ref={nameInputRef}
+									id="admin-feature-name"
+									name="name"
+									type="text"
+									required
+									enterKeyHint="next"
 									data-testid="field-name"
 									value={form.name}
 									className={fieldErrors.name ? "input-error" : ""}
+									aria-invalid={Boolean(fieldErrors.name)}
+									aria-describedby={
+										fieldErrors.name ? "error-feature-name" : undefined
+									}
 									onChange={(e) => {
 										setForm({ ...form, name: e.target.value });
 										if (fieldErrors.name)
@@ -258,24 +266,42 @@ export default function AdminFeatures() {
 									}}
 								/>
 								{fieldErrors.name && (
-									<span className="field-error" data-testid="error-name">
+									<span
+										id="error-feature-name"
+										className="field-error"
+										role="alert"
+										data-testid="error-name"
+									>
 										{fieldErrors.name}
 									</span>
 								)}
 							</label>
 							<label className="required-dot">
 								Ícono
-								<IconPicker
-									value={form.icon}
-									onChange={(val) => {
-										setForm({ ...form, icon: val });
-										if (fieldErrors.icon)
-											setFieldErrors({ ...fieldErrors, icon: "" });
-									}}
-									placeholder="fa-solid fa-wifi"
-								/>
+								<div
+									ref={iconContainerRef}
+									aria-invalid={Boolean(fieldErrors.icon)}
+									aria-describedby={
+										fieldErrors.icon ? "error-feature-icon" : undefined
+									}
+								>
+									<IconPicker
+										value={form.icon}
+										onChange={(val) => {
+											setForm({ ...form, icon: val });
+											if (fieldErrors.icon)
+												setFieldErrors({ ...fieldErrors, icon: "" });
+										}}
+										placeholder="fa-solid fa-wifi"
+									/>
+								</div>
 								{fieldErrors.icon && (
-									<span className="field-error" data-testid="error-icon">
+									<span
+										id="error-feature-icon"
+										className="field-error"
+										role="alert"
+										data-testid="error-icon"
+									>
 										{fieldErrors.icon}
 									</span>
 								)}

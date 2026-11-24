@@ -175,3 +175,20 @@ describe("BookingDateFields - Escape focus restoration", () => {
 		expect(document.querySelector(".react-datepicker")).not.toBeInTheDocument();
 	});
 });
+
+describe("BookingDateFields - input hints and aria-invalid defaults", () => {
+	it("exposes name, enterKeyHint, and explicit aria-invalid=false on check-in and check-out inputs", () => {
+		renderDateFields();
+
+		const checkIn = screen.getByLabelText("Check-in");
+		const checkOut = screen.getByLabelText("Check-out");
+
+		expect(checkIn).toHaveAttribute("name", "checkIn");
+		expect(checkIn).toHaveAttribute("enterkeyhint", "next");
+		expect(checkIn).toHaveAttribute("aria-invalid", "false");
+
+		expect(checkOut).toHaveAttribute("name", "checkOut");
+		expect(checkOut).toHaveAttribute("enterkeyhint", "next");
+		expect(checkOut).toHaveAttribute("aria-invalid", "false");
+	});
+});

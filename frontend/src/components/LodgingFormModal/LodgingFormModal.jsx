@@ -37,13 +37,11 @@ export default function LodgingFormModal({
 	const previousFocusRef = useRef(document.activeElement);
 	const submittingRef = useRef(false);
 	const uploadingRef = useRef(false);
-	const focusInvalidFieldTimeoutRef = useRef(null);
+	const fieldRefs = useRef({});
+	const imageUploadRef = useRef(null);
 	const titleId = useId();
 	const descriptionId = useId();
-
-	useEffect(() => {
-		return () => clearTimeout(focusInvalidFieldTimeoutRef.current);
-	}, []);
+	const formId = useId();
 
 	const [form, setForm] = useState({
 		name: lodging?.name ?? "",
@@ -187,10 +185,24 @@ export default function LodgingFormModal({
 		const errs = validate();
 		setFieldErrors(errs);
 		if (Object.keys(errs).length > 0) {
-			focusInvalidFieldTimeoutRef.current = setTimeout(
-				() => document.querySelector(".input-error")?.focus(),
-				100,
-			);
+			const fieldOrder = [
+				"name",
+				"email",
+				"description",
+				"address",
+				"city",
+				"country",
+				"phoneNumber",
+				"pricePerNight",
+				"maxGuests",
+				"imageUrls",
+			];
+			const firstInvalid = fieldOrder.find((key) => errs[key]);
+			if (firstInvalid === "imageUrls") {
+				imageUploadRef.current?.querySelector(".btn-upload")?.focus();
+			} else if (firstInvalid) {
+				fieldRefs.current[firstInvalid]?.focus();
+			}
 			return;
 		}
 		const payload = {
@@ -228,20 +240,27 @@ export default function LodgingFormModal({
 	function inputField(name, label, type, field, inputProps = {}) {
 		const value = form[name];
 		const error = fieldErrors[name];
+		const fieldId = `${formId}-${name}`;
 		return (
-			<label className={label ? "required-dot" : ""}>
+			<label htmlFor={fieldId} className={label ? "required-dot" : ""}>
 				{field || name.charAt(0).toUpperCase() + name.slice(1)}
 				<input
+					id={fieldId}
+					name={name}
 					type={type || "text"}
 					value={value}
+					required={Boolean(label)}
 					data-testid={`field-${name}`}
 					className={error ? "input-error" : ""}
-					aria-invalid={error ? "true" : undefined}
+					aria-invalid={Boolean(error)}
 					aria-describedby={
 						error ? `${descriptionId}-${name}-error` : undefined
 					}
 					disabled={isPending}
-					ref={name === "name" ? initialFocusRef : undefined}
+					ref={(el) => {
+						fieldRefs.current[name] = el;
+						if (name === "name") initialFocusRef.current = el;
+					}}
 					{...inputProps}
 					onChange={(e) => {
 						setForm({ ...form, [name]: e.target.value });
@@ -252,6 +271,7 @@ export default function LodgingFormModal({
 					<span
 						id={`${descriptionId}-${name}-error`}
 						className="field-error"
+						role="alert"
 						data-testid={`error-${name}`}
 					>
 						{error}
@@ -287,15 +307,30 @@ export default function LodgingFormModal({
 					</h2>
 					<form onSubmit={handleSubmit} noValidate>
 						<div className="modal-form-grid">
-							{inputField("name", true, "text", "Nombre del alojamiento")}
-							{inputField("email", true, "email", "Correo electrónico")}
-							<label className="full-width required-dot">
+							{inputField("name", true, "text", "Nombre del alojamiento", {
+								enterKeyHint: "next",
+							})}
+							{inputField("email", true, "email", "Correo electrónico", {
+								autoComplete: "email",
+								spellCheck: false,
+								enterKeyHint: "next",
+							})}
+							<label
+								htmlFor={`${formId}-description`}
+								className="full-width required-dot"
+							>
 								Descripción
 								<textarea
+									id={`${formId}-description`}
+									name="description"
+									ref={(el) => {
+										fieldRefs.current.description = el;
+									}}
+									required
 									data-testid="field-description"
 									value={form.description}
 									className={fieldErrors.description ? "input-error" : ""}
-									aria-invalid={fieldErrors.description ? "true" : undefined}
+									aria-invalid={Boolean(fieldErrors.description)}
 									aria-describedby={
 										fieldErrors.description
 											? `${descriptionId}-description-error`
@@ -312,16 +347,29 @@ export default function LodgingFormModal({
 									<span
 										id={`${descriptionId}-description-error`}
 										className="field-error"
+										role="alert"
 										data-testid="error-description"
 									>
 										{fieldErrors.description}
 									</span>
 								)}
 							</label>
-							{inputField("address", true, "text", "Dirección")}
-							{inputField("city", true, "text", "Ciudad")}
-							{inputField("country", true, "text", "País")}
-							{inputField("phoneNumber", true, "tel", "Teléfono")}
+							{inputField("address", true, "text", "Dirección", {
+								autoComplete: "street-address",
+								enterKeyHint: "next",
+							})}
+							{inputField("city", true, "text", "Ciudad", {
+								autoComplete: "address-level2",
+								enterKeyHint: "next",
+							})}
+							{inputField("country", true, "text", "País", {
+								autoComplete: "country-name",
+								enterKeyHint: "next",
+							})}
+							{inputField("phoneNumber", true, "tel", "Teléfono", {
+								autoComplete: "tel",
+								enterKeyHint: "next",
+							})}
 							{inputField(
 								"pricePerNight",
 								true,
@@ -330,6 +378,7 @@ export default function LodgingFormModal({
 								{
 									min: "0.01",
 									step: "0.01",
+									enterKeyHint: "next",
 								},
 							)}
 							{inputField(
@@ -340,11 +389,14 @@ export default function LodgingFormModal({
 								{
 									min: "1",
 									step: "1",
+									enterKeyHint: "next",
 								},
 							)}
-							<label>
+							<label htmlFor={`${formId}-categoryId`}>
 								Categoría
 								<select
+									id={`${formId}-categoryId`}
+									name="categoryId"
 									value={form.categoryId || ""}
 									disabled={isPending}
 									onChange={(e) =>
@@ -366,6 +418,7 @@ export default function LodgingFormModal({
 										<label key={f.id} className="feature-checkbox">
 											<input
 												type="checkbox"
+												name="featureIds"
 												value={f.id}
 												checked={form.featureIds.includes(f.id)}
 												disabled={isPending}
@@ -391,6 +444,7 @@ export default function LodgingFormModal({
 										<label key={p.id} className="feature-checkbox">
 											<input
 												type="checkbox"
+												name="policyIds"
 												value={p.id}
 												checked={form.policyIds?.includes(p.id)}
 												disabled={isPending}
@@ -411,17 +465,40 @@ export default function LodgingFormModal({
 									))}
 								</div>
 							</div>
-							<ImageUpload
-								urls={form.imageUrls}
-								onUrlsChange={(urls) => setForm({ ...form, imageUrls: urls })}
-								disabled={submitting}
-								onUploadingChange={(nextUploading) => {
-									uploadingRef.current = nextUploading;
-									setUploading(nextUploading);
-								}}
-							/>
+							<div
+								ref={imageUploadRef}
+								className="full-width"
+								role="group"
+								aria-label="Imágenes"
+								aria-invalid={Boolean(fieldErrors.imageUrls)}
+								aria-describedby={
+									fieldErrors.imageUrls
+										? `${descriptionId}-imageUrls-error`
+										: undefined
+								}
+							>
+								<ImageUpload
+									urls={form.imageUrls}
+									onUrlsChange={(urls) => {
+										setForm({ ...form, imageUrls: urls });
+										if (fieldErrors.imageUrls && urls.length > 0) {
+											setFieldErrors({ ...fieldErrors, imageUrls: "" });
+										}
+									}}
+									disabled={submitting}
+									onUploadingChange={(nextUploading) => {
+										uploadingRef.current = nextUploading;
+										setUploading(nextUploading);
+									}}
+								/>
+							</div>
 							{fieldErrors.imageUrls && (
-								<p className="field-error full-width">
+								<p
+									id={`${descriptionId}-imageUrls-error`}
+									className="field-error full-width"
+									role="alert"
+									data-testid="error-imageUrls"
+								>
 									{fieldErrors.imageUrls}
 								</p>
 							)}

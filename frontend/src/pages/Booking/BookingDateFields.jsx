@@ -124,6 +124,7 @@ export default function BookingDateFields({
 					<label htmlFor="booking-check-in">Check-in</label>
 					<DatePicker
 						id="booking-check-in"
+						name="checkIn"
 						locale="es"
 						selected={checkIn}
 						onChange={onCheckInChange}
@@ -141,7 +142,9 @@ export default function BookingDateFields({
 						dateFormat="dd/MM/yyyy"
 						placeholderText="Check-in"
 						aria-required="true"
+						aria-invalid="false"
 						aria-describedby={availabilityMessageId}
+						customInput={<input enterKeyHint="next" />}
 						disabled={availabilityStatus === "loading"}
 					/>
 				</div>
@@ -150,6 +153,7 @@ export default function BookingDateFields({
 					<label htmlFor="booking-check-out">Check-out</label>
 					<DatePicker
 						id="booking-check-out"
+						name="checkOut"
 						locale="es"
 						selected={checkOut}
 						onChange={onCheckOutChange}
@@ -167,7 +171,9 @@ export default function BookingDateFields({
 						dateFormat="dd/MM/yyyy"
 						placeholderText="Check-out"
 						aria-required="true"
+						aria-invalid="false"
 						aria-describedby={availabilityMessageId}
+						customInput={<input enterKeyHint="next" />}
 						disabled={availabilityStatus === "loading"}
 					/>
 				</div>

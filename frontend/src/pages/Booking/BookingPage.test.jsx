@@ -1202,3 +1202,21 @@ describe("BookingPage - local calendar dates", () => {
 		);
 	});
 });
+
+describe("BookingPage - form input hints and aria-invalid defaults", () => {
+	it("exposes name, enterKeyHint, and aria-invalid=false on editable booking fields before validation", async () => {
+		mockGetDefaults();
+		renderBookingPage();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const phone = screen.getByLabelText("Teléfono");
+		expect(phone).toHaveAttribute("name", "guestPhone");
+		expect(phone).toHaveAttribute("enterkeyhint", "next");
+		expect(phone).toHaveAttribute("aria-invalid", "false");
+
+		const notes = screen.getByLabelText("Notas");
+		expect(notes).toHaveAttribute("name", "notes");
+		expect(notes).toHaveAttribute("enterkeyhint", "done");
+	});
+});

@@ -51,9 +51,12 @@ export default function Home() {
 	const categoryRequest = useRef(0);
 	const checkInPicker = useRef(null);
 	const checkOutPicker = useRef(null);
+	const checkInContainerRef = useRef(null);
+	const checkOutContainerRef = useRef(null);
 	const [checkIn, setCheckIn] = useState(null);
 	const [checkOut, setCheckOut] = useState(null);
 	const [formSearchError, setFormSearchError] = useState("");
+	const [searchErrorField, setSearchErrorField] = useState(null);
 	const [favoriteIds, setFavoriteIds] = useState(new Set());
 	const {
 		lodgings,
@@ -164,11 +167,19 @@ export default function Home() {
 	function handleSearch(e) {
 		e.preventDefault();
 		setFormSearchError("");
+		setSearchErrorField(null);
 
 		if ((checkIn && !checkOut) || (!checkIn && checkOut)) {
+			const invalidField = checkIn ? "checkOut" : "checkIn";
 			setFormSearchError(
 				"Las fechas de entrada y salida deben enviarse juntas",
 			);
+			setSearchErrorField(invalidField);
+			const targetContainer =
+				invalidField === "checkIn"
+					? checkInContainerRef.current
+					: checkOutContainerRef.current;
+			targetContainer?.querySelector("input")?.focus();
 			return;
 		}
 
@@ -176,6 +187,8 @@ export default function Home() {
 			setFormSearchError(
 				"La fecha de check-out debe ser posterior al check-in",
 			);
+			setSearchErrorField("checkOut");
+			checkOutContainerRef.current?.querySelector("input")?.focus();
 			return;
 		}
 
@@ -246,128 +259,169 @@ export default function Home() {
 					<p className="search-subtitle">
 						Elegí tu destino y fechas para encontrar las mejores opciones.
 					</p>
-					<form onSubmit={handleSearch}>
-						<div style={{ position: "relative", width: "100%" }}>
-							<input
-								type="text"
-								placeholder="Ciudad"
-								value={city}
-								onChange={(e) => handleCityChange(e.target.value)}
-								onFocus={handleCityFocus}
-								onBlur={handleCityBlur}
-								onKeyDown={handleCityKeyDown}
-								role="combobox"
-								aria-label="Ciudad"
-								aria-autocomplete="list"
-								aria-expanded={showSuggestions}
-								aria-controls="city-suggestions-listbox"
-								aria-activedescendant={
-									activeSuggestionIndex >= 0
-										? `city-suggestion-${activeSuggestionIndex}`
-										: undefined
-								}
-							/>
-							{showSuggestions && (
-								<ul
-									id="city-suggestions-listbox"
-									className={
-										"city-suggestions" + (loadingCities ? " is-pending" : "")
+					<search aria-label="Buscar hospedaje">
+						<form onSubmit={handleSearch}>
+							<div style={{ position: "relative", width: "100%" }}>
+								<input
+									type="search"
+									name="city"
+									enterKeyHint="search"
+									spellCheck={false}
+									placeholder="Ciudad"
+									value={city}
+									onChange={(e) => handleCityChange(e.target.value)}
+									onFocus={handleCityFocus}
+									onBlur={handleCityBlur}
+									onKeyDown={handleCityKeyDown}
+									role="combobox"
+									aria-label="Ciudad"
+									aria-autocomplete="list"
+									aria-expanded={showSuggestions}
+									aria-controls="city-suggestions-listbox"
+									aria-activedescendant={
+										activeSuggestionIndex >= 0
+											? `city-suggestion-${activeSuggestionIndex}`
+											: undefined
 									}
-									role="listbox"
-									aria-label="Sugerencias de ciudades"
-									aria-busy={loadingCities}
-								>
-									{loadingCities && (
-										<li className="city-suggestions-loading" role="status">
-											Buscando...
-										</li>
-									)}
-									{!loadingCities && suggestions.length === 0 && (
-										<li className="city-suggestions-empty" role="status">
-											Sin resultados
-										</li>
-									)}
-									{suggestions.map((c, index) => (
-										<li
-											key={c}
-											id={`city-suggestion-${index}`}
-											role="option"
-											aria-selected={activeSuggestionIndex === index}
-											className={
-												activeSuggestionIndex === index
-													? "is-active"
-													: undefined
-											}
-											onMouseEnter={() => activateSuggestion(index)}
-											onMouseDown={() => selectCity(c)}
-										>
-											{c}
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
-						<div
-							onKeyDownCapture={(event) =>
-								handleDayEscape(event, checkInPicker)
-							}
-						>
-							<DatePicker
-								ref={checkInPicker}
-								selected={checkIn}
-								onChange={(date) => setCheckIn(date)}
-								selectsStart
-								popperProps={{ strategy: "fixed" }}
-								popperModifiers={homeCalendarModifiers}
-								monthsShown={2}
-								startDate={checkIn}
-								endDate={checkOut}
-								minDate={new Date()}
-								placeholderText="Check-in"
-								ariaLabel="Check-in"
-								dateFormat="dd/MM/yyyy"
-								locale="es"
-								popperClassName="home-datepicker-popper"
-							/>
-						</div>
-						<div
-							onKeyDownCapture={(event) =>
-								handleDayEscape(event, checkOutPicker)
-							}
-						>
-							<DatePicker
-								ref={checkOutPicker}
-								selected={checkOut}
-								onChange={(date) => setCheckOut(date)}
-								selectsEnd
-								popperProps={{ strategy: "fixed" }}
-								popperModifiers={homeCalendarModifiers}
-								monthsShown={2}
-								startDate={checkIn}
-								endDate={checkOut}
-								minDate={checkIn || new Date()}
-								placeholderText="Check-out"
-								ariaLabel="Check-out"
-								dateFormat="dd/MM/yyyy"
-								locale="es"
-								popperClassName="home-datepicker-popper"
-							/>
-						</div>
-						<button
-							type="submit"
-							className="btn-search"
-							aria-label="Buscar"
-							title="Buscar"
-						>
-							<Search size={20} strokeWidth={2.5} aria-hidden="true" />
-							<span className="sr-only">Buscar</span>
-						</button>
-					</form>
-					{formSearchError && (
-						<p className="search-error" role="alert">
-							{formSearchError}
-						</p>
-					)}
+								/>
+								{showSuggestions && (
+									<ul
+										id="city-suggestions-listbox"
+										className={
+											"city-suggestions" + (loadingCities ? " is-pending" : "")
+										}
+										role="listbox"
+										aria-label="Sugerencias de ciudades"
+										aria-busy={loadingCities}
+									>
+										{loadingCities && (
+											<li className="city-suggestions-loading" role="status">
+												Buscando...
+											</li>
+										)}
+										{!loadingCities && suggestions.length === 0 && (
+											<li className="city-suggestions-empty" role="status">
+												Sin resultados
+											</li>
+										)}
+										{suggestions.map((c, index) => (
+											<li
+												key={c}
+												id={`city-suggestion-${index}`}
+												role="option"
+												aria-selected={activeSuggestionIndex === index}
+												className={
+													activeSuggestionIndex === index
+														? "is-active"
+														: undefined
+												}
+												onMouseEnter={() => activateSuggestion(index)}
+												onMouseDown={() => selectCity(c)}
+											>
+												{c}
+											</li>
+										))}
+									</ul>
+								)}
+							</div>
+							<div
+								ref={checkInContainerRef}
+								onKeyDownCapture={(event) =>
+									handleDayEscape(event, checkInPicker)
+								}
+							>
+								<DatePicker
+									ref={checkInPicker}
+									name="checkIn"
+									selected={checkIn}
+									onChange={(date) => {
+										setCheckIn(date);
+										if (formSearchError) {
+											setFormSearchError("");
+											setSearchErrorField(null);
+										}
+									}}
+									selectsStart
+									popperProps={{ strategy: "fixed" }}
+									popperModifiers={homeCalendarModifiers}
+									monthsShown={2}
+									startDate={checkIn}
+									endDate={checkOut}
+									minDate={new Date()}
+									placeholderText="Check-in"
+									ariaLabel="Check-in"
+									aria-invalid={
+										formSearchError && searchErrorField === "checkIn"
+											? "true"
+											: undefined
+									}
+									aria-describedby={
+										formSearchError && searchErrorField === "checkIn"
+											? "home-search-error"
+											: undefined
+									}
+									dateFormat="dd/MM/yyyy"
+									locale="es"
+									popperClassName="home-datepicker-popper"
+								/>
+							</div>
+							<div
+								ref={checkOutContainerRef}
+								onKeyDownCapture={(event) =>
+									handleDayEscape(event, checkOutPicker)
+								}
+							>
+								<DatePicker
+									ref={checkOutPicker}
+									name="checkOut"
+									selected={checkOut}
+									onChange={(date) => {
+										setCheckOut(date);
+										if (formSearchError) {
+											setFormSearchError("");
+											setSearchErrorField(null);
+										}
+									}}
+									selectsEnd
+									popperProps={{ strategy: "fixed" }}
+									popperModifiers={homeCalendarModifiers}
+									monthsShown={2}
+									startDate={checkIn}
+									endDate={checkOut}
+									minDate={checkIn || new Date()}
+									placeholderText="Check-out"
+									ariaLabel="Check-out"
+									aria-invalid={
+										formSearchError && searchErrorField === "checkOut"
+											? "true"
+											: undefined
+									}
+									aria-describedby={
+										formSearchError && searchErrorField === "checkOut"
+											? "home-search-error"
+											: undefined
+									}
+									dateFormat="dd/MM/yyyy"
+									locale="es"
+									popperClassName="home-datepicker-popper"
+								/>
+							</div>
+							<button
+								type="submit"
+								className="btn-search"
+								aria-label="Buscar"
+								title="Buscar"
+							>
+								<Search size={20} strokeWidth={2.5} aria-hidden="true" />
+								<span className="sr-only">Buscar</span>
+							</button>
+						</form>
+						{formSearchError && (
+							<p id="home-search-error" className="search-error" role="alert">
+								{formSearchError}
+							</p>
+						)}
+					</search>
 				</div>
 			</section>
 			<section className="categories">

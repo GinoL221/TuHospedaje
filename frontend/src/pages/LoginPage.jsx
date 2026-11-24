@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
@@ -20,6 +20,8 @@ export default function LoginPage() {
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
+	const emailInputRef = useRef(null);
+	const passwordInputRef = useRef(null);
 	const location = useLocation();
 	const message = location.state?.message;
 	const destination = location.state?.from;
@@ -59,7 +61,14 @@ export default function LoginPage() {
 
 		const errors = validate();
 		setFieldErrors(errors);
-		if (Object.keys(errors).length > 0) return;
+		if (Object.keys(errors).length > 0) {
+			if (errors.email) {
+				emailInputRef.current?.focus();
+			} else if (errors.password) {
+				passwordInputRef.current?.focus();
+			}
+			return;
+		}
 
 		try {
 			setLoading(true);
@@ -92,13 +101,18 @@ export default function LoginPage() {
 				<form onSubmit={handleSubmit} noValidate>
 					<label htmlFor="login-email">Email</label>
 					<input
+						ref={emailInputRef}
 						id="login-email"
 						name="email"
 						type="email"
+						autoComplete="username"
+						spellCheck={false}
+						enterKeyHint="next"
+						required
 						value={form.email}
 						onChange={handleChange}
 						className={fieldErrors.email ? "input-error" : ""}
-						aria-invalid={fieldErrors.email ? "true" : undefined}
+						aria-invalid={Boolean(fieldErrors.email)}
 						aria-describedby={
 							fieldErrors.email ? "login-email-error" : undefined
 						}
@@ -112,13 +126,17 @@ export default function LoginPage() {
 					<label htmlFor="login-password">Contraseña</label>
 					<div className="input-wrap">
 						<input
+							ref={passwordInputRef}
 							id="login-password"
 							name="password"
 							type={showPassword ? "text" : "password"}
+							autoComplete="current-password"
+							enterKeyHint="done"
+							required
 							value={form.password}
 							onChange={handleChange}
 							className={fieldErrors.password ? "input-error" : ""}
-							aria-invalid={fieldErrors.password ? "true" : undefined}
+							aria-invalid={Boolean(fieldErrors.password)}
 							aria-describedby={
 								fieldErrors.password ? "login-password-error" : undefined
 							}

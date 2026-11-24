@@ -170,10 +170,29 @@ describe("AdminCategories - create", () => {
 			"No hay categorías cargadas todavía. ¡Creá la primera!",
 		);
 		await user.click(screen.getByTestId("admin-add-btn"));
+
+		const nameField = screen.getByLabelText("Nombre");
+		expect(nameField).toHaveAttribute("name", "name");
+		expect(nameField).toHaveAttribute("enterkeyhint", "next");
+		expect(nameField).toHaveAttribute("aria-invalid", "false");
+		expect(screen.getByLabelText("Descripción")).toHaveAttribute(
+			"name",
+			"description",
+		);
+		const imageField = screen.getByLabelText("Imagen representativa (URL)");
+		expect(imageField).toHaveAttribute("name", "imageUrl");
+		expect(imageField).toHaveAttribute("enterkeyhint", "done");
+
 		await user.click(screen.getByTestId("admin-save-btn"));
 
-		expect(await screen.findByTestId("error-name")).toHaveTextContent(
-			"El nombre es obligatorio",
+		const nameError = await screen.findByTestId("error-name");
+		expect(nameError).toHaveTextContent("El nombre es obligatorio");
+		expect(nameError).toHaveAttribute("role", "alert");
+		expect(nameField).toHaveAttribute("aria-invalid", "true");
+		expect(nameField).toHaveAttribute("aria-describedby", nameError.id);
+		expect(screen.getByTestId("error-image-url")).toHaveAttribute(
+			"role",
+			"alert",
 		);
 		expect(post).not.toHaveBeenCalled();
 	});

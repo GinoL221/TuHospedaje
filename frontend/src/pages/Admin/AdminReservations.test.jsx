@@ -114,6 +114,28 @@ describe("AdminReservations - listing", () => {
 		expect(region.querySelector("table")).toBeInTheDocument();
 	});
 
+	it("wraps the reservations filter bar in a <search> landmark with mobile search attributes", async () => {
+		getAdminReservations.mockResolvedValue({
+			items: [reservationFixture()],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
+		});
+		const { container } = renderAdminReservations();
+
+		await screen.findByText("Cabaña del Lago");
+		const searchLandmark = container.querySelector("search");
+		expect(searchLandmark).toBeInTheDocument();
+		expect(searchLandmark).toHaveAttribute("aria-label", "Filtrar reservas");
+
+		const searchInput = screen.getByLabelText("Buscar reservas");
+		expect(searchLandmark).toContainElement(searchInput);
+		expect(searchInput).toHaveAttribute("type", "search");
+		expect(searchInput).toHaveAttribute("name", "search");
+		expect(searchInput).toHaveAttribute("enterkeyhint", "search");
+		expect(searchInput).toHaveAttribute("spellcheck", "false");
+	});
+
 	it("shows exact creation time and notes for each reservation", async () => {
 		getAdminReservations.mockResolvedValue({
 			items: [reservationFixture()],

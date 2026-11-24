@@ -24,9 +24,15 @@ vi.mock("react-datepicker", () => ({
 		locale,
 		popperClassName,
 		monthsShown,
+		name,
+		"aria-invalid": ariaInvalid,
+		"aria-describedby": ariaDescribedBy,
 	}) => (
 		<input
+			name={name}
 			aria-label={ariaLabel}
+			aria-invalid={ariaInvalid}
+			aria-describedby={ariaDescribedBy}
 			data-testid={`datepicker-${placeholderText}`}
 			data-locale={locale}
 			data-popper-class={popperClassName}
@@ -1052,9 +1058,36 @@ describe("Home - search form", () => {
 
 		await user.click(screen.getByRole("button", { name: "Buscar" }));
 
-		expect(
-			screen.getByText("La fecha de check-out debe ser posterior al check-in"),
-		).toBeInTheDocument();
+		const errorEl = screen.getByText(
+			"La fecha de check-out debe ser posterior al check-in",
+		);
+		expect(errorEl).toBeInTheDocument();
+		expect(errorEl).toHaveAttribute("id", "home-search-error");
+		const checkOutInput = screen.getByTestId("datepicker-Check-out");
+		expect(checkOutInput).toHaveAttribute("aria-invalid", "true");
+		expect(checkOutInput).toHaveAttribute(
+			"aria-describedby",
+			"home-search-error",
+		);
+		expect(checkOutInput).toHaveFocus();
+	});
+
+	it("wraps the search form in a <search> landmark and exposes search input attributes", async () => {
+		mockGetDefaults();
+		const { container } = renderHome();
+
+		await screen.findByText("Cabaña del Lago");
+
+		const searchLandmark = container.querySelector("search");
+		expect(searchLandmark).toBeInTheDocument();
+		expect(searchLandmark).toHaveAttribute("aria-label", "Buscar hospedaje");
+		const cityInput = within(searchLandmark).getByRole("combobox", {
+			name: "Ciudad",
+		});
+		expect(cityInput).toHaveAttribute("type", "search");
+		expect(cityInput).toHaveAttribute("name", "city");
+		expect(cityInput).toHaveAttribute("enterkeyhint", "search");
+		expect(cityInput).toHaveAttribute("spellcheck", "false");
 	});
 
 	it("shows a validation error when only one date is selected", async () => {

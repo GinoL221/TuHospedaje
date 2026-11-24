@@ -73,15 +73,17 @@ export default function GuestDetails({
 							<label htmlFor="booking-phone">Teléfono</label>
 							<input
 								id="booking-phone"
+								name="guestPhone"
 								ref={phoneInputRef}
 								type="tel"
 								inputMode="tel"
 								autoComplete="tel"
+								enterKeyHint="next"
 								value={guestPhone}
 								onChange={onGuestPhoneChange}
 								placeholder="Ingresá tu teléfono"
 								aria-required="true"
-								aria-invalid={phoneError ? "true" : undefined}
+								aria-invalid={Boolean(phoneError)}
 								aria-describedby={
 									phoneError ? "booking-phone-error" : undefined
 								}
