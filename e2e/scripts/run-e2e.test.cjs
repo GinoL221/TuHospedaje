@@ -11,6 +11,7 @@ const {
   resolveConfig,
   verifyComposeStack,
   verifyReadiness,
+  verifyPlaywright,
   main,
 } = require('./run-e2e.cjs');
 
@@ -271,4 +272,49 @@ test('main forwards args and resolved env vars to Playwright and propagates non-
   assert.equal(pwCall.options.env.API_BASE_URL, 'http://localhost:8081');
   assert.equal(pwCall.options.env.E2E_FRONTEND_PORT, '5174');
   assert.equal(pwCall.options.env.E2E_BACKEND_PORT, '8081');
+});
+
+test('verifyPlaywright throws actionable npm ci error when binary is missing or not executable', () => {
+  assert.throws(
+    () =>
+      verifyPlaywright(() => {
+        const err = new Error('ENOENT');
+        err.code = 'ENOENT';
+        throw err;
+      }),
+    /npm ci/,
+  );
+});
+
+test('main rejects when Playwright spawnSync returns an error', async () => {
+  await assert.rejects(
+    main(['tests/smoke.spec.js'], {
+      env: { E2E_COMPOSE_PROJECT: 'tuhospedaje-dev-seeded' },
+      access: () => {},
+      fetchImpl: async () => ({ status: 200 }),
+      spawnSync: (cmd) => {
+        if (cmd === 'docker') {
+          return { status: 0, stdout: 'tuhospedaje-dev-seeded|running\n', stderr: '' };
+        }
+        return { error: new Error('ENOENT') };
+      },
+    }),
+    /Failed to run Playwright: ENOENT/,
+  );
+});
+
+test('main returns exit code 1 when Playwright is terminated by a signal (status: null)', async () => {
+  const code = await main(['tests/smoke.spec.js'], {
+    env: { E2E_COMPOSE_PROJECT: 'tuhospedaje-dev-seeded' },
+    access: () => {},
+    fetchImpl: async () => ({ status: 200 }),
+    spawnSync: (cmd) => {
+      if (cmd === 'docker') {
+        return { status: 0, stdout: 'tuhospedaje-dev-seeded|running\n', stderr: '' };
+      }
+      return { status: null, signal: 'SIGKILL' };
+    },
+  });
+
+  assert.equal(code, 1);
 });

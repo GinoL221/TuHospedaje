@@ -59,7 +59,9 @@ jobs:
       - run: npm run coverage
       - name: Run E2E runner unit tests
         working-directory: .
-        run: node --test e2e/scripts/run-e2e.test.cjs
+        run: >-
+          node --test e2e/scripts/run-e2e.test.cjs
+          e2e/scripts/summarize-e2e-retries.test.cjs
 
   e2e:
     needs: [backend, frontend]
@@ -293,88 +295,7 @@ jobs:
         env:
           E2E_OUTCOME: ${{ steps.e2e-tests.outcome }}
           E2E_BROWSER: ${{ matrix.browser }}
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-
-          const browser = process.env.E2E_BROWSER || 'unknown';
-          const outcome = process.env.E2E_OUTCOME || 'unknown';
-          const resultsPath = path.join('e2e', 'test-results', 'results.json');
-          const recovered = [];
-          let missingResults = false;
-          let parseError = '';
-
-          function walkSuite(suite, parents) {
-            const next = suite.title ? [...parents, suite.title] : parents;
-            for (const spec of suite.specs || []) {
-              const title = [...next, spec.title].filter(Boolean).join(' > ');
-              for (const test of spec.tests || []) {
-                const results = Array.isArray(test.results) ? test.results : [];
-                const isRecovered =
-                  test.status === 'flaky' ||
-                  results.some((r) => r.retry > 0 && r.status === 'passed');
-                if (isRecovered) {
-                  recovered.push(title);
-                }
-              }
-            }
-            for (const child of suite.suites || []) {
-              walkSuite(child, next);
-            }
-          }
-
-          if (fs.existsSync(resultsPath)) {
-            try {
-              const data = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
-              for (const suite of data.suites || []) {
-                walkSuite(suite, []);
-              }
-            } catch (err) {
-              parseError = err instanceof Error ? err.message : String(err);
-            }
-          } else {
-            missingResults = true;
-          }
-
-          const lines = [];
-          if (outcome === 'failure') {
-            lines.push(`### E2E (${browser}): FINAL_E2E_FAILURE`);
-            if (missingResults) {
-              lines.push('- `results.json` was not generated.');
-            } else if (parseError) {
-              lines.push(`- results.json parse error: ${parseError}`);
-            }
-            if (recovered.length > 0) {
-              const count = recovered.length;
-              lines.push(`- Recovered on retry before failure (${count}):`);
-              for (const title of recovered) {
-                lines.push(`  - ${title}`);
-              }
-            }
-          } else if (missingResults || parseError) {
-            lines.push(`### E2E (${browser}): E2E_PASS_RESULTS_UNAVAILABLE`);
-            if (missingResults) {
-              lines.push('- `results.json` was not generated.');
-            } else {
-              lines.push(`- results.json parse error: ${parseError}`);
-            }
-          } else if (recovered.length > 0) {
-            const count = recovered.length;
-            lines.push(`### E2E (${browser}): RECOVERED_PASS (${count})`);
-            for (const title of recovered) {
-              lines.push(`- ${title}`);
-            }
-          } else {
-            lines.push(`### E2E (${browser}): E2E_PASS_FIRST_ATTEMPT`);
-          }
-
-          const output = `${lines.join('\n')}\n`;
-          process.stdout.write(output);
-          if (process.env.GITHUB_STEP_SUMMARY) {
-            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, output, 'utf8');
-          }
-          NODE
+        run: node e2e/scripts/summarize-e2e-retries.cjs
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
@@ -382,10 +303,18 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: playwright-report-${{ matrix.browser }}
-          path: |
-            e2e/playwright-report/
-            e2e/test-results/
+          path: e2e/playwright-report/
           retention-days: 7
+
+      - name: Upload Playwright failure diagnostics
+        if: ${{ failure() && steps.e2e-tests.outcome == 'failure' }}
+        # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: playwright-failure-diagnostics-${{ matrix.browser }}
+          path: e2e/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
   containers:
     if: >-

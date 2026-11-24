@@ -5,11 +5,11 @@ import re
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 E2E_PACKAGE_JSON = ROOT / "e2e/package.json"
 PLAYWRIGHT_CONFIG = ROOT / "e2e/playwright.config.js"
+SUMMARIZE_RETRIES_SCRIPT = ROOT / "e2e/scripts/summarize-e2e-retries.cjs"
 
 
 class CiWorkflowHardeningTest(unittest.TestCase):
@@ -173,13 +173,36 @@ class PlaywrightCiAntiDriftTest(unittest.TestCase):
 
     def test_ci_e2e_configures_webkit_retry_summary_and_artifacts(self):
         self.assertIn("E2E_ENABLE_WEBKIT", self.e2e_job)
-        self.assertIn("GITHUB_STEP_SUMMARY", self.e2e_job)
-        self.assertIn("RECOVERED_PASS", self.e2e_job)
-        self.assertIn("E2E_PASS_FIRST_ATTEMPT", self.e2e_job)
-        self.assertIn("FINAL_E2E_FAILURE", self.e2e_job)
-        self.assertIn("e2e/playwright-report/", self.e2e_job)
-        self.assertIn("e2e/test-results/", self.e2e_job)
+        self.assertIn("node e2e/scripts/summarize-e2e-retries.cjs", self.e2e_job)
         self.assertIn("node --test e2e/scripts/run-e2e.test.cjs", self.ci_content)
+        self.assertIn("e2e/scripts/summarize-e2e-retries.test.cjs", self.ci_content)
+
+        self.assertTrue(
+            SUMMARIZE_RETRIES_SCRIPT.is_file(),
+            "e2e/scripts/summarize-e2e-retries.cjs must exist",
+        )
+        summary_script = SUMMARIZE_RETRIES_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("GITHUB_STEP_SUMMARY", summary_script)
+        for token in (
+            "RECOVERED_PASS",
+            "E2E_PASS_FIRST_ATTEMPT",
+            "E2E_PASS_RESULTS_UNAVAILABLE",
+            "FINAL_E2E_FAILURE",
+        ):
+            self.assertIn(token, summary_script)
+
+        report_step = self.e2e_job.split("- name: Upload Playwright report", 1)[1]
+        report_only, diagnostics_step = report_step.split(
+            "- name: Upload Playwright failure diagnostics", 1
+        )
+        self.assertIn("e2e/playwright-report/", report_only)
+        self.assertNotIn(
+            "e2e/test-results/",
+            report_only,
+            "Unconditional report upload must not include e2e/test-results/",
+        )
+        self.assertIn("failure()", diagnostics_step)
+        self.assertIn("e2e/test-results/", diagnostics_step)
 
     def test_playwright_config_hardening_options(self):
         self.assertRegex(
