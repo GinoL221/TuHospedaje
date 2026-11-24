@@ -37,17 +37,25 @@ module.exports = defineConfig({
 
   projects: [
     {
+      name: 'setup',
+      testMatch: /.*\.setup\.js/,
+      use: { browserName: 'chromium' },
+    },
+    {
       name: 'chromium',
-      testIgnore: '**/mobile-*.spec.js',
+      dependencies: ['setup'],
+      testIgnore: ['**/mobile-*.spec.js', '**/*.setup.js'],
       use: { browserName: 'chromium' },
     },
     {
       name: 'firefox',
-      testIgnore: '**/mobile-*.spec.js',
+      dependencies: ['setup'],
+      testIgnore: ['**/mobile-*.spec.js', '**/*.setup.js'],
       use: { browserName: 'firefox' },
     },
     {
       name: 'mobile-chromium',
+      dependencies: ['setup'],
       testMatch: '**/mobile-*.spec.js',
       use: {
         browserName: 'chromium',
@@ -60,6 +68,7 @@ module.exports = defineConfig({
       ? [
           {
             name: 'mobile-webkit',
+            dependencies: ['setup'],
             testMatch: ['**/smoke.spec.js', '**/mobile-*.spec.js'],
             use: {
               ...devices['iPhone 13'],
