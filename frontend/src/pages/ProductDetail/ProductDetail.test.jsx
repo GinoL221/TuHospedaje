@@ -859,8 +859,8 @@ describe("ProductDetail - navigation to booking", () => {
 		renderProductDetail({ authValue: makeAuthValue() });
 
 		await screen.findByText("Cabaña del Lago");
-		const checkIn = screen.getByRole("textbox", { name: "Check-in" });
-		const checkOut = screen.getByRole("textbox", { name: "Check-out" });
+		const checkIn = screen.getByRole("combobox", { name: "Check-in" });
+		const checkOut = screen.getByRole("combobox", { name: "Check-out" });
 
 		expect(checkIn.parentElement).not.toBe(checkOut.parentElement);
 		expect(checkIn.parentElement).toContainElement(
