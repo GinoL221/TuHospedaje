@@ -1,21 +1,13 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
 	createLodging,
 	updateLodging,
 } from "../../services/adminCatalogService";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import ModalDialog from "../ModalDialog/ModalDialog";
 import ImageUpload from "../../components/ImageUpload/ImageUpload";
 import Icon from "../Icons/Icon";
-
-const FOCUSABLE_SELECTOR = [
-	"button:not([disabled])",
-	"[href]",
-	'input:not([disabled]):not([type="hidden"]):not([tabindex="-1"])',
-	"select:not([disabled])",
-	"textarea:not([disabled])",
-	'[tabindex]:not([tabindex="-1"])',
-].join(",");
 
 function haveSameIds(current, initial) {
 	if (current.length !== initial.length) return false;
@@ -32,9 +24,7 @@ export default function LodgingFormModal({
 	onClose,
 }) {
 	const isEdit = Boolean(lodging?.id);
-	const dialogRef = useRef(null);
 	const initialFocusRef = useRef(null);
-	const previousFocusRef = useRef(document.activeElement);
 	const submittingRef = useRef(false);
 	const uploadingRef = useRef(false);
 	const fieldRefs = useRef({});
@@ -62,20 +52,6 @@ export default function LodgingFormModal({
 	const [fieldErrors, setFieldErrors] = useState({});
 	const [submitting, setSubmitting] = useState(false);
 	const [uploading, setUploading] = useState(false);
-
-	useEffect(() => {
-		const previousFocus = previousFocusRef.current;
-		initialFocusRef.current?.focus();
-
-		return () => {
-			if (
-				previousFocus?.isConnected &&
-				previousFocus.matches(FOCUSABLE_SELECTOR)
-			) {
-				previousFocus.focus();
-			}
-		};
-	}, []);
 
 	const hasChanges = isEdit
 		? form.name !== (lodging.name ?? "") ||
@@ -120,33 +96,14 @@ export default function LodgingFormModal({
 		cancel.handleCancel();
 	};
 
-	const handleKeyDown = (event) => {
-		if (cancel.showConfirm) return;
-
-		if (event.key === "Escape") {
-			event.preventDefault();
-			requestClose();
-			return;
-		}
-
-		if (event.key !== "Tab") return;
-
-		const focusableElements = Array.from(
-			dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [],
-		);
-		if (focusableElements.length === 0) {
+	const handleDialogCancel = (event) => {
+		if (submittingRef.current || uploadingRef.current) {
 			event.preventDefault();
 			return;
 		}
-
-		const firstElement = focusableElements[0];
-		const lastElement = focusableElements.at(-1);
-		if (event.shiftKey && document.activeElement === firstElement) {
+		if (hasChanges) {
 			event.preventDefault();
-			lastElement.focus();
-		} else if (!event.shiftKey && document.activeElement === lastElement) {
-			event.preventDefault();
-			firstElement.focus();
+			cancel.handleCancel();
 		}
 	};
 
@@ -283,252 +240,242 @@ export default function LodgingFormModal({
 
 	return (
 		<>
-			<div
-				className="modal-overlay"
-				onClick={(event) => {
-					if (event.target === event.currentTarget) requestClose();
-				}}
-				onKeyDown={handleKeyDown}
-				aria-hidden={cancel.showConfirm ? "true" : undefined}
-				inert={cancel.showConfirm ? true : undefined}
+			<ModalDialog
+				className="modal modal-lg"
+				data-testid="admin-modal"
+				ariaLabelledBy={titleId}
+				ariaDescribedBy={descriptionId}
+				closedBy={isPending ? "none" : "any"}
+				initialFocusRef={initialFocusRef}
+				onCancel={handleDialogCancel}
+				onClose={requestClose}
 			>
-				<div
-					ref={dialogRef}
-					className="modal modal-lg"
-					data-testid="admin-modal"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby={titleId}
-					aria-describedby={descriptionId}
-					onClick={(e) => e.stopPropagation()}
-				>
-					<h2 id={titleId}>
-						{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}
-					</h2>
-					<form onSubmit={handleSubmit} noValidate>
-						<div className="modal-form-grid">
-							{inputField("name", true, "text", "Nombre del alojamiento", {
-								enterKeyHint: "next",
-							})}
-							{inputField("email", true, "email", "Correo electrónico", {
-								autoComplete: "email",
-								spellCheck: false,
-								enterKeyHint: "next",
-							})}
-							<label
-								htmlFor={`${formId}-description`}
-								className="full-width required-dot"
-							>
-								Descripción
-								<textarea
-									id={`${formId}-description`}
-									name="description"
-									ref={(el) => {
-										fieldRefs.current.description = el;
-									}}
-									required
-									data-testid="field-description"
-									value={form.description}
-									className={fieldErrors.description ? "input-error" : ""}
-									aria-invalid={Boolean(fieldErrors.description)}
-									aria-describedby={
-										fieldErrors.description
-											? `${descriptionId}-description-error`
-											: undefined
-									}
-									disabled={isPending}
-									onChange={(e) => {
-										setForm({ ...form, description: e.target.value });
-										if (fieldErrors.description)
-											setFieldErrors({ ...fieldErrors, description: "" });
-									}}
-								/>
-								{fieldErrors.description && (
-									<span
-										id={`${descriptionId}-description-error`}
-										className="field-error"
-										role="alert"
-										data-testid="error-description"
-									>
-										{fieldErrors.description}
-									</span>
-								)}
-							</label>
-							{inputField("address", true, "text", "Dirección", {
-								autoComplete: "street-address",
-								enterKeyHint: "next",
-							})}
-							{inputField("city", true, "text", "Ciudad", {
-								autoComplete: "address-level2",
-								enterKeyHint: "next",
-							})}
-							{inputField("country", true, "text", "País", {
-								autoComplete: "country-name",
-								enterKeyHint: "next",
-							})}
-							{inputField("phoneNumber", true, "tel", "Teléfono", {
-								autoComplete: "tel",
-								enterKeyHint: "next",
-							})}
-							{inputField(
-								"pricePerNight",
-								true,
-								"number",
-								"Precio por noche (ARS)",
-								{
-									min: "0.01",
-									step: "0.01",
-									enterKeyHint: "next",
-								},
-							)}
-							{inputField(
-								"maxGuests",
-								true,
-								"number",
-								"Capacidad máxima de huéspedes",
-								{
-									min: "1",
-									step: "1",
-									enterKeyHint: "next",
-								},
-							)}
-							<label htmlFor={`${formId}-categoryId`}>
-								Categoría
-								<select
-									id={`${formId}-categoryId`}
-									name="categoryId"
-									value={form.categoryId || ""}
-									disabled={isPending}
-									onChange={(e) =>
-										setForm({ ...form, categoryId: e.target.value })
-									}
-								>
-									<option value="">Sin categoría</option>
-									{categories.map((c) => (
-										<option key={c.id} value={c.id}>
-											{c.name}
-										</option>
-									))}
-								</select>
-							</label>
-							<div className="full-width field-group">
-								<span className="field-label">Características</span>
-								<div className="feature-checkboxes">
-									{features.map((f) => (
-										<label key={f.id} className="feature-checkbox">
-											<input
-												type="checkbox"
-												name="featureIds"
-												value={f.id}
-												checked={form.featureIds.includes(f.id)}
-												disabled={isPending}
-												onChange={(e) => {
-													const id = Number(e.target.value);
-													setForm({
-														...form,
-														featureIds: e.target.checked
-															? [...form.featureIds, id]
-															: form.featureIds.filter((fid) => fid !== id),
-													});
-												}}
-											/>
-											<Icon name={f.icon} /> {f.name}
-										</label>
-									))}
-								</div>
-							</div>
-							<div className="full-width field-group">
-								<span className="field-label">Políticas</span>
-								<div className="feature-checkboxes">
-									{policies.map((p) => (
-										<label key={p.id} className="feature-checkbox">
-											<input
-												type="checkbox"
-												name="policyIds"
-												value={p.id}
-												checked={form.policyIds?.includes(p.id)}
-												disabled={isPending}
-												onChange={(e) => {
-													const id = Number(e.target.value);
-													setForm({
-														...form,
-														policyIds: e.target.checked
-															? [...(form.policyIds || []), id]
-															: (form.policyIds || []).filter(
-																	(pid) => pid !== id,
-																),
-													});
-												}}
-											/>
-											<Icon name={p.icon} /> {p.name}
-										</label>
-									))}
-								</div>
-							</div>
-							<div
-								ref={imageUploadRef}
-								className="full-width"
-								role="group"
-								aria-label="Imágenes"
-								aria-invalid={Boolean(fieldErrors.imageUrls)}
+				<h2 id={titleId}>
+					{isEdit ? "Editar alojamiento" : "Nuevo alojamiento"}
+				</h2>
+				<form onSubmit={handleSubmit} noValidate>
+					<div className="modal-form-grid">
+						{inputField("name", true, "text", "Nombre del alojamiento", {
+							enterKeyHint: "next",
+						})}
+						{inputField("email", true, "email", "Correo electrónico", {
+							autoComplete: "email",
+							spellCheck: false,
+							enterKeyHint: "next",
+						})}
+						<label
+							htmlFor={`${formId}-description`}
+							className="full-width required-dot"
+						>
+							Descripción
+							<textarea
+								id={`${formId}-description`}
+								name="description"
+								ref={(el) => {
+									fieldRefs.current.description = el;
+								}}
+								required
+								data-testid="field-description"
+								value={form.description}
+								className={fieldErrors.description ? "input-error" : ""}
+								aria-invalid={Boolean(fieldErrors.description)}
 								aria-describedby={
-									fieldErrors.imageUrls
-										? `${descriptionId}-imageUrls-error`
+									fieldErrors.description
+										? `${descriptionId}-description-error`
 										: undefined
 								}
-							>
-								<ImageUpload
-									urls={form.imageUrls}
-									onUrlsChange={(urls) => {
-										setForm({ ...form, imageUrls: urls });
-										if (fieldErrors.imageUrls && urls.length > 0) {
-											setFieldErrors({ ...fieldErrors, imageUrls: "" });
-										}
-									}}
-									disabled={submitting}
-									onUploadingChange={(nextUploading) => {
-										uploadingRef.current = nextUploading;
-										setUploading(nextUploading);
-									}}
-								/>
-							</div>
-							{fieldErrors.imageUrls && (
-								<p
-									id={`${descriptionId}-imageUrls-error`}
-									className="field-error full-width"
+								disabled={isPending}
+								onChange={(e) => {
+									setForm({ ...form, description: e.target.value });
+									if (fieldErrors.description)
+										setFieldErrors({ ...fieldErrors, description: "" });
+								}}
+							/>
+							{fieldErrors.description && (
+								<span
+									id={`${descriptionId}-description-error`}
+									className="field-error"
 									role="alert"
-									data-testid="error-imageUrls"
+									data-testid="error-description"
 								>
-									{fieldErrors.imageUrls}
-								</p>
+									{fieldErrors.description}
+								</span>
 							)}
-							{error && <p className="form-error full-width">{error}</p>}
-							<p id={descriptionId} className="required-note full-width">
-								* Campos obligatorios
-							</p>
-							<div className="modal-actions full-width">
-								<button
-									type="submit"
-									className="btn-save"
-									data-testid="admin-save-btn"
-									disabled={isPending}
-								>
-									{isEdit ? "Guardar cambios" : "Guardar"}
-								</button>
-								<button
-									type="button"
-									className="btn-cancel"
-									data-testid="admin-cancel-btn"
-									onClick={requestClose}
-									disabled={isPending}
-								>
-									Cancelar
-								</button>
+						</label>
+						{inputField("address", true, "text", "Dirección", {
+							autoComplete: "street-address",
+							enterKeyHint: "next",
+						})}
+						{inputField("city", true, "text", "Ciudad", {
+							autoComplete: "address-level2",
+							enterKeyHint: "next",
+						})}
+						{inputField("country", true, "text", "País", {
+							autoComplete: "country-name",
+							enterKeyHint: "next",
+						})}
+						{inputField("phoneNumber", true, "tel", "Teléfono", {
+							autoComplete: "tel",
+							enterKeyHint: "next",
+						})}
+						{inputField(
+							"pricePerNight",
+							true,
+							"number",
+							"Precio por noche (ARS)",
+							{
+								min: "0.01",
+								step: "0.01",
+								enterKeyHint: "next",
+							},
+						)}
+						{inputField(
+							"maxGuests",
+							true,
+							"number",
+							"Capacidad máxima de huéspedes",
+							{
+								min: "1",
+								step: "1",
+								enterKeyHint: "next",
+							},
+						)}
+						<label htmlFor={`${formId}-categoryId`}>
+							Categoría
+							<select
+								id={`${formId}-categoryId`}
+								name="categoryId"
+								value={form.categoryId || ""}
+								disabled={isPending}
+								onChange={(e) =>
+									setForm({ ...form, categoryId: e.target.value })
+								}
+							>
+								<option value="">Sin categoría</option>
+								{categories.map((c) => (
+									<option key={c.id} value={c.id}>
+										{c.name}
+									</option>
+								))}
+							</select>
+						</label>
+						<div className="full-width field-group">
+							<span className="field-label">Características</span>
+							<div className="feature-checkboxes">
+								{features.map((f) => (
+									<label key={f.id} className="feature-checkbox">
+										<input
+											type="checkbox"
+											name="featureIds"
+											value={f.id}
+											checked={form.featureIds.includes(f.id)}
+											disabled={isPending}
+											onChange={(e) => {
+												const id = Number(e.target.value);
+												setForm({
+													...form,
+													featureIds: e.target.checked
+														? [...form.featureIds, id]
+														: form.featureIds.filter((fid) => fid !== id),
+												});
+											}}
+										/>
+										<Icon name={f.icon} /> {f.name}
+									</label>
+								))}
 							</div>
 						</div>
-					</form>
-				</div>
-			</div>
+						<div className="full-width field-group">
+							<span className="field-label">Políticas</span>
+							<div className="feature-checkboxes">
+								{policies.map((p) => (
+									<label key={p.id} className="feature-checkbox">
+										<input
+											type="checkbox"
+											name="policyIds"
+											value={p.id}
+											checked={form.policyIds?.includes(p.id)}
+											disabled={isPending}
+											onChange={(e) => {
+												const id = Number(e.target.value);
+												setForm({
+													...form,
+													policyIds: e.target.checked
+														? [...(form.policyIds || []), id]
+														: (form.policyIds || []).filter(
+																(pid) => pid !== id,
+															),
+												});
+											}}
+										/>
+										<Icon name={p.icon} /> {p.name}
+									</label>
+								))}
+							</div>
+						</div>
+						<div
+							ref={imageUploadRef}
+							className="full-width"
+							role="group"
+							aria-label="Imágenes"
+							aria-invalid={Boolean(fieldErrors.imageUrls)}
+							aria-describedby={
+								fieldErrors.imageUrls
+									? `${descriptionId}-imageUrls-error`
+									: undefined
+							}
+						>
+							<ImageUpload
+								urls={form.imageUrls}
+								onUrlsChange={(urls) => {
+									setForm({ ...form, imageUrls: urls });
+									if (fieldErrors.imageUrls && urls.length > 0) {
+										setFieldErrors({ ...fieldErrors, imageUrls: "" });
+									}
+								}}
+								disabled={submitting}
+								onUploadingChange={(nextUploading) => {
+									uploadingRef.current = nextUploading;
+									setUploading(nextUploading);
+								}}
+							/>
+						</div>
+						{fieldErrors.imageUrls && (
+							<p
+								id={`${descriptionId}-imageUrls-error`}
+								className="field-error full-width"
+								role="alert"
+								data-testid="error-imageUrls"
+							>
+								{fieldErrors.imageUrls}
+							</p>
+						)}
+						{error && <p className="form-error full-width">{error}</p>}
+						<p id={descriptionId} className="required-note full-width">
+							* Campos obligatorios
+						</p>
+						<div className="modal-actions full-width">
+							<button
+								type="submit"
+								className="btn-save"
+								data-testid="admin-save-btn"
+								disabled={isPending}
+							>
+								{isEdit ? "Guardar cambios" : "Guardar"}
+							</button>
+							<button
+								type="button"
+								className="btn-cancel"
+								data-testid="admin-cancel-btn"
+								onClick={requestClose}
+								disabled={isPending}
+							>
+								Cancelar
+							</button>
+						</div>
+					</div>
+				</form>
+			</ModalDialog>
 
 			<ConfirmDialog
 				show={cancel.showConfirm}

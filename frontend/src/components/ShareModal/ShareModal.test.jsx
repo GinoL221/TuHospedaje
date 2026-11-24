@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ShareModal from "./ShareModal";
 
@@ -17,13 +17,16 @@ describe("ShareModal", () => {
 		}
 	});
 
-	it("exposes a named, described modal and initially focuses close", () => {
+	it("exposes a native modal dialog without redundant ARIA and initially focuses close", () => {
 		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
 
 		const dialog = screen.getByRole("dialog", { name: "Compartir" });
-		expect(dialog.parentElement).toHaveClass("share-modal-overlay");
-		expect(dialog.parentElement).not.toHaveClass("modal-overlay");
-		expect(dialog).toHaveAttribute("aria-modal", "true");
+		expect(dialog.tagName).toBe("DIALOG");
+		expect(dialog).toHaveAttribute("open");
+		expect(dialog).toHaveAttribute("closedby", "any");
+		expect(dialog).not.toHaveAttribute("role");
+		expect(dialog).not.toHaveAttribute("aria-modal");
+		expect(dialog).toHaveClass("modal-dialog", "share-modal");
 		expect(dialog).toHaveAccessibleDescription(
 			"Elegí cómo enviar este alojamiento.",
 		);
@@ -225,6 +228,9 @@ describe("ShareModal", () => {
 			"utf8",
 		);
 
+		expect(css).toContain("dialog.share-modal[open]");
+		expect(css).toContain("dialog.share-modal::backdrop");
+		expect(css).not.toMatch(/\.share-modal-overlay/);
 		expect(css).toMatch(
 			/\.share-btn\s*{[^}]*color:\s*var\(--secondary\);[^}]*background:\s*#ffffff;/,
 		);
@@ -239,7 +245,7 @@ describe("ShareModal", () => {
 		);
 	});
 
-	it("contains Tab and Shift+Tab across every enabled control and link", async () => {
+	it("supports Tab and Shift+Tab across every enabled control and link", async () => {
 		const user = userEvent.setup();
 		render(<ShareModal lodging={lodging} onClose={vi.fn()} />);
 
@@ -262,10 +268,8 @@ describe("ShareModal", () => {
 			await user.tab();
 			expect(link).toHaveFocus();
 		}
-		await user.tab();
-		expect(closeButton).toHaveFocus();
 		await user.tab({ shift: true });
-		expect(links.at(-1)).toHaveFocus();
+		expect(links.at(-2)).toHaveFocus();
 	});
 
 	it("closes on Escape", async () => {
@@ -278,27 +282,37 @@ describe("ShareModal", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("closes on overlay click but not on an interior click", async () => {
+	it("closes on backdrop click but not on an interior click", () => {
 		const onClose = vi.fn();
-		const user = userEvent.setup();
 		render(<ShareModal lodging={lodging} onClose={onClose} />);
 		const dialog = screen.getByRole("dialog", { name: "Compartir" });
+		vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue({
+			left: 100,
+			right: 600,
+			top: 100,
+			bottom: 500,
+			width: 500,
+			height: 400,
+		});
 
-		await user.click(dialog);
+		const heading = screen.getByRole("heading", { name: "Compartir" });
+		fireEvent.pointerDown(heading, { clientX: 200, clientY: 200 });
+		fireEvent.pointerUp(heading, { clientX: 200, clientY: 200 });
 		expect(onClose).not.toHaveBeenCalled();
 
-		await user.click(dialog.parentElement);
+		fireEvent.pointerDown(dialog, { clientX: 20, clientY: 20 });
+		fireEvent.pointerUp(dialog, { clientX: 20, clientY: 20 });
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("locks body scrolling while mounted and restores the exact previous overflow", () => {
+	it("does not mutate document.body.style.overflow while mounted", () => {
 		document.body.style.overflow = "scroll";
 
 		const { unmount } = render(
 			<ShareModal lodging={lodging} onClose={vi.fn()} />,
 		);
 
-		expect(document.body.style.overflow).toBe("hidden");
+		expect(document.body.style.overflow).toBe("scroll");
 
 		unmount();
 		expect(document.body.style.overflow).toBe("scroll");
