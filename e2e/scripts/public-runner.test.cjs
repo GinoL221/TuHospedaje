@@ -7,11 +7,11 @@ const {
   pinnedVersion, imageForVersion, parseMode, dockerArgv, verifyPlaywright, verifyImage, main,
 } = require('./public-runner.cjs');
 
-const image = 'mcr.microsoft.com/playwright:v1.60.0-noble';
+const image = imageForVersion(pinnedVersion(require('../package.json')));
 
 test('requires an exact pinned Playwright version and derives the official Noble tag', () => {
   assert.equal(pinnedVersion({ devDependencies: { '@playwright/test': '1.60.0' } }), '1.60.0');
-  assert.equal(imageForVersion('1.60.0'), image);
+  assert.equal(imageForVersion('1.60.0'), 'mcr.microsoft.com/playwright:v1.60.0-noble');
   for (const version of ['^1.60.0', '1.60', 'latest', '../1.2.3']) {
     assert.throws(() => pinnedVersion({ devDependencies: { '@playwright/test': version } }));
   }
