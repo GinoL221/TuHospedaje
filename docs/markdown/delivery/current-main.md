@@ -36,7 +36,7 @@ La matriz pide, para cada historia, componente de UI, endpoint y criterio de ace
 
 - Backend: `cd backend && ./mvnw -B verify`
 - Frontend: `cd frontend && npm ci && npm run lint && npm run format:check && npm run coverage`
-- E2E público, sin escribir en la base local preservada: `node e2e/scripts/public-runner.cjs list`, luego `smoke` o `public` según `README.md`
+- E2E local contra un stack desechable (`tuhospedaje-dev-seeded`, sin escribir en la base local preservada): `node e2e/scripts/run-e2e.cjs --dry-run` y luego `node e2e/scripts/run-e2e.cjs` según `README.md` (el antiguo runner público en Docker fue retirado tras migrar `mobile-webkit` a CI)
 
 Una prueba que pasa en otro commit no corrige la entrega actual. La corrección entra en `main` con el test que falla antes del cambio y pasa después.
 
