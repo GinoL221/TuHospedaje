@@ -83,7 +83,7 @@ async function exerciseGallery(page) {
   await opener.focus();
   await opener.click();
 
-  const modal = page.locator('.gallery-modal-overlay');
+  const modal = page.getByRole('dialog', { name: 'Galería de imágenes' });
   const image = modal.locator('.gallery-modal-image img');
   const close = modal.getByRole('button', { name: 'Cerrar galería' });
   const previous = modal.getByRole('button', { name: 'Imagen anterior' });
