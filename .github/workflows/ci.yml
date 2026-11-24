@@ -57,6 +57,11 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run coverage
+      - name: Run E2E runner unit tests
+        working-directory: .
+        run: >-
+          node --test e2e/scripts/run-e2e.test.cjs
+          e2e/scripts/summarize-e2e-retries.test.cjs
 
   e2e:
     needs: [backend, frontend]
@@ -71,10 +76,12 @@ jobs:
         ci-session-${{ github.run_id }}-${{ github.run_attempt }}
       CI_SESSION_REFRESH_KEY: >-
         ci-refresh-${{ github.run_id }}-${{ github.run_attempt }}
+      PLAYWRIGHT_IMAGE: >-
+        mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, mobile-chromium]
+        browser: [chromium, firefox, mobile-chromium, mobile-webkit]
     services:
       mariadb:
         # Match backend Testcontainers (mariadb:10.11) so lock/gap behavior
@@ -243,18 +250,15 @@ jobs:
                'CONFIRMED', 0
              );"
 
-      - name: Install Playwright
+      - name: Install e2e dependencies
         working-directory: e2e
-        run: |
-          npm ci
-          if [ "${{ matrix.browser }}" = "mobile-chromium" ]; then
-            npx playwright install --with-deps chromium
-          else
-            npx playwright install --with-deps "${{ matrix.browser }}"
-          fi
+        run: npm ci
+
+      - name: Pull Playwright container image
+        run: docker pull "$PLAYWRIGHT_IMAGE"
 
       - name: Run e2e tests
-        working-directory: e2e
+        id: e2e-tests
         env:
           BASE_URL: http://localhost:5173
           TEST_ADMIN_EMAIL: admin@tuhospedaje.com
@@ -262,7 +266,36 @@ jobs:
           TEST_USER_EMAIL: ${{ steps.test-user.outputs.email }}
           TEST_USER_PASSWORD: ${{ env.CI_TEST_USER_PASSWORD }}
           TEST_USER_NAME: E2E
-        run: npx playwright test --project=${{ matrix.browser }}
+          E2E_ENABLE_WEBKIT: >-
+            ${{ matrix.browser == 'mobile-webkit' && '1' || '0' }}
+        run: |
+          docker run --rm --init --network host --shm-size 512m \
+            --user "$(id -u):$(id -g)" \
+            -v "${{ github.workspace }}/e2e:/workspace/e2e" \
+            -w /workspace/e2e \
+            -e HOME=/tmp \
+            -e XDG_CACHE_HOME=/tmp/fontcache \
+            -e CI=true \
+            -e BASE_URL \
+            -e TEST_ADMIN_EMAIL \
+            -e TEST_ADMIN_PASSWORD \
+            -e TEST_USER_EMAIL \
+            -e TEST_USER_PASSWORD \
+            -e TEST_USER_NAME \
+            -e E2E_ENABLE_WEBKIT \
+            "$PLAYWRIGHT_IMAGE" \
+            ./node_modules/.bin/playwright test \
+            --project="${{ matrix.browser }}"
+
+      - name: Summarize E2E retry status
+        if: >-
+          ${{ !cancelled() &&
+          (steps.e2e-tests.outcome == 'success' ||
+          steps.e2e-tests.outcome == 'failure') }}
+        env:
+          E2E_OUTCOME: ${{ steps.e2e-tests.outcome }}
+          E2E_BROWSER: ${{ matrix.browser }}
+        run: node e2e/scripts/summarize-e2e-retries.cjs
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
@@ -272,6 +305,16 @@ jobs:
           name: playwright-report-${{ matrix.browser }}
           path: e2e/playwright-report/
           retention-days: 7
+
+      - name: Upload Playwright failure diagnostics
+        if: ${{ failure() && steps.e2e-tests.outcome == 'failure' }}
+        # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: playwright-failure-diagnostics-${{ matrix.browser }}
+          path: e2e/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
   containers:
     if: >-

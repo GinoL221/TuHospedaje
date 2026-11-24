@@ -5,6 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "test": "playwright test",
+    "test:local": "node scripts/run-e2e.cjs",
+    "test:runner": "node --test scripts/run-e2e.test.cjs scripts/summarize-e2e-retries.test.cjs",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:chrome": "playwright test --project=chromium",

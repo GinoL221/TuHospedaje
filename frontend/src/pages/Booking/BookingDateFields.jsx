@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale/es";
 import { minCheckoutDate } from "../../utils/dateRange";
@@ -17,6 +18,59 @@ export default function BookingDateFields({
 	isDateOccupied,
 	isCheckOutDateAvailable,
 }) {
+	const escapeCloseIdRef = useRef(null);
+	const restoreFramesRef = useRef({ outer: null, inner: null });
+	const [suppressOpenForId, setSuppressOpenForId] = useState(null);
+
+	const cancelPendingFocusRestore = useCallback(() => {
+		if (restoreFramesRef.current.outer !== null) {
+			cancelAnimationFrame(restoreFramesRef.current.outer);
+			restoreFramesRef.current.outer = null;
+		}
+		if (restoreFramesRef.current.inner !== null) {
+			cancelAnimationFrame(restoreFramesRef.current.inner);
+			restoreFramesRef.current.inner = null;
+		}
+	}, []);
+
+	useEffect(() => cancelPendingFocusRestore, [cancelPendingFocusRestore]);
+
+	const handleDatePickerKeyDown = (id, event) => {
+		if (event.key === "Escape") {
+			escapeCloseIdRef.current = id;
+		}
+	};
+
+	const handleCalendarOpen = (id) => {
+		if (escapeCloseIdRef.current === id) {
+			escapeCloseIdRef.current = null;
+		}
+		cancelPendingFocusRestore();
+		setSuppressOpenForId((current) => (current === id ? null : current));
+	};
+
+	const handleCalendarClose = (id) => {
+		if (escapeCloseIdRef.current !== id) return;
+		escapeCloseIdRef.current = null;
+		cancelPendingFocusRestore();
+		setSuppressOpenForId(id);
+
+		// Wait two animation frames so focus is restored strictly after
+		// react-datepicker's single-rAF deferBlur() finishes (WebKit runs
+		// setTimeout(0) before rAF, letting deferBlur() blur back to body).
+		restoreFramesRef.current.outer = requestAnimationFrame(() => {
+			restoreFramesRef.current.outer = null;
+			restoreFramesRef.current.inner = requestAnimationFrame(() => {
+				restoreFramesRef.current.inner = null;
+				const input = document.getElementById(id);
+				if (input && document.activeElement !== input) {
+					input.focus({ preventScroll: true });
+				}
+				setSuppressOpenForId((current) => (current === id ? null : current));
+			});
+		});
+	};
+
 	return (
 		<fieldset
 			className="booking-fieldset booking-date-fieldset"
@@ -73,6 +127,12 @@ export default function BookingDateFields({
 						locale="es"
 						selected={checkIn}
 						onChange={onCheckInChange}
+						onKeyDown={(event) =>
+							handleDatePickerKeyDown("booking-check-in", event)
+						}
+						onCalendarOpen={() => handleCalendarOpen("booking-check-in")}
+						onCalendarClose={() => handleCalendarClose("booking-check-in")}
+						preventOpenOnFocus={suppressOpenForId === "booking-check-in"}
 						selectsStart
 						startDate={checkIn}
 						endDate={checkOut}
@@ -93,6 +153,12 @@ export default function BookingDateFields({
 						locale="es"
 						selected={checkOut}
 						onChange={onCheckOutChange}
+						onKeyDown={(event) =>
+							handleDatePickerKeyDown("booking-check-out", event)
+						}
+						onCalendarOpen={() => handleCalendarOpen("booking-check-out")}
+						onCalendarClose={() => handleCalendarClose("booking-check-out")}
+						preventOpenOnFocus={suppressOpenForId === "booking-check-out"}
 						selectsEnd
 						startDate={checkIn}
 						endDate={checkOut}
