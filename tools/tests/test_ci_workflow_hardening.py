@@ -1,12 +1,15 @@
 """Test CI workflow hardening rules (least privilege permissions, SHA-pinned actions, push retries, tags)."""
 
-from pathlib import Path
+import json
 import re
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
+E2E_PACKAGE_JSON = ROOT / "e2e/package.json"
+PLAYWRIGHT_CONFIG = ROOT / "e2e/playwright.config.js"
 
 
 class CiWorkflowHardeningTest(unittest.TestCase):
@@ -86,6 +89,119 @@ class CiWorkflowHardeningTest(unittest.TestCase):
                     f"Action {action} must be pinned to Node 24 release SHA {expected_sha}, but found {found_sha}",
                 )
 
+
+class PlaywrightCiAntiDriftTest(unittest.TestCase):
+
+    def setUp(self):
+        self.ci_content = CI_WORKFLOW.read_text(encoding="utf-8")
+        self.e2e_pkg = json.loads(E2E_PACKAGE_JSON.read_text(encoding="utf-8"))
+        self.playwright_config = PLAYWRIGHT_CONFIG.read_text(encoding="utf-8")
+        self.e2e_job = self.ci_content.split("\n  e2e:\n", 1)[1].split("\n  containers:\n", 1)[0]
+
+    def test_playwright_package_uses_exact_semver_pin(self):
+        pin = self.e2e_pkg.get("devDependencies", {}).get("@playwright/test")
+        self.assertIsInstance(pin, str, "@playwright/test must be declared in e2e/package.json devDependencies")
+        self.assertRegex(
+            pin,
+            r"^\d+\.\d+\.\d+$",
+            f"@playwright/test must be pinned to an exact 3-part semver without ^ or ~, found: {pin!r}",
+        )
+
+    def test_ci_uses_digest_pinned_playwright_noble_image_matching_package_json(self):
+        pin = self.e2e_pkg["devDependencies"]["@playwright/test"]
+        self.assertNotIn(
+            "playwright install --with-deps",
+            self.ci_content,
+            "CI must use the prebuilt Playwright container image instead of playwright install --with-deps",
+        )
+
+        image_refs = re.findall(r"mcr\.microsoft\.com/playwright:[^\s\"']+", self.ci_content)
+        self.assertTrue(
+            image_refs,
+            "CI workflow must reference a digest-pinned mcr.microsoft.com/playwright Noble image",
+        )
+        expected_pattern = re.compile(
+            rf"^mcr\.microsoft\.com/playwright:v{re.escape(pin)}-noble@sha256:[a-f0-9]{{64}}$"
+        )
+        for ref in image_refs:
+            self.assertRegex(
+                ref,
+                expected_pattern,
+                f"Playwright CI image must match exact e2e/package.json pin v{pin}-noble@sha256:<64-hex>, found: {ref}",
+            )
+
+        self.assertIn("docker pull", self.e2e_job, "e2e job must pull the Playwright container image explicitly")
+        self.assertIn("docker run", self.e2e_job, "e2e job must run Playwright inside the container image")
+
+    def test_ci_matrix_and_package_scripts_projects_are_declared_in_playwright_config(self):
+        declared_projects = set(
+            re.findall(r"name:\s*['\"]([a-zA-Z0-9_-]+)['\"]", self.playwright_config)
+        )
+        self.assertTrue(declared_projects, "e2e/playwright.config.js must declare at least one project")
+
+        scripts = self.e2e_pkg.get("scripts", {})
+        script_projects = []
+        for script_cmd in scripts.values():
+            script_projects.extend(re.findall(r"--project=([a-zA-Z0-9_-]+)", script_cmd))
+        self.assertTrue(script_projects, "e2e/package.json scripts must reference --project=<name>")
+        for project in script_projects:
+            self.assertIn(
+                project,
+                declared_projects,
+                f"e2e/package.json script references undeclared Playwright project: {project}",
+            )
+
+        matrix_match = re.search(r"browser:\s*\[([^\]]+)\]", self.e2e_job)
+        self.assertIsNotNone(matrix_match, "e2e job must define strategy.matrix.browser")
+        assert matrix_match is not None
+        matrix_browsers = [
+            item.strip().strip("'\"")
+            for item in matrix_match.group(1).split(",")
+            if item.strip()
+        ]
+        expected_browsers = {"chromium", "firefox", "mobile-chromium", "mobile-webkit"}
+        self.assertTrue(
+            expected_browsers.issubset(set(matrix_browsers)),
+            f"e2e matrix must include {sorted(expected_browsers)}, found: {matrix_browsers}",
+        )
+        for browser in matrix_browsers:
+            self.assertIn(
+                browser,
+                declared_projects,
+                f"CI e2e matrix browser {browser!r} is not declared in e2e/playwright.config.js",
+            )
+
+    def test_ci_e2e_configures_webkit_retry_summary_and_artifacts(self):
+        self.assertIn("E2E_ENABLE_WEBKIT", self.e2e_job)
+        self.assertIn("GITHUB_STEP_SUMMARY", self.e2e_job)
+        self.assertIn("RECOVERED_PASS", self.e2e_job)
+        self.assertIn("E2E_PASS_FIRST_ATTEMPT", self.e2e_job)
+        self.assertIn("FINAL_E2E_FAILURE", self.e2e_job)
+        self.assertIn("e2e/playwright-report/", self.e2e_job)
+        self.assertIn("e2e/test-results/", self.e2e_job)
+        self.assertIn("node --test e2e/scripts/run-e2e.test.cjs", self.ci_content)
+
+    def test_playwright_config_hardening_options(self):
+        self.assertRegex(
+            self.playwright_config,
+            r"retries:\s*process\.env\.CI\s*\?\s*1\s*:\s*0",
+            "e2e/playwright.config.js must configure retries: process.env.CI ? 1 : 0",
+        )
+        self.assertRegex(
+            self.playwright_config,
+            r"trace:\s*['\"]retain-on-failure['\"]",
+            "e2e/playwright.config.js must configure trace: 'retain-on-failure'",
+        )
+        self.assertRegex(
+            self.playwright_config,
+            r"open:\s*['\"]never['\"]",
+            "e2e/playwright.config.js must configure HTML reporter with open: 'never'",
+        )
+        self.assertIn(
+            "test-results/results.json",
+            self.playwright_config,
+            "e2e/playwright.config.js must configure JSON reporter outputFile test-results/results.json",
+        )
 
 
 if __name__ == "__main__":
