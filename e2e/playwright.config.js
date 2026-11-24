@@ -50,13 +50,13 @@ module.exports = defineConfig({
     {
       name: 'firefox',
       dependencies: ['setup'],
-      testIgnore: ['**/mobile-*.spec.js', '**/*.setup.js'],
+      testIgnore: ['**/mobile-*.spec.js', '**/*.setup.js', '**/visual-regression.spec.js'],
       use: { browserName: 'firefox' },
     },
     {
       name: 'mobile-chromium',
       dependencies: ['setup'],
-      testMatch: '**/mobile-*.spec.js',
+      testMatch: ['**/mobile-*.spec.js', '**/visual-regression.spec.js'],
       use: {
         browserName: 'chromium',
         viewport: { width: 390, height: 844 },
