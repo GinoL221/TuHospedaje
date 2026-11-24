@@ -51,6 +51,8 @@ export default function Header() {
 			}
 			alt={user.firstName}
 			className="avatar"
+			width="36"
+			height="36"
 			onError={(e) => {
 				e.target.onerror = null;
 				e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.firstName)}&background=264653&color=fff&size=36`;
@@ -63,7 +65,13 @@ export default function Header() {
 			<nav className="page-container">
 				<div className="logo-container">
 					<Link to="/" className="brand-link">
-						<img src={logo} alt="TuHospedaje — Inicio" className="logo" />
+						<img
+							src={logo}
+							alt="TuHospedaje — Inicio"
+							className="logo"
+							width="451"
+							height="253"
+						/>
 					</Link>
 					<Link to="/" className="tagline">
 						Encuentra tu lugar ideal al mejor precio

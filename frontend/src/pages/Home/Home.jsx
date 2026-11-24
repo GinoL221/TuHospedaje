@@ -400,13 +400,16 @@ export default function Home() {
 						</p>
 						{visibleSearchResults.lodgings?.length > 0 && (
 							<div className="hotel-list">
-								{visibleSearchResults.lodgings.map((lodging) => (
+								{visibleSearchResults.lodgings.map((lodging, index) => (
 									<ProductCard
 										key={lodging.id}
 										lodging={lodging}
 										defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
 										onFavoriteToggle={handleFavoriteToggle}
 										showUnratedMessage
+										imagePriority={
+											index === 0 ? "high" : index < 4 ? "eager" : "lazy"
+										}
 									/>
 								))}
 							</div>
@@ -460,13 +463,16 @@ export default function Home() {
 						aria-label="Recomendaciones"
 						aria-busy={listBusy}
 					>
-						{lodgings.map((lodging) => (
+						{lodgings.map((lodging, index) => (
 							<div key={lodging.id} role="listitem" className="hotel-list-item">
 								<ProductCard
 									lodging={lodging}
 									defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
 									onFavoriteToggle={handleFavoriteToggle}
 									showUnratedMessage
+									imagePriority={
+										index === 0 ? "high" : index < 4 ? "eager" : "lazy"
+									}
 								/>
 							</div>
 						))}

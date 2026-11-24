@@ -52,6 +52,8 @@ describe("Header - authenticated user", () => {
 			"src",
 			expect.stringContaining("TuHospedaje_Isologotipo.png"),
 		);
+		expect(logo).toHaveAttribute("width", "451");
+		expect(logo).toHaveAttribute("height", "253");
 	});
 
 	it("navigates home through the tagline", () => {
@@ -119,7 +121,10 @@ describe("Header - authenticated user", () => {
 	it("exposes the authenticated header styling hooks without loading an auth page", () => {
 		customRender(<Header />);
 
-		expect(screen.getByRole("img", { name: "Test" })).toHaveClass("avatar");
+		const avatar = screen.getByRole("img", { name: "Test" });
+		expect(avatar).toHaveClass("avatar");
+		expect(avatar).toHaveAttribute("width", "36");
+		expect(avatar).toHaveAttribute("height", "36");
 		expect(screen.getByText("Test")).toHaveClass("nav-username");
 		expect(screen.getByRole("button", { name: "Cerrar sesión" })).toHaveClass(
 			"btn-logout",

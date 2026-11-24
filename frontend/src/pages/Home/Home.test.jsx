@@ -63,11 +63,13 @@ vi.mock("../../components/ProductCard/ProductCard", () => ({
 		defaultFavorite = false,
 		onFavoriteToggle,
 		showUnratedMessage = false,
+		imagePriority,
 	}) => (
 		<div
 			data-testid="product-card"
 			data-favorite={defaultFavorite}
 			data-show-unrated-message={showUnratedMessage}
+			data-image-priority={imagePriority}
 		>
 			{lodging.name}
 			{onFavoriteToggle && (
@@ -1347,5 +1349,45 @@ describe("Home - visitor accessibility contract", () => {
 				"Elegí tu destino y fechas para encontrar las mejores opciones.",
 			),
 		).toBeInTheDocument();
+	});
+
+	it("assigns imagePriority high to the first card, eager to the first row, and lazy to the rest in recommendations", async () => {
+		const sixLodgings = Array.from({ length: 6 }, (_, i) => ({
+			...lodgingFixture,
+			id: i + 1,
+			name: `Hospedaje ${i + 1}`,
+		}));
+		mockGetDefaults({
+			recommendations: recommendationsPage({ lodgings: sixLodgings }),
+		});
+		renderHome();
+
+		await screen.findByText("Hospedaje 1");
+		const cards = screen.getAllByTestId("product-card");
+		expect(
+			cards.map((card) => card.getAttribute("data-image-priority")),
+		).toEqual(["high", "eager", "eager", "eager", "lazy", "lazy"]);
+	});
+
+	it("assigns imagePriority high to the first card, eager to the first row, and lazy to the rest in search results", async () => {
+		const sixLodgings = Array.from({ length: 6 }, (_, i) => ({
+			...lodgingFixture,
+			id: i + 1,
+			name: `Resultado ${i + 1}`,
+		}));
+		mockGetDefaults({
+			recommendations: recommendationsPage({ lodgings: [] }),
+			categoryLodgings: sixLodgings,
+		});
+		renderHome({ route: "/?city=Bariloche" });
+
+		await screen.findByText("Resultado 1");
+		const searchSection = screen
+			.getByRole("heading", { name: "Resultados de búsqueda" })
+			.closest("section");
+		const cards = within(searchSection).getAllByTestId("product-card");
+		expect(
+			cards.map((card) => card.getAttribute("data-image-priority")),
+		).toEqual(["high", "eager", "eager", "eager", "lazy", "lazy"]);
 	});
 });
