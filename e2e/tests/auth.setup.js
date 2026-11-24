@@ -6,13 +6,15 @@ const {
   AUTH_DIR,
   ADMIN_STORAGE_STATE,
   USER_STORAGE_STATE,
+  resolveAdminCredentials,
+  resolveUserCredentials,
 } = require('../fixtures/fixtures');
 
 fs.mkdirSync(AUTH_DIR, { recursive: true });
 
 setup('authenticate admin', async ({ page }) => {
-  const email = process.env.TEST_ADMIN_EMAIL || 'admin@tuhospedaje.com';
-  const password = process.env.TEST_ADMIN_PASSWORD || 'Admin1';
+  fs.rmSync(ADMIN_STORAGE_STATE, { force: true });
+  const { email, password } = resolveAdminCredentials();
 
   const loginPage = new LoginPage(page);
   await loginPage.open('/login');
@@ -26,8 +28,8 @@ setup('authenticate admin', async ({ page }) => {
 });
 
 setup('authenticate user', async ({ page }) => {
-  const email = process.env.TEST_USER_EMAIL || '';
-  const password = process.env.TEST_USER_PASSWORD || '';
+  fs.rmSync(USER_STORAGE_STATE, { force: true });
+  const { email, password } = resolveUserCredentials();
 
   setup.skip(
     !email || !password,
