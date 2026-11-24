@@ -330,6 +330,30 @@ Antes de ejecutar cualquier modo, instalá las dependencias E2E desde la raíz d
 cd e2e && npm ci && cd ..
 ```
 
+#### Runner local nativo (`run-e2e.cjs`)
+
+Para ejecutar la suite E2E localmente contra un stack desechable ya levantado (`tuhospedaje-dev-seeded` por defecto), usá el runner nativo desde la raíz o desde `e2e/`:
+
+```bash
+node e2e/scripts/run-e2e.cjs --dry-run
+node e2e/scripts/run-e2e.cjs tests/smoke.spec.js --project=chromium --workers=1
+cd e2e && npm run test:local -- --project=chromium
+```
+
+El runner verifica que los contenedores `db`, `backend` y `frontend` del proyecto Compose desechable estén en estado `running`, comprueba readiness HTTP en frontend (`BASE_URL/`) y backend (`API_BASE_URL/actuator/health/readiness`), y luego invoca Playwright con los argumentos recibidos. No levanta servidores, no descarga imágenes ni borra volúmenes automáticamente.
+
+Variables y opciones admitidas:
+
+- `E2E_COMPOSE_PROJECT` (por defecto `tuhospedaje-dev-seeded`): proyecto Compose desechable; rechaza nombres sin un segmento `dev` o `test` (como `tuhospedaje-local` o `prod`) para proteger el stack preservado.
+- `E2E_FRONTEND_PORT` (por defecto `5173`) y `E2E_BACKEND_PORT` (por defecto `8080`): puertos enteros en `1..65535`.
+- `BASE_URL` (por defecto `http://localhost:<E2E_FRONTEND_PORT>`) y `API_BASE_URL` (por defecto `http://localhost:<E2E_BACKEND_PORT>`).
+- `--dry-run`: ejecuta todas las verificaciones e imprime el comando de Playwright sin lanzarlo.
+- `--help` / `-h`: muestra la ayuda sin tocar Docker ni HTTP.
+
+Las corridas locales reutilizan `tuhospedaje-dev-seeded`. Si el estado acumulado en la base de desarrollo provoca una falla local, recreá manualmente el stack desechable (nunca se automatiza en el runner para evitar borrados accidentales de volúmenes).
+
+#### Runner público en Docker (`public-runner.cjs`)
+
 El runner no instala paquetes. También requiere que la imagen Playwright versionada ya esté en caché de Docker. Después, levantá el demo local y usá únicamente estos modos desde la raíz del repositorio:
 
 ```bash
