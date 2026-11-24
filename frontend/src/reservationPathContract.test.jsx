@@ -8,6 +8,7 @@ describe("reservation path visual contract", () => {
 	it("keeps gallery navigation, recovery controls, and reservation surfaces on semantic tokens", () => {
 		const gallery = readSource("components/LodgingGallery/LodgingGallery.jsx");
 		const modal = readSource("components/GalleryModal/GalleryModal.jsx");
+		const modalDialog = readSource("components/ModalDialog/ModalDialog.jsx");
 		const productDetail = readSource("pages/ProductDetail/ProductDetail.jsx");
 		const product = readSource("pages/ProductDetail/ProductDetail.css");
 		const bookingPage = readSource("pages/Booking/BookingPage.jsx");
@@ -20,8 +21,10 @@ describe("reservation path visual contract", () => {
 
 		expect(gallery).toContain('inline: "center"');
 		expect(gallery).toContain('block: "nearest"');
-		expect(modal).toContain("closeButtonRef.current?.focus()");
-		expect(modal).toContain('event.key === "Escape"');
+		expect(modal).toContain("initialFocusRef={closeButtonRef}");
+		expect(modal).toContain('closedBy="any"');
+		expect(modalDialog).toContain("dialog.showModal()");
+		expect(modalDialog).toContain('dialog.addEventListener("cancel"');
 		expect(productDetail).toContain("retryAvailability");
 		expect(bookingPage).toContain("preflight?.available === false");
 		expect(confirmationPage).toContain('navigate("/", { replace: true })');
