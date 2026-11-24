@@ -67,6 +67,25 @@ class LocalPersistentConfigTest(unittest.TestCase):
             self.assertFalse(mount.get("bind", {}).get("create_host_path", False))
             self.assertEqual(Path(mount["source"]), ROOT / "test-fixture-canonical-assets" / mount["target"].removeprefix("/canonical/"))
 
+    def test_backend_target_isolated_in_named_volume(self):
+        self.assertIn("backend-target", self.config["volumes"])
+        self.assertEqual(
+            self.config["volumes"]["backend-target"]["name"],
+            "tuhospedaje-local_backend-target",
+        )
+        target_mounts = [
+            mount
+            for mount in self.config["services"]["backend"]["volumes"]
+            if mount.get("target") == "/workspace/target"
+        ]
+        self.assertEqual(
+            len(target_mounts),
+            1,
+            "local backend must isolate /workspace/target in a named Docker volume",
+        )
+        self.assertEqual(target_mounts[0].get("type"), "volume")
+        self.assertEqual(target_mounts[0].get("source"), "backend-target")
+
 
 if __name__ == "__main__":
     unittest.main()

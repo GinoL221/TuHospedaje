@@ -75,6 +75,62 @@ class ComposeHygieneTest(unittest.TestCase):
             cwd=ROOT, env=env, capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads(result.stdout)
+        self.assertIn("backend-target", data["volumes"])
+        self.assertEqual(
+            data["volumes"]["backend-target"]["name"],
+            "tuhospedaje-dev-seeded_backend-target",
+        )
+        target_mounts = [
+            mount
+            for mount in data["services"]["backend"]["volumes"]
+            if mount.get("target") == "/workspace/target"
+        ]
+        self.assertEqual(
+            len(target_mounts),
+            1,
+            "dev-seed backend must preserve the isolated /workspace/target volume mount",
+        )
+        self.assertEqual(target_mounts[0].get("type"), "volume")
+        self.assertEqual(target_mounts[0].get("source"), "backend-target")
+
+    def test_dev_compose_isolates_backend_target_in_named_volume(self):
+        env = {
+            "PATH": os.environ["PATH"],
+            "COMPOSE_DISABLE_ENV_FILE": "1",
+            "DEV_DB_NAME": "tuhospedaje_dev",
+            "DEV_DB_USERNAME": "dev_user",
+            "DEV_DB_PASSWORD": "dev_password",
+            "DEV_DB_ROOT_PASSWORD": "dev_root_password",
+            "DEV_JWT_SECRET": TEST_DEV_SECRET,
+            "DEV_SESSION_REFRESH_KEY": TEST_DEV_SECRET,
+        }
+        result = subprocess.run(
+            ["docker", "compose", "--env-file", "/dev/null",
+             "-f", str(ROOT / "compose.yaml"),
+             "-f", str(ROOT / "compose.dev.yaml"),
+             "config", "--format", "json"],
+            cwd=ROOT, env=env, capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads(result.stdout)
+        self.assertIn("backend-target", data["volumes"])
+        self.assertEqual(
+            data["volumes"]["backend-target"]["name"],
+            "tuhospedaje-dev_backend-target",
+        )
+        target_mounts = [
+            mount
+            for mount in data["services"]["backend"]["volumes"]
+            if mount.get("target") == "/workspace/target"
+        ]
+        self.assertEqual(
+            len(target_mounts),
+            1,
+            "dev backend must isolate /workspace/target in a named Docker volume",
+        )
+        self.assertEqual(target_mounts[0].get("type"), "volume")
+        self.assertEqual(target_mounts[0].get("source"), "backend-target")
 
     def test_dev_assets_compose_validates_cleanly(self):
         env = {

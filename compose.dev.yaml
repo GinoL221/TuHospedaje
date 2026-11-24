@@ -26,6 +26,7 @@ services:
       target: dev
     volumes:
       - ./backend:/workspace
+      - backend-target:/workspace/target
       - maven-cache:/root/.m2
       - dev-uploads:/uploads
     environment:
@@ -96,6 +97,7 @@ services:
 volumes:
   db-data:
     name: tuhospedaje-dev-db
+  backend-target:
   maven-cache:
   frontend-node-modules:
   dev-uploads:
