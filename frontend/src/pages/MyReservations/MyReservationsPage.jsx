@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, ExternalLink } from "lucide-react";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import {
 	cancelReservation,
 	getMyReservations,
@@ -57,6 +58,7 @@ export default function MyReservationsPage() {
 	const [pendingIds, setPendingIds] = useState(new Set());
 	const pendingIdsRef = useRef(new Set());
 	const [cancellationErrors, setCancellationErrors] = useState({});
+	const [cancelTarget, setCancelTarget] = useState(null);
 
 	useEffect(() => {
 		getMyReservations()
@@ -65,12 +67,14 @@ export default function MyReservationsPage() {
 			.finally(() => setLoading(false));
 	}, []);
 
-	async function handleCancel(reservation) {
-		if (
-			pendingIdsRef.current.has(reservation.id) ||
-			!window.confirm("¿Querés cancelar esta reserva?")
-		)
-			return;
+	function handleCancelRequest(reservation) {
+		if (pendingIdsRef.current.has(reservation.id)) return;
+		setCancelTarget(reservation);
+	}
+
+	async function confirmCancelReservation() {
+		const reservation = cancelTarget;
+		if (!reservation || pendingIdsRef.current.has(reservation.id)) return;
 
 		pendingIdsRef.current.add(reservation.id);
 		setPendingIds(new Set(pendingIdsRef.current));
@@ -89,6 +93,7 @@ export default function MyReservationsPage() {
 		} finally {
 			pendingIdsRef.current.delete(reservation.id);
 			setPendingIds(new Set(pendingIdsRef.current));
+			setCancelTarget(null);
 		}
 	}
 
@@ -188,7 +193,7 @@ export default function MyReservationsPage() {
 											type="button"
 											className="reservation-cancel"
 											disabled={pendingIds.has(r.id)}
-											onClick={() => handleCancel(r)}
+											onClick={() => handleCancelRequest(r)}
 										>
 											{pendingIds.has(r.id)
 												? "Cancelando..."
@@ -206,6 +211,14 @@ export default function MyReservationsPage() {
 					})}
 				</div>
 			)}
+
+			<ConfirmDialog
+				show={cancelTarget !== null}
+				message="¿Querés cancelar esta reserva?"
+				onConfirm={confirmCancelReservation}
+				onCancel={() => setCancelTarget(null)}
+				testId="confirm-cancel-reservation"
+			/>
 		</main>
 	);
 }

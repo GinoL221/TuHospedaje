@@ -6,6 +6,7 @@ import {
 	updateFeature,
 } from "../../services/adminCatalogService";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import ModalDialog from "../../components/ModalDialog/ModalDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
 import IconPicker from "../../components/IconPicker/IconPicker";
@@ -233,105 +234,105 @@ export default function AdminFeatures() {
 			)}
 
 			{showModal && (
-				<div className="modal-overlay" onClick={cancel.handleCancel}>
-					<div
-						className="modal"
-						data-testid="admin-modal"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<h2>
-							{editing ? "Editar característica" : "Nueva característica"}
-						</h2>
-						<form onSubmit={handleSubmit} noValidate>
-							<label htmlFor="admin-feature-name" className="required-dot">
-								Nombre
-								<input
-									ref={nameInputRef}
-									id="admin-feature-name"
-									name="name"
-									type="text"
-									required
-									enterKeyHint="next"
-									data-testid="field-name"
-									value={form.name}
-									className={fieldErrors.name ? "input-error" : ""}
-									aria-invalid={Boolean(fieldErrors.name)}
-									aria-describedby={
-										fieldErrors.name ? "error-feature-name" : undefined
-									}
-									onChange={(e) => {
-										setForm({ ...form, name: e.target.value });
-										if (fieldErrors.name)
-											setFieldErrors({ ...fieldErrors, name: "" });
-									}}
-								/>
-								{fieldErrors.name && (
-									<span
-										id="error-feature-name"
-										className="field-error"
-										role="alert"
-										data-testid="error-name"
-									>
-										{fieldErrors.name}
-									</span>
-								)}
-							</label>
-							<label className="required-dot">
-								Ícono
-								<div
-									ref={iconContainerRef}
-									aria-invalid={Boolean(fieldErrors.icon)}
-									aria-describedby={
-										fieldErrors.icon ? "error-feature-icon" : undefined
-									}
+				<ModalDialog
+					className="modal"
+					ariaLabelledBy="admin-feature-modal-title"
+					closedBy="any"
+					onClose={cancel.handleCancel}
+					data-testid="admin-modal"
+				>
+					<h2 id="admin-feature-modal-title">
+						{editing ? "Editar característica" : "Nueva característica"}
+					</h2>
+					<form onSubmit={handleSubmit} noValidate>
+						<label htmlFor="admin-feature-name" className="required-dot">
+							Nombre
+							<input
+								ref={nameInputRef}
+								id="admin-feature-name"
+								name="name"
+								type="text"
+								required
+								enterKeyHint="next"
+								data-testid="field-name"
+								value={form.name}
+								className={fieldErrors.name ? "input-error" : ""}
+								aria-invalid={Boolean(fieldErrors.name)}
+								aria-describedby={
+									fieldErrors.name ? "error-feature-name" : undefined
+								}
+								onChange={(e) => {
+									setForm({ ...form, name: e.target.value });
+									if (fieldErrors.name)
+										setFieldErrors({ ...fieldErrors, name: "" });
+								}}
+							/>
+							{fieldErrors.name && (
+								<span
+									id="error-feature-name"
+									className="field-error"
+									role="alert"
+									data-testid="error-name"
 								>
-									<IconPicker
-										value={form.icon}
-										onChange={(val) => {
-											setForm({ ...form, icon: val });
-											if (fieldErrors.icon)
-												setFieldErrors({ ...fieldErrors, icon: "" });
-										}}
-										placeholder="fa-solid fa-wifi"
-									/>
-								</div>
-								{fieldErrors.icon && (
-									<span
-										id="error-feature-icon"
-										className="field-error"
-										role="alert"
-										data-testid="error-icon"
-									>
-										{fieldErrors.icon}
-									</span>
-								)}
-							</label>
-							{error && (
-								<p className="form-error" data-testid="admin-form-error">
-									{error}
-								</p>
+									{fieldErrors.name}
+								</span>
 							)}
-							<p className="required-note">* Campos obligatorios</p>
-							<div className="modal-actions">
-								<button
-									type="submit"
-									className="btn-save"
-									data-testid="admin-save-btn"
-								>
-									{editing ? "Guardar cambios" : "Crear"}
-								</button>
-								<button
-									type="button"
-									className="btn-cancel"
-									data-testid="admin-cancel-btn"
-									onClick={cancel.handleCancel}
-								>
-									Cancelar
-								</button>
+						</label>
+						<label className="required-dot">
+							Ícono
+							<div
+								ref={iconContainerRef}
+								aria-invalid={Boolean(fieldErrors.icon)}
+								aria-describedby={
+									fieldErrors.icon ? "error-feature-icon" : undefined
+								}
+							>
+								<IconPicker
+									value={form.icon}
+									onChange={(val) => {
+										setForm({ ...form, icon: val });
+										if (fieldErrors.icon)
+											setFieldErrors({ ...fieldErrors, icon: "" });
+									}}
+									placeholder="fa-solid fa-wifi"
+								/>
 							</div>
-						</form>
-					</div>
-				</div>
+							{fieldErrors.icon && (
+								<span
+									id="error-feature-icon"
+									className="field-error"
+									role="alert"
+									data-testid="error-icon"
+								>
+									{fieldErrors.icon}
+								</span>
+							)}
+						</label>
+						{error && (
+							<p className="form-error" data-testid="admin-form-error">
+								{error}
+							</p>
+						)}
+						<p className="required-note">* Campos obligatorios</p>
+						<div className="modal-actions">
+							<button
+								type="submit"
+								className="btn-save"
+								data-testid="admin-save-btn"
+							>
+								{editing ? "Guardar cambios" : "Crear"}
+							</button>
+							<button
+								type="button"
+								className="btn-cancel"
+								data-testid="admin-cancel-btn"
+								onClick={cancel.handleCancel}
+							>
+								Cancelar
+							</button>
+						</div>
+					</form>
+				</ModalDialog>
 			)}
 
 			<ConfirmDialog

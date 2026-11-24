@@ -361,4 +361,27 @@ describe("AdminFeatures - form semantics and direct ref focus", () => {
 
 		timeoutSpy.mockRestore();
 	});
+
+	it("exposes an accessible native dialog with its heading name and closes on Escape", async () => {
+		get.mockResolvedValue([]);
+		const user = userEvent.setup();
+		renderAdminFeatures();
+
+		await screen.findByText(
+			"No hay características cargadas todavía. ¡Creá la primera!",
+		);
+		await user.click(screen.getByTestId("admin-add-btn"));
+
+		const dialog = screen.getByRole("dialog", {
+			name: "Nueva característica",
+		});
+		expect(dialog.tagName).toBe("DIALOG");
+		expect(dialog).toHaveAttribute("open");
+		expect(dialog).not.toHaveAttribute("role");
+		expect(dialog).not.toHaveAttribute("aria-modal");
+
+		await user.keyboard("{Escape}");
+
+		expect(screen.queryByTestId("admin-modal")).not.toBeInTheDocument();
+	});
 });

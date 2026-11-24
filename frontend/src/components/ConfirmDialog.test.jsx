@@ -26,15 +26,20 @@ describe("ConfirmDialog - visibility", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("dialog", { name: "¿Eliminar alojamiento?" }),
-		).toHaveAttribute("aria-modal", "true");
+		const dialog = screen.getByRole("dialog", {
+			name: "¿Eliminar alojamiento?",
+		});
+		expect(dialog.tagName).toBe("DIALOG");
+		expect(dialog).toHaveAttribute("open");
+		expect(dialog).not.toHaveAttribute("role");
+		expect(dialog).not.toHaveAttribute("aria-modal");
 		expect(screen.getByTestId("confirm-delete-no")).toHaveFocus();
 	});
 });
 
 describe("ConfirmDialog - keyboard and focus", () => {
-	it("wraps Tab and Shift+Tab within enabled dialog controls", async () => {
+	it("moves keyboard focus between dialog controls and delegates trapping to native showModal()", async () => {
+		const showModalSpy = vi.spyOn(HTMLDialogElement.prototype, "showModal");
 		const user = userEvent.setup();
 		render(
 			<ConfirmDialog
@@ -48,11 +53,13 @@ describe("ConfirmDialog - keyboard and focus", () => {
 		const confirmButton = screen.getByTestId("confirm-delete-yes");
 		const cancelButton = screen.getByTestId("confirm-delete-no");
 
+		expect(showModalSpy).toHaveBeenCalledTimes(1);
 		expect(cancelButton).toHaveFocus();
-		await user.tab();
-		expect(confirmButton).toHaveFocus();
 		await user.tab({ shift: true });
+		expect(confirmButton).toHaveFocus();
+		await user.tab();
 		expect(cancelButton).toHaveFocus();
+		showModalSpy.mockRestore();
 	});
 
 	it("cancels on Escape", async () => {

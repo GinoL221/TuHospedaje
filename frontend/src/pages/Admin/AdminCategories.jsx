@@ -6,6 +6,7 @@ import {
 	updateCategory,
 } from "../../services/adminCatalogService";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import ModalDialog from "../../components/ModalDialog/ModalDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
 import IconPicker from "../../components/IconPicker/IconPicker";
@@ -300,137 +301,139 @@ export default function AdminCategories() {
 			)}
 
 			{showModal && (
-				<div className="modal-overlay" onClick={cancel.handleCancel}>
-					<div
-						className="modal"
-						data-testid="admin-modal"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<h2>{editing ? "Editar categoría" : "Nueva categoría"}</h2>
-						<form onSubmit={handleSubmit} noValidate>
-							<label htmlFor="admin-category-name" className="required-dot">
-								Nombre
-								<input
-									ref={nameInputRef}
-									id="admin-category-name"
-									name="name"
-									type="text"
-									required
-									enterKeyHint="next"
-									data-testid="field-name"
-									value={form.name}
-									className={fieldErrors.name ? "input-error" : ""}
-									aria-invalid={Boolean(fieldErrors.name)}
-									aria-describedby={
-										fieldErrors.name ? "error-category-name" : undefined
-									}
-									onChange={(e) => {
-										setForm({ ...form, name: e.target.value });
-										if (fieldErrors.name)
-											setFieldErrors({ ...fieldErrors, name: "" });
-									}}
-								/>
-								{fieldErrors.name && (
-									<span
-										id="error-category-name"
-										className="field-error"
-										role="alert"
-										data-testid="error-name"
-									>
-										{fieldErrors.name}
-									</span>
-								)}
-							</label>
-							<label htmlFor="admin-category-description">
-								Descripción
-								<textarea
-									id="admin-category-description"
-									name="description"
-									data-testid="field-description"
-									value={form.description}
-									onChange={(e) =>
-										setForm({ ...form, description: e.target.value })
-									}
-								/>
-							</label>
-							<label>
-								Ícono
-								<IconPicker
-									value={form.icon}
-									onChange={(val) => setForm({ ...form, icon: val })}
-									placeholder="Buscar ícono"
-								/>
-							</label>
-							<label
-								htmlFor="admin-category-image-url"
-								className={editing ? undefined : "required-dot"}
+				<ModalDialog
+					className="modal"
+					ariaLabelledBy="admin-category-modal-title"
+					closedBy="any"
+					onClose={cancel.handleCancel}
+					data-testid="admin-modal"
+				>
+					<h2 id="admin-category-modal-title">
+						{editing ? "Editar categoría" : "Nueva categoría"}
+					</h2>
+					<form onSubmit={handleSubmit} noValidate>
+						<label htmlFor="admin-category-name" className="required-dot">
+							Nombre
+							<input
+								ref={nameInputRef}
+								id="admin-category-name"
+								name="name"
+								type="text"
+								required
+								enterKeyHint="next"
+								data-testid="field-name"
+								value={form.name}
+								className={fieldErrors.name ? "input-error" : ""}
+								aria-invalid={Boolean(fieldErrors.name)}
+								aria-describedby={
+									fieldErrors.name ? "error-category-name" : undefined
+								}
+								onChange={(e) => {
+									setForm({ ...form, name: e.target.value });
+									if (fieldErrors.name)
+										setFieldErrors({ ...fieldErrors, name: "" });
+								}}
+							/>
+							{fieldErrors.name && (
+								<span
+									id="error-category-name"
+									className="field-error"
+									role="alert"
+									data-testid="error-name"
+								>
+									{fieldErrors.name}
+								</span>
+							)}
+						</label>
+						<label htmlFor="admin-category-description">
+							Descripción
+							<textarea
+								id="admin-category-description"
+								name="description"
+								data-testid="field-description"
+								value={form.description}
+								onChange={(e) =>
+									setForm({ ...form, description: e.target.value })
+								}
+							/>
+						</label>
+						<label>
+							Ícono
+							<IconPicker
+								value={form.icon}
+								onChange={(val) => setForm({ ...form, icon: val })}
+								placeholder="Buscar ícono"
+							/>
+						</label>
+						<label
+							htmlFor="admin-category-image-url"
+							className={editing ? undefined : "required-dot"}
+						>
+							Imagen representativa (URL)
+							<input
+								ref={imageUrlInputRef}
+								id="admin-category-image-url"
+								name="imageUrl"
+								type="url"
+								enterKeyHint="done"
+								data-testid="field-image-url"
+								value={form.imageUrl}
+								required={!editing}
+								className={fieldErrors.imageUrl ? "input-error" : ""}
+								aria-invalid={Boolean(fieldErrors.imageUrl)}
+								aria-describedby={
+									fieldErrors.imageUrl ? "error-image-url" : undefined
+								}
+								onChange={(e) => {
+									setForm({ ...form, imageUrl: e.target.value });
+									if (fieldErrors.imageUrl)
+										setFieldErrors({ ...fieldErrors, imageUrl: "" });
+								}}
+							/>
+							{fieldErrors.imageUrl && (
+								<span
+									className="field-error"
+									id="error-image-url"
+									role="alert"
+									data-testid="error-image-url"
+								>
+									{fieldErrors.imageUrl}
+								</span>
+							)}
+						</label>
+						{isValidHttpsImageUrl(form.imageUrl) && (
+							<img
+								src={form.imageUrl.trim()}
+								alt="Vista previa de la imagen representativa"
+								className="admin-image-preview"
+								data-testid="image-url-preview"
+							/>
+						)}
+						{error && (
+							<p className="form-error" data-testid="admin-form-error">
+								{error}
+							</p>
+						)}
+						<p className="required-note">* Campos obligatorios</p>
+						<div className="modal-actions">
+							<button
+								type="submit"
+								className="btn-save"
+								data-testid="admin-save-btn"
 							>
-								Imagen representativa (URL)
-								<input
-									ref={imageUrlInputRef}
-									id="admin-category-image-url"
-									name="imageUrl"
-									type="url"
-									enterKeyHint="done"
-									data-testid="field-image-url"
-									value={form.imageUrl}
-									required={!editing}
-									className={fieldErrors.imageUrl ? "input-error" : ""}
-									aria-invalid={Boolean(fieldErrors.imageUrl)}
-									aria-describedby={
-										fieldErrors.imageUrl ? "error-image-url" : undefined
-									}
-									onChange={(e) => {
-										setForm({ ...form, imageUrl: e.target.value });
-										if (fieldErrors.imageUrl)
-											setFieldErrors({ ...fieldErrors, imageUrl: "" });
-									}}
-								/>
-								{fieldErrors.imageUrl && (
-									<span
-										className="field-error"
-										id="error-image-url"
-										role="alert"
-										data-testid="error-image-url"
-									>
-										{fieldErrors.imageUrl}
-									</span>
-								)}
-							</label>
-							{isValidHttpsImageUrl(form.imageUrl) && (
-								<img
-									src={form.imageUrl.trim()}
-									alt="Vista previa de la imagen representativa"
-									className="admin-image-preview"
-									data-testid="image-url-preview"
-								/>
-							)}
-							{error && (
-								<p className="form-error" data-testid="admin-form-error">
-									{error}
-								</p>
-							)}
-							<p className="required-note">* Campos obligatorios</p>
-							<div className="modal-actions">
-								<button
-									type="submit"
-									className="btn-save"
-									data-testid="admin-save-btn"
-								>
-									{editing ? "Guardar cambios" : "Crear"}
-								</button>
-								<button
-									type="button"
-									className="btn-cancel"
-									data-testid="admin-cancel-btn"
-									onClick={cancel.handleCancel}
-								>
-									Cancelar
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
+								{editing ? "Guardar cambios" : "Crear"}
+							</button>
+							<button
+								type="button"
+								className="btn-cancel"
+								data-testid="admin-cancel-btn"
+								onClick={cancel.handleCancel}
+							>
+								Cancelar
+							</button>
+						</div>
+					</form>
+				</ModalDialog>
 			)}
 
 			<ConfirmDialog
