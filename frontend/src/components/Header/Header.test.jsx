@@ -242,4 +242,71 @@ describe("Header - unauthenticated user", () => {
 			screen.queryByRole("button", { name: "Cerrar sesión" }),
 		).not.toBeInTheDocument();
 	});
+
+	it("closes the open mobile menu on Escape and returns focus to the hamburger button", async () => {
+		const user = userEvent.setup();
+		customRender(<Header />, { authValue: null });
+
+		const menuButton = screen.getByRole("button", { name: "Abrir menú" });
+		await user.click(menuButton);
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+
+		const loginLink = screen.getByRole("link", { name: "Iniciar sesión" });
+		loginLink.focus();
+		expect(loginLink).toHaveFocus();
+
+		await user.keyboard("{Escape}");
+
+		const reopenedButton = screen.getByRole("button", { name: "Abrir menú" });
+		expect(reopenedButton).toHaveAttribute("aria-expanded", "false");
+		expect(reopenedButton).toHaveFocus();
+	});
+
+	it("closes the open mobile menu when clicking outside the header without stealing focus", async () => {
+		const user = userEvent.setup();
+		customRender(
+			<div>
+				<Header />
+				<button type="button">Acción externa</button>
+			</div>,
+			{ authValue: null },
+		);
+
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+
+		const outsideButton = screen.getByRole("button", {
+			name: "Acción externa",
+		});
+		await user.click(outsideButton);
+
+		expect(screen.getByRole("button", { name: "Abrir menú" })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
+		expect(outsideButton).toHaveFocus();
+	});
+
+	it("does not close the open mobile menu when clicking a non-navigating area inside it", async () => {
+		const user = userEvent.setup();
+		customRender(<Header />);
+
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		const menu = document.getElementById("mobile-navigation");
+		expect(menu).toHaveClass("nav-links--open");
+
+		await user.click(screen.getByText("Test"));
+
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+		expect(menu).toHaveClass("nav-links--open");
+	});
 });

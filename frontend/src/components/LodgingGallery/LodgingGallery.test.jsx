@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { act, render } from "@testing-library/react";
 import { screen, userEvent } from "../../test/test-utils";
 import { afterEach, vi } from "vitest";
@@ -232,5 +233,28 @@ describe("LodgingGallery", () => {
 			expect(thumbImg).toHaveAttribute("width", "400");
 			expect(thumbImg).toHaveAttribute("height", "300");
 		});
+	});
+
+	it("wraps the gallery in a size container and uses @container queries instead of viewport breakpoints", () => {
+		const { container } = render(
+			<LodgingGallery images={images} name="Cabaña del Lago" />,
+		);
+		const galleryContainer = container.querySelector(".gallery-container");
+		expect(galleryContainer).not.toBeNull();
+		expect(galleryContainer).toContainElement(
+			container.querySelector(".gallery-wrapper"),
+		);
+
+		const css = readFileSync(
+			"src/components/LodgingGallery/LodgingGallery.css",
+			"utf8",
+		);
+		expect(css).toMatch(
+			/\.gallery-container\s*\{[^}]*container-type:\s*inline-size;/s,
+		);
+		expect(css).toMatch(/@container\s+[\w-]*\s*\(min-width:\s*901px\)/);
+		expect(css).toMatch(/@container\s+[\w-]*\s*\(max-width:\s*768px\)/);
+		expect(css).not.toMatch(/@media\s*\(min-width:\s*901px\)/);
+		expect(css).not.toMatch(/@media\s*\(max-width:\s*768px\)/);
 	});
 });

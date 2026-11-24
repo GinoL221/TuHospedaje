@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { readFileSync } from "node:fs";
 import {
 	customRender,
 	screen,
@@ -1218,5 +1219,22 @@ describe("BookingPage - form input hints and aria-invalid defaults", () => {
 		const notes = screen.getByLabelText("Notas");
 		expect(notes).toHaveAttribute("name", "notes");
 		expect(notes).toHaveAttribute("enterkeyhint", "done");
+	});
+});
+
+describe("BookingPage - container queries contract", () => {
+	it("uses container queries on .booking-form and removes the @media (min-width: 901px) gallery override block", () => {
+		const css = readFileSync("src/pages/Booking/BookingPage.css", "utf8");
+
+		expect(css).toMatch(
+			/\.booking-form\s*\{[^}]*container-type:\s*inline-size;/s,
+		);
+		expect(css).toMatch(
+			/@container\s+[\w-]*\s*\(max-width:\s*\d+px\)\s*\{[\s\S]*?\.booking-field-grid--identity,[\s\S]*?\.booking-field-grid--dates[\s\S]*?grid-template-columns:\s*1fr;/,
+		);
+		expect(css).toMatch(/@media\s*\(max-width:\s*960px\)/);
+		expect(css).toMatch(/@media\s*\(max-width:\s*768px\)/);
+		expect(css).not.toMatch(/@media\s*\(min-width:\s*901px\)/);
+		expect(css).not.toMatch(/\.booking-summary\s+\.gallery-wrapper/);
 	});
 });

@@ -146,101 +146,111 @@ export default function LodgingGallery({ images = [], name }) {
 
 	return (
 		<>
-			<div className="gallery-wrapper">
-				<div className="gallery-main">
-					<button
-						className="gallery-main-trigger"
-						onClick={() => setIsModalOpen(true)}
-						aria-label="Abrir galería"
-					>
-						<img
-							src={previewImages[previewIndex]}
-							alt={`${name} - ${previewIndex + 1}`}
-							fetchPriority="high"
-							width="800"
-							height="600"
-							onError={(event) => {
-								event.currentTarget.src = FALLBACK_IMAGE;
-							}}
-						/>
-					</button>
-					{images.length > 1 && !isTabletViewport && (
-						<div className="gallery-desktop-navigation">
-							{previousButton}
-							{nextButton}
-						</div>
-					)}
+			<div className="gallery-container">
+				<div className="gallery-wrapper">
+					<div className="gallery-main">
+						<button
+							className="gallery-main-trigger"
+							onClick={() => setIsModalOpen(true)}
+							aria-label="Abrir galería"
+						>
+							<img
+								src={previewImages[previewIndex]}
+								alt={`${name} - ${previewIndex + 1}`}
+								fetchPriority="high"
+								width="800"
+								height="600"
+								onError={(event) => {
+									event.currentTarget.src = FALLBACK_IMAGE;
+								}}
+							/>
+						</button>
+						{images.length > 1 && !isTabletViewport && (
+							<div className="gallery-desktop-navigation">
+								{previousButton}
+								{nextButton}
+							</div>
+						)}
+						{images.length > 1 && (
+							<div className="gallery-mobile-controls">
+								<button
+									className="gallery-mobile-arrow gallery-mobile-arrow--prev"
+									onClick={() =>
+										setCurrentIndex((prev) => Math.max(0, prev - 1))
+									}
+									disabled={currentIndex === 0}
+									aria-label="Imagen anterior en galería"
+								>
+									<ChevronLeft size={24} aria-hidden="true" focusable="false" />
+								</button>
+								<button
+									className="gallery-mobile-arrow gallery-mobile-arrow--next"
+									onClick={() =>
+										setCurrentIndex((prev) =>
+											Math.min(previewImages.length - 1, prev + 1),
+										)
+									}
+									disabled={previewIndex === previewImages.length - 1}
+									aria-label="Imagen siguiente en galería"
+								>
+									<ChevronRight
+										size={24}
+										aria-hidden="true"
+										focusable="false"
+									/>
+								</button>
+							</div>
+						)}
+					</div>
 					{images.length > 1 && (
-						<div className="gallery-mobile-controls">
-							<button
-								className="gallery-mobile-arrow gallery-mobile-arrow--prev"
-								onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-								disabled={currentIndex === 0}
-								aria-label="Imagen anterior en galería"
-							>
-								<ChevronLeft size={24} aria-hidden="true" focusable="false" />
-							</button>
-							<button
-								className="gallery-mobile-arrow gallery-mobile-arrow--next"
-								onClick={() =>
-									setCurrentIndex((prev) =>
-										Math.min(previewImages.length - 1, prev + 1),
-									)
-								}
-								disabled={previewIndex === previewImages.length - 1}
-								aria-label="Imagen siguiente en galería"
-							>
-								<ChevronRight size={24} aria-hidden="true" focusable="false" />
-							</button>
+						<div className="gallery-thumbs-col">
+							{isTabletViewport && previousButton}
+							<div className="gallery-thumbs" ref={thumbnailStripRef}>
+								{previewImages.slice(1).map((url, index) => (
+									<button
+										key={url}
+										ref={(node) => {
+											thumbnailRefs.current[index + 1] = node;
+										}}
+										className={`gallery-thumb ${previewIndex === index + 1 ? "gallery-thumb--active" : ""}`}
+										onClick={() => {
+											setCurrentIndex(index + 1);
+											setIsModalOpen(true);
+										}}
+										aria-label={`Ver imagen ${index + 2}`}
+										aria-current={
+											previewIndex === index + 1 ? "true" : undefined
+										}
+									>
+										<img
+											src={url}
+											alt={`${name} - ${index + 2}`}
+											loading="lazy"
+											fetchPriority="low"
+											width="400"
+											height="300"
+											onError={(event) => {
+												event.currentTarget.src = FALLBACK_THUMB;
+											}}
+										/>
+									</button>
+								))}
+							</div>
+							{isTabletViewport && nextButton}
+							<div className="gallery-desktop-actions">
+								<button
+									className="gallery-more"
+									onClick={() => {
+										setCurrentIndex(0);
+										setIsModalOpen(true);
+									}}
+								>
+									Ver más
+								</button>
+							</div>
 						</div>
 					)}
 				</div>
-				{images.length > 1 && (
-					<div className="gallery-thumbs-col">
-						{isTabletViewport && previousButton}
-						<div className="gallery-thumbs" ref={thumbnailStripRef}>
-							{previewImages.slice(1).map((url, index) => (
-								<button
-									key={url}
-									ref={(node) => {
-										thumbnailRefs.current[index + 1] = node;
-									}}
-									className={`gallery-thumb ${previewIndex === index + 1 ? "gallery-thumb--active" : ""}`}
-									onClick={() => {
-										setCurrentIndex(index + 1);
-										setIsModalOpen(true);
-									}}
-									aria-label={`Ver imagen ${index + 2}`}
-									aria-current={previewIndex === index + 1 ? "true" : undefined}
-								>
-									<img
-										src={url}
-										alt={`${name} - ${index + 2}`}
-										loading="lazy"
-										fetchPriority="low"
-										width="400"
-										height="300"
-										onError={(event) => {
-											event.currentTarget.src = FALLBACK_THUMB;
-										}}
-									/>
-								</button>
-							))}
-						</div>
-						{isTabletViewport && nextButton}
-						<div className="gallery-desktop-actions">
-							<button
-								className="gallery-more"
-								onClick={() => {
-									setCurrentIndex(0);
-									setIsModalOpen(true);
-								}}
-							>
-								Ver más
-							</button>
-						</div>
-					</div>
-				)}
 			</div>
 			{isModalOpen && (
 				<GalleryModal
