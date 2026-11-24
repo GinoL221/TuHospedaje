@@ -461,13 +461,14 @@ export default function Home() {
 						aria-busy={listBusy}
 					>
 						{lodgings.map((lodging) => (
-							<ProductCard
-								key={lodging.id}
-								lodging={lodging}
-								defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
-								onFavoriteToggle={handleFavoriteToggle}
-								showUnratedMessage
-							/>
+							<div key={lodging.id} role="listitem" className="hotel-list-item">
+								<ProductCard
+									lodging={lodging}
+									defaultFavorite={user ? favoriteIds.has(lodging.id) : false}
+									onFavoriteToggle={handleFavoriteToggle}
+									showUnratedMessage
+								/>
+							</div>
 						))}
 					</div>
 				)}

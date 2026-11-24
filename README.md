@@ -353,6 +353,18 @@ Variables y opciones admitidas:
 Las corridas locales reutilizan `tuhospedaje-dev-seeded`. Si el estado acumulado en la base de desarrollo provoca una falla local, recreá manualmente el stack desechable (nunca se automatiza en el runner para evitar borrados accidentales de volúmenes).
 
 - **`mobile-webkit` (CI y opt-in local):** el proyecto `mobile-webkit` (`iPhone 13`, `smoke.spec.js` y `mobile-*.spec.js`) corre automáticamente en GitHub Actions CI. En entorno local es opt-in con `E2E_ENABLE_WEBKIT=1` si los binarios de WebKit están disponibles.
+- **Snapshots visuales (`visual-regression.spec.js`):** corre únicamente en `chromium` y `mobile-chromium` con respuestas de API stubbeadas y contexto determinístico (`locale`, `timezoneId`, `reducedMotion`). Para regenerar los baselines Linux Ubuntu 24.04 Noble usados en CI con la imagen pineada `mcr.microsoft.com/playwright:v1.61.1-noble` (sin script wrapper en el repositorio), ejecutá desde la raíz con el frontend activo:
+
+  ```bash
+  docker run --rm --init --network host --shm-size 512m \
+    --user "$(id -u):$(id -g)" \
+    -v "$PWD/e2e:/workspace/e2e" -w /workspace/e2e \
+    -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/fontcache -e BASE_URL=http://localhost:5173 \
+    mcr.microsoft.com/playwright:v1.61.1-noble \
+    ./node_modules/.bin/playwright test tests/visual-regression.spec.js \
+      --project=chromium --project=mobile-chromium --workers=1 --update-snapshots
+  ```
+
 - **Assets canónicos:** las pruebas sobre imágenes canónicas siguen siendo opt-in mediante `CANONICAL_ASSETS_E2E=1`.
 - **Aislamiento de datos:** las suites de autenticación, reservas, reseñas y administración escriben en la base; ejecutalas únicamente contra un stack desechable, nunca contra la base local preservada.
 

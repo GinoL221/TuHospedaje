@@ -68,6 +68,7 @@ function DateRangeInputs({
 							inputRefs.current[field] = input;
 						}}
 						id={inputId}
+						role="combobox"
 						aria-label={label}
 						value={drafts[field] ?? formatDate(date)}
 						placeholder={`Elegí el ${label.toLowerCase()}`}
