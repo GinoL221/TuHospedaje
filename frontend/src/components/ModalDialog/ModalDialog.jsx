@@ -32,13 +32,15 @@ export default function ModalDialog({
 	const openRef = useRef(open);
 	const onCloseRef = useRef(onClose);
 	const onCancelRef = useRef(onCancel);
+	const initialFocusRefRef = useRef(initialFocusRef);
 	const pointerDownOutsideRef = useRef(false);
-	const closingProgrammaticallyRef = useRef(false);
+	const pendingProgrammaticClosesRef = useRef(0);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		onCloseRef.current = onClose;
 		onCancelRef.current = onCancel;
-	}, [onClose, onCancel]);
+		initialFocusRefRef.current = initialFocusRef;
+	}, [onClose, onCancel, initialFocusRef]);
 
 	useLayoutEffect(() => {
 		openRef.current = open;
@@ -47,21 +49,19 @@ export default function ModalDialog({
 
 		if (open && !dialog.open) {
 			dialog.showModal();
-			initialFocusRef?.current?.focus();
+			initialFocusRefRef.current?.current?.focus();
 		} else if (!open && dialog.open) {
-			closingProgrammaticallyRef.current = true;
+			pendingProgrammaticClosesRef.current += 1;
 			dialog.close();
-			closingProgrammaticallyRef.current = false;
 		}
 
 		return () => {
 			if (dialog.open) {
-				closingProgrammaticallyRef.current = true;
+				pendingProgrammaticClosesRef.current += 1;
 				dialog.close();
-				closingProgrammaticallyRef.current = false;
 			}
 		};
-	}, [open, initialFocusRef]);
+	}, [open]);
 
 	useEffect(() => {
 		const dialog = dialogRef.current;
@@ -82,14 +82,20 @@ export default function ModalDialog({
 
 		const handleClose = () => {
 			dialog.returnValue = "";
-			if (!closingProgrammaticallyRef.current) {
-				onCloseRef.current?.();
-				queueMicrotask(() => {
-					if (dialog.isConnected && !dialog.open && openRef.current) {
-						dialog.showModal();
-					}
-				});
+			if (pendingProgrammaticClosesRef.current > 0) {
+				pendingProgrammaticClosesRef.current -= 1;
+				return;
 			}
+			if (!openRef.current || dialog.open) {
+				return;
+			}
+			onCloseRef.current?.();
+			queueMicrotask(() => {
+				if (dialog.isConnected && !dialog.open && openRef.current) {
+					dialog.showModal();
+					initialFocusRefRef.current?.current?.focus();
+				}
+			});
 		};
 
 		dialog.addEventListener("cancel", triggerCancel);

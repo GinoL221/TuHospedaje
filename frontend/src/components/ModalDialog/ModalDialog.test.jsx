@@ -54,6 +54,64 @@ describe("ModalDialog - native dialog semantics", () => {
 		dialog.close("submitted");
 		expect(dialog.returnValue).toBe("");
 	});
+
+	it("does not fire onClose when a programmatic close dispatches close asynchronously", async () => {
+		const onClose = vi.fn();
+		const { rerender } = render(
+			<ModalDialog open={true} ariaLabel="Async close test" onClose={onClose}>
+				<p>Body</p>
+			</ModalDialog>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Async close test" });
+		vi.spyOn(dialog, "close").mockImplementation(() => {
+			dialog.removeAttribute("open");
+			setTimeout(() => {
+				dialog.dispatchEvent(new Event("close"));
+			}, 0);
+		});
+
+		rerender(
+			<ModalDialog open={false} ariaLabel="Async close test" onClose={onClose}>
+				<p>Body</p>
+			</ModalDialog>,
+		);
+
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("ignores a stale async close event from a prior programmatic close after re-opening", async () => {
+		const onClose = vi.fn();
+		const { rerender } = render(
+			<ModalDialog open={true} ariaLabel="Reopen async test" onClose={onClose}>
+				<p>Body</p>
+			</ModalDialog>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Reopen async test" });
+		let flushAsyncClose;
+		vi.spyOn(dialog, "close").mockImplementation(() => {
+			dialog.removeAttribute("open");
+			flushAsyncClose = () => dialog.dispatchEvent(new Event("close"));
+		});
+
+		rerender(
+			<ModalDialog open={false} ariaLabel="Reopen async test" onClose={onClose}>
+				<p>Body</p>
+			</ModalDialog>,
+		);
+		rerender(
+			<ModalDialog open={true} ariaLabel="Reopen async test" onClose={onClose}>
+				<p>Body</p>
+			</ModalDialog>,
+		);
+
+		flushAsyncClose();
+		await Promise.resolve();
+		expect(onClose).not.toHaveBeenCalled();
+		expect(dialog.open).toBe(true);
+	});
 });
 
 describe("ModalDialog - Escape and cancel handling", () => {
