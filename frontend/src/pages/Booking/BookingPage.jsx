@@ -333,6 +333,8 @@ export default function BookingPage() {
 							<label htmlFor="booking-notes">Notas</label>
 							<textarea
 								id="booking-notes"
+								name="notes"
+								enterKeyHint="done"
 								value={notes}
 								onChange={(event) => setNotes(event.target.value)}
 								placeholder="Indicaciones adicionales para tu reserva"

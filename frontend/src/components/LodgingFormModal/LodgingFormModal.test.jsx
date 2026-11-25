@@ -379,15 +379,87 @@ describe("LodgingFormModal - image requirements and error display", () => {
 	});
 });
 
-describe("LodgingFormModal - invalid-field focus timeout cleanup", () => {
-	it("clears the pending focus timeout on unmount so it never fires after teardown", () => {
-		const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
-		const { unmount } = renderModal();
+describe("LodgingFormModal - form semantics, autofill, and direct ref focus", () => {
+	it("exposes explicit name, htmlFor/id, autofill hints, and aria-invalid=false before validation", () => {
+		renderModal();
 
+		const nameInput = screen.getByLabelText("Nombre del alojamiento");
+		const emailInput = screen.getByLabelText("Correo electrónico");
+		const descriptionInput = screen.getByLabelText("Descripción");
+		const addressInput = screen.getByLabelText("Dirección");
+		const cityInput = screen.getByLabelText("Ciudad");
+		const countryInput = screen.getByLabelText("País");
+		const phoneInput = screen.getByLabelText("Teléfono");
+		const categorySelect = screen.getByLabelText("Categoría");
+
+		expect(nameInput).toHaveAttribute("name", "name");
+		expect(nameInput).toHaveAttribute("enterkeyhint", "next");
+		expect(nameInput).toHaveAttribute("aria-invalid", "false");
+		expect(nameInput.id).toBeTruthy();
+
+		expect(emailInput).toHaveAttribute("name", "email");
+		expect(emailInput).toHaveAttribute("autocomplete", "email");
+		expect(emailInput).toHaveAttribute("spellcheck", "false");
+		expect(emailInput).toHaveAttribute("enterkeyhint", "next");
+		expect(emailInput).toHaveAttribute("aria-invalid", "false");
+
+		expect(descriptionInput).toHaveAttribute("name", "description");
+		expect(descriptionInput).toHaveAttribute("aria-invalid", "false");
+
+		expect(addressInput).toHaveAttribute("name", "address");
+		expect(addressInput).toHaveAttribute("autocomplete", "street-address");
+		expect(addressInput).toHaveAttribute("enterkeyhint", "next");
+
+		expect(cityInput).toHaveAttribute("name", "city");
+		expect(cityInput).toHaveAttribute("autocomplete", "address-level2");
+		expect(cityInput).toHaveAttribute("enterkeyhint", "next");
+
+		expect(countryInput).toHaveAttribute("name", "country");
+		expect(countryInput).toHaveAttribute("autocomplete", "country-name");
+		expect(countryInput).toHaveAttribute("enterkeyhint", "next");
+
+		expect(phoneInput).toHaveAttribute("name", "phoneNumber");
+		expect(phoneInput).toHaveAttribute("autocomplete", "tel");
+		expect(phoneInput).toHaveAttribute("enterkeyhint", "next");
+
+		expect(categorySelect).toHaveAttribute("name", "categoryId");
+	});
+
+	it("associates validation errors with role=alert and aria-describedby including imageUrls", async () => {
+		const user = userEvent.setup();
+		renderModal();
+
+		await user.click(screen.getByTestId("admin-save-btn"));
+
+		const nameError = screen.getByTestId("error-name");
+		expect(nameError).toHaveAttribute("role", "alert");
+		expect(screen.getByTestId("field-name")).toHaveAttribute(
+			"aria-describedby",
+			nameError.id,
+		);
+
+		const imageError = screen.getByTestId("error-imageUrls");
+		expect(imageError).toHaveAttribute("role", "alert");
+		expect(imageError.id).toBeTruthy();
+		const imageGroup = screen.getByRole("group", { name: "Imágenes" });
+		expect(imageGroup).toHaveAttribute("aria-invalid", "true");
+		expect(imageGroup).toHaveAttribute("aria-describedby", imageError.id);
+	});
+
+	it("focuses the first invalid field synchronously without scheduling setTimeout", async () => {
+		const user = userEvent.setup();
+		renderModal();
+
+		const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
 		fireEvent.click(screen.getByTestId("admin-save-btn"));
-		unmount();
 
-		expect(clearTimeoutSpy).toHaveBeenCalled();
-		clearTimeoutSpy.mockRestore();
+		expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 100);
+		expect(screen.getByTestId("field-name")).toHaveFocus();
+
+		await user.type(screen.getByTestId("field-name"), "Cabaña Test");
+		fireEvent.click(screen.getByTestId("admin-save-btn"));
+		expect(screen.getByTestId("field-email")).toHaveFocus();
+
+		timeoutSpy.mockRestore();
 	});
 });

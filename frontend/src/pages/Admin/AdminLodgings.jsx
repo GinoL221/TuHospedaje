@@ -132,18 +132,25 @@ export default function AdminLodgings() {
 			>
 				+ Agregar alojamiento
 			</button>
-			<div className="admin-table-controls">
+			<search
+				className="admin-table-controls"
+				aria-label="Filtrar alojamientos"
+			>
 				<label htmlFor="admin-lodgings-search">
 					Buscar alojamientos
 					<input
 						id="admin-lodgings-search"
+						name="search"
+						type="search"
+						enterKeyHint="search"
+						spellCheck={false}
 						aria-label="Buscar alojamientos"
 						value={search}
 						onChange={handleSearchChange}
 						placeholder="Buscar por nombre, ciudad o país"
 					/>
 				</label>
-			</div>
+			</search>
 			{lodgingsError ? (
 				<div role="alert">
 					<p>No pudimos cargar los alojamientos.</p>

@@ -86,6 +86,24 @@ describe("LoginPage - render", () => {
 			screen.getByRole("button", { name: "Iniciar sesión" }),
 		).toBeInTheDocument();
 	});
+
+	it("exposes autofill, mobile keyboard hints, required, and explicit aria-invalid=false before interaction", () => {
+		renderLoginPage({ initialEntries: ["/login"] });
+
+		const email = getEmailInput();
+		const password = getPasswordInput();
+
+		expect(email).toHaveAttribute("autocomplete", "username");
+		expect(email).toHaveAttribute("spellcheck", "false");
+		expect(email).toHaveAttribute("enterkeyhint", "next");
+		expect(email).toBeRequired();
+		expect(email).toHaveAttribute("aria-invalid", "false");
+
+		expect(password).toHaveAttribute("autocomplete", "current-password");
+		expect(password).toHaveAttribute("enterkeyhint", "done");
+		expect(password).toBeRequired();
+		expect(password).toHaveAttribute("aria-invalid", "false");
+	});
 });
 
 describe("LoginPage - booking authentication journey", () => {
@@ -207,6 +225,18 @@ describe("LoginPage - empty submit", () => {
 		const passwordError = screen.getByText("La contraseña es obligatoria");
 		expect(passwordError).toHaveAttribute("id", "login-password-error");
 		expect(passwordError).toHaveAttribute("role", "alert");
+	});
+
+	it("moves focus synchronously to the first invalid field on failed submit", async () => {
+		const user = userEvent.setup();
+		renderLoginPage({ initialEntries: ["/login"] });
+
+		await fillAndSubmit(user, {});
+		expect(getEmailInput()).toHaveFocus();
+
+		await user.type(getEmailInput(), "test@example.com");
+		await user.click(screen.getByRole("button", { name: /iniciar sesión/i }));
+		expect(getPasswordInput()).toHaveFocus();
 	});
 });
 

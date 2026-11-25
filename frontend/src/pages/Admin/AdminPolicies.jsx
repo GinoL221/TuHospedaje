@@ -32,7 +32,8 @@ export default function AdminPolicies() {
 	const [initialLoadError, setInitialLoadError] = useState(false);
 	const [loadAttempt, setLoadAttempt] = useState(0);
 	const [deleteConfirm, setDeleteConfirm] = useState(null);
-	const focusInvalidFieldTimeoutRef = useRef(null);
+	const nameInputRef = useRef(null);
+	const iconContainerRef = useRef(null);
 
 	const resetForm = () => setForm({ name: "", description: "", icon: "" });
 	const cancel = useConfirmCancel(
@@ -43,10 +44,6 @@ export default function AdminPolicies() {
 			setShowModal(false);
 		},
 	);
-
-	useEffect(() => {
-		return () => clearTimeout(focusInvalidFieldTimeoutRef.current);
-	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -106,10 +103,11 @@ export default function AdminPolicies() {
 		const errs = validate();
 		setFieldErrors(errs);
 		if (Object.keys(errs).length > 0) {
-			focusInvalidFieldTimeoutRef.current = setTimeout(
-				() => document.querySelector(".input-error")?.focus(),
-				100,
-			);
+			if (errs.name) {
+				nameInputRef.current?.focus();
+			} else if (errs.icon) {
+				iconContainerRef.current?.querySelector("button")?.focus();
+			}
 			return;
 		}
 
@@ -263,12 +261,22 @@ export default function AdminPolicies() {
 					>
 						<h2>{editing ? "Editar política" : "Nueva política"}</h2>
 						<form onSubmit={handleSubmit} noValidate>
-							<label className="required-dot">
+							<label htmlFor="admin-policy-name" className="required-dot">
 								Nombre
 								<input
+									ref={nameInputRef}
+									id="admin-policy-name"
+									name="name"
+									type="text"
+									required
+									enterKeyHint="next"
 									data-testid="field-name"
 									value={form.name}
 									className={fieldErrors.name ? "input-error" : ""}
+									aria-invalid={Boolean(fieldErrors.name)}
+									aria-describedby={
+										fieldErrors.name ? "error-policy-name" : undefined
+									}
 									onChange={(e) => {
 										setForm({ ...form, name: e.target.value });
 										if (fieldErrors.name)
@@ -276,14 +284,21 @@ export default function AdminPolicies() {
 									}}
 								/>
 								{fieldErrors.name && (
-									<span className="field-error" data-testid="error-name">
+									<span
+										id="error-policy-name"
+										className="field-error"
+										role="alert"
+										data-testid="error-name"
+									>
 										{fieldErrors.name}
 									</span>
 								)}
 							</label>
-							<label>
+							<label htmlFor="admin-policy-description">
 								Descripción
 								<textarea
+									id="admin-policy-description"
+									name="description"
 									data-testid="field-description"
 									value={form.description}
 									onChange={(e) =>
@@ -293,17 +308,30 @@ export default function AdminPolicies() {
 							</label>
 							<label className="required-dot">
 								Ícono
-								<IconPicker
-									value={form.icon}
-									onChange={(val) => {
-										setForm({ ...form, icon: val });
-										if (fieldErrors.icon)
-											setFieldErrors({ ...fieldErrors, icon: "" });
-									}}
-									placeholder="fa-solid fa-clock"
-								/>
+								<div
+									ref={iconContainerRef}
+									aria-invalid={Boolean(fieldErrors.icon)}
+									aria-describedby={
+										fieldErrors.icon ? "error-policy-icon" : undefined
+									}
+								>
+									<IconPicker
+										value={form.icon}
+										onChange={(val) => {
+											setForm({ ...form, icon: val });
+											if (fieldErrors.icon)
+												setFieldErrors({ ...fieldErrors, icon: "" });
+										}}
+										placeholder="fa-solid fa-clock"
+									/>
+								</div>
 								{fieldErrors.icon && (
-									<span className="field-error" data-testid="error-icon">
+									<span
+										id="error-policy-icon"
+										className="field-error"
+										role="alert"
+										data-testid="error-icon"
+									>
 										{fieldErrors.icon}
 									</span>
 								)}

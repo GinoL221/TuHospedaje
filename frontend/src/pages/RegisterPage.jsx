@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
@@ -24,6 +24,11 @@ export default function RegisterPage() {
 	const [loading, setLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const firstNameInputRef = useRef(null);
+	const lastNameInputRef = useRef(null);
+	const emailInputRef = useRef(null);
+	const passwordInputRef = useRef(null);
+	const confirmPasswordInputRef = useRef(null);
 	const [pwChecks, setPwChecks] = useState({
 		minLength: false,
 		maxLength: false,
@@ -81,7 +86,20 @@ export default function RegisterPage() {
 
 		const errors = validate();
 		setFieldErrors(errors);
-		if (Object.keys(errors).length > 0) return;
+		if (Object.keys(errors).length > 0) {
+			if (errors.firstName) {
+				firstNameInputRef.current?.focus();
+			} else if (errors.lastName) {
+				lastNameInputRef.current?.focus();
+			} else if (errors.email) {
+				emailInputRef.current?.focus();
+			} else if (errors.password) {
+				passwordInputRef.current?.focus();
+			} else if (errors.confirmPassword) {
+				confirmPasswordInputRef.current?.focus();
+			}
+			return;
+		}
 
 		try {
 			setLoading(true);
@@ -121,12 +139,17 @@ export default function RegisterPage() {
 				<form onSubmit={handleSubmit} noValidate>
 					<label htmlFor="register-first-name">Nombre</label>
 					<input
+						ref={firstNameInputRef}
 						id="register-first-name"
 						name="firstName"
+						type="text"
+						autoComplete="given-name"
+						enterKeyHint="next"
+						required
 						value={form.firstName}
 						onChange={handleChange}
 						className={fieldErrors.firstName ? "input-error" : ""}
-						aria-invalid={fieldErrors.firstName ? "true" : undefined}
+						aria-invalid={Boolean(fieldErrors.firstName)}
 						aria-describedby={
 							fieldErrors.firstName ? "register-firstName-error" : undefined
 						}
@@ -143,12 +166,17 @@ export default function RegisterPage() {
 
 					<label htmlFor="register-last-name">Apellido</label>
 					<input
+						ref={lastNameInputRef}
 						id="register-last-name"
 						name="lastName"
+						type="text"
+						autoComplete="family-name"
+						enterKeyHint="next"
+						required
 						value={form.lastName}
 						onChange={handleChange}
 						className={fieldErrors.lastName ? "input-error" : ""}
-						aria-invalid={fieldErrors.lastName ? "true" : undefined}
+						aria-invalid={Boolean(fieldErrors.lastName)}
 						aria-describedby={
 							fieldErrors.lastName ? "register-lastName-error" : undefined
 						}
@@ -165,13 +193,18 @@ export default function RegisterPage() {
 
 					<label htmlFor="register-email">Email</label>
 					<input
+						ref={emailInputRef}
 						id="register-email"
 						name="email"
 						type="email"
+						autoComplete="username"
+						spellCheck={false}
+						enterKeyHint="next"
+						required
 						value={form.email}
 						onChange={handleChange}
 						className={fieldErrors.email ? "input-error" : ""}
-						aria-invalid={fieldErrors.email ? "true" : undefined}
+						aria-invalid={Boolean(fieldErrors.email)}
 						aria-describedby={
 							fieldErrors.email ? "register-email-error" : undefined
 						}
@@ -185,9 +218,13 @@ export default function RegisterPage() {
 					<label htmlFor="register-password">Contraseña</label>
 					<div className="input-wrap">
 						<input
+							ref={passwordInputRef}
 							id="register-password"
 							name="password"
 							type={showPassword ? "text" : "password"}
+							autoComplete="new-password"
+							enterKeyHint="next"
+							required
 							value={form.password}
 							onChange={handleChange}
 							className={
@@ -201,7 +238,7 @@ export default function RegisterPage() {
 										? "input-valid"
 										: ""
 							}
-							aria-invalid={fieldErrors.password ? "true" : undefined}
+							aria-invalid={Boolean(fieldErrors.password)}
 							aria-describedby={
 								fieldErrors.password ? "register-password-error" : undefined
 							}
@@ -262,13 +299,17 @@ export default function RegisterPage() {
 					</label>
 					<div className="input-wrap">
 						<input
+							ref={confirmPasswordInputRef}
 							id="register-confirm-password"
 							name="confirmPassword"
 							type={showConfirmPassword ? "text" : "password"}
+							autoComplete="new-password"
+							enterKeyHint="done"
+							required
 							value={form.confirmPassword}
 							onChange={handleChange}
 							className={fieldErrors.confirmPassword ? "input-error" : ""}
-							aria-invalid={fieldErrors.confirmPassword ? "true" : undefined}
+							aria-invalid={Boolean(fieldErrors.confirmPassword)}
 							aria-describedby={
 								fieldErrors.confirmPassword
 									? "register-confirmPassword-error"

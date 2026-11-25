@@ -325,22 +325,40 @@ describe("AdminFeatures - delete", () => {
 	});
 });
 
-describe("AdminFeatures - invalid-field focus timeout cleanup", () => {
-	it("clears the pending focus timeout on unmount so it never fires after teardown", async () => {
+describe("AdminFeatures - form semantics and direct ref focus", () => {
+	it("exposes explicit name, htmlFor/id, enterKeyHint, aria-invalid/aria-describedby, and focuses invalid fields without setTimeout", async () => {
 		get.mockResolvedValue([]);
 		const user = userEvent.setup();
-		const { unmount } = renderAdminFeatures();
+		renderAdminFeatures();
 
 		await screen.findByText(
 			"No hay características cargadas todavía. ¡Creá la primera!",
 		);
 		await user.click(screen.getByTestId("admin-add-btn"));
 
-		const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
-		fireEvent.click(screen.getByTestId("admin-save-btn"));
-		unmount();
+		const nameField = screen.getByLabelText("Nombre");
+		expect(nameField).toHaveAttribute("name", "name");
+		expect(nameField).toHaveAttribute("enterkeyhint", "next");
+		expect(nameField).toHaveAttribute("aria-invalid", "false");
 
-		expect(clearTimeoutSpy).toHaveBeenCalled();
-		clearTimeoutSpy.mockRestore();
+		const timeoutSpy = vi.spyOn(globalThis, "setTimeout");
+		fireEvent.click(screen.getByTestId("admin-save-btn"));
+
+		expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 100);
+		expect(nameField).toHaveFocus();
+
+		const nameError = screen.getByTestId("error-name");
+		expect(nameError).toHaveAttribute("role", "alert");
+		expect(nameField).toHaveAttribute("aria-invalid", "true");
+		expect(nameField).toHaveAttribute("aria-describedby", nameError.id);
+
+		const iconError = screen.getByTestId("error-icon");
+		expect(iconError).toHaveAttribute("role", "alert");
+
+		await user.type(nameField, "WiFi");
+		fireEvent.click(screen.getByTestId("admin-save-btn"));
+		expect(screen.getByTestId("icon-picker-trigger")).toHaveFocus();
+
+		timeoutSpy.mockRestore();
 	});
 });

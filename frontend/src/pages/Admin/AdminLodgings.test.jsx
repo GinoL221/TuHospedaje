@@ -105,6 +105,26 @@ describe("AdminLodgings - listing", () => {
 		expect(region.querySelector("table")).toBeInTheDocument();
 	});
 
+	it("wraps the lodgings search bar in a <search> landmark with mobile search attributes", async () => {
+		mockGetDefaults();
+		const { container } = renderAdminLodgings();
+
+		await screen.findByText("Cabaña del Lago");
+		const searchLandmark = container.querySelector("search");
+		expect(searchLandmark).toBeInTheDocument();
+		expect(searchLandmark).toHaveAttribute(
+			"aria-label",
+			"Filtrar alojamientos",
+		);
+
+		const searchInput = screen.getByLabelText("Buscar alojamientos");
+		expect(searchLandmark).toContainElement(searchInput);
+		expect(searchInput).toHaveAttribute("type", "search");
+		expect(searchInput).toHaveAttribute("name", "search");
+		expect(searchInput).toHaveAttribute("enterkeyhint", "search");
+		expect(searchInput).toHaveAttribute("spellcheck", "false");
+	});
+
 	it("renders the empty state when there are no lodgings", async () => {
 		mockGetDefaults({ lodgings: [] });
 		renderAdminLodgings();

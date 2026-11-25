@@ -90,6 +90,44 @@ describe("RegisterPage - render", () => {
 			screen.getByRole("button", { name: "Crear cuenta" }),
 		).toBeInTheDocument();
 	});
+
+	it("exposes autofill, mobile keyboard hints, required, and explicit aria-invalid=false before interaction", () => {
+		renderRegisterPage();
+
+		const firstName = getInput("firstName");
+		const lastName = getInput("lastName");
+		const email = getInput("email");
+		const password = getInput("password");
+		const confirmPassword = getInput("confirmPassword");
+
+		expect(firstName).toHaveAttribute("type", "text");
+		expect(firstName).toHaveAttribute("autocomplete", "given-name");
+		expect(firstName).toHaveAttribute("enterkeyhint", "next");
+		expect(firstName).toBeRequired();
+		expect(firstName).toHaveAttribute("aria-invalid", "false");
+
+		expect(lastName).toHaveAttribute("type", "text");
+		expect(lastName).toHaveAttribute("autocomplete", "family-name");
+		expect(lastName).toHaveAttribute("enterkeyhint", "next");
+		expect(lastName).toBeRequired();
+		expect(lastName).toHaveAttribute("aria-invalid", "false");
+
+		expect(email).toHaveAttribute("autocomplete", "username");
+		expect(email).toHaveAttribute("spellcheck", "false");
+		expect(email).toHaveAttribute("enterkeyhint", "next");
+		expect(email).toBeRequired();
+		expect(email).toHaveAttribute("aria-invalid", "false");
+
+		expect(password).toHaveAttribute("autocomplete", "new-password");
+		expect(password).toHaveAttribute("enterkeyhint", "next");
+		expect(password).toBeRequired();
+		expect(password).toHaveAttribute("aria-invalid", "false");
+
+		expect(confirmPassword).toHaveAttribute("autocomplete", "new-password");
+		expect(confirmPassword).toHaveAttribute("enterkeyhint", "done");
+		expect(confirmPassword).toBeRequired();
+		expect(confirmPassword).toHaveAttribute("aria-invalid", "false");
+	});
 });
 
 describe("RegisterPage - password complexity checklist", () => {
@@ -156,6 +194,19 @@ describe("RegisterPage - empty submit", () => {
 			expect(errorEl).toBeInTheDocument();
 			expect(errorEl).toHaveAttribute("role", "alert");
 		}
+	});
+
+	it("moves focus to the first invalid field in DOM order on submit error", async () => {
+		const user = userEvent.setup();
+		renderRegisterPage();
+
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+		expect(getInput("firstName")).toHaveFocus();
+
+		await user.type(getInput("firstName"), "Test");
+		await user.type(getInput("lastName"), "User");
+		await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+		expect(getInput("email")).toHaveFocus();
 	});
 });
 

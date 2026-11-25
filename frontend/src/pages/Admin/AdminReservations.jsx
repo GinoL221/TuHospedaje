@@ -125,11 +125,15 @@ export default function AdminReservations() {
 				<h2 id="admin-reservations-heading">Reservas</h2>
 			</div>
 
-			<div className="admin-table-controls">
+			<search className="admin-table-controls" aria-label="Filtrar reservas">
 				<label htmlFor="admin-reservations-search">
 					Buscar reservas
 					<input
 						id="admin-reservations-search"
+						name="search"
+						type="search"
+						enterKeyHint="search"
+						spellCheck={false}
 						aria-label="Buscar reservas"
 						value={search}
 						onChange={handleSearchChange}
@@ -141,6 +145,7 @@ export default function AdminReservations() {
 					Estado
 					<select
 						id="admin-reservations-status"
+						name="status"
 						aria-label="Filtrar por estado"
 						value={status}
 						onChange={handleStatusChange}
@@ -156,7 +161,7 @@ export default function AdminReservations() {
 				<button type="button" onClick={resetFilters}>
 					Limpiar filtros
 				</button>
-			</div>
+			</search>
 
 			{error ? (
 				<div className="empty-state" role="alert">

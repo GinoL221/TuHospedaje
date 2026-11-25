@@ -154,6 +154,11 @@ export default function AdminCategories() {
 		const errs = validate();
 		setFieldErrors(errs);
 		if (Object.keys(errs).length > 0) {
+			if (errs.name) {
+				nameInputRef.current?.focus();
+			} else if (errs.imageUrl) {
+				imageUrlInputRef.current?.focus();
+			}
 			return;
 		}
 
@@ -303,13 +308,22 @@ export default function AdminCategories() {
 					>
 						<h2>{editing ? "Editar categoría" : "Nueva categoría"}</h2>
 						<form onSubmit={handleSubmit} noValidate>
-							<label className="required-dot">
+							<label htmlFor="admin-category-name" className="required-dot">
 								Nombre
 								<input
 									ref={nameInputRef}
+									id="admin-category-name"
+									name="name"
+									type="text"
+									required
+									enterKeyHint="next"
 									data-testid="field-name"
 									value={form.name}
 									className={fieldErrors.name ? "input-error" : ""}
+									aria-invalid={Boolean(fieldErrors.name)}
+									aria-describedby={
+										fieldErrors.name ? "error-category-name" : undefined
+									}
 									onChange={(e) => {
 										setForm({ ...form, name: e.target.value });
 										if (fieldErrors.name)
@@ -317,14 +331,21 @@ export default function AdminCategories() {
 									}}
 								/>
 								{fieldErrors.name && (
-									<span className="field-error" data-testid="error-name">
+									<span
+										id="error-category-name"
+										className="field-error"
+										role="alert"
+										data-testid="error-name"
+									>
 										{fieldErrors.name}
 									</span>
 								)}
 							</label>
-							<label>
+							<label htmlFor="admin-category-description">
 								Descripción
 								<textarea
+									id="admin-category-description"
+									name="description"
 									data-testid="field-description"
 									value={form.description}
 									onChange={(e) =>
@@ -340,16 +361,22 @@ export default function AdminCategories() {
 									placeholder="Buscar ícono"
 								/>
 							</label>
-							<label className={editing ? undefined : "required-dot"}>
+							<label
+								htmlFor="admin-category-image-url"
+								className={editing ? undefined : "required-dot"}
+							>
 								Imagen representativa (URL)
 								<input
 									ref={imageUrlInputRef}
+									id="admin-category-image-url"
+									name="imageUrl"
 									type="url"
+									enterKeyHint="done"
 									data-testid="field-image-url"
 									value={form.imageUrl}
 									required={!editing}
 									className={fieldErrors.imageUrl ? "input-error" : ""}
-									aria-invalid={fieldErrors.imageUrl ? "true" : "false"}
+									aria-invalid={Boolean(fieldErrors.imageUrl)}
 									aria-describedby={
 										fieldErrors.imageUrl ? "error-image-url" : undefined
 									}
@@ -363,6 +390,7 @@ export default function AdminCategories() {
 									<span
 										className="field-error"
 										id="error-image-url"
+										role="alert"
 										data-testid="error-image-url"
 									>
 										{fieldErrors.imageUrl}
