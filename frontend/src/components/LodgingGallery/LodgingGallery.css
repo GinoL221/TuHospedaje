@@ -60,6 +60,7 @@
 
 .gallery-main-trigger img {
   width: 100%;
+  height: auto;
   max-height: 560px;
   min-height: 400px;
   object-fit: contain;
