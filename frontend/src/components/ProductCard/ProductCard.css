@@ -183,7 +183,7 @@
 }
 
 /* RESPONSIVE */
-@container product-card (max-width: 320px) {
+@media (max-width: 768px) {
   .hotel-card-body {
     padding: 12px 14px 14px;
   }

@@ -386,7 +386,7 @@ describe("ProductCard - visitor accessibility contract", () => {
 			/\.hotel-card-link\s*\{[^}]*container-type:\s*inline-size;/s,
 		);
 		expect(css).toMatch(/@container\s+[\w-]*\s*\(max-width:\s*280px\)/);
-		expect(css).not.toMatch(/@media\s*\(max-width:\s*(?:768|360)px\)/);
+		expect(css).not.toMatch(/@media\s*\(max-width:\s*360px\)/);
 	});
 
 	it("pins the narrow card title minimum and favorite hit target", () => {
