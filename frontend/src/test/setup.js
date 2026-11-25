@@ -8,29 +8,30 @@ if (
 	typeof HTMLDialogElement.prototype.showModal !== "function"
 ) {
 	const previousFocusMap = new WeakMap();
-	const pendingAutoFocusMap = new WeakMap();
 	const openModalDialogs = [];
+	let lastExternalFocus = null;
 
-	const nativeFocus = HTMLElement.prototype.focus;
-	HTMLElement.prototype.focus = function focus(...args) {
-		const closedDialog = this.closest?.("dialog:not([open])");
-		if (closedDialog) {
-			pendingAutoFocusMap.set(closedDialog, this);
-			return;
+	document.addEventListener("focusin", (event) => {
+		if (
+			event.target instanceof HTMLElement &&
+			!event.target.closest("dialog:not([open])")
+		) {
+			lastExternalFocus = event.target;
 		}
-		return nativeFocus.apply(this, args);
-	};
+	});
 
 	HTMLDialogElement.prototype.showModal = function showModal() {
 		if (this.open) return;
-		previousFocusMap.set(this, document.activeElement);
+		const invoker =
+			document.activeElement && this.contains(document.activeElement)
+				? lastExternalFocus
+				: document.activeElement;
+		previousFocusMap.set(this, invoker);
 		this.open = true;
 		this.setAttribute("open", "");
 		openModalDialogs.push(this);
 
-		const autoFocusTarget =
-			this.querySelector("[autofocus]") ?? pendingAutoFocusMap.get(this);
-		pendingAutoFocusMap.delete(this);
+		const autoFocusTarget = this.querySelector("[autofocus]");
 		if (autoFocusTarget && typeof autoFocusTarget.focus === "function") {
 			autoFocusTarget.focus();
 		}

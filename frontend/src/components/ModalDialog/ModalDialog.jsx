@@ -2,9 +2,10 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import "./ModalDialog.css";
 
 function isOutsideDialog(event, dialog) {
+	if (event.target !== dialog) return false;
 	const rect = dialog.getBoundingClientRect();
 	if (rect.width === 0 && rect.height === 0) {
-		return event.target === dialog;
+		return true;
 	}
 	return (
 		event.clientX < rect.left ||
@@ -28,6 +29,7 @@ export default function ModalDialog({
 	...rest
 }) {
 	const dialogRef = useRef(null);
+	const openRef = useRef(open);
 	const onCloseRef = useRef(onClose);
 	const onCancelRef = useRef(onCancel);
 	const pointerDownOutsideRef = useRef(false);
@@ -39,6 +41,7 @@ export default function ModalDialog({
 	}, [onClose, onCancel]);
 
 	useLayoutEffect(() => {
+		openRef.current = open;
 		const dialog = dialogRef.current;
 		if (!dialog) return undefined;
 
@@ -81,6 +84,11 @@ export default function ModalDialog({
 			dialog.returnValue = "";
 			if (!closingProgrammaticallyRef.current) {
 				onCloseRef.current?.();
+				queueMicrotask(() => {
+					if (dialog.isConnected && !dialog.open && openRef.current) {
+						dialog.showModal();
+					}
+				});
 			}
 		};
 

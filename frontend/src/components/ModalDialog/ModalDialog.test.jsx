@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ModalDialog from "./ModalDialog";
 
@@ -95,6 +95,30 @@ describe("ModalDialog - Escape and cancel handling", () => {
 			screen.getByRole("dialog", { name: "Guarded modal" }),
 		).toHaveAttribute("open");
 	});
+
+	it("re-opens via showModal when a non-cancelable cancel and native close fire while open remains true", async () => {
+		const onClose = vi.fn();
+		const showModalSpy = vi.spyOn(HTMLDialogElement.prototype, "showModal");
+
+		render(
+			<ModalDialog open={true} ariaLabel="Sticky modal" onClose={onClose}>
+				<button type="button">Acción</button>
+			</ModalDialog>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Sticky modal" });
+		expect(showModalSpy).toHaveBeenCalledTimes(1);
+
+		dialog.dispatchEvent(new Event("cancel", { cancelable: false }));
+		dialog.close();
+
+		await waitFor(() => {
+			expect(dialog.open).toBe(true);
+			expect(showModalSpy).toHaveBeenCalledTimes(2);
+		});
+		expect(onClose).toHaveBeenCalledTimes(1);
+		showModalSpy.mockRestore();
+	});
 });
 
 describe("ModalDialog - Safari light-dismiss fallback", () => {
@@ -158,6 +182,28 @@ describe("ModalDialog - Safari light-dismiss fallback", () => {
 
 		fireEvent.pointerDown(dialog, { clientX: 10, clientY: 10 });
 		fireEvent.pointerUp(dialog, { clientX: 10, clientY: 10 });
+
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("does not dismiss when pointerdown and pointerup target a child overflowing outside dialog bounds", () => {
+		const onClose = vi.fn();
+		render(
+			<ModalDialog
+				ariaLabel="Overflow child test"
+				closedBy="any"
+				onClose={onClose}
+			>
+				<button type="button">Popover option</button>
+			</ModalDialog>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Overflow child test" });
+		const child = screen.getByRole("button", { name: "Popover option" });
+		vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue(rect);
+
+		fireEvent.pointerDown(child, { clientX: 50, clientY: 50 });
+		fireEvent.pointerUp(child, { clientX: 50, clientY: 50 });
 
 		expect(onClose).not.toHaveBeenCalled();
 	});
