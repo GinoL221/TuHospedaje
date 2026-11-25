@@ -47,7 +47,6 @@ async function useLongReservationHarness(page) {
       body: JSON.stringify({ ...longReservation, status: 'CANCELLED' }),
     });
   });
-  page.on('dialog', (dialog) => dialog.accept());
 }
 
 async function exerciseReservations(page) {
@@ -73,6 +72,9 @@ async function exerciseReservations(page) {
   await expectNoHorizontalOverflow(page);
 
   await cancelButton.click();
+  const confirmDialog = page.getByTestId('confirm-cancel-reservation');
+  await expect(confirmDialog).toBeVisible();
+  await page.getByTestId('confirm-cancel-reservation-yes').click();
   await expect(page.getByText('Cancelada')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancelar reserva' })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
