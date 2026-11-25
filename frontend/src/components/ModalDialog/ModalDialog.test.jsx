@@ -154,6 +154,24 @@ describe("ModalDialog - Escape and cancel handling", () => {
 		).toHaveAttribute("open");
 	});
 
+	it("blocks Escape dismissal when closedBy is 'none' even without onCancel", async () => {
+		const onClose = vi.fn();
+		const user = userEvent.setup();
+
+		render(
+			<ModalDialog ariaLabel="Locked modal" closedBy="none" onClose={onClose}>
+				<button type="button">Acción</button>
+			</ModalDialog>,
+		);
+
+		await user.keyboard("{Escape}");
+
+		expect(onClose).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("dialog", { name: "Locked modal" }),
+		).toHaveAttribute("open");
+	});
+
 	it("re-opens via showModal when a non-cancelable cancel and native close fire while open remains true", async () => {
 		const onClose = vi.fn();
 		const showModalSpy = vi.spyOn(HTMLDialogElement.prototype, "showModal");

@@ -74,6 +74,12 @@ export default function ModalDialog({
 					return;
 				}
 			}
+			if (closedBy === "none") {
+				if (event.cancelable) {
+					event.preventDefault();
+				}
+				return;
+			}
 			if (event.cancelable) {
 				event.preventDefault();
 				onCloseRef.current?.();
