@@ -111,6 +111,38 @@ describe("ProductCard - rendering lodging data", () => {
 	});
 });
 
+describe("ProductCard - image loading priority", () => {
+	it("defaults to lazy loading without fetchpriority and preserves dimensions", () => {
+		renderProductCard();
+
+		const img = screen.getByRole("img", { name: "Cabaña del Lago" });
+		expect(img).toHaveAttribute("loading", "lazy");
+		expect(img).not.toHaveAttribute("fetchpriority");
+		expect(img).toHaveAttribute("width", "400");
+		expect(img).toHaveAttribute("height", "300");
+	});
+
+	it("sets fetchpriority high and omits loading when imagePriority is high", () => {
+		renderProductCard({ imagePriority: "high" });
+
+		const img = screen.getByRole("img", { name: "Cabaña del Lago" });
+		expect(img).not.toHaveAttribute("loading");
+		expect(img).toHaveAttribute("fetchpriority", "high");
+		expect(img).toHaveAttribute("width", "400");
+		expect(img).toHaveAttribute("height", "300");
+	});
+
+	it("omits both loading and fetchpriority when imagePriority is eager", () => {
+		renderProductCard({ imagePriority: "eager" });
+
+		const img = screen.getByRole("img", { name: "Cabaña del Lago" });
+		expect(img).not.toHaveAttribute("loading");
+		expect(img).not.toHaveAttribute("fetchpriority");
+		expect(img).toHaveAttribute("width", "400");
+		expect(img).toHaveAttribute("height", "300");
+	});
+});
+
 describe("ProductCard - broken image fallback", () => {
 	it("falls back to the placeholder image when the lodging image fails to load", () => {
 		renderProductCard();

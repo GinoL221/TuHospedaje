@@ -212,4 +212,25 @@ describe("LodgingGallery", () => {
 			screen.getByRole("button", { name: "Imagen siguiente" }),
 		).toHaveFocus();
 	});
+
+	it("prioritizes the main LCP image and lazy-loads secondary thumbnails with explicit dimensions", () => {
+		const { container } = render(
+			<LodgingGallery images={images} name="Cabaña del Lago" />,
+		);
+
+		const mainImg = container.querySelector(".gallery-main-trigger img");
+		expect(mainImg).toHaveAttribute("fetchpriority", "high");
+		expect(mainImg).not.toHaveAttribute("loading");
+		expect(mainImg).toHaveAttribute("width", "800");
+		expect(mainImg).toHaveAttribute("height", "600");
+
+		const thumbImgs = container.querySelectorAll(".gallery-thumb img");
+		expect(thumbImgs).toHaveLength(4);
+		thumbImgs.forEach((thumbImg) => {
+			expect(thumbImg).toHaveAttribute("loading", "lazy");
+			expect(thumbImg).toHaveAttribute("fetchpriority", "low");
+			expect(thumbImg).toHaveAttribute("width", "400");
+			expect(thumbImg).toHaveAttribute("height", "300");
+		});
+	});
 });

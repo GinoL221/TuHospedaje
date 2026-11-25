@@ -11,6 +11,7 @@ export default function ProductCard({
 	onFavoriteToggle,
 	showFavoriteButton = true,
 	showUnratedMessage = false,
+	imagePriority = "lazy",
 }) {
 	const { user } = useAuth();
 	const [optimisticFavorite, setOptimisticFavorite] = useState(null);
@@ -57,7 +58,8 @@ export default function ProductCard({
 						alt={lodging.name}
 						width="400"
 						height="300"
-						loading="lazy"
+						loading={imagePriority === "lazy" ? "lazy" : undefined}
+						fetchPriority={imagePriority === "high" ? "high" : undefined}
 						onError={() => setImgError(true)}
 					/>
 					{user && showFavoriteButton && (

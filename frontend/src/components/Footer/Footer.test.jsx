@@ -15,6 +15,9 @@ describe("Footer - content", () => {
 			"src",
 			expect.stringContaining("TuHospedaje_Isologotipo.png"),
 		);
+		expect(logo).toHaveAttribute("width", "451");
+		expect(logo).toHaveAttribute("height", "253");
+		expect(logo).toHaveAttribute("loading", "lazy");
 		expect(logo.closest(".footer-brand")).toContainElement(logo);
 	});
 
@@ -33,12 +36,20 @@ describe("Footer - content", () => {
 		});
 		expect(facebookLink).toHaveAttribute("href", "https://facebook.com");
 		expect(facebookLink).toHaveAttribute("target", "_blank");
+		const facebookIcon = screen.getByRole("img", { name: "Facebook" });
+		expect(facebookIcon).toHaveAttribute("width", "24");
+		expect(facebookIcon).toHaveAttribute("height", "24");
+		expect(facebookIcon).toHaveAttribute("loading", "lazy");
 
 		const instagramLink = screen.getByRole("link", {
 			name: "Instagram",
 		});
 		expect(instagramLink).toHaveAttribute("href", "https://instagram.com");
 		expect(instagramLink).toHaveAttribute("target", "_blank");
+		const instagramIcon = screen.getByRole("img", { name: "Instagram" });
+		expect(instagramIcon).toHaveAttribute("width", "24");
+		expect(instagramIcon).toHaveAttribute("height", "24");
+		expect(instagramIcon).toHaveAttribute("loading", "lazy");
 	});
 
 	it("mounts the single always-visible WhatsApp control inside the footer", () => {

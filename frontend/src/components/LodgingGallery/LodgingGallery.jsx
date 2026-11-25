@@ -156,7 +156,9 @@ export default function LodgingGallery({ images = [], name }) {
 						<img
 							src={previewImages[previewIndex]}
 							alt={`${name} - ${previewIndex + 1}`}
-							loading="lazy"
+							fetchPriority="high"
+							width="800"
+							height="600"
 							onError={(event) => {
 								event.currentTarget.src = FALLBACK_IMAGE;
 							}}
@@ -215,6 +217,9 @@ export default function LodgingGallery({ images = [], name }) {
 										src={url}
 										alt={`${name} - ${index + 2}`}
 										loading="lazy"
+										fetchPriority="low"
+										width="400"
+										height="300"
 										onError={(event) => {
 											event.currentTarget.src = FALLBACK_THUMB;
 										}}
