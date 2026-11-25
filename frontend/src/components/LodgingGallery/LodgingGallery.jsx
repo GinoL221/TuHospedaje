@@ -14,6 +14,14 @@ const FALLBACK_THUMB = "https://placehold.co/400x300?text=Sin+imagen";
 const MOBILE_MEDIA_QUERY = "(max-width: 768px)";
 const DESKTOP_MEDIA_QUERY = "(min-width: 901px)";
 
+function matchesMobileViewport() {
+	if (typeof window === "undefined") return false;
+	if (typeof window.matchMedia === "function") {
+		return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+	}
+	return window.innerWidth <= 768;
+}
+
 function matchesTabletViewport() {
 	if (typeof window === "undefined") return false;
 	if (typeof window.matchMedia === "function") {
@@ -28,15 +36,21 @@ function matchesTabletViewport() {
 export default function LodgingGallery({ images = [], name }) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [isTabletViewport, setIsTabletViewport] = useState(
+	const [isTabletContainer, setIsTabletContainer] = useState(
 		matchesTabletViewport,
 	);
-	const isTabletViewportRef = useRef(isTabletViewport);
+	const [isMobileContainer, setIsMobileContainer] = useState(
+		matchesMobileViewport,
+	);
+	const containerRef = useRef(null);
+	const isTabletContainerRef = useRef(isTabletContainer);
+	const isMobileContainerRef = useRef(isMobileContainer);
 	const pendingArrowFocusRef = useRef(null);
 	const previousButtonRef = useRef(null);
 	const nextButtonRef = useRef(null);
 	const thumbnailStripRef = useRef(null);
 	const thumbnailRefs = useRef([]);
+	const hasImages = images.length > 0;
 	const previewImages = images.slice(0, 5);
 	const previewIndex = Math.min(
 		currentIndex,
@@ -44,16 +58,16 @@ export default function LodgingGallery({ images = [], name }) {
 	);
 
 	useEffect(() => {
-		const updateForViewport = () => {
-			const nextIsTabletViewport = matchesTabletViewport();
-			if (nextIsTabletViewport === isTabletViewportRef.current) return;
+		const applyLayoutMode = (nextIsTablet, nextIsMobile) => {
+			if (nextIsMobile !== isMobileContainerRef.current) {
+				isMobileContainerRef.current = nextIsMobile;
+				setIsMobileContainer(nextIsMobile);
+			}
 
-			const isMobileViewport =
-				typeof window.matchMedia === "function"
-					? window.matchMedia(MOBILE_MEDIA_QUERY).matches
-					: window.innerWidth <= 768;
+			if (nextIsTablet === isTabletContainerRef.current) return;
+
 			pendingArrowFocusRef.current = null;
-			if (!isMobileViewport) {
+			if (!nextIsMobile) {
 				if (document.activeElement === previousButtonRef.current) {
 					pendingArrowFocusRef.current = "previous";
 				} else if (document.activeElement === nextButtonRef.current) {
@@ -61,10 +75,44 @@ export default function LodgingGallery({ images = [], name }) {
 				}
 			}
 
-			isTabletViewportRef.current = nextIsTabletViewport;
-			setIsTabletViewport(nextIsTabletViewport);
+			isTabletContainerRef.current = nextIsTablet;
+			setIsTabletContainer(nextIsTablet);
 		};
 
+		const updateFromWidth = (width) => {
+			if (typeof width === "number" && width > 0) {
+				applyLayoutMode(width > 768 && width < 901, width <= 768);
+				return true;
+			}
+			return false;
+		};
+
+		const updateForViewport = () => {
+			const measuredWidth =
+				containerRef.current?.getBoundingClientRect?.().width;
+			if (updateFromWidth(measuredWidth)) return;
+			applyLayoutMode(matchesTabletViewport(), matchesMobileViewport());
+		};
+
+		const initialWidth = containerRef.current?.getBoundingClientRect?.().width;
+		updateFromWidth(initialWidth);
+
+		let observer = null;
+		if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+			observer = new ResizeObserver((entries) => {
+				const entryWidth = entries[0]?.contentRect?.width;
+				const width =
+					typeof entryWidth === "number" && entryWidth > 0
+						? entryWidth
+						: containerRef.current?.getBoundingClientRect?.().width;
+				if (!updateFromWidth(width)) {
+					applyLayoutMode(matchesTabletViewport(), matchesMobileViewport());
+				}
+			});
+			observer.observe(containerRef.current);
+		}
+
+		let cleanupViewportListener;
 		if (typeof window.matchMedia === "function") {
 			const mediaQueries = [
 				window.matchMedia(MOBILE_MEDIA_QUERY),
@@ -74,16 +122,24 @@ export default function LodgingGallery({ images = [], name }) {
 				mediaQueries.forEach((query) =>
 					query.addEventListener("change", updateForViewport),
 				);
-				return () =>
+				cleanupViewportListener = () =>
 					mediaQueries.forEach((query) =>
 						query.removeEventListener("change", updateForViewport),
 					);
 			}
 		}
 
-		window.addEventListener("resize", updateForViewport);
-		return () => window.removeEventListener("resize", updateForViewport);
-	}, []);
+		if (!cleanupViewportListener) {
+			window.addEventListener("resize", updateForViewport);
+			cleanupViewportListener = () =>
+				window.removeEventListener("resize", updateForViewport);
+		}
+
+		return () => {
+			observer?.disconnect();
+			cleanupViewportListener();
+		};
+	}, [hasImages]);
 
 	useLayoutEffect(() => {
 		const focusedArrow = pendingArrowFocusRef.current;
@@ -95,20 +151,20 @@ export default function LodgingGallery({ images = [], name }) {
 				? previousButtonRef.current
 				: nextButtonRef.current;
 		if (button && !button.disabled) button.focus();
-	}, [isTabletViewport]);
+	}, [isTabletContainer]);
 
 	useEffect(() => {
-		if (!window.matchMedia?.(MOBILE_MEDIA_QUERY).matches) return;
+		if (!isMobileContainer) return;
 		const thumbnail = thumbnailRefs.current[previewIndex];
 		if (!thumbnail || !thumbnailStripRef.current?.contains(thumbnail)) return;
-		thumbnail.scrollIntoView({
+		thumbnail.scrollIntoView?.({
 			inline: "center",
 			block: "nearest",
-			behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+			behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
 				? "auto"
 				: "smooth",
 		});
-	}, [previewIndex]);
+	}, [isMobileContainer, previewIndex]);
 
 	const previousButton = (
 		<button
@@ -146,101 +202,111 @@ export default function LodgingGallery({ images = [], name }) {
 
 	return (
 		<>
-			<div className="gallery-wrapper">
-				<div className="gallery-main">
-					<button
-						className="gallery-main-trigger"
-						onClick={() => setIsModalOpen(true)}
-						aria-label="Abrir galería"
-					>
-						<img
-							src={previewImages[previewIndex]}
-							alt={`${name} - ${previewIndex + 1}`}
-							fetchPriority="high"
-							width="800"
-							height="600"
-							onError={(event) => {
-								event.currentTarget.src = FALLBACK_IMAGE;
-							}}
-						/>
-					</button>
-					{images.length > 1 && !isTabletViewport && (
-						<div className="gallery-desktop-navigation">
-							{previousButton}
-							{nextButton}
-						</div>
-					)}
+			<div ref={containerRef} className="gallery-container">
+				<div className="gallery-wrapper">
+					<div className="gallery-main">
+						<button
+							className="gallery-main-trigger"
+							onClick={() => setIsModalOpen(true)}
+							aria-label="Abrir galería"
+						>
+							<img
+								src={previewImages[previewIndex]}
+								alt={`${name} - ${previewIndex + 1}`}
+								fetchPriority="high"
+								width="800"
+								height="600"
+								onError={(event) => {
+									event.currentTarget.src = FALLBACK_IMAGE;
+								}}
+							/>
+						</button>
+						{images.length > 1 && !isTabletContainer && (
+							<div className="gallery-desktop-navigation">
+								{previousButton}
+								{nextButton}
+							</div>
+						)}
+						{images.length > 1 && (
+							<div className="gallery-mobile-controls">
+								<button
+									className="gallery-mobile-arrow gallery-mobile-arrow--prev"
+									onClick={() =>
+										setCurrentIndex((prev) => Math.max(0, prev - 1))
+									}
+									disabled={currentIndex === 0}
+									aria-label="Imagen anterior en galería"
+								>
+									<ChevronLeft size={24} aria-hidden="true" focusable="false" />
+								</button>
+								<button
+									className="gallery-mobile-arrow gallery-mobile-arrow--next"
+									onClick={() =>
+										setCurrentIndex((prev) =>
+											Math.min(previewImages.length - 1, prev + 1),
+										)
+									}
+									disabled={previewIndex === previewImages.length - 1}
+									aria-label="Imagen siguiente en galería"
+								>
+									<ChevronRight
+										size={24}
+										aria-hidden="true"
+										focusable="false"
+									/>
+								</button>
+							</div>
+						)}
+					</div>
 					{images.length > 1 && (
-						<div className="gallery-mobile-controls">
-							<button
-								className="gallery-mobile-arrow gallery-mobile-arrow--prev"
-								onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-								disabled={currentIndex === 0}
-								aria-label="Imagen anterior en galería"
-							>
-								<ChevronLeft size={24} aria-hidden="true" focusable="false" />
-							</button>
-							<button
-								className="gallery-mobile-arrow gallery-mobile-arrow--next"
-								onClick={() =>
-									setCurrentIndex((prev) =>
-										Math.min(previewImages.length - 1, prev + 1),
-									)
-								}
-								disabled={previewIndex === previewImages.length - 1}
-								aria-label="Imagen siguiente en galería"
-							>
-								<ChevronRight size={24} aria-hidden="true" focusable="false" />
-							</button>
+						<div className="gallery-thumbs-col">
+							{isTabletContainer && previousButton}
+							<div className="gallery-thumbs" ref={thumbnailStripRef}>
+								{previewImages.slice(1).map((url, index) => (
+									<button
+										key={url}
+										ref={(node) => {
+											thumbnailRefs.current[index + 1] = node;
+										}}
+										className={`gallery-thumb ${previewIndex === index + 1 ? "gallery-thumb--active" : ""}`}
+										onClick={() => {
+											setCurrentIndex(index + 1);
+											setIsModalOpen(true);
+										}}
+										aria-label={`Ver imagen ${index + 2}`}
+										aria-current={
+											previewIndex === index + 1 ? "true" : undefined
+										}
+									>
+										<img
+											src={url}
+											alt={`${name} - ${index + 2}`}
+											loading="lazy"
+											fetchPriority="low"
+											width="400"
+											height="300"
+											onError={(event) => {
+												event.currentTarget.src = FALLBACK_THUMB;
+											}}
+										/>
+									</button>
+								))}
+							</div>
+							{isTabletContainer && nextButton}
+							<div className="gallery-desktop-actions">
+								<button
+									className="gallery-more"
+									onClick={() => {
+										setCurrentIndex(0);
+										setIsModalOpen(true);
+									}}
+								>
+									Ver más
+								</button>
+							</div>
 						</div>
 					)}
 				</div>
-				{images.length > 1 && (
-					<div className="gallery-thumbs-col">
-						{isTabletViewport && previousButton}
-						<div className="gallery-thumbs" ref={thumbnailStripRef}>
-							{previewImages.slice(1).map((url, index) => (
-								<button
-									key={url}
-									ref={(node) => {
-										thumbnailRefs.current[index + 1] = node;
-									}}
-									className={`gallery-thumb ${previewIndex === index + 1 ? "gallery-thumb--active" : ""}`}
-									onClick={() => {
-										setCurrentIndex(index + 1);
-										setIsModalOpen(true);
-									}}
-									aria-label={`Ver imagen ${index + 2}`}
-									aria-current={previewIndex === index + 1 ? "true" : undefined}
-								>
-									<img
-										src={url}
-										alt={`${name} - ${index + 2}`}
-										loading="lazy"
-										fetchPriority="low"
-										width="400"
-										height="300"
-										onError={(event) => {
-											event.currentTarget.src = FALLBACK_THUMB;
-										}}
-									/>
-								</button>
-							))}
-						</div>
-						{isTabletViewport && nextButton}
-						<div className="gallery-desktop-actions">
-							<button
-								className="gallery-more"
-								onClick={() => {
-									setCurrentIndex(0);
-									setIsModalOpen(true);
-								}}
-							>
-								Ver más
-							</button>
-						</div>
-					</div>
-				)}
 			</div>
 			{isModalOpen && (
 				<GalleryModal

@@ -31,6 +31,8 @@
 }
 
 .booking-form {
+  container-type: inline-size;
+  container-name: booking-form;
   box-sizing: border-box;
   min-width: 0;
   background: var(--surface-raised);
@@ -184,7 +186,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: clamp(20px, 3vw, 32px);
+  padding: clamp(20px, 3vw, 32px) clamp(16px, 3vw, 32px);
 }
 
 .booking-form-header {
@@ -691,11 +693,12 @@
   }
 }
 
-@media (max-width: 640px) {
-  .booking-form {
-    padding: 20px 16px;
-  }
-
+/*
+ * .booking-form content-box is ~556px in the 1280px two-column layout and
+ * ~324px on a 390px mobile viewport, so 520px keeps desktop two-column grids
+ * intact while collapsing cleanly whenever the form column narrows.
+ */
+@container booking-form (max-width: 520px) {
   .booking-field-grid--identity,
   .booking-field-grid--dates {
     grid-template-columns: 1fr;
@@ -730,68 +733,12 @@
   }
 }
 
-/*
- * The summary column is narrow even on wide viewports, so from 901px the
- * gallery keeps the stacked layout instead of the two-column desktop grid.
- * Below 901px the gallery's own responsive rules stay in charge.
- */
 @media (min-width: 901px) {
-  .booking-summary .gallery-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
   .booking-summary .gallery-main-trigger img {
     min-height: 0;
     max-height: none;
     aspect-ratio: 16 / 10;
     object-fit: cover;
-  }
-
-  .booking-summary .gallery-thumbs-col {
-    position: relative;
-    display: block;
-    align-self: auto;
-    width: 100%;
-    max-width: 100%;
-    max-height: none;
-  }
-
-  .booking-summary .gallery-desktop-navigation {
-    display: none;
-  }
-
-  .booking-summary .gallery-desktop-actions {
-    position: absolute;
-    right: 6px;
-    bottom: 6px;
-    display: flex;
-  }
-
-  .booking-summary .gallery-thumbs {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    min-width: 0;
-    padding: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .booking-summary .gallery-thumb {
-    flex: 0 0 72px;
-    width: 72px;
-    height: 54px;
-  }
-
-  .booking-summary .gallery-more {
-    position: static;
-    margin: 0;
-    min-height: 32px;
-    padding: 4px 12px;
-    font-size: 0.75rem;
-    white-space: nowrap;
   }
 }
 

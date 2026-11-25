@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
@@ -11,6 +11,37 @@ export default function Header() {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [profileModalOpen, setProfileModalOpen] = useState(false);
 	const headerRef = useRef(null);
+	const menuButtonRef = useRef(null);
+
+	useEffect(() => {
+		if (!menuOpen) return undefined;
+
+		const isBlockedByModal = (event) =>
+			event.defaultPrevented ||
+			profileModalOpen ||
+			Boolean(document.querySelector("dialog[open]"));
+
+		const handleKeyDown = (event) => {
+			if (event.key !== "Escape" || isBlockedByModal(event)) return;
+			setMenuOpen(false);
+			menuButtonRef.current?.focus();
+		};
+
+		const handlePointerDown = (event) => {
+			if (isBlockedByModal(event)) return;
+			if (headerRef.current && !headerRef.current.contains(event.target)) {
+				setMenuOpen(false);
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+		document.addEventListener("pointerdown", handlePointerDown);
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+			document.removeEventListener("pointerdown", handlePointerDown);
+		};
+	}, [menuOpen, profileModalOpen]);
 
 	useLayoutEffect(() => {
 		const header = headerRef.current;
@@ -78,6 +109,7 @@ export default function Header() {
 					</Link>
 				</div>
 				<button
+					ref={menuButtonRef}
 					type="button"
 					className="hamburger-btn"
 					onClick={() => setMenuOpen((prev) => !prev)}

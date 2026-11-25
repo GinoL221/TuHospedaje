@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
 	render,
 	screen,
@@ -403,5 +404,22 @@ describe("ReviewsSection - failed submission", () => {
 
 		await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
 		alertSpy.mockRestore();
+	});
+});
+
+describe("ReviewsSection - container queries contract", () => {
+	it("establishes inline-size containment on .ratings-section and uses @container for narrow layout", () => {
+		const css = readFileSync(
+			"src/components/ReviewsSection/ReviewsSection.css",
+			"utf8",
+		);
+
+		expect(css).toMatch(
+			/\.ratings-section\s*\{[^}]*container-type:\s*inline-size;/s,
+		);
+		expect(css).toMatch(
+			/@container\s+[\w-]*\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.ratings-alert,[\s\S]*?\.eligibility-alert[\s\S]*?\.review-date/,
+		);
+		expect(css).not.toMatch(/@media\s*\(max-width:\s*480px\)/);
 	});
 });
