@@ -11,6 +11,7 @@ export default function IconPicker({
 }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	const [portalContainer, setPortalContainer] = useState(null);
 	const triggerRef = useRef(null);
 	const popoverRef = useRef(null);
 	const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -44,7 +45,10 @@ export default function IconPicker({
 
 		const handleKeyDown = (event) => {
 			if (event.key === "Escape") {
+				event.preventDefault();
+				event.stopPropagation();
 				setIsOpen(false);
+				triggerRef.current?.focus();
 			}
 		};
 
@@ -61,13 +65,13 @@ export default function IconPicker({
 
 		window.addEventListener("scroll", handleScrollResize, true);
 		window.addEventListener("resize", handleScrollResize);
-		document.addEventListener("keydown", handleKeyDown);
+		document.addEventListener("keydown", handleKeyDown, true);
 		document.addEventListener("mousedown", handleOutsideClick);
 
 		return () => {
 			window.removeEventListener("scroll", handleScrollResize, true);
 			window.removeEventListener("resize", handleScrollResize);
-			document.removeEventListener("keydown", handleKeyDown);
+			document.removeEventListener("keydown", handleKeyDown, true);
 			document.removeEventListener("mousedown", handleOutsideClick);
 		};
 	}, [isOpen]);
@@ -79,7 +83,14 @@ export default function IconPicker({
 				type="button"
 				className="icon-picker-trigger"
 				data-testid="icon-picker-trigger"
-				onClick={() => setIsOpen((prev) => !prev)}
+				onClick={() => {
+					if (!isOpen) {
+						setPortalContainer(
+							triggerRef.current?.closest("dialog") ?? document.body,
+						);
+					}
+					setIsOpen((prev) => !prev);
+				}}
 				aria-expanded={isOpen}
 			>
 				<span className="icon-picker-preview">
@@ -133,7 +144,7 @@ export default function IconPicker({
 							})}
 						</div>
 					</div>,
-					document.body,
+					portalContainer ?? document.body,
 				)}
 		</div>
 	);

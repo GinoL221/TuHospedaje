@@ -1,0 +1,21 @@
+:where(dialog.modal-dialog) {
+  box-sizing: border-box;
+  border: none;
+  margin: auto;
+  padding: 0;
+  color: inherit;
+}
+
+dialog.modal-dialog[open] {
+  display: block;
+}
+
+dialog.modal-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.modal-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}

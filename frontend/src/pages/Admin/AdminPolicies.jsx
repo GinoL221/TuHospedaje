@@ -6,6 +6,7 @@ import {
 	updatePolicy,
 } from "../../services/adminCatalogService";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import ModalDialog from "../../components/ModalDialog/ModalDialog";
 import useConfirmCancel from "../../hooks/useConfirmCancel";
 import Icon from "../../components/Icons/Icon";
 import IconPicker from "../../components/IconPicker/IconPicker";
@@ -253,115 +254,117 @@ export default function AdminPolicies() {
 			)}
 
 			{showModal && (
-				<div className="modal-overlay" onClick={cancel.handleCancel}>
-					<div
-						className="modal"
-						data-testid="admin-modal"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<h2>{editing ? "Editar política" : "Nueva política"}</h2>
-						<form onSubmit={handleSubmit} noValidate>
-							<label htmlFor="admin-policy-name" className="required-dot">
-								Nombre
-								<input
-									ref={nameInputRef}
-									id="admin-policy-name"
-									name="name"
-									type="text"
-									required
-									enterKeyHint="next"
-									data-testid="field-name"
-									value={form.name}
-									className={fieldErrors.name ? "input-error" : ""}
-									aria-invalid={Boolean(fieldErrors.name)}
-									aria-describedby={
-										fieldErrors.name ? "error-policy-name" : undefined
-									}
-									onChange={(e) => {
-										setForm({ ...form, name: e.target.value });
-										if (fieldErrors.name)
-											setFieldErrors({ ...fieldErrors, name: "" });
-									}}
-								/>
-								{fieldErrors.name && (
-									<span
-										id="error-policy-name"
-										className="field-error"
-										role="alert"
-										data-testid="error-name"
-									>
-										{fieldErrors.name}
-									</span>
-								)}
-							</label>
-							<label htmlFor="admin-policy-description">
-								Descripción
-								<textarea
-									id="admin-policy-description"
-									name="description"
-									data-testid="field-description"
-									value={form.description}
-									onChange={(e) =>
-										setForm({ ...form, description: e.target.value })
-									}
-								/>
-							</label>
-							<label className="required-dot">
-								Ícono
-								<div
-									ref={iconContainerRef}
-									aria-invalid={Boolean(fieldErrors.icon)}
-									aria-describedby={
-										fieldErrors.icon ? "error-policy-icon" : undefined
-									}
+				<ModalDialog
+					className="modal"
+					ariaLabelledBy="admin-policy-modal-title"
+					closedBy="any"
+					onClose={cancel.handleCancel}
+					data-testid="admin-modal"
+				>
+					<h2 id="admin-policy-modal-title">
+						{editing ? "Editar política" : "Nueva política"}
+					</h2>
+					<form onSubmit={handleSubmit} noValidate>
+						<label htmlFor="admin-policy-name" className="required-dot">
+							Nombre
+							<input
+								ref={nameInputRef}
+								id="admin-policy-name"
+								name="name"
+								type="text"
+								required
+								enterKeyHint="next"
+								data-testid="field-name"
+								value={form.name}
+								className={fieldErrors.name ? "input-error" : ""}
+								aria-invalid={Boolean(fieldErrors.name)}
+								aria-describedby={
+									fieldErrors.name ? "error-policy-name" : undefined
+								}
+								onChange={(e) => {
+									setForm({ ...form, name: e.target.value });
+									if (fieldErrors.name)
+										setFieldErrors({ ...fieldErrors, name: "" });
+								}}
+							/>
+							{fieldErrors.name && (
+								<span
+									id="error-policy-name"
+									className="field-error"
+									role="alert"
+									data-testid="error-name"
 								>
-									<IconPicker
-										value={form.icon}
-										onChange={(val) => {
-											setForm({ ...form, icon: val });
-											if (fieldErrors.icon)
-												setFieldErrors({ ...fieldErrors, icon: "" });
-										}}
-										placeholder="fa-solid fa-clock"
-									/>
-								</div>
-								{fieldErrors.icon && (
-									<span
-										id="error-policy-icon"
-										className="field-error"
-										role="alert"
-										data-testid="error-icon"
-									>
-										{fieldErrors.icon}
-									</span>
-								)}
-							</label>
-							{error && (
-								<p className="form-error" data-testid="admin-form-error">
-									{error}
-								</p>
+									{fieldErrors.name}
+								</span>
 							)}
-							<p className="required-note">* Campos obligatorios</p>
-							<div className="modal-actions">
-								<button
-									type="submit"
-									className="btn-save"
-									data-testid="admin-save-btn"
-								>
-									{editing ? "Guardar cambios" : "Crear"}
-								</button>
-								<button
-									type="button"
-									className="btn-cancel"
-									data-testid="admin-cancel-btn"
-									onClick={cancel.handleCancel}
-								>
-									Cancelar
-								</button>
+						</label>
+						<label htmlFor="admin-policy-description">
+							Descripción
+							<textarea
+								id="admin-policy-description"
+								name="description"
+								data-testid="field-description"
+								value={form.description}
+								onChange={(e) =>
+									setForm({ ...form, description: e.target.value })
+								}
+							/>
+						</label>
+						<label className="required-dot">
+							Ícono
+							<div
+								ref={iconContainerRef}
+								aria-invalid={Boolean(fieldErrors.icon)}
+								aria-describedby={
+									fieldErrors.icon ? "error-policy-icon" : undefined
+								}
+							>
+								<IconPicker
+									value={form.icon}
+									onChange={(val) => {
+										setForm({ ...form, icon: val });
+										if (fieldErrors.icon)
+											setFieldErrors({ ...fieldErrors, icon: "" });
+									}}
+									placeholder="fa-solid fa-clock"
+								/>
 							</div>
-						</form>
-					</div>
-				</div>
+							{fieldErrors.icon && (
+								<span
+									id="error-policy-icon"
+									className="field-error"
+									role="alert"
+									data-testid="error-icon"
+								>
+									{fieldErrors.icon}
+								</span>
+							)}
+						</label>
+						{error && (
+							<p className="form-error" data-testid="admin-form-error">
+								{error}
+							</p>
+						)}
+						<p className="required-note">* Campos obligatorios</p>
+						<div className="modal-actions">
+							<button
+								type="submit"
+								className="btn-save"
+								data-testid="admin-save-btn"
+							>
+								{editing ? "Guardar cambios" : "Crear"}
+							</button>
+							<button
+								type="button"
+								className="btn-cancel"
+								data-testid="admin-cancel-btn"
+								onClick={cancel.handleCancel}
+							>
+								Cancelar
+							</button>
+						</div>
+					</form>
+				</ModalDialog>
 			)}
 
 			<ConfirmDialog

@@ -158,7 +158,7 @@ describe("MyReservationsPage - reservation list", () => {
 		).toHaveLength(1);
 	});
 
-	it("requires confirmation, prevents duplicate requests, and replaces the cancelled row", async () => {
+	it("requires confirmation via ConfirmDialog (never window.confirm), prevents duplicate requests, and replaces the cancelled row", async () => {
 		const user = userEvent.setup();
 		let resolveCancellation;
 		cancelReservation.mockReturnValue(
@@ -167,7 +167,7 @@ describe("MyReservationsPage - reservation list", () => {
 			}),
 		);
 		getMyReservations.mockResolvedValue([reservationFixture]);
-		vi.spyOn(window, "confirm").mockReturnValue(true);
+		const confirmSpy = vi.spyOn(window, "confirm");
 		customRender(<MyReservationsPage />);
 
 		const button = await screen.findByRole("button", {
@@ -175,10 +175,17 @@ describe("MyReservationsPage - reservation list", () => {
 		});
 		await user.click(button);
 
-		expect(window.confirm).toHaveBeenCalled();
+		expect(confirmSpy).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("dialog", { name: "¿Querés cancelar esta reserva?" }),
+		).toBeInTheDocument();
+		expect(cancelReservation).not.toHaveBeenCalled();
+
+		const confirmButton = screen.getByTestId("confirm-cancel-reservation-yes");
+		await user.click(confirmButton);
 		expect(button).toBeDisabled();
 		expect(button).toHaveTextContent("Cancelando...");
-		await user.click(button);
+		await user.click(confirmButton);
 		expect(cancelReservation).toHaveBeenCalledTimes(1);
 
 		resolveCancellation({ ...reservationFixture, status: "CANCELLED" });
@@ -186,31 +193,42 @@ describe("MyReservationsPage - reservation list", () => {
 		expect(
 			screen.queryByRole("button", { name: "Cancelar reserva" }),
 		).not.toBeInTheDocument();
+		confirmSpy.mockRestore();
 	});
 
-	it("does not cancel when confirmation is declined", async () => {
+	it("does not cancel when confirmation dialog is declined", async () => {
 		const user = userEvent.setup();
 		getMyReservations.mockResolvedValue([reservationFixture]);
-		vi.spyOn(window, "confirm").mockReturnValue(false);
+		const confirmSpy = vi.spyOn(window, "confirm");
 		customRender(<MyReservationsPage />);
 
 		await user.click(
 			await screen.findByRole("button", { name: "Cancelar reserva" }),
 		);
+		expect(
+			screen.getByRole("dialog", { name: "¿Querés cancelar esta reserva?" }),
+		).toBeInTheDocument();
 
+		await user.click(screen.getByTestId("confirm-cancel-reservation-no"));
+
+		expect(confirmSpy).not.toHaveBeenCalled();
+		expect(
+			screen.queryByRole("dialog", { name: "¿Querés cancelar esta reserva?" }),
+		).not.toBeInTheDocument();
 		expect(cancelReservation).not.toHaveBeenCalled();
+		confirmSpy.mockRestore();
 	});
 
 	it("keeps the row usable and shows an inline error when cancellation fails", async () => {
 		const user = userEvent.setup();
 		getMyReservations.mockResolvedValue([reservationFixture]);
 		cancelReservation.mockRejectedValue(new Error("Intentá nuevamente."));
-		vi.spyOn(window, "confirm").mockReturnValue(true);
 		customRender(<MyReservationsPage />);
 
 		await user.click(
 			await screen.findByRole("button", { name: "Cancelar reserva" }),
 		);
+		await user.click(screen.getByTestId("confirm-cancel-reservation-yes"));
 
 		expect(await screen.findByText("Intentá nuevamente.")).toBeInTheDocument();
 		expect(screen.getByText("Confirmada")).toBeInTheDocument();
