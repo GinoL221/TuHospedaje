@@ -85,11 +85,15 @@ function ModalHarness() {
 }
 
 describe("LodgingFormModal - accessible dialog behavior", () => {
-	it("exposes a named, described modal and initially focuses the name field", () => {
+	it("exposes a native modal dialog without redundant ARIA and initially focuses the name field", () => {
 		renderModal();
 
 		const dialog = screen.getByRole("dialog", { name: "Nuevo alojamiento" });
-		expect(dialog).toHaveAttribute("aria-modal", "true");
+		expect(dialog.tagName).toBe("DIALOG");
+		expect(dialog).toHaveAttribute("open");
+		expect(dialog).toHaveAttribute("closedby", "any");
+		expect(dialog).not.toHaveAttribute("role");
+		expect(dialog).not.toHaveAttribute("aria-modal");
 		expect(dialog).toHaveAccessibleDescription("* Campos obligatorios");
 		expect(screen.getByTestId("field-name")).toHaveFocus();
 	});
@@ -107,39 +111,52 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 		expect(opener).toHaveFocus();
 	});
 
-	it("traps Tab and Shift+Tab within enabled form controls", async () => {
+	it("navigates form controls with Tab and Shift+Tab", async () => {
 		const user = userEvent.setup();
 		renderModal();
 		const firstControl = screen.getByTestId("field-name");
-		const lastControl = screen.getByTestId("admin-cancel-btn");
+		const secondControl = screen.getByTestId("field-email");
 
 		expect(firstControl).toHaveFocus();
-		await user.tab({ shift: true });
-		expect(lastControl).toHaveFocus();
 		await user.tab();
+		expect(secondControl).toHaveFocus();
+		await user.tab({ shift: true });
 		expect(firstControl).toHaveFocus();
 	});
 
-	it("does not dismiss from an interior click and closes a clean form from the overlay", async () => {
-		const user = userEvent.setup();
+	it("does not dismiss from an interior click and closes a clean form from the backdrop", () => {
 		const { props } = renderModal();
 		const modal = screen.getByTestId("admin-modal");
+		vi.spyOn(modal, "getBoundingClientRect").mockReturnValue({
+			left: 100,
+			right: 900,
+			top: 50,
+			bottom: 700,
+			width: 800,
+			height: 650,
+		});
 
-		await user.click(modal);
+		const heading = screen.getByRole("heading", { name: "Nuevo alojamiento" });
+		fireEvent.pointerDown(heading, { clientX: 200, clientY: 200 });
+		fireEvent.pointerUp(heading, { clientX: 200, clientY: 200 });
 		expect(props.onClose).not.toHaveBeenCalled();
 
-		await user.click(modal.parentElement);
+		fireEvent.pointerDown(modal, { clientX: 20, clientY: 20 });
+		fireEvent.pointerUp(modal, { clientX: 20, clientY: 20 });
 		expect(props.onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("opens ConfirmDialog for a dirty Escape and restores focus when discard is canceled", async () => {
+	it("opens ConfirmDialog for a dirty Escape without manual inert/aria-hidden and restores focus when discard is canceled", async () => {
 		const user = userEvent.setup();
 		const { props } = renderModal();
+		const modal = screen.getByTestId("admin-modal");
 		const nameField = screen.getByTestId("field-name");
 		await user.type(nameField, "Cabaña pendiente");
 
 		await user.keyboard("{Escape}");
 		expect(screen.getByTestId("confirm-cancel-no")).toHaveFocus();
+		expect(modal).not.toHaveAttribute("aria-hidden");
+		expect(modal).not.toHaveAttribute("inert");
 		expect(props.onClose).not.toHaveBeenCalled();
 
 		await user.click(screen.getByTestId("confirm-cancel-no"));
@@ -148,12 +165,22 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 		expect(nameField).toHaveFocus();
 	});
 
-	it("discards dirty changes after an overlay close request is confirmed", async () => {
+	it("discards dirty changes after a backdrop close request is confirmed", async () => {
 		const user = userEvent.setup();
 		const { props } = renderModal();
+		const modal = screen.getByTestId("admin-modal");
 		await user.type(screen.getByTestId("field-name"), "Cabaña pendiente");
 
-		await user.click(screen.getByTestId("admin-modal").parentElement);
+		vi.spyOn(modal, "getBoundingClientRect").mockReturnValue({
+			left: 100,
+			right: 900,
+			top: 50,
+			bottom: 700,
+			width: 800,
+			height: 650,
+		});
+		fireEvent.pointerDown(modal, { clientX: 20, clientY: 20 });
+		fireEvent.pointerUp(modal, { clientX: 20, clientY: 20 });
 		expect(screen.getByTestId("confirm-cancel")).toBeInTheDocument();
 		await user.click(screen.getByTestId("confirm-cancel-yes"));
 
@@ -170,13 +197,15 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 		);
 		const user = userEvent.setup();
 		const { props } = renderModal({ lodging: defaultLodgingWithImage });
+		const modal = screen.getByTestId("admin-modal");
 		fillRequiredFields();
 		const saveButton = screen.getByTestId("admin-save-btn");
 
 		await user.click(saveButton);
 		expect(saveButton).toBeDisabled();
 		await user.keyboard("{Escape}");
-		fireEvent.click(screen.getByTestId("admin-modal").parentElement);
+		fireEvent.pointerDown(modal, { clientX: 0, clientY: 0 });
+		fireEvent.pointerUp(modal, { clientX: 0, clientY: 0 });
 		fireEvent.submit(saveButton.closest("form"));
 
 		expect(createLodging).toHaveBeenCalledTimes(1);
@@ -197,12 +226,14 @@ describe("LodgingFormModal - accessible dialog behavior", () => {
 		);
 		const user = userEvent.setup();
 		const { props } = renderModal();
+		const modal = screen.getByTestId("admin-modal");
 		const file = new File(["image"], "photo.png", { type: "image/png" });
 
 		await user.upload(screen.getByLabelText(/URLs de imágenes/i), file);
 		expect(screen.getByTestId("admin-save-btn")).toBeDisabled();
 		await user.keyboard("{Escape}");
-		fireEvent.click(screen.getByTestId("admin-modal").parentElement);
+		fireEvent.pointerDown(modal, { clientX: 0, clientY: 0 });
+		fireEvent.pointerUp(modal, { clientX: 0, clientY: 0 });
 
 		expect(props.onClose).not.toHaveBeenCalled();
 		expect(screen.queryByTestId("confirm-cancel")).not.toBeInTheDocument();

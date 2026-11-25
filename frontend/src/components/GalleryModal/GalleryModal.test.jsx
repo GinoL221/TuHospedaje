@@ -35,9 +35,12 @@ describe("GalleryModal", () => {
 			.getByRole("button", { name: "Imagen siguiente" })
 			.querySelector("svg");
 
-		expect(
-			screen.getByRole("dialog", { name: "Galería de imágenes" }),
-		).toHaveAttribute("aria-modal", "true");
+		const dialog = screen.getByRole("dialog", { name: "Galería de imágenes" });
+		expect(dialog.tagName).toBe("DIALOG");
+		expect(dialog).toHaveAttribute("open");
+		expect(dialog).toHaveAttribute("closedby", "any");
+		expect(dialog).not.toHaveAttribute("role");
+		expect(dialog).not.toHaveAttribute("aria-modal");
 		expect(closeIcon).toHaveClass("lucide-x");
 		expect(previousIcon).toHaveClass("lucide-chevron-left");
 		expect(nextIcon).toHaveClass("lucide-chevron-right");
@@ -65,7 +68,7 @@ describe("GalleryModal", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("focuses close on open, contains Tab navigation, and restores opener focus", async () => {
+	it("focuses close on open, navigates controls with Tab, and restores opener focus", async () => {
 		const user = userEvent.setup();
 		const onClose = vi.fn();
 		const renderGallery = (show) => (
@@ -94,15 +97,31 @@ describe("GalleryModal", () => {
 		const nextButton = screen.getByRole("button", { name: "Imagen siguiente" });
 		expect(closeButton).toHaveFocus();
 
-		for (const expectedButton of [previousButton, nextButton, closeButton]) {
-			await user.tab();
-			expect(expectedButton).toHaveFocus();
-		}
-		await user.tab({ shift: true });
+		await user.tab();
+		expect(previousButton).toHaveFocus();
+		await user.tab();
 		expect(nextButton).toHaveFocus();
+		await user.tab({ shift: true });
+		expect(previousButton).toHaveFocus();
 
 		rerender(renderGallery(false));
 		expect(trigger).toHaveFocus();
+	});
+
+	it("closes on backdrop click but not when clicking the image, without mutating body overflow", async () => {
+		document.body.style.overflow = "auto";
+		const user = userEvent.setup();
+		const { onClose } = renderGalleryModal();
+		const dialog = screen.getByRole("dialog", { name: "Galería de imágenes" });
+
+		expect(document.body.style.overflow).toBe("auto");
+
+		await user.click(screen.getByRole("img", { name: "1 de 2" }));
+		expect(onClose).not.toHaveBeenCalled();
+
+		await user.click(dialog);
+		expect(onClose).toHaveBeenCalledTimes(1);
+		document.body.style.overflow = "";
 	});
 
 	it("disables modal navigation when there is only one image", () => {
@@ -122,6 +141,9 @@ describe("GalleryModal", () => {
 			"utf8",
 		);
 
+		expect(css).toContain("dialog.gallery-modal[open]");
+		expect(css).toContain("dialog.gallery-modal::backdrop");
+		expect(css).not.toMatch(/\.gallery-modal-overlay/);
 		expect(css).toMatch(
 			/\.gallery-modal-close,\s*\.gallery-nav[\s\S]*var\(--action-primary-bg\)/,
 		);

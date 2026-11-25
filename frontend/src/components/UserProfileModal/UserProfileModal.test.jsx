@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import UserProfileModal from "./UserProfileModal";
@@ -16,13 +16,28 @@ describe("UserProfileModal", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("renders user information and welcome email section", () => {
-		render(<UserProfileModal user={user} onClose={() => {}} />);
+	it("renders native modal dialog semantics with user information and without mutating body overflow", () => {
+		document.body.style.overflow = "scroll";
+		const { unmount } = render(
+			<UserProfileModal user={user} onClose={() => {}} />,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Carlos Gómez" });
+		expect(dialog.tagName).toBe("DIALOG");
+		expect(dialog).toHaveAttribute("open");
+		expect(dialog).toHaveAttribute("closedby", "any");
+		expect(dialog).not.toHaveAttribute("role");
+		expect(dialog).not.toHaveAttribute("aria-modal");
+		expect(document.body.style.overflow).toBe("scroll");
 		expect(screen.getByText("Carlos Gómez")).toBeInTheDocument();
 		expect(screen.getByText("carlos@example.test")).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /Reenviar correo de bienvenida/i }),
 		).toBeInTheDocument();
+
+		unmount();
+		expect(document.body.style.overflow).toBe("scroll");
+		document.body.style.overflow = "";
 	});
 
 	it("triggers resend and shows confirmation message", async () => {
@@ -64,7 +79,7 @@ describe("UserProfileModal", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("traps focus within the modal when tabbing", async () => {
+	it("navigates focus across modal controls with Tab and Shift+Tab", async () => {
 		const userEv = userEvent.setup();
 		render(<UserProfileModal user={user} onClose={() => {}} />);
 
@@ -80,10 +95,50 @@ describe("UserProfileModal", () => {
 		await userEv.tab();
 		expect(resendBtn).toHaveFocus();
 
-		await userEv.tab();
-		expect(closeBtn).toHaveFocus();
-
 		await userEv.tab({ shift: true });
-		expect(resendBtn).toHaveFocus();
+		expect(closeBtn).toHaveFocus();
+	});
+
+	it("closes on backdrop click but not on an interior click", () => {
+		const onClose = vi.fn();
+		render(<UserProfileModal user={user} onClose={onClose} />);
+		const dialog = screen.getByRole("dialog", { name: "Carlos Gómez" });
+		vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue({
+			left: 100,
+			right: 540,
+			top: 100,
+			bottom: 500,
+			width: 440,
+			height: 400,
+		});
+
+		const heading = screen.getByRole("heading", { name: "Carlos Gómez" });
+		fireEvent.pointerDown(heading, { clientX: 200, clientY: 200 });
+		fireEvent.pointerUp(heading, { clientX: 200, clientY: 200 });
+		expect(onClose).not.toHaveBeenCalled();
+
+		fireEvent.pointerDown(dialog, { clientX: 20, clientY: 20 });
+		fireEvent.pointerUp(dialog, { clientX: 20, clientY: 20 });
+		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("restores focus to the opener when unmounted", async () => {
+		const userEv = userEvent.setup();
+		const { rerender } = render(<button type="button">Abrir perfil</button>);
+		const trigger = screen.getByRole("button", { name: "Abrir perfil" });
+		await userEv.click(trigger);
+
+		rerender(
+			<>
+				<button type="button">Abrir perfil</button>
+				<UserProfileModal user={user} onClose={vi.fn()} />
+			</>,
+		);
+		expect(
+			screen.getByRole("button", { name: /Cerrar ventana de perfil/i }),
+		).toHaveFocus();
+
+		rerender(<button type="button">Abrir perfil</button>);
+		expect(trigger).toHaveFocus();
 	});
 });

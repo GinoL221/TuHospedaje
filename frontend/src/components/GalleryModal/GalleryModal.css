@@ -1,16 +1,22 @@
-.gallery-modal-overlay {
+dialog.gallery-modal[open] {
   box-sizing: border-box;
-  position: fixed;
-  inset: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
   background: rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
   cursor: zoom-out;
-  min-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: contain;
+}
+
+dialog.gallery-modal::backdrop {
+  background: rgba(0, 0, 0, 0.9);
 }
 
 .gallery-modal-close,

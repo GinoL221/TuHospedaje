@@ -1,20 +1,10 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Copy, X } from "lucide-react";
+import ModalDialog from "../ModalDialog/ModalDialog";
 import "./ShareModal.css";
 
-const FOCUSABLE_SELECTOR = [
-	"button:not([disabled])",
-	"[href]",
-	"input:not([disabled])",
-	"select:not([disabled])",
-	"textarea:not([disabled])",
-	'[tabindex]:not([tabindex="-1"])',
-].join(",");
-
 export default function ShareModal({ lodging, onClose }) {
-	const dialogRef = useRef(null);
 	const closeButtonRef = useRef(null);
-	const previousFocusRef = useRef(null);
 	const titleId = useId();
 	const descriptionId = useId();
 	const [copyStatus, setCopyStatus] = useState("");
@@ -22,52 +12,6 @@ export default function ShareModal({ lodging, onClose }) {
 	const lodgingDescription = lodging.description?.trim() || "";
 	const initialMessage = `Mirá este alojamiento en TuHospedaje: ${lodging.name}${lodgingDescription ? `. ${lodgingDescription}` : ""}`;
 	const [message, setMessage] = useState(initialMessage);
-
-	useEffect(() => {
-		previousFocusRef.current = document.activeElement;
-		const previousBodyOverflow = document.body.style.overflow;
-		document.body.style.overflow = "hidden";
-		closeButtonRef.current?.focus();
-
-		return () => {
-			document.body.style.overflow = previousBodyOverflow;
-			const previousFocus = previousFocusRef.current;
-			if (
-				previousFocus?.isConnected &&
-				previousFocus.matches(FOCUSABLE_SELECTOR)
-			) {
-				previousFocus.focus();
-			}
-		};
-	}, []);
-
-	const handleKeyDown = (event) => {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			onClose();
-			return;
-		}
-
-		if (event.key !== "Tab") return;
-
-		const focusableElements = Array.from(
-			dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? [],
-		);
-		if (focusableElements.length === 0) {
-			event.preventDefault();
-			return;
-		}
-
-		const firstElement = focusableElements[0];
-		const lastElement = focusableElements.at(-1);
-		if (event.shiftKey && document.activeElement === firstElement) {
-			event.preventDefault();
-			lastElement.focus();
-		} else if (!event.shiftKey && document.activeElement === lastElement) {
-			event.preventDefault();
-			firstElement.focus();
-		}
-	};
 
 	const copyToClipboard = async (value) => {
 		if (navigator.clipboard?.writeText) {
@@ -184,106 +128,99 @@ export default function ShareModal({ lodging, onClose }) {
 	];
 
 	return (
-		<div
-			className="share-modal-overlay"
-			onClick={onClose}
-			onKeyDown={handleKeyDown}
+		<ModalDialog
+			className="modal-content share-modal"
+			ariaLabelledBy={titleId}
+			ariaDescribedBy={descriptionId}
+			closedBy="any"
+			initialFocusRef={closeButtonRef}
+			onClose={onClose}
 		>
-			<div
-				ref={dialogRef}
-				className="modal-content share-modal"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby={titleId}
-				aria-describedby={descriptionId}
-				onClick={(e) => e.stopPropagation()}
-			>
-				<header className="share-header">
-					<div>
-						<h2 id={titleId}>Compartir</h2>
-						<p id={descriptionId} className="share-sr-only">
-							Elegí cómo enviar este alojamiento.
-						</p>
-					</div>
-					<button
-						ref={closeButtonRef}
-						type="button"
-						className="modal-close"
-						onClick={onClose}
-						aria-label="Cerrar"
-					>
-						<X size={20} aria-hidden="true" />
-					</button>
-				</header>
-
-				<div className="share-lodging">
-					{lodging.imageUrls?.[0] && (
-						<img
-							src={lodging.imageUrls[0]}
-							alt={lodging.name}
-							className="share-image"
-						/>
-					)}
-					<p className="share-accessible-description">
-						{lodging.name} - {lodging.city}
+			<header className="share-header">
+				<div>
+					<h2 id={titleId}>Compartir</h2>
+					<p id={descriptionId} className="share-sr-only">
+						Elegí cómo enviar este alojamiento.
 					</p>
-					<div className="share-description" aria-hidden="true">
-						<strong>{lodging.name}</strong>
-						<span>{lodging.city}</span>
-						{lodgingDescription && <span>{lodgingDescription}</span>}
-					</div>
 				</div>
+				<button
+					ref={closeButtonRef}
+					type="button"
+					className="modal-close"
+					onClick={onClose}
+					aria-label="Cerrar"
+				>
+					<X size={20} aria-hidden="true" />
+				</button>
+			</header>
 
-				<div className="share-link-row">
-					<div className="share-link-summary" aria-hidden="true">
-						<span>Enlace del alojamiento</span>
-						<strong>{window.location.host}</strong>
-					</div>
-					<button type="button" className="share-copy-btn" onClick={handleCopy}>
-						<Copy size={18} aria-hidden="true" />
-						Copiar enlace
-					</button>
-				</div>
-				<label className="share-message-label" htmlFor={`${titleId}-message`}>
-					Mensaje para compartir
-					<textarea
-						id={`${titleId}-message`}
-						value={message}
-						onChange={(event) => setMessage(event.target.value)}
+			<div className="share-lodging">
+				{lodging.imageUrls?.[0] && (
+					<img
+						src={lodging.imageUrls[0]}
+						alt={lodging.name}
+						className="share-image"
 					/>
-				</label>
-				<p className="share-copy-status" aria-live="polite" aria-atomic="true">
-					{copyStatus}
+				)}
+				<p className="share-accessible-description">
+					{lodging.name} - {lodging.city}
 				</p>
-
-				<div className="share-options" aria-label="Redes sociales">
-					{shareLinks.map((s) =>
-						s.name === "Instagram" ? (
-							<button
-								key={s.name}
-								type="button"
-								className="share-btn"
-								style={{ "--share-brand": s.bg }}
-								onClick={handleInstagram}
-							>
-								{s.icon} {s.name}
-							</button>
-						) : (
-							<a
-								key={s.name}
-								href={s.href}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="share-btn"
-								style={{ "--share-brand": s.bg }}
-								onClick={onClose}
-							>
-								{s.icon} {s.name}
-							</a>
-						),
-					)}
+				<div className="share-description" aria-hidden="true">
+					<strong>{lodging.name}</strong>
+					<span>{lodging.city}</span>
+					{lodgingDescription && <span>{lodgingDescription}</span>}
 				</div>
 			</div>
-		</div>
+
+			<div className="share-link-row">
+				<div className="share-link-summary" aria-hidden="true">
+					<span>Enlace del alojamiento</span>
+					<strong>{window.location.host}</strong>
+				</div>
+				<button type="button" className="share-copy-btn" onClick={handleCopy}>
+					<Copy size={18} aria-hidden="true" />
+					Copiar enlace
+				</button>
+			</div>
+			<label className="share-message-label" htmlFor={`${titleId}-message`}>
+				Mensaje para compartir
+				<textarea
+					id={`${titleId}-message`}
+					value={message}
+					onChange={(event) => setMessage(event.target.value)}
+				/>
+			</label>
+			<p className="share-copy-status" aria-live="polite" aria-atomic="true">
+				{copyStatus}
+			</p>
+
+			<div className="share-options" aria-label="Redes sociales">
+				{shareLinks.map((s) =>
+					s.name === "Instagram" ? (
+						<button
+							key={s.name}
+							type="button"
+							className="share-btn"
+							style={{ "--share-brand": s.bg }}
+							onClick={handleInstagram}
+						>
+							{s.icon} {s.name}
+						</button>
+					) : (
+						<a
+							key={s.name}
+							href={s.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="share-btn"
+							style={{ "--share-brand": s.bg }}
+							onClick={onClose}
+						>
+							{s.icon} {s.name}
+						</a>
+					),
+				)}
+			</div>
+		</ModalDialog>
 	);
 }
