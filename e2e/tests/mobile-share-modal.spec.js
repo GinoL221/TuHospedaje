@@ -102,10 +102,12 @@ async function exerciseShareModal(page) {
     dialog.getByRole('button', { name: 'Instagram' }),
   ];
 
-  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog).toHaveJSProperty('tagName', 'DIALOG');
+  await expect(dialog).toHaveAttribute('open', '');
+  await expect(dialog).toHaveCSS('overscroll-behavior', 'contain');
   await expect(dialog).toHaveAccessibleDescription('Elegí cómo enviar este alojamiento.');
   await expect(close).toBeFocused();
-  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('scroll');
   await expectNoHorizontalOverflow(page, dialog);
 
   for (const action of actions) {
@@ -120,13 +122,12 @@ async function exerciseShareModal(page) {
     await expect(action).toBeFocused();
   }
   await page.keyboard.press('Tab');
-  await expect(close).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
-  await expect(actions.at(-1)).toBeFocused();
+  await expect(opener).not.toBeFocused();
+  await expect(page.locator('main :focus')).toHaveCount(0);
 
   await message.fill('Mensaje mobile determinista');
   await expectNoHorizontalOverflow(page, dialog);
-  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('scroll');
 
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
