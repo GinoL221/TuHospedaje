@@ -44,4 +44,72 @@ describe("admin shell contract", () => {
 		expect(tableRule).toMatch(/min-width:\s*580px/);
 		expect(css).toMatch(/@media\s*\(max-width:\s*900px\)/);
 	});
+
+	it("defines Admin semantic tokens in App.css without introducing --text-muted", () => {
+		const appCss = readCss("src/App.css");
+
+		expect(appCss).toMatch(/--content-muted:\s*#595959;/);
+		expect(appCss).toMatch(/--accent-on-dark:\s*#7fd8cc;/);
+		expect(appCss).toMatch(/--surface-on-dark-text:\s*#ffffff;/);
+		expect(appCss).not.toMatch(/--text-muted\s*:/);
+	});
+
+	it("replaces hardcoded Admin.css colors with semantic tokens and color-mix", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+
+		expect(css).not.toMatch(/#7fd8cc/i);
+		expect(css).not.toMatch(/#595959/i);
+		expect(css).not.toMatch(/#d32f2f/i);
+		expect(css).not.toMatch(/#1a4f6e/i);
+		expect(css).not.toMatch(/#fff\b/i);
+		expect(css).not.toContain("rgba(38, 70, 83, 0.03)");
+
+		expect(rule(css, ".admin-sidebar-brand-sub")).toMatch(
+			/color:\s*var\(--accent-on-dark\)/,
+		);
+		expect(rule(css, ".stat-label")).toMatch(/color:\s*var\(--content-muted\)/);
+		expect(rule(css, ".required-dot::before")).toMatch(
+			/color:\s*var\(--feedback-danger-text\)/,
+		);
+		expect(rule(css, ".required-note")).toMatch(
+			/color:\s*var\(--feedback-danger-text\)/,
+		);
+		expect(rule(css, "tbody tr:hover")).toMatch(
+			/background:\s*color-mix\(in srgb,\s*var\(--secondary\)\s*3%,\s*transparent\)/,
+		);
+		expect(rule(css, "th.sortable:hover")).toMatch(
+			/background:\s*color-mix\(in srgb,\s*var\(--secondary\)\s*85%,\s*black\)/,
+		);
+	});
+
+	it("styles scrollable admin table wrappers with focus-visible and sticky thead", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+		const wrapperRule = rule(css, ".admin-table-wrapper");
+		const wrapperFocusRule = rule(css, ".admin-table-wrapper:focus-visible");
+		const theadRule = rule(css, "table thead");
+
+		expect(wrapperRule).toBeDefined();
+		expect(wrapperRule).toMatch(/overflow:\s*auto/);
+		expect(wrapperFocusRule).toBeDefined();
+		expect(wrapperFocusRule).toMatch(/outline:/);
+		expect(theadRule).toBeDefined();
+		expect(theadRule).toMatch(/position:\s*sticky/);
+		expect(theadRule).toMatch(/inset-block-start:\s*0/);
+		expect(theadRule).toMatch(/z-index:\s*1/);
+	});
+
+	it("reserves bottom clearance in admin-content so the fixed FAB never covers the last table row", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+		const contentRule = rule(css, ".admin-content");
+		const mobileBlock = css.match(
+			/@media\s*\(max-width:\s*900px\)\s*\{([\s\S]*)\}\s*$/,
+		)?.[1];
+
+		expect(contentRule).toBeDefined();
+		expect(contentRule).toMatch(/padding:\s*28px 32px 96px/);
+		expect(mobileBlock).toBeDefined();
+		expect(mobileBlock).toMatch(
+			/\.admin-content\s*\{[^}]*padding:\s*20px 16px 96px/,
+		);
+	});
 });

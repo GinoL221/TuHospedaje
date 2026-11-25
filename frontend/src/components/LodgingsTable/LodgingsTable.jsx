@@ -22,53 +22,60 @@ export default function LodgingsTable({
 
 	return (
 		<>
-			<table>
-				<thead>
-					<tr>
-						<SortableTh
-							columnKey="id"
-							sortKey={sortKey}
-							sortDir={sortDir}
-							onSort={onSort}
-						>
-							Id
-						</SortableTh>
-						<SortableTh
-							columnKey="name"
-							sortKey={sortKey}
-							sortDir={sortDir}
-							onSort={onSort}
-						>
-							Nombre
-						</SortableTh>
-						<th>Acciones</th>
-					</tr>
-				</thead>
-				<tbody>
-					{lodgings.map((l) => (
-						<tr key={l.id} data-testid={`row-${l.id}`}>
-							<td>{l.id}</td>
-							<td>{l.name}</td>
-							<td>
-								<button
-									className="btn-edit"
-									data-testid="row-edit-btn"
-									onClick={() => onEdit(l)}
-								>
-									Editar
-								</button>
-								<button
-									className="btn-delete"
-									data-testid="row-delete-btn"
-									onClick={() => onDelete(l.id, l.name)}
-								>
-									Eliminar
-								</button>
-							</td>
+			<div
+				className="admin-table-wrapper"
+				role="region"
+				tabIndex={0}
+				aria-label="Tabla de alojamientos"
+			>
+				<table>
+					<thead>
+						<tr>
+							<SortableTh
+								columnKey="id"
+								sortKey={sortKey}
+								sortDir={sortDir}
+								onSort={onSort}
+							>
+								Id
+							</SortableTh>
+							<SortableTh
+								columnKey="name"
+								sortKey={sortKey}
+								sortDir={sortDir}
+								onSort={onSort}
+							>
+								Nombre
+							</SortableTh>
+							<th>Acciones</th>
 						</tr>
-					))}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{lodgings.map((l) => (
+							<tr key={l.id} data-testid={`row-${l.id}`}>
+								<td>{l.id}</td>
+								<td>{l.name}</td>
+								<td>
+									<button
+										className="btn-edit"
+										data-testid="row-edit-btn"
+										onClick={() => onEdit(l)}
+									>
+										Editar
+									</button>
+									<button
+										className="btn-delete"
+										data-testid="row-delete-btn"
+										onClick={() => onDelete(l.id, l.name)}
+									>
+										Eliminar
+									</button>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
 			<Pagination
 				page={page}
 				totalPages={totalPages}

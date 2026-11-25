@@ -119,23 +119,35 @@ export default function AdminDashboard({ onTabChange }) {
 
 				{recentLodgings.length > 0 && (
 					<div className="dashboard-recent">
-						<h3 className="dashboard-recent-title">Últimos alojamientos</h3>
-						<table>
-							<thead>
-								<tr>
-									<th>ID</th>
-									<th>Nombre</th>
-								</tr>
-							</thead>
-							<tbody>
-								{recentLodgings.map((l) => (
-									<tr key={l.id}>
-										<td>{l.id}</td>
-										<td>{l.name}</td>
+						<h3
+							id="dashboard-recent-lodgings-heading"
+							className="dashboard-recent-title"
+						>
+							Últimos alojamientos
+						</h3>
+						<div
+							className="admin-table-wrapper"
+							role="region"
+							tabIndex={0}
+							aria-labelledby="dashboard-recent-lodgings-heading"
+						>
+							<table>
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Nombre</th>
 									</tr>
-								))}
-							</tbody>
-						</table>
+								</thead>
+								<tbody>
+									{recentLodgings.map((l) => (
+										<tr key={l.id}>
+											<td>{l.id}</td>
+											<td>{l.name}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
 					</div>
 				)}
 
@@ -150,45 +162,59 @@ export default function AdminDashboard({ onTabChange }) {
 
 				{recentReservations.length > 0 && (
 					<div className="dashboard-recent">
-						<h3 className="dashboard-recent-title">Últimas reservas</h3>
-						<table>
-							<thead>
-								<tr>
-									<th>ID</th>
-									<th>Alojamiento</th>
-									<th>Huésped</th>
-									<th>Creación</th>
-									<th>Notas</th>
-									<th>Check-in</th>
-									<th>Check-out</th>
-									<th>Total</th>
-									<th>Estado</th>
-								</tr>
-							</thead>
-							<tbody>
-								{recentReservations.map((r) => (
-									<tr key={r.id}>
-										<td>{r.id}</td>
-										<td>{r.lodgingName}</td>
-										<td>{r.guestName}</td>
-										<td>{reservationCreatedAtValue(r)}</td>
-										<td>
-											{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}
-										</td>
-										<td>{r.checkIn}</td>
-										<td>{r.checkOut}</td>
-										<td>${r.totalPrice}</td>
-										<td>
-											<span
-												className={`status-badge status-${r.status.toLowerCase()}`}
-											>
-												{r.status === "CONFIRMED" ? "Confirmada" : "Cancelada"}
-											</span>
-										</td>
+						<h3
+							id="dashboard-recent-reservations-heading"
+							className="dashboard-recent-title"
+						>
+							Últimas reservas
+						</h3>
+						<div
+							className="admin-table-wrapper"
+							role="region"
+							tabIndex={0}
+							aria-labelledby="dashboard-recent-reservations-heading"
+						>
+							<table>
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Alojamiento</th>
+										<th>Huésped</th>
+										<th>Creación</th>
+										<th>Notas</th>
+										<th>Check-in</th>
+										<th>Check-out</th>
+										<th>Total</th>
+										<th>Estado</th>
 									</tr>
-								))}
-							</tbody>
-						</table>
+								</thead>
+								<tbody>
+									{recentReservations.map((r) => (
+										<tr key={r.id}>
+											<td>{r.id}</td>
+											<td>{r.lodgingName}</td>
+											<td>{r.guestName}</td>
+											<td>{reservationCreatedAtValue(r)}</td>
+											<td>
+												{hasReservationNotes(r.notes) ? r.notes.trim() : "-"}
+											</td>
+											<td>{r.checkIn}</td>
+											<td>{r.checkOut}</td>
+											<td>${r.totalPrice}</td>
+											<td>
+												<span
+													className={`status-badge status-${r.status.toLowerCase()}`}
+												>
+													{r.status === "CONFIRMED"
+														? "Confirmada"
+														: "Cancelada"}
+												</span>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
 					</div>
 				)}
 			</div>

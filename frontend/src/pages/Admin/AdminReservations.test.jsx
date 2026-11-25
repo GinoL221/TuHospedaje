@@ -99,6 +99,21 @@ describe("AdminReservations - listing", () => {
 		expect(row2.querySelector(".status-badge")).toHaveClass("status-cancelled");
 	});
 
+	it("wraps the reservations table in a keyboard-scrollable named region", async () => {
+		getAdminReservations.mockResolvedValue({
+			items: [reservationFixture()],
+			currentPage: 0,
+			totalItems: 1,
+			totalPages: 1,
+		});
+		renderAdminReservations();
+
+		await screen.findByText("Cabaña del Lago");
+		const region = screen.getByRole("region", { name: "Reservas" });
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("shows exact creation time and notes for each reservation", async () => {
 		getAdminReservations.mockResolvedValue({
 			items: [reservationFixture()],

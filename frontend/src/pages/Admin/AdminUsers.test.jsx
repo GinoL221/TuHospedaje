@@ -56,6 +56,18 @@ describe("AdminUsers - listing", () => {
 		expect(row2.querySelector(".role-badge")).toHaveClass("role-admin");
 	});
 
+	it("wraps the users table in a keyboard-scrollable named region", async () => {
+		get.mockResolvedValue([userFixture()]);
+		renderAdminUsers();
+
+		await screen.findByText("ana@example.com");
+		const region = screen.getByRole("region", {
+			name: "Tabla de usuarios",
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("fetches from GET /users on mount", async () => {
 		get.mockResolvedValue([userFixture()]);
 		renderAdminUsers();

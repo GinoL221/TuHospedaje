@@ -61,6 +61,18 @@ describe("AdminCategories - listing", () => {
 		expect(screen.getByText("Alojamientos tipo hotel.")).toBeInTheDocument();
 	});
 
+	it("wraps the categories table in a keyboard-scrollable named region", async () => {
+		get.mockResolvedValue([categoryFixture()]);
+		renderAdminCategories();
+
+		await screen.findByText("Cabañas");
+		const region = screen.getByRole("region", {
+			name: "Tabla de categorías",
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("fetches from GET /categories on mount", async () => {
 		get.mockResolvedValue([categoryFixture()]);
 		renderAdminCategories();

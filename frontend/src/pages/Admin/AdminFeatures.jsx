@@ -161,64 +161,71 @@ export default function AdminFeatures() {
 			)}
 			{!initialLoadError && featureList.length > 0 && (
 				<>
-					<table>
-						<thead>
-							<tr>
-								<SortableTh
-									columnKey="id"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									ID
-								</SortableTh>
-								<SortableTh
-									columnKey="name"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Nombre
-								</SortableTh>
-								<SortableTh
-									columnKey="icon"
-									sortKey={sortKey}
-									sortDir={sortDir}
-									onSort={requestSort}
-								>
-									Ícono
-								</SortableTh>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody>
-							{pageItems.map((f) => (
-								<tr key={f.id} data-testid={`row-${f.id}`}>
-									<td>{f.id}</td>
-									<td>{f.name}</td>
-									<td>
-										<Icon name={f.icon} /> <code>{f.icon}</code>
-									</td>
-									<td>
-										<button
-											className="btn-edit"
-											data-testid="row-edit-btn"
-											onClick={() => openModal(f)}
-										>
-											Editar
-										</button>
-										<button
-											className="btn-delete"
-											data-testid="row-delete-btn"
-											onClick={() => handleDelete(f.id, f.name)}
-										>
-											Eliminar
-										</button>
-									</td>
+					<div
+						className="admin-table-wrapper"
+						role="region"
+						tabIndex={0}
+						aria-label="Tabla de características"
+					>
+						<table>
+							<thead>
+								<tr>
+									<SortableTh
+										columnKey="id"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										ID
+									</SortableTh>
+									<SortableTh
+										columnKey="name"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Nombre
+									</SortableTh>
+									<SortableTh
+										columnKey="icon"
+										sortKey={sortKey}
+										sortDir={sortDir}
+										onSort={requestSort}
+									>
+										Ícono
+									</SortableTh>
+									<th>Acciones</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{pageItems.map((f) => (
+									<tr key={f.id} data-testid={`row-${f.id}`}>
+										<td>{f.id}</td>
+										<td>{f.name}</td>
+										<td>
+											<Icon name={f.icon} /> <code>{f.icon}</code>
+										</td>
+										<td>
+											<button
+												className="btn-edit"
+												data-testid="row-edit-btn"
+												onClick={() => openModal(f)}
+											>
+												Editar
+											</button>
+											<button
+												className="btn-delete"
+												data-testid="row-delete-btn"
+												onClick={() => handleDelete(f.id, f.name)}
+											>
+												Eliminar
+											</button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 					<Pagination
 						page={page}
 						totalPages={totalPages}

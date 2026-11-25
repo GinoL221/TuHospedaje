@@ -94,6 +94,18 @@ describe("AdminPolicies - listing", () => {
 		expect(screen.getByText("No se permiten mascotas.")).toBeInTheDocument();
 	});
 
+	it("wraps the policies table in a keyboard-scrollable named region", async () => {
+		get.mockResolvedValue([policyFixture()]);
+		renderAdminPolicies();
+
+		await screen.findByText("Check-in flexible");
+		const region = screen.getByRole("region", {
+			name: "Tabla de políticas",
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region.querySelector("table")).toBeInTheDocument();
+	});
+
 	it("fetches from GET /policies on mount", async () => {
 		get.mockResolvedValue([policyFixture()]);
 		renderAdminPolicies();

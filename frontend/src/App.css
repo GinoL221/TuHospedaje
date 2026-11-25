@@ -6,8 +6,11 @@
   --accent: #2a9d8f;
   --surface-page: var(--bg);
   --surface-raised: #fff;
+  --surface-on-dark-text: #ffffff;
   --content-primary: var(--text);
   --content-strong: var(--secondary);
+  --content-muted: #595959;
+  --accent-on-dark: #7fd8cc;
   /* One hairline for raised surfaces, so cards read the same on every screen. */
   --border-subtle: color-mix(in srgb, var(--secondary) 16%, transparent);
 
