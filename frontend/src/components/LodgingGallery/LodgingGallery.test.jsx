@@ -257,4 +257,89 @@ describe("LodgingGallery", () => {
 		expect(css).not.toMatch(/@media\s*\(min-width:\s*901px\)/);
 		expect(css).not.toMatch(/@media\s*\(max-width:\s*768px\)/);
 	});
+
+	it("syncs tablet and mobile controls from ResizeObserver container width while preserving focus across transitions", async () => {
+		vi.stubGlobal("matchMedia", (query) => ({
+			matches: query === DESKTOP_MEDIA_QUERY,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+		}));
+
+		let resizeCallback = null;
+		let observedTarget = null;
+		class ResizeObserverMock {
+			constructor(callback) {
+				resizeCallback = callback;
+			}
+			observe(target) {
+				observedTarget = target;
+			}
+			disconnect = vi.fn();
+		}
+		vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+
+		const { container } = render(
+			<LodgingGallery images={images} name="Cabaña del Lago" />,
+		);
+		const galleryContainer = container.querySelector(".gallery-container");
+		expect(observedTarget).toBe(galleryContainer);
+
+		const triggerContainerWidth = (width) => {
+			act(() => {
+				resizeCallback([{ target: galleryContainer, contentRect: { width } }]);
+			});
+		};
+
+		// Desktop container width (>= 901px): controls stay in .gallery-main
+		triggerContainerWidth(1000);
+		const user = userEvent.setup();
+		const desktopNext = screen.getByRole("button", {
+			name: "Imagen siguiente",
+		});
+		expect(container.querySelector(".gallery-main")).toContainElement(
+			desktopNext,
+		);
+		await user.click(desktopNext);
+		expect(desktopNext).toHaveFocus();
+
+		// Tablet container width (769px..900px): controls move into .gallery-thumbs-col and keep focus
+		triggerContainerWidth(820);
+		const tabletNext = screen.getByRole("button", {
+			name: "Imagen siguiente",
+		});
+		const tabletPrev = screen.getByRole("button", {
+			name: "Imagen anterior",
+		});
+		const thumbsCol = container.querySelector(".gallery-thumbs-col");
+		expect(thumbsCol).toContainElement(tabletPrev);
+		expect(thumbsCol).toContainElement(tabletNext);
+		expect(container.querySelector(".gallery-main")).not.toContainElement(
+			tabletNext,
+		);
+		expect(tabletNext).toHaveFocus();
+
+		// Back to desktop container width (1000px): controls move back to .gallery-main and keep focus
+		triggerContainerWidth(1000);
+		const restoredDesktopNext = screen.getByRole("button", {
+			name: "Imagen siguiente",
+		});
+		expect(container.querySelector(".gallery-main")).toContainElement(
+			restoredDesktopNext,
+		);
+		expect(restoredDesktopNext).toHaveFocus();
+
+		// Back to tablet then mobile container width (<= 768px): controls exit tablet mode
+		triggerContainerWidth(820);
+		expect(thumbsCol).toContainElement(
+			screen.getByRole("button", { name: "Imagen siguiente" }),
+		);
+
+		triggerContainerWidth(480);
+		expect(thumbsCol).not.toContainElement(
+			screen.getByRole("button", { name: "Imagen siguiente" }),
+		);
+		expect(thumbsCol).not.toContainElement(
+			screen.getByRole("button", { name: "Imagen anterior" }),
+		);
+	});
 });

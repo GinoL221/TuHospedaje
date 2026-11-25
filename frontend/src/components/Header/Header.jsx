@@ -16,13 +16,19 @@ export default function Header() {
 	useEffect(() => {
 		if (!menuOpen) return undefined;
 
+		const isBlockedByModal = (event) =>
+			event.defaultPrevented ||
+			profileModalOpen ||
+			Boolean(document.querySelector("dialog[open]"));
+
 		const handleKeyDown = (event) => {
-			if (event.key !== "Escape") return;
+			if (event.key !== "Escape" || isBlockedByModal(event)) return;
 			setMenuOpen(false);
 			menuButtonRef.current?.focus();
 		};
 
 		const handlePointerDown = (event) => {
+			if (isBlockedByModal(event)) return;
 			if (headerRef.current && !headerRef.current.contains(event.target)) {
 				setMenuOpen(false);
 			}
@@ -35,7 +41,7 @@ export default function Header() {
 			document.removeEventListener("keydown", handleKeyDown);
 			document.removeEventListener("pointerdown", handlePointerDown);
 		};
-	}, [menuOpen]);
+	}, [menuOpen, profileModalOpen]);
 
 	useLayoutEffect(() => {
 		const header = headerRef.current;

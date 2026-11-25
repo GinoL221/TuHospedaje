@@ -170,8 +170,6 @@
 }
 
 .hotel-card-link {
-  container-type: inline-size;
-  container-name: product-card;
   --product-card-focus: var(--action-primary-focus);
   box-sizing: border-box;
   width: 100%;
@@ -193,7 +191,7 @@
   }
 }
 
-@container product-card (max-width: 280px) {
+@media (max-width: 360px) {
   .hotel-card-body {
     padding: var(--space-3);
   }

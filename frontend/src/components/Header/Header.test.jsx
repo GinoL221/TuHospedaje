@@ -309,4 +309,67 @@ describe("Header - unauthenticated user", () => {
 		);
 		expect(menu).toHaveClass("nav-links--open");
 	});
+
+	it("does not close the mobile menu or steal focus when an open dialog is present", async () => {
+		const user = userEvent.setup();
+		customRender(
+			<div>
+				<Header />
+				<dialog open>
+					<button type="button">Acción en diálogo</button>
+				</dialog>
+			</div>,
+			{ authValue: null },
+		);
+
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+
+		const dialogButton = screen.getByRole("button", {
+			name: "Acción en diálogo",
+		});
+		dialogButton.focus();
+		expect(dialogButton).toHaveFocus();
+
+		await user.keyboard("{Escape}");
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+		expect(dialogButton).toHaveFocus();
+
+		await user.click(dialogButton);
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+		expect(dialogButton).toHaveFocus();
+	});
+
+	it("does not close the mobile menu or steal focus when Escape keydown is already defaultPrevented", async () => {
+		const user = userEvent.setup();
+		customRender(<Header />, { authValue: null });
+
+		await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+		const loginLink = screen.getByRole("link", { name: "Iniciar sesión" });
+		loginLink.focus();
+		expect(loginLink).toHaveFocus();
+
+		const escapeEvent = new KeyboardEvent("keydown", {
+			key: "Escape",
+			bubbles: true,
+			cancelable: true,
+		});
+		escapeEvent.preventDefault();
+		document.dispatchEvent(escapeEvent);
+
+		expect(screen.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute(
+			"aria-expanded",
+			"true",
+		);
+		expect(loginLink).toHaveFocus();
+	});
 });

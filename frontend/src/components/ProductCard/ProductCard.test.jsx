@@ -373,7 +373,7 @@ describe("ProductCard - visitor accessibility contract", () => {
 		expect(screen.getByRole("link")).toHaveAttribute("href", "/lodgings/1");
 	});
 
-	it("defines tokenized focus, touch-target, and container-based narrow card rules", () => {
+	it("defines tokenized focus, touch-target, and narrow-viewport card rules", () => {
 		const css = readFileSync(
 			"src/components/ProductCard/ProductCard.css",
 			"utf8",
@@ -382,11 +382,9 @@ describe("ProductCard - visitor accessibility contract", () => {
 		expect(css).toMatch(/--product-card-surface:/);
 		expect(css).toMatch(/\.hotel-card-link:focus-visible/);
 		expect(css).toMatch(/\.fav-btn[\s\S]*?min-width: 44px/);
-		expect(css).toMatch(
-			/\.hotel-card-link\s*\{[^}]*container-type:\s*inline-size;/s,
-		);
-		expect(css).toMatch(/@container\s+[\w-]*\s*\(max-width:\s*280px\)/);
-		expect(css).not.toMatch(/@media\s*\(max-width:\s*360px\)/);
+		expect(css).not.toMatch(/container-type:\s*inline-size;/);
+		expect(css).not.toMatch(/@container\s+product-card/);
+		expect(css).toMatch(/@media\s*\(max-width:\s*360px\)/);
 	});
 
 	it("pins the narrow card title minimum and favorite hit target", () => {
@@ -395,9 +393,8 @@ describe("ProductCard - visitor accessibility contract", () => {
 			"utf8",
 		);
 		const narrowRules =
-			css.match(
-				/@container\s+[\w-]*\s*\(max-width:\s*280px\)\s*\{([\s\S]*)\}\s*$/,
-			)?.[1] ?? "";
+			css.match(/@media\s*\(max-width:\s*360px\)\s*\{([\s\S]*)\}\s*$/)?.[1] ??
+			"";
 
 		expect(narrowRules).toMatch(
 			/\.hotel-card-body h3[\s\S]*?font-size:\s*max\(16px,\s*var\(--type-body-size\)\)/,

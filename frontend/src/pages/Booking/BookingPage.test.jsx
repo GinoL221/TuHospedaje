@@ -1223,7 +1223,7 @@ describe("BookingPage - form input hints and aria-invalid defaults", () => {
 });
 
 describe("BookingPage - container queries contract", () => {
-	it("uses container queries on .booking-form and removes the @media (min-width: 901px) gallery override block", () => {
+	it("uses container queries on .booking-form, scopes gallery image sizing to @media (min-width: 901px), and removes gallery-wrapper overrides", () => {
 		const css = readFileSync("src/pages/Booking/BookingPage.css", "utf8");
 
 		expect(css).toMatch(
@@ -1234,7 +1234,9 @@ describe("BookingPage - container queries contract", () => {
 		);
 		expect(css).toMatch(/@media\s*\(max-width:\s*960px\)/);
 		expect(css).toMatch(/@media\s*\(max-width:\s*768px\)/);
-		expect(css).not.toMatch(/@media\s*\(min-width:\s*901px\)/);
+		expect(css).toMatch(
+			/@media\s*\(min-width:\s*901px\)\s*\{\s*\.booking-summary\s+\.gallery-main-trigger\s+img\s*\{[\s\S]*?aspect-ratio:\s*16\s*\/\s*10;[\s\S]*?\}\s*\}/,
+		);
 		expect(css).not.toMatch(/\.booking-summary\s+\.gallery-wrapper/);
 	});
 });
