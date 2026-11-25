@@ -132,7 +132,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
-  padding: 28px 32px;
+  padding: 28px 32px 96px;
   min-width: 0;
 }
 
@@ -896,7 +896,7 @@ textarea.input-error {
     padding: 12px;
   }
   .admin-content {
-    padding: 20px 16px;
+    padding: 20px 16px 96px;
   }
   .admin-topbar {
     padding: 0 16px;

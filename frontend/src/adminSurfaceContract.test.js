@@ -97,4 +97,19 @@ describe("admin shell contract", () => {
 		expect(theadRule).toMatch(/inset-block-start:\s*0/);
 		expect(theadRule).toMatch(/z-index:\s*1/);
 	});
+
+	it("reserves bottom clearance in admin-content so the fixed FAB never covers the last table row", () => {
+		const css = readCss("src/pages/Admin/Admin.css");
+		const contentRule = rule(css, ".admin-content");
+		const mobileBlock = css.match(
+			/@media\s*\(max-width:\s*900px\)\s*\{([\s\S]*)\}\s*$/,
+		)?.[1];
+
+		expect(contentRule).toBeDefined();
+		expect(contentRule).toMatch(/padding:\s*28px 32px 96px/);
+		expect(mobileBlock).toBeDefined();
+		expect(mobileBlock).toMatch(
+			/\.admin-content\s*\{[^}]*padding:\s*20px 16px 96px/,
+		);
+	});
 });
