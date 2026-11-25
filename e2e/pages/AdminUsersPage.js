@@ -5,11 +5,11 @@ const AdminBasePage = require('./AdminBasePage');
  * AdminUsersPage — page object for the Admin › Users section.
  *
  * Entity key : "users"
- * Operations : read user list, toggle role via window.confirm
+ * Operations : read user list, toggle role via ConfirmDialog
  * No create, no edit, no delete — read-only except for role toggle.
  *
- * Role-toggle confirmation is a native window.confirm dialog.
- * The handler MUST be registered via page.once('dialog') before the click.
+ * Role-toggle confirmation uses the ConfirmDialog component
+ * (testId="confirm-role-toggle").
  */
 class AdminUsersPage extends AdminBasePage {
   /** @param {import('@playwright/test').Page} page */
@@ -34,14 +34,14 @@ class AdminUsersPage extends AdminBasePage {
   }
 
   /**
-   * Accept the window.confirm dialog and click the role-toggle button.
-   * The dialog handler is registered BEFORE the click so it is in place
-   * when the native dialog fires.
+   * Click the role-toggle button and confirm in the ConfirmDialog.
    * @param {number|string} id
    */
   async toggleRole(id) {
-    this.page.once('dialog', (dialog) => dialog.accept());
     await this.getRoleBtn(id).click();
+    const yesBtn = this.page.locator('[data-testid="confirm-role-toggle-yes"]');
+    await yesBtn.waitFor({ state: 'visible' });
+    await yesBtn.click();
     // Give React a tick to process the PUT response and re-render.
     await this.page.waitForTimeout(400);
   }
