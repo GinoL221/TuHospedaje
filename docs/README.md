@@ -67,7 +67,7 @@ Los reportes y planes de Sprint describen cortes históricos del proyecto. Usalo
 
 ## Entregables publicados en el repositorio
 
-- [Bitácora del proyecto](markdown/bitacora-del-proyecto.md) · [PDF](entregables/bitacora-del-proyecto.pdf): línea de tiempo desde el Sprint 1 hasta v1.0.1, con decisiones, exclusiones y límites
+- [Bitácora del proyecto](markdown/bitacora-del-proyecto.md) · [PDF](entregables/bitacora-del-proyecto.pdf): línea de tiempo desde el Sprint 1 hasta `main@7f4e846` (v1.0.1 y modernización E2E/frontend), con decisiones, exclusiones y límites
 - [Definición del proyecto en PDF](entregables/project-definition.pdf)
 - [Sprint 1 — reporte PDF](entregables/sprint-1-report.pdf) · [test plan PDF](entregables/sprint-1-test-plan.pdf)
 - [Sprint 2 — reporte PDF](entregables/sprint-2-report.pdf) · [test plan PDF](entregables/sprint-2-test-plan.pdf)

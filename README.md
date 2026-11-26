@@ -47,7 +47,7 @@ Requisitos para este flujo: **Docker Compose v2** e internet en el primer build 
 
 - **Backend:** Java 17, Spring Boot 4.0, Spring Security/JWT, Spring Data JPA, Flyway y MariaDB 10.11.
 - **Frontend:** React 19, Vite 8, React Router y Lucide React.
-- **E2E:** Playwright para Chromium, Firefox y mobile Chromium.
+- **E2E:** Playwright para Chromium, Firefox, mobile Chromium y mobile WebKit (en CI; opt-in local con `E2E_ENABLE_WEBKIT=1`), con `@axe-core/playwright` WCAG AA y snapshots visuales.
 - **Almacenamiento de imágenes:** Almacenamiento local en el backend mediante `LocalImageStorageService`, con endpoints públicos seguros en `/uploads/**` e imágenes canónicas de seed en `/canonical-lodging-images/**`. Validación estricta con `ImageContentValidator` (magic bytes, JPEG, PNG, WebP, GIF hasta 5 MB y sin SVG).
 - **Correo electrónico:** Outbox transaccional en base de datos (`email_outbox`) con despacho asíncrono vía SMTP (configurable con las variables `MAILTRAP_*`; en producción, el servidor SMTP del operador). Configurar SMTP no prueba la entrega ni la llegada al buzón.
 
@@ -373,7 +373,7 @@ Las corridas locales reutilizan `tuhospedaje-dev-seeded`. Si el estado acumulado
 - [`docs/README.md`](docs/README.md): índice general de documentación y jerarquía de fuentes.
 - [`docs/markdown/api-reference.md`](docs/markdown/api-reference.md): referencia de la API HTTP (50 operaciones verificadas contra `/v3/api-docs`). En desarrollo, Swagger UI está en `http://localhost:8080/swagger-ui/index.html` y el esquema OpenAPI en `/v3/api-docs`; no hay colección Postman en el repositorio porque Swagger/OpenAPI la reemplaza.
 - [`docs/markdown/backend-architecture.md`](docs/markdown/backend-architecture.md): arquitectura del backend.
-- [`docs/markdown/bitacora-del-proyecto.md`](docs/markdown/bitacora-del-proyecto.md): bitácora del proyecto desde el Sprint 1 hasta v1.0.1.
+- [`docs/markdown/bitacora-del-proyecto.md`](docs/markdown/bitacora-del-proyecto.md): bitácora del proyecto desde el Sprint 1 hasta `main@7f4e846` (v1.0.1 y modernización E2E/frontend).
 - [`docs/markdown/delivery/current-main.md`](docs/markdown/delivery/current-main.md): registro histórico de la entrega académica del corte `18d9898` (anterior a v1.0.0). No describe el `main` actual; el historial y las verificaciones ligadas a ese SHA viven aquí.
 - [`product.md`](product.md): resumen de alcance subordinado a los PDF originales; recorridos de demostración, excepción móvil de Admin e incrementos posteriores.
 - [`DESIGN.md`](DESIGN.md): traducción técnica de identidad, convenciones registradas y diferencias pendientes frente a los requisitos oficiales; no sustituye su aceptación.

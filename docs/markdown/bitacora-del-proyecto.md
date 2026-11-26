@@ -11,7 +11,7 @@ date: "Noviembre 2026"
 
 Esta bitácora cuenta en orden cronológico cómo se construyó TuHospedaje: qué se entregó en cada etapa, qué se decidió y por qué, qué quedó fuera a propósito y qué no se comprobó. Cada hito cita su fuente (commit, pull request o documento) para que pueda verificarse.
 
-- **Corte:** 2026-11-17. Todos los hitos hasta `main@53d554a` están integrados: las tareas T1 a T14 cerraron en `main@c9d91d0` y el tag `v1.0.1` (`bd3bc43`), seguidas por el cierre del contrato `409`, la documentación técnica de backend/API/frontend, la higiene de compilación y el primer lote de `NullAway` (PRs #453 a #474).
+- **Corte:** 2026-11-25. Todos los hitos hasta `main@7f4e846` están integrados: las tareas T1 a T14 cerraron en `main@c9d91d0` y el tag `v1.0.1` (`bd3bc43`), seguidas por el cierre del contrato `409`, la documentación técnica de backend/API/frontend, la higiene de compilación y el primer lote de `NullAway` (PRs #453 a #474), el inicio rápido para corrección académica (PR #476), la modernización de Playwright E2E y CI (PRs #478 a #480) y la modernización del frontend con `modern-web-guidance` (PRs #481 a #486).
 - **Alcance:** resume y enlaza los informes y planes de prueba de cada sprint. No los reemplaza ni redefine el alcance de [product.md](../../product.md).
 - **Límite:** no afirma que el sistema esté desplegado ni verificado en producción. La sección 9 detalla qué falta comprobar.
 
@@ -32,6 +32,9 @@ Esta bitácora cuenta en orden cronológico cómo se construyó TuHospedaje: qu�
 | 2026-11-08 a 11-10 | Correcciones de v1.0.1 (T1 a T13) | PR #425 a #449, `main@c9d91d0` |
 | 2026-11-11 | Release **v1.0.1** (T14) con entregables regenerados | PR #451, tag `v1.0.1` en `bd3bc43` |
 | 2026-11-12 a 11-17 | Cierre posterior a v1.0.1: contrato 409, docs de API/backend, guards de compilación y NullAway lote 1 | PR #453 a #474, `main@53d554a` |
+| 2026-11-18 a 11-19 | Inicio rápido para corrección académica (`dev-setup.sh`, huésped demo) | PR #476, `main@f3d5eba` |
+| 2026-11-24 | Modernización de Playwright E2E y CI (Ubuntu Noble, `mobile-webkit`, `axe-core` WCAG AA y snapshots visuales) | PR #478 a #480, `main@721fee2` |
+| 2026-11-24 a 11-25 | Modernización frontend (`modern-web-guidance`): LCP, tokens/tablas Admin, autofill/ARIA, `<dialog>` nativo y `@container` | PR #481 a #486, `main@7f4e846` |
 
 ## 3. Sprint por sprint
 
@@ -124,6 +127,23 @@ Después del tag `v1.0.1` se cerró el contrato HTTP `409 Conflict` para duplica
 | #471 a #474 | Cierre de los seguimientos `#454` a `#457`: carreras de constraint única a `409`, renombre solo por mayúsculas/minúsculas en políticas y alojamientos, mensajes localizados en `Auth`/`Reservation`/`LodgingQuery` y verificación completa de `ApiError` en `/v3/api-docs` |
 
 Al cierre de esta etapa `main` quedó en `53d554a` (861 tests de backend corridos con 1 omitido, 52 tests en `tools/tests` y los 6 jobs de CI en verde).
+
+### 6.4 Entrega académica, Playwright E2E y modernización frontend (2026-11-18 a 2026-11-25)
+
+Tras el corte documental de `#475` (`2113c00`) se sumaron el arranque simplificado para corrección académica, la modernización de la suite Playwright en CI y una pasada de mejoras de plataforma web sobre `frontend/` dividida en 6 PRs apilados.
+
+| PR | Cambio |
+| --- | --- |
+| #476 | Inicio rápido para corrección: `scripts/dev-setup.sh`, migración demo `db/dev/V1_9001__dev_demo_guest.sql` (`huesped@tuhospedaje.com`) y guía en `README.md` (`main@f3d5eba`) |
+| #477 | Volumen aislado para `backend/target` en desarrollo contenedorizado |
+| #478 a #480 | Playwright `1.61.1`, contenedor Ubuntu Noble fijado por digest en CI con `mobile-webkit` (CI bajó de ~24 min a ~12 min), runner local `e2e/scripts/run-e2e.cjs`, `storageState`, auditoría WCAG AA con `@axe-core/playwright` y snapshots visuales (`main@721fee2`) |
+| #481 | Priorización LCP (`fetchPriority="high"`, sin `loading="lazy"` sobre el pliegue) y dimensiones explícitas en imágenes de `LodgingGallery`, `ProductCard`, `Home`, `Header` y `Footer` |
+| #482 | Tokens CSS en `App.css`/`Admin.css` sin hex fijos, tablas Admin navegables por teclado (`tabIndex={0}`, `role="region"`, `thead` sticky) y margen inferior para el botón flotante |
+| #483 | `autoComplete`, `enterKeyHint`, `<search>`, asociación ARIA completa de errores y foco directo por ref en formularios de autenticación, reserva, búsqueda y Admin |
+| #484 y #485 | Primitiva `<dialog>` nativa (`ModalDialog` con `showModal()` y fallback para Safari/WebKit), migración de `ConfirmDialog`, los 3 modales Admin, `ShareModal`, `GalleryModal`, `UserProfileModal` y `LodgingFormModal`, y reemplazo de `window.confirm` en `MyReservationsPage` |
+| #486 | Container queries (`@container`) en `LodgingGallery`, `ProductCard`, `ReviewsSection` y `BookingPage`, y cierre accesible por `Escape`/click externo con retorno de foco en el menú mobile de `Header` |
+
+Al cierre de esta etapa `main` quedó en `7f4e846` con los 7 jobs de CI en verde en el run `45646830494` (`frontend`, `backend`, `e2e` en `chromium`, `firefox`, `mobile-chromium` y `mobile-webkit`, y `containers`). Sin nuevo tag publicado ni despliegue en producción.
 
 ## 7. Decisiones
 

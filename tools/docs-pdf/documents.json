@@ -32,16 +32,16 @@
       "facts": [
         {
           "label": "Período",
-          "value": "2026-05-18 a 2026-11-17"
+          "value": "2026-05-18 a 2026-11-25"
         },
         {
           "label": "Hitos",
-          "value": "Sprints 1 a 4, plan P0 a P28, v1.0.0 y v1.0.1"
+          "value": "Sprints 1 a 4, plan P0 a P28, v1.0.0, v1.0.1 y modernización E2E/frontend"
         },
         {
           "label": "Corte",
-          "value": "main@53d554a",
-          "check": "53d554a"
+          "value": "main@7f4e846",
+          "check": "7f4e846"
         }
       ]
     },
