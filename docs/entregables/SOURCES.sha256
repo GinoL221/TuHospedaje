@@ -1,4 +1,4 @@
-d294b80282ade30ad5b2278e8cab6a017906494d057e5a76235231eabb1436bc  docs/markdown/bitacora-del-proyecto.md
+4c7ba3f16e5d754b4c33ed2d880823149a30903b440071492e343b44f6dfc0b1  docs/markdown/bitacora-del-proyecto.md
 4d42a5722e86dd43940fb533b867a39be0f524b5b3c060d7beb78db9564b7088  docs/markdown/project-definition.md
 bf99e4e3ed22af7ec530fa2cfd1d0ab52a23b6374f2f5b5f7575a0bfa1d4994d  docs/markdown/sprint-1/sprint-1-report.md
 a94b264e306215454b0a9eb12dd1752829ba68efac88b57e6e433b20cc399ea7  docs/markdown/sprint-1/sprint-1-test-plan.md
@@ -11,6 +11,6 @@ d8aa56d267e70b53624291cc914c8c4f7a907ebe4f605a9fe85d87033c959e48  docs/markdown/
 30783d9cc6a878c340c7817c84608ce2c36798dae70675101be367dff3fa4ff5  tools/docs-pdf/brand.css
 c35bddc18d3eab7052d9ec40e72a9465f4682a6a3d3057b97a5d85bc324d47b9  tools/docs-pdf/build.mjs
 01455a247658b95ff14775f29622a9e4727a03332361f1ae04846eb043aa67ba  tools/docs-pdf/transform.mjs
-9ccf56612b8b437c6163655b303a5fd0a32b4f24bc10343ff72df0d6dfeb5fe1  tools/docs-pdf/documents.json
+e5641141c99f84fed8a769a06a4ec5697b09041ca5a61c0936f204c27f90af0a  tools/docs-pdf/documents.json
 b1b790f8b81b1a896370b8c354d49eb0d67fa29a1526ecbdbd475c506d79bb86  tools/docs-pdf/package-lock.json
 127b816d66c3cb1f089663ded8ec63cbd3d58dfe46f6fce9257761004b1d3c48  frontend/src/assets/images/TuHospedaje_Imagotipo.png
