@@ -55,7 +55,7 @@ class RepoHygieneTest(unittest.TestCase):
         self.assertTrue(self.is_ignored("e2e/playwright-report/index.html"), "e2e/playwright-report/ must be ignored")
 
     def test_project_versions_are_aligned_to_release(self):
-        expected = "1.0.1"
+        expected = "1.1.0"
 
         # backend pom.xml (the release manifest)
         pom = (ROOT / "backend/pom.xml").read_text(encoding="utf-8")
